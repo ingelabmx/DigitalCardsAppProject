@@ -1,0 +1,34 @@
+@page
+@model DigitalCards.Web.Pages.Client.CardsModel
+@{
+    ViewData["Title"] = "Tarjetas cliente";
+}
+
+<section class="form-panel">
+    <h1>Tarjetas del cliente</h1>
+
+    <form method="get" data-testid="client-cards-form">
+        <div class="mb-3">
+            <label asp-for="UserName" class="form-label">Usuario o correo</label>
+            <input asp-for="UserName" class="form-control" data-testid="client-cards-username" />
+        </div>
+        <button class="btn btn-primary" type="submit" data-testid="client-cards-submit">Buscar</button>
+    </form>
+</section>
+
+@if (Model.Cards.Count > 0)
+{
+    <section class="result-panel mt-3" data-testid="client-card-results">
+        <h2>Resultados</h2>
+        @foreach (var card in Model.Cards)
+        {
+            <article class="border-top py-3" data-testid="client-card">
+                <h3>@card.BusinessName</h3>
+                <p>Sellos actuales: <strong>@card.CurrentStamps</strong></p>
+                <p>Sellos historicos: <strong>@card.LifetimeStamps</strong></p>
+                <p>Google Wallet: <strong>@(card.GoogleObjectId is null ? "Pendiente" : "Google emitida")</strong></p>
+            </article>
+        }
+    </section>
+}
+

@@ -1,0 +1,48 @@
+@page "{token}"
+@model DigitalCards.Web.Pages.Wallet.SelectModel
+@{
+    ViewData["Title"] = "Seleccionar Wallet";
+}
+
+@if (Model.Landing is null)
+{
+    <section class="result-panel" data-testid="wallet-not-found">
+        <h1>Link no valido</h1>
+        <p>El link de enrolamiento no existe o ya no esta disponible.</p>
+    </section>
+}
+else
+{
+    <section class="wallet-panel" data-testid="wallet-select">
+        <p class="eyebrow">Tarjeta digital</p>
+        <h1>@Model.Landing.BusinessName</h1>
+        <p class="lead">Tarjeta de @Model.Landing.ClientName con @Model.Landing.CurrentStamps sellos actuales.</p>
+
+        <div class="metric-row">
+            <div class="metric">
+                <span>Sellos actuales</span>
+                <strong>@Model.Landing.CurrentStamps</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos historicos</span>
+                <strong>@Model.Landing.LifetimeStamps</strong>
+            </div>
+            <div class="metric">
+                <span>Google</span>
+                <strong>@(Model.Landing.HasGooglePass ? "Emitida" : "Pendiente")</strong>
+            </div>
+        </div>
+
+        <div class="wallet-actions">
+            <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
+               asp-page="/Wallet/Apple"
+               asp-route-token="@Model.Landing.Token"
+               data-testid="apple-wallet-button">Apple Wallet</a>
+            <a class="btn btn-primary wallet-button d-flex align-items-center justify-content-center"
+               asp-page="/Wallet/Google"
+               asp-route-token="@Model.Landing.Token"
+               data-testid="google-wallet-button">Google Wallet</a>
+        </div>
+    </section>
+}
+

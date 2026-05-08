@@ -1,0 +1,37 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Migracion ASP.NET Core";
+}
+
+<section class="app-surface">
+    <div>
+        <p class="eyebrow">ASP.NET Core paralelo</p>
+        <h1>DigitalCards migration shell</h1>
+        <p class="lead">
+            Esqueleto modular con dominio, casos de uso, infraestructura fake y Razor Pages para cubrir los primeros flujos criticos sin tocar produccion.
+        </p>
+    </div>
+
+    <div class="action-grid" aria-label="Flujos disponibles">
+        <a class="action-card" asp-page="/Register" data-testid="home-register-link">
+            <span>Registro cliente</span>
+            <small>Alta de cliente en el store in-memory.</small>
+        </a>
+        <a class="action-card" asp-page="/Business/Login" data-testid="home-business-login-link">
+            <span>Login negocio</span>
+            <small>Usa demo@digitalcards.test / business123.</small>
+        </a>
+        <a class="action-card" asp-page="/Dev/Outbox" data-testid="home-outbox-link">
+            <span>Outbox fake</span>
+            <small>Simula correo de enrolamiento Wallet.</small>
+        </a>
+    </div>
+</section>
+
+<section class="info-band">
+    <h2>Estado de esta fase</h2>
+    <p>
+        Esta app no conecta a MySQL, SMTP, Google Wallet ni Apple Wallet reales. Los adaptadores actuales son fake por diseno.
+    </p>
+</section>

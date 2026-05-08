@@ -1,0 +1,14 @@
+@page "{token}"
+@model DigitalCards.Web.Pages.Wallet.AppleModel
+@{
+    ViewData["Title"] = "Apple Wallet";
+}
+
+<section class="result-panel" data-testid="apple-wallet-placeholder">
+    <h1>Apple Wallet pendiente</h1>
+    <p>
+        El endpoint existe para fijar la ruta del flujo, pero la generacion .pkpass y el web service Apple Wallet se implementaran en una fase posterior.
+    </p>
+    <a asp-page="/Wallet/Select" asp-route-token="@Model.Token">Volver</a>
+</section>
+

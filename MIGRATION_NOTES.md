@@ -9,6 +9,7 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [04 Migration Target Architecture](docs/migration-context/04-migration-target-architecture.md)
 - [05 Migration Roadmap](docs/migration-context/05-migration-roadmap.md)
 - [06 Playwright Test Plan](docs/migration-context/06-playwright-test-plan.md)
+- [07 Modern ASP.NET Core Skeleton](docs/migration-context/07-modern-skeleton.md)
+- [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase es documental. No reemplaza todavia la aplicacion Web Forms ni cambia el flujo funcional actual.
-
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms ni conecta integraciones productivas.

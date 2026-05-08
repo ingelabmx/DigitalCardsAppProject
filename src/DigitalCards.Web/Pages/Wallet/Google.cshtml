@@ -1,0 +1,25 @@
+@page "{token}"
+@model DigitalCards.Web.Pages.Wallet.GoogleModel
+@{
+    ViewData["Title"] = "Google Wallet";
+}
+
+@if (Model.Result is null)
+{
+    <section class="result-panel" data-testid="google-wallet-not-found">
+        <h1>Link no valido</h1>
+        <p>No se pudo emitir Google Wallet para este token.</p>
+    </section>
+}
+else
+{
+    <section class="result-panel" data-testid="google-wallet-result">
+        <h1>Google Wallet fake emitida</h1>
+        <p>Object ID: <strong data-testid="google-object-id">@Model.Result.ObjectId</strong></p>
+        <p>
+            Save URL:
+            <a href="@Model.Result.SaveUrl" data-testid="google-save-url">@Model.Result.SaveUrl</a>
+        </p>
+    </section>
+}
+

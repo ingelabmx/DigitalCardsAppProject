@@ -1,0 +1,31 @@
+@page
+@model DigitalCards.Web.Pages.Dev.OutboxModel
+@{
+    ViewData["Title"] = "Outbox fake";
+}
+
+<section class="result-panel">
+    <h1>Outbox fake</h1>
+
+    @if (Model.Messages.Count == 0)
+    {
+        <p data-testid="outbox-empty">No hay correos generados.</p>
+    }
+    else
+    {
+        <div class="list-group" data-testid="outbox-list">
+            @foreach (var message in Model.Messages)
+            {
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between gap-3">
+                        <strong>@message.To</strong>
+                        <small>@message.CreatedAt.ToLocalTime().ToString("g")</small>
+                    </div>
+                    <p class="mb-1">Tarjeta de @message.BusinessName para @message.ClientName.</p>
+                    <a href="@message.EnrollmentUrl" data-testid="email-link">Abrir link de Wallet</a>
+                </div>
+            }
+        </div>
+    }
+</section>
+
