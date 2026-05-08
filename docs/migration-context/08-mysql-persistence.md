@@ -2,9 +2,9 @@
 
 ## Scope
 
-This adapter adds real persistence for the ASP.NET Core migration shell without
-touching production or the Web Forms tables. It uses Dapper and MySqlConnector
-behind the existing application interfaces.
+This adapter adds real persistence for the ASP.NET Core migration shell against
+the existing Web Forms tables. It uses Dapper and MySqlConnector behind the
+existing application interfaces.
 
 ## Provider Switch
 
@@ -36,19 +36,25 @@ dotnet user-secrets set "ConnectionStrings:DigitalCards" "Server=HOST;Port=3306;
 dotnet run --launch-profile hostgator-mysql --project src\DigitalCards.Web\DigitalCards.Web.csproj
 ```
 
-## Schema
+## Legacy Table Mapping
 
-Run `docs/db-modern-mysql.sql` against a local or test database. The script uses
-`modern_clients`, `modern_businesses`, and `modern_loyalty_cards` so it does not
-collide with the legacy tables `UserClient`, `Business`, and `ClientCard`.
+No new tables are created by this adapter. It maps the modern domain to these
+existing tables:
 
-Do not run the script against the HostGator database until the intended schema
-change is approved. It creates new `modern_*` tables and seeds a demo business.
+- `UserClient` -> clients.
+- `Business` -> businesses.
+- `ClientCard` -> loyalty cards and stamp state.
+
+The legacy schema uses integer ids. The modern domain currently uses `Guid`, so
+Infrastructure maps legacy integer ids to deterministic GUID values internally.
+Wallet enrollment tokens are based on the mapped `ClientCard.CardID`.
 
 ## Intentional Limits
 
 - No production connection strings are committed.
 - Wallet and email integrations remain fake.
-- No legacy table writes are introduced in this step.
-- The legacy mapping can be added later as a separate adapter once the migration
-  contract is stable.
+- This adapter writes rows to the existing HostGator tables when the `MySql`
+  provider is enabled.
+- No DDL is executed by the application.
+- `CardIDGoogle` is limited by the existing legacy column length, so the fake
+  Google object id is stored in a shortened legacy-compatible form.

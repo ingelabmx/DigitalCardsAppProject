@@ -13,51 +13,35 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
+    public async Task<LoyaltyCard> AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            insert into modern_loyalty_cards (
-                id,
-                client_id,
-                business_id,
-                enrollment_token,
-                current_stamps,
-                lifetime_stamps,
-                created_at,
-                last_stamped_at,
-                google_object_id,
-                google_save_url)
-            values (
-                @Id,
-                @ClientId,
-                @BusinessId,
-                @EnrollmentToken,
-                @CurrentStamps,
-                @LifetimeStamps,
-                @CreatedAt,
-                @LastStampedAt,
-                @GoogleObjectId,
-                @GoogleSaveUrl);
+            insert into ClientCard (CardIDGoogle, CreationDate, CheckQTY, LastCheck, UserID, BusinessID, HistoricCheckQTY)
+            values (@GoogleObjectId, @CreatedAt, @CurrentStamps, @LastStampedAt, @ClientId, @BusinessId, @HistoricCheckQTY);
+            select last_insert_id();
             """;
 
         await using var connection = _connectionFactory.Create();
-        await connection.ExecuteAsync(new CommandDefinition(sql, ToParameters(card), cancellationToken: cancellationToken));
+        var cardId = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, ToInsertParameters(card), cancellationToken: cancellationToken));
+
+        return await FindByIdAsync(cardId, cancellationToken)
+            ?? throw new InvalidOperationException("Inserted legacy card could not be loaded.");
     }
 
     public async Task UpdateAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            update modern_loyalty_cards
-            set current_stamps = @CurrentStamps,
-                lifetime_stamps = @LifetimeStamps,
-                last_stamped_at = @LastStampedAt,
-                google_object_id = @GoogleObjectId,
-                google_save_url = @GoogleSaveUrl
-            where id = @Id;
+            update ClientCard
+            set CheckQTY = @CurrentStamps,
+                HistoricCheckQTY = @HistoricCheckQTY,
+                LastCheck = @LastStampedAt,
+                CardIDGoogle = @GoogleObjectId
+            where CardID = @Id;
             """;
 
         await using var connection = _connectionFactory.Create();
-        await connection.ExecuteAsync(new CommandDefinition(sql, ToParameters(card), cancellationToken: cancellationToken));
+        await connection.ExecuteAsync(new CommandDefinition(sql, ToUpdateParameters(card), cancellationToken: cancellationToken));
     }
 
     public async Task<LoyaltyCard?> FindByClientAndBusinessAsync(
@@ -66,19 +50,17 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   client_id as Client_Id,
-                   business_id as Business_Id,
-                   enrollment_token as Enrollment_Token,
-                   current_stamps as Current_Stamps,
-                   lifetime_stamps as Lifetime_Stamps,
-                   created_at as Created_At,
-                   last_stamped_at as Last_Stamped_At,
-                   google_object_id as Google_Object_Id,
-                   google_save_url as Google_Save_Url
-            from modern_loyalty_cards
-            where client_id = @ClientId
-              and business_id = @BusinessId
+            select CardID,
+                   CardIDGoogle,
+                   CreationDate,
+                   CheckQTY,
+                   LastCheck,
+                   UserID,
+                   BusinessID,
+                   HistoricCheckQTY
+            from ClientCard
+            where UserID = @ClientId
+              and BusinessID = @BusinessId
             limit 1;
             """;
 
@@ -86,8 +68,8 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         var row = await connection.QuerySingleOrDefaultAsync<LoyaltyCardRow>(
             new CommandDefinition(sql, new
             {
-                ClientId = clientId.ToString(),
-                BusinessId = businessId.ToString()
+                ClientId = LegacyIdMapper.ToInt32(clientId),
+                BusinessId = LegacyIdMapper.ToInt32(businessId)
             }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
@@ -96,24 +78,28 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
     public async Task<LoyaltyCard?> FindByEnrollmentTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   client_id as Client_Id,
-                   business_id as Business_Id,
-                   enrollment_token as Enrollment_Token,
-                   current_stamps as Current_Stamps,
-                   lifetime_stamps as Lifetime_Stamps,
-                   created_at as Created_At,
-                   last_stamped_at as Last_Stamped_At,
-                   google_object_id as Google_Object_Id,
-                   google_save_url as Google_Save_Url
-            from modern_loyalty_cards
-            where enrollment_token = @Token
+            select CardID,
+                   CardIDGoogle,
+                   CreationDate,
+                   CheckQTY,
+                   LastCheck,
+                   UserID,
+                   BusinessID,
+                   HistoricCheckQTY
+            from ClientCard
+            where CardID = @CardId
             limit 1;
             """;
 
+        var cardId = LegacyIdMapper.TryTokenToInt32(token);
+        if (cardId is null)
+        {
+            return null;
+        }
+
         await using var connection = _connectionFactory.Create();
         var row = await connection.QuerySingleOrDefaultAsync<LoyaltyCardRow>(
-            new CommandDefinition(sql, new { Token = token.Trim() }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { CardId = cardId }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
     }
@@ -121,43 +107,89 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
     public async Task<IReadOnlyList<LoyaltyCard>> ListByClientAsync(Guid clientId, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   client_id as Client_Id,
-                   business_id as Business_Id,
-                   enrollment_token as Enrollment_Token,
-                   current_stamps as Current_Stamps,
-                   lifetime_stamps as Lifetime_Stamps,
-                   created_at as Created_At,
-                   last_stamped_at as Last_Stamped_At,
-                   google_object_id as Google_Object_Id,
-                   google_save_url as Google_Save_Url
-            from modern_loyalty_cards
-            where client_id = @ClientId
-            order by created_at desc;
+            select CardID,
+                   CardIDGoogle,
+                   CreationDate,
+                   CheckQTY,
+                   LastCheck,
+                   UserID,
+                   BusinessID,
+                   HistoricCheckQTY
+            from ClientCard
+            where UserID = @ClientId
+            order by CreationDate desc;
             """;
 
         await using var connection = _connectionFactory.Create();
         var rows = await connection.QueryAsync<LoyaltyCardRow>(
-            new CommandDefinition(sql, new { ClientId = clientId.ToString() }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { ClientId = LegacyIdMapper.ToInt32(clientId) }, cancellationToken: cancellationToken));
 
         return rows.Select(row => row.ToDomain()).ToArray();
     }
 
-    private static object ToParameters(LoyaltyCard card)
+    private async Task<LoyaltyCard?> FindByIdAsync(int cardId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            select CardID,
+                   CardIDGoogle,
+                   CreationDate,
+                   CheckQTY,
+                   LastCheck,
+                   UserID,
+                   BusinessID,
+                   HistoricCheckQTY
+            from ClientCard
+            where CardID = @CardId
+            limit 1;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var row = await connection.QuerySingleOrDefaultAsync<LoyaltyCardRow>(
+            new CommandDefinition(sql, new { CardId = cardId }, cancellationToken: cancellationToken));
+
+        return row?.ToDomain();
+    }
+
+    private static object ToInsertParameters(LoyaltyCard card)
     {
         return new
         {
-            Id = card.Id.ToString(),
-            ClientId = card.ClientId.ToString(),
-            BusinessId = card.BusinessId.ToString(),
-            card.EnrollmentToken,
+            ClientId = LegacyIdMapper.ToInt32(card.ClientId),
+            BusinessId = LegacyIdMapper.ToInt32(card.BusinessId),
             card.CurrentStamps,
-            card.LifetimeStamps,
+            HistoricCheckQTY = card.LifetimeStamps,
             CreatedAt = card.CreatedAt.UtcDateTime,
             LastStampedAt = card.LastStampedAt.UtcDateTime,
-            card.GoogleObjectId,
-            card.GoogleSaveUrl
+            GoogleObjectId = ToLegacyGoogleId(card.GoogleObjectId)
         };
+    }
+
+    private static object ToUpdateParameters(LoyaltyCard card)
+    {
+        return new
+        {
+            Id = LegacyIdMapper.ToInt32(card.Id),
+            card.CurrentStamps,
+            HistoricCheckQTY = card.LifetimeStamps,
+            LastStampedAt = card.LastStampedAt.UtcDateTime,
+            GoogleObjectId = ToLegacyGoogleId(card.GoogleObjectId)
+        };
+    }
+
+    private static string? ToLegacyGoogleId(string? objectId)
+    {
+        if (string.IsNullOrWhiteSpace(objectId))
+        {
+            return null;
+        }
+
+        var normalized = new string(objectId.Where(char.IsLetterOrDigit).ToArray());
+        if (normalized.Length <= 10)
+        {
+            return normalized;
+        }
+
+        return normalized[^10..];
     }
 
     private static DateTimeOffset AsUtc(DateTime value)
@@ -168,30 +200,36 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
     }
 
     private sealed record LoyaltyCardRow(
-        string Id,
-        string Client_Id,
-        string Business_Id,
-        string Enrollment_Token,
-        int Current_Stamps,
-        int Lifetime_Stamps,
-        DateTime Created_At,
-        DateTime Last_Stamped_At,
-        string? Google_Object_Id,
-        string? Google_Save_Url)
+        int CardID,
+        string? CardIDGoogle,
+        DateTime? CreationDate,
+        int? CheckQTY,
+        DateTime? LastCheck,
+        int UserID,
+        int BusinessID,
+        int? HistoricCheckQTY)
     {
         public LoyaltyCard ToDomain()
         {
+            var cardGuid = LegacyIdMapper.ToGuid(CardID);
+            var createdAt = AsUtc(CreationDate ?? DateTime.UtcNow);
+            var currentStamps = CheckQTY ?? 0;
+            var lifetimeStamps = Math.Max(HistoricCheckQTY ?? currentStamps, currentStamps);
+            var googleSaveUrl = string.IsNullOrWhiteSpace(CardIDGoogle)
+                ? null
+                : $"https://pay.google.com/gp/v/save/{CardIDGoogle}";
+
             return LoyaltyCard.Restore(
-                Guid.Parse(Id),
-                Guid.Parse(Client_Id),
-                Guid.Parse(Business_Id),
-                Enrollment_Token,
-                Current_Stamps,
-                Lifetime_Stamps,
-                AsUtc(Created_At),
-                AsUtc(Last_Stamped_At),
-                Google_Object_Id,
-                Google_Save_Url);
+                cardGuid,
+                LegacyIdMapper.ToGuid(UserID),
+                LegacyIdMapper.ToGuid(BusinessID),
+                cardGuid.ToString("N"),
+                currentStamps,
+                lifetimeStamps,
+                createdAt,
+                AsUtc(LastCheck ?? CreationDate ?? DateTime.UtcNow),
+                string.IsNullOrWhiteSpace(CardIDGoogle) ? null : CardIDGoogle,
+                googleSaveUrl);
         }
     }
 }

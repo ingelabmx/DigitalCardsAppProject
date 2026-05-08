@@ -16,14 +16,13 @@ public sealed class MySqlClientRepository : IClientRepository
     public async Task AddAsync(Client client, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            insert into modern_clients (id, user_name, first_name, last_name, email)
-            values (@Id, @UserName, @FirstName, @LastName, @Email);
+            insert into UserClient (UserName, UserPassword, FirstName, Lastname, UserEmail, RoleID)
+            values (@UserName, '', @FirstName, @LastName, @Email, 2);
             """;
 
         await using var connection = _connectionFactory.Create();
         await connection.ExecuteAsync(new CommandDefinition(sql, new
         {
-            Id = client.Id.ToString(),
             client.UserName,
             client.FirstName,
             client.LastName,
@@ -34,18 +33,18 @@ public sealed class MySqlClientRepository : IClientRepository
     public async Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   user_name as User_Name,
-                   first_name as First_Name,
-                   last_name as Last_Name,
-                   email as Email
-            from modern_clients
-            where id = @Id;
+            select UserID,
+                   UserName,
+                   FirstName,
+                   Lastname,
+                   UserEmail
+            from UserClient
+            where UserID = @Id;
             """;
 
         await using var connection = _connectionFactory.Create();
         var row = await connection.QuerySingleOrDefaultAsync<ClientRow>(
-            new CommandDefinition(sql, new { Id = id.ToString() }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { Id = LegacyIdMapper.ToInt32(id) }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
     }
@@ -53,14 +52,14 @@ public sealed class MySqlClientRepository : IClientRepository
     public async Task<Client?> FindByUserNameOrEmailAsync(string value, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   user_name as User_Name,
-                   first_name as First_Name,
-                   last_name as Last_Name,
-                   email as Email
-            from modern_clients
-            where lower(user_name) = lower(@Value)
-               or lower(email) = lower(@Value)
+            select UserID,
+                   UserName,
+                   FirstName,
+                   Lastname,
+                   UserEmail
+            from UserClient
+            where lower(UserName) = lower(@Value)
+               or lower(UserEmail) = lower(@Value)
             limit 1;
             """;
 
@@ -72,15 +71,15 @@ public sealed class MySqlClientRepository : IClientRepository
     }
 
     private sealed record ClientRow(
-        string Id,
-        string User_Name,
-        string First_Name,
-        string Last_Name,
-        string Email)
+        int UserID,
+        string UserName,
+        string FirstName,
+        string Lastname,
+        string UserEmail)
     {
         public Client ToDomain()
         {
-            return new Client(Guid.Parse(Id), User_Name, First_Name, Last_Name, Email);
+            return new Client(LegacyIdMapper.ToGuid(UserID), UserName, FirstName, Lastname, UserEmail);
         }
     }
 }

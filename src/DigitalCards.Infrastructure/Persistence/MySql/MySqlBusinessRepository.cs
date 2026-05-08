@@ -16,13 +16,13 @@ public sealed class MySqlBusinessRepository : IBusinessRepository
     public async Task<Business?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   name as Name,
-                   email as Email,
-                   password_hash_placeholder as Password_Hash_Placeholder,
-                   logo_path as Logo_Path
-            from modern_businesses
-            where lower(email) = lower(@Email)
+            select BusinessID,
+                   BusinessName,
+                   BusinessEmail,
+                   BusinessPassword,
+                   BusinessLogo
+            from Business
+            where lower(BusinessEmail) = lower(@Email)
             limit 1;
             """;
 
@@ -36,18 +36,18 @@ public sealed class MySqlBusinessRepository : IBusinessRepository
     public async Task<Business?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   name as Name,
-                   email as Email,
-                   password_hash_placeholder as Password_Hash_Placeholder,
-                   logo_path as Logo_Path
-            from modern_businesses
-            where id = @Id;
+            select BusinessID,
+                   BusinessName,
+                   BusinessEmail,
+                   BusinessPassword,
+                   BusinessLogo
+            from Business
+            where BusinessID = @Id;
             """;
 
         await using var connection = _connectionFactory.Create();
         var row = await connection.QuerySingleOrDefaultAsync<BusinessRow>(
-            new CommandDefinition(sql, new { Id = id.ToString() }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { Id = LegacyIdMapper.ToInt32(id) }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
     }
@@ -55,13 +55,13 @@ public sealed class MySqlBusinessRepository : IBusinessRepository
     public async Task<IReadOnlyList<Business>> ListAsync(CancellationToken cancellationToken = default)
     {
         const string sql = """
-            select id as Id,
-                   name as Name,
-                   email as Email,
-                   password_hash_placeholder as Password_Hash_Placeholder,
-                   logo_path as Logo_Path
-            from modern_businesses
-            order by name;
+            select BusinessID,
+                   BusinessName,
+                   BusinessEmail,
+                   BusinessPassword,
+                   BusinessLogo
+            from Business
+            order by BusinessName;
             """;
 
         await using var connection = _connectionFactory.Create();
@@ -72,15 +72,20 @@ public sealed class MySqlBusinessRepository : IBusinessRepository
     }
 
     private sealed record BusinessRow(
-        string Id,
-        string Name,
-        string Email,
-        string Password_Hash_Placeholder,
-        string Logo_Path)
+        int BusinessID,
+        string BusinessName,
+        string BusinessEmail,
+        string BusinessPassword,
+        string? BusinessLogo)
     {
         public Business ToDomain()
         {
-            return new Business(Guid.Parse(Id), Name, Email, Password_Hash_Placeholder, Logo_Path);
+            return new Business(
+                LegacyIdMapper.ToGuid(BusinessID),
+                BusinessName,
+                BusinessEmail,
+                BusinessPassword,
+                string.IsNullOrWhiteSpace(BusinessLogo) ? "/img/demo-coffee.svg" : BusinessLogo);
         }
     }
 }

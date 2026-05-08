@@ -12,14 +12,14 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
         _store = store;
     }
 
-    public Task AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
+    public Task<LoyaltyCard> AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
     {
         lock (_store.Sync)
         {
             _store.LoyaltyCards.Add(card);
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(card);
     }
 
     public Task UpdateAsync(LoyaltyCard card, CancellationToken cancellationToken = default)

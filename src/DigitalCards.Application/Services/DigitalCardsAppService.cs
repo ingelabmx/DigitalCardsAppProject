@@ -47,7 +47,7 @@ public sealed class DigitalCardsAppService
     public async Task<BusinessDto?> LoginBusinessAsync(BusinessLoginCommand command, CancellationToken cancellationToken = default)
     {
         var business = await _businesses.FindByEmailAsync(command.Email, cancellationToken);
-        if (business is null || !string.Equals(business.PasswordHashPlaceholder, command.Password, StringComparison.Ordinal))
+        if (business is null || !LegacyPasswordVerifier.Matches(business.PasswordHashPlaceholder, command.Password))
         {
             return null;
         }
@@ -64,7 +64,7 @@ public sealed class DigitalCardsAppService
         if (card is null)
         {
             card = new LoyaltyCard(Guid.NewGuid(), client.Id, business.Id, _clock.UtcNow);
-            await _loyaltyCards.AddAsync(card, cancellationToken);
+            card = await _loyaltyCards.AddAsync(card, cancellationToken);
         }
 
         var enrollmentUrl = $"{command.BaseUrl.TrimEnd('/')}/Wallet/Select/{card.EnrollmentToken}";
