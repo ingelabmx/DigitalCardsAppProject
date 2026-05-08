@@ -10,6 +10,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>digitalcardsapp-modern-web</UserSecretsId>
   </PropertyGroup>
 
 </Project>

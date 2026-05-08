@@ -27,11 +27,23 @@ $env:ConnectionStrings__DigitalCards = 'Server=localhost;Database=dcards_test;Us
 dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj
 ```
 
+For the HostGator database, keep the connection string in ASP.NET Core User
+Secrets or environment variables. The repo includes a `hostgator-mysql` launch
+profile that enables the `MySql` provider, but it does not contain credentials.
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DigitalCards" "Server=HOST;Port=3306;Database=DATABASE;User ID=USER;Password=PASSWORD;CharSet=utf8mb4;SslMode=Preferred;" --project src\DigitalCards.Web\DigitalCards.Web.csproj
+dotnet run --launch-profile hostgator-mysql --project src\DigitalCards.Web\DigitalCards.Web.csproj
+```
+
 ## Schema
 
 Run `docs/db-modern-mysql.sql` against a local or test database. The script uses
 `modern_clients`, `modern_businesses`, and `modern_loyalty_cards` so it does not
 collide with the legacy tables `UserClient`, `Business`, and `ClientCard`.
+
+Do not run the script against the HostGator database until the intended schema
+change is approved. It creates new `modern_*` tables and seeds a demo business.
 
 ## Intentional Limits
 
