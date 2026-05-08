@@ -1,4 +1,6 @@
-Tengo un proyecto web existente DigitalCardsApp. Es una aplicación para registrar usuarios y generar tarjetas digitales de lealtad por negocio, con sellos digitales. El punto crítico del sistema es que debe generar tarjetas compatibles con Google Wallet y Apple Wallet, dependiendo del tipo de celular del cliente.
+DigitalCardsApp Chat:
+
+Tengo este proyecto web existente DigitalCardsApp. Es una aplicación para registrar usuarios y generar tarjetas digitales de lealtad por negocio, con sellos digitales. El punto crítico del sistema es que debe generar tarjetas compatibles con Google Wallet y Apple Wallet, dependiendo del tipo de celular del cliente. 
 
 Quiero iniciar una migración ordenada usando las skills:
 
