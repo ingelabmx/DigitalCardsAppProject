@@ -1,0 +1,18 @@
+Card es para llamar y se mire
+
+Title = BusinessName
+
+
+En automatico envía correos con las tarjetas creadas ya sea de Apple y Google
+Imagenes genericas
+
+
+ON WORK
+Modificar la table de Cards, ver como enviar el nombre de la empresa, debe de ser sencillo revisando como lo obtienen dentro de la pagina, esto para mandarlo para el id del card - ESTO ES PARA CREAR TARJETAS PARA EL CLIENTE
+
+
+Revisar como crear las clases de los pases de Google
+
+
+
+Revisar como enviar el correo con los links de enroll de los pases - Ya sea con google y apple, revisarlo con Emmanuel cuando el termine de codificar su parte

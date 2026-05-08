@@ -1,0 +1,3 @@
+Tu proyecto es una aplicación ASP.NET Web Forms en .NET Framework 4.8, no ASP.NET Core ni MVC moderno.
+
+Migrar a ASP.NET Core 10 LTS + arquitectura modular /// ASP.NET Core MVC / Razor Pages /// ASP.NET Core API + Next.js/React

@@ -1,0 +1,152 @@
+Tengo un proyecto web existente DigitalCardsApp. Es una aplicación para registrar usuarios y generar tarjetas digitales de lealtad por negocio, con sellos digitales. El punto crítico del sistema es que debe generar tarjetas compatibles con Google Wallet y Apple Wallet, dependiendo del tipo de celular del cliente.
+
+Quiero iniciar una migración ordenada usando las skills:
+
+- aspnet-core
+- playwright
+
+Objetivo principal:
+Analiza completamente el proyecto actual y genera el contexto técnico necesario para empezar una migración a ASP.NET Core moderno, sin romper el flujo actual.
+
+Contexto funcional del negocio:
+El flujo esperado del producto es:
+
+1. Un cliente se registra en una tarjeta de lealtad de un negocio.
+2. El sistema guarda la relación cliente-negocio-tarjeta.
+3. Al cliente le llega un correo.
+4. En el correo, el cliente puede elegir qué tarjeta necesita:
+   - Apple Wallet para iPhone.
+   - Google Wallet para Android.
+5. El sistema debe generar dinámicamente la tarjeta correcta.
+6. La tarjeta debe reflejar los sellos digitales del cliente.
+7. Cuando el negocio agrega sellos, la tarjeta debe poder actualizarse.
+
+Primera fase: análisis, no migración completa todavía.
+
+Quiero que hagas lo siguiente:
+
+1. Inspecciona la estructura actual del proyecto.
+   - Detecta framework, versión de .NET, tipo de aplicación, dependencias y patrón arquitectónico.
+   - Identifica carpetas importantes.
+   - Identifica la estructura de la base de datos ubicada en: "C:\Users\eguillen\source\repos\DigitalCardsApp\docs\db_dcards.sql"
+   - Identifica páginas, controladores, modelos, conectores, servicios y assets.
+   - Identifica cómo se conecta a la base de datos.
+   - Identifica cómo se envían correos.
+   - Identifica cómo se maneja el registro de clientes.
+   - Identifica cómo se manejan negocios, usuarios, tarjetas y sellos.
+
+2. Analiza específicamente la parte de Wallets.
+   - Busca cualquier implementación de Google Wallet.
+   - Busca cualquier implementación de Apple Wallet.
+   - Identifica si ya existen clases, métodos, certificados, JWTs, archivos .pkpass, endpoints o ramas antiguas relacionadas.
+   - Evalúa qué partes sirven como base y cuáles deben descartarse.
+   - Señala inconsistencias técnicas o riesgos.
+
+3. Genera documentación de contexto dentro del repo en una carpeta nueva:
+   /docs/migration-context/
+
+   Crea estos archivos:
+
+   a) /docs/migration-context/01-current-architecture.md
+      Debe explicar:
+      - tipo de proyecto actual;
+      - framework;
+      - estructura de carpetas;
+      - flujo actual;
+      - dependencias;
+      - base de datos;
+      - correo;
+      - lógica de tarjetas;
+      - riesgos técnicos.
+
+   b) /docs/migration-context/02-domain-model.md
+      Debe documentar:
+      - entidades detectadas;
+      - modelos actuales;
+      - tablas o stored procedures usados si se pueden inferir;
+      - relación entre usuario, negocio, tarjeta y sellos;
+      - campos existentes relacionados con Apple Wallet y Google Wallet;
+      - modelo de dominio recomendado para la migración.
+
+   c) /docs/migration-context/03-wallet-analysis.md
+      Debe documentar:
+      - estado actual de Google Wallet;
+      - estado actual de Apple Wallet;
+      - qué falta para producción;
+      - qué endpoints serían necesarios;
+      - qué datos deben almacenarse para cada plataforma;
+      - riesgos de certificados, llaves, tokens y credenciales;
+      - recomendaciones para Google Wallet;
+      - recomendaciones para Apple Wallet.
+
+   d) /docs/migration-context/04-migration-target-architecture.md
+      Debe proponer una arquitectura destino en ASP.NET Core.
+      Quiero que evalúes si conviene:
+      - ASP.NET Core MVC/Razor Pages;
+      - ASP.NET Core Web API + frontend separado;
+      - monolito modular;
+      - servicios separados.
+
+      La recomendación inicial preferida es un monolito modular ASP.NET Core con separación en:
+      - Domain
+      - Application
+      - Infrastructure
+      - Web/API
+      - Worker, si aplica
+
+   e) /docs/migration-context/05-migration-roadmap.md
+      Debe contener un roadmap incremental por fases:
+      - fase 0: análisis y seguridad;
+      - fase 1: levantar proyecto ASP.NET Core base;
+      - fase 2: migrar autenticación/usuarios/negocios;
+      - fase 3: migrar tarjetas y sellos;
+      - fase 4: Google Wallet;
+      - fase 5: Apple Wallet;
+      - fase 6: emails;
+      - fase 7: pruebas end-to-end con Playwright;
+      - fase 8: despliegue.
+
+   f) /docs/migration-context/06-playwright-test-plan.md
+      Debe proponer pruebas end-to-end para:
+      - registro de cliente;
+      - selección de Apple Wallet;
+      - selección de Google Wallet;
+      - recepción o simulación del link de correo;
+      - login de negocio;
+      - agregado de sello;
+      - visualización de tarjeta actualizada;
+      - casos de error;
+      - pruebas responsive para iPhone/Android.
+
+4. Genera un archivo:
+   /docs/migration-context/00-executive-summary.md
+
+   Este archivo debe resumir en lenguaje claro:
+   - qué es el proyecto actual;
+   - cuál es el mayor riesgo;
+   - qué partes se pueden reutilizar;
+   - qué partes conviene reescribir;
+   - cuál es la arquitectura recomendada;
+   - cuál debería ser el primer PR de migración.
+
+5. Genera también un archivo:
+   /MIGRATION_NOTES.md
+
+   Este debe ser un índice breve que apunte a todos los documentos creados en /docs/migration-context/.
+
+Reglas importantes:
+- No borres archivos existentes.
+- No migres todavía todo el sistema.
+- No hagas cambios grandes en código funcional todavía.
+- No expongas secretos encontrados en el código.
+- Si encuentras passwords, certificados, connection strings, service account JSON o SMTP credentials, no los copies textualmente en la documentación. Solo indica que existen secretos hardcodeados y en qué tipo de archivo fueron detectados.
+- Si detectas código inseguro, documenta el riesgo y recomienda rotar credenciales.
+- Si hay ramas antiguas o archivos relacionados con Apple Wallet, analízalos si están disponibles.
+- Si algo no se puede determinar, dilo explícitamente.
+- Prioriza documentación accionable para que el siguiente paso sea crear el proyecto ASP.NET Core destino.
+
+Después de generar los documentos:
+1. Muestra un resumen de los hallazgos principales.
+2. Lista los archivos creados.
+3. Recomienda el primer PR técnico para iniciar la migración.
+4. Recomienda qué pruebas Playwright se deberían crear primero.
