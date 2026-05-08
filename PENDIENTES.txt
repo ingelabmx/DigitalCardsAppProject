@@ -1,18 +1,35 @@
-Card es para llamar y se mire
+Orden recomendado:
 
-Title = BusinessName
+1. Revisar y commitear el PR actual
 
+Esqueleto ASP.NET Core moderno.
+Pruebas unitarias/smoke/E2E Playwright.
+Stubs fake de Wallet/email.
+Limpieza inicial de secretos legacy.
 
-En automatico envía correos con las tarjetas creadas ya sea de Apple y Google
-Imagenes genericas
+2.Rotar credenciales reales fuera del repo
 
+DB legacy.
+SMTP.
+Google Wallet service account.
+Cualquier certificado/llave Wallet.
+Esto no se resuelve solo borrando archivos: si estuvieron en Git, hay que asumirlas expuestas.
 
-ON WORK
-Modificar la table de Cards, ver como enviar el nombre de la empresa, debe de ser sencillo revisando como lo obtienen dentro de la pagina, esto para mandarlo para el id del card - ESTO ES PARA CREAR TARJETAS PARA EL CLIENTE
+3. Validar que Web Forms legacy siga levantando
 
+Ya no debe depender de JSON dentro del repo.
+Debe recibir GOOGLE_APPLICATION_CREDENTIALS.
+SMTP debe venir de env vars o config segura.
 
-Revisar como crear las clases de los pases de Google
+4. Crear CI inicial
 
+dotnet build DigitalCardsApp.Modern.sln
+dotnet test DigitalCardsApp.Modern.sln
+Playwright opcional con RUN_PLAYWRIGHT=1.
 
+5. PR 2: persistencia real pero aislada
 
-Revisar como enviar el correo con los links de enroll de los pases - Ya sea con google y apple, revisarlo con Emmanuel cuando el termine de codificar su parte
+Agregar Infrastructure con MySQL/EF Core o Dapper.
+Leer datos legacy sin modificar producción.
+Mapear clientes, negocios, tarjetas, sellos.
+Mantener feature flag/fake services.
