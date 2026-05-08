@@ -35,5 +35,35 @@ public sealed class LoyaltyCardTests
         Assert.Equal(0, card.CurrentStamps);
         Assert.Equal(10, card.LifetimeStamps);
     }
-}
 
+    [Fact]
+    public void Restore_RehydratesPersistedWalletState()
+    {
+        var id = Guid.NewGuid();
+        var clientId = Guid.NewGuid();
+        var businessId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.Parse("2026-05-08T12:00:00Z");
+        var lastStampedAt = createdAt.AddHours(2);
+
+        var card = LoyaltyCard.Restore(
+            id,
+            clientId,
+            businessId,
+            "token-123",
+            4,
+            13,
+            createdAt,
+            lastStampedAt,
+            "google-object",
+            "https://wallet.example.test/save");
+
+        Assert.Equal(id, card.Id);
+        Assert.Equal(clientId, card.ClientId);
+        Assert.Equal(businessId, card.BusinessId);
+        Assert.Equal("token-123", card.EnrollmentToken);
+        Assert.Equal(4, card.CurrentStamps);
+        Assert.Equal(13, card.LifetimeStamps);
+        Assert.Equal(lastStampedAt, card.LastStampedAt);
+        Assert.Equal("google-object", card.GoogleObjectId);
+    }
+}

@@ -5,15 +5,42 @@ public sealed class LoyaltyCard
     private const int MaxVisibleStamps = 9;
 
     public LoyaltyCard(Guid id, Guid clientId, Guid businessId, DateTimeOffset createdAt)
+        : this(
+            id,
+            clientId,
+            businessId,
+            id.ToString("N"),
+            currentStamps: 1,
+            lifetimeStamps: 1,
+            createdAt,
+            lastStampedAt: createdAt,
+            googleObjectId: null,
+            googleSaveUrl: null)
+    {
+    }
+
+    private LoyaltyCard(
+        Guid id,
+        Guid clientId,
+        Guid businessId,
+        string enrollmentToken,
+        int currentStamps,
+        int lifetimeStamps,
+        DateTimeOffset createdAt,
+        DateTimeOffset lastStampedAt,
+        string? googleObjectId,
+        string? googleSaveUrl)
     {
         Id = id;
         ClientId = clientId;
         BusinessId = businessId;
+        EnrollmentToken = enrollmentToken;
+        CurrentStamps = currentStamps;
+        LifetimeStamps = lifetimeStamps;
         CreatedAt = createdAt;
-        LastStampedAt = createdAt;
-        CurrentStamps = 1;
-        LifetimeStamps = 1;
-        EnrollmentToken = id.ToString("N");
+        LastStampedAt = lastStampedAt;
+        GoogleObjectId = googleObjectId;
+        GoogleSaveUrl = googleSaveUrl;
     }
 
     public Guid Id { get; }
@@ -35,6 +62,46 @@ public sealed class LoyaltyCard
     public string? GoogleObjectId { get; private set; }
 
     public string? GoogleSaveUrl { get; private set; }
+
+    public static LoyaltyCard Restore(
+        Guid id,
+        Guid clientId,
+        Guid businessId,
+        string enrollmentToken,
+        int currentStamps,
+        int lifetimeStamps,
+        DateTimeOffset createdAt,
+        DateTimeOffset lastStampedAt,
+        string? googleObjectId,
+        string? googleSaveUrl)
+    {
+        if (string.IsNullOrWhiteSpace(enrollmentToken))
+        {
+            throw new ArgumentException("Enrollment token is required.", nameof(enrollmentToken));
+        }
+
+        if (currentStamps < 0 || currentStamps > MaxVisibleStamps)
+        {
+            throw new ArgumentOutOfRangeException(nameof(currentStamps), "Current stamps must be between 0 and 9.");
+        }
+
+        if (lifetimeStamps < currentStamps)
+        {
+            throw new ArgumentOutOfRangeException(nameof(lifetimeStamps), "Lifetime stamps cannot be lower than current stamps.");
+        }
+
+        return new LoyaltyCard(
+            id,
+            clientId,
+            businessId,
+            enrollmentToken,
+            currentStamps,
+            lifetimeStamps,
+            createdAt,
+            lastStampedAt,
+            googleObjectId,
+            googleSaveUrl);
+    }
 
     public void AddStamp(DateTimeOffset stampedAt)
     {
@@ -59,4 +126,3 @@ public sealed class LoyaltyCard
         GoogleSaveUrl = saveUrl;
     }
 }
-

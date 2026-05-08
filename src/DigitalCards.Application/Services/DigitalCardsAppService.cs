@@ -109,6 +109,7 @@ public sealed class DigitalCardsAppService
 
         var result = await _googleWallet.IssueSaveLinkAsync(card, client, business, cancellationToken);
         card.MarkGoogleIssued(result.ObjectId, result.SaveUrl);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
         return result;
     }
 
@@ -124,6 +125,7 @@ public sealed class DigitalCardsAppService
         }
 
         card.AddStamp(_clock.UtcNow);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
 
         if (card.GoogleObjectId is not null)
         {
@@ -195,4 +197,3 @@ public sealed class DigitalCardsAppService
             card.GoogleSaveUrl);
     }
 }
-

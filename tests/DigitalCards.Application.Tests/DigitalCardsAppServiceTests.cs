@@ -3,6 +3,7 @@ using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Persistence.MySql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,46 @@ namespace DigitalCards.Application.Tests;
 
 public sealed class DigitalCardsAppServiceTests
 {
+    [Fact]
+    public void AddInfrastructure_ThrowsWhenMySqlProviderHasNoConnectionString()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "MySql"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("ConnectionStrings:DigitalCards", exception.Message);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersMySqlRepositoriesWhenConfigured()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "MySql",
+                ["ConnectionStrings:DigitalCards"] = "Server=localhost;Database=dcards_test;User ID=test;Password=test;"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
+        Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
+        Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
+    }
+
     [Fact]
     public async Task EnrollSelectGoogleAndStamp_UsesFakeIntegrationsWithoutProductionServices()
     {
@@ -59,4 +100,3 @@ public sealed class DigitalCardsAppServiceTests
         Assert.NotNull(stamped.GoogleObjectId);
     }
 }
-
