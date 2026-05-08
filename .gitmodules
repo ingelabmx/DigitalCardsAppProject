@@ -1,0 +1,3 @@
+[submodule "DigitalCardsApp"]
+	path = DigitalCardsApp
+	url = https://github.com/ingelabmx/DigitalCardsApp.git
