@@ -8,17 +8,17 @@
     <div>
         <p class="eyebrow">Negocio</p>
         <h1 data-testid="business-dashboard-title">@Model.BusinessName</h1>
-        <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets fake.</p>
+        <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
     </div>
 
     <div class="action-grid">
         <a class="action-card" asp-page="/Business/Enroll" asp-route-businessId="@Model.BusinessId" data-testid="enroll-link">
             <span>Asociar cliente</span>
-            <small>Genera correo fake con link de Wallet.</small>
+            <small>Genera correo con link de Wallet.</small>
         </a>
         <a class="action-card" asp-page="/Business/Stamp" asp-route-businessId="@Model.BusinessId" data-testid="stamp-link">
             <span>Agregar sello</span>
-            <small>Actualiza la tarjeta y el Wallet fake.</small>
+            <small>Actualiza la tarjeta y el Wallet.</small>
         </a>
         <a class="action-card" asp-page="/Dev/Outbox" data-testid="dashboard-outbox-link">
             <span>Ver outbox</span>
@@ -26,4 +26,3 @@
         </a>
     </div>
 </section>
-

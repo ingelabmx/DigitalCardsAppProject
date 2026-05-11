@@ -12,11 +12,25 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
         _store = store;
     }
 
-    public Task AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
+    public Task<LoyaltyCard> AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
     {
         lock (_store.Sync)
         {
             _store.LoyaltyCards.Add(card);
+        }
+
+        return Task.FromResult(card);
+    }
+
+    public Task UpdateAsync(LoyaltyCard card, CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var index = _store.LoyaltyCards.FindIndex(existing => existing.Id == card.Id);
+            if (index >= 0)
+            {
+                _store.LoyaltyCards[index] = card;
+            }
         }
 
         return Task.CompletedTask;
@@ -43,4 +57,3 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
             _store.LoyaltyCards.Where(card => card.ClientId == clientId).ToArray());
     }
 }
-

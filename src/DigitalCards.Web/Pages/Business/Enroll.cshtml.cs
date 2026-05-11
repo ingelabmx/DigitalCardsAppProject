@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web;
+using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -9,10 +11,14 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class EnrollModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly IConfiguration _configuration;
 
-    public EnrollModel(DigitalCardsAppService appService)
+    public EnrollModel(
+        DigitalCardsAppService appService,
+        IConfiguration configuration)
     {
         _appService = appService;
+        _configuration = configuration;
     }
 
     [BindProperty]
@@ -49,7 +55,10 @@ public sealed class EnrollModel : PageModel
 
     private string GetBaseUrl()
     {
-        return $"{Request.Scheme}://{Request.Host}";
+        return EnrollmentBaseUrlResolver.Resolve(
+            _configuration["DigitalCards:PublicBaseUrl"],
+            Request.Scheme,
+            Request.Host);
     }
 
     public sealed class InputModel
@@ -62,4 +71,3 @@ public sealed class EnrollModel : PageModel
         public string UserNameOrEmail { get; set; } = string.Empty;
     }
 }
-

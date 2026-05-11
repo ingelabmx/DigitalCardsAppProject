@@ -10,6 +10,9 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [05 Migration Roadmap](docs/migration-context/05-migration-roadmap.md)
 - [06 Playwright Test Plan](docs/migration-context/06-playwright-test-plan.md)
 - [07 Modern ASP.NET Core Skeleton](docs/migration-context/07-modern-skeleton.md)
+- [08 MySQL Persistence Adapter](docs/migration-context/08-mysql-persistence.md)
+- [09 Google Wallet Service](docs/migration-context/09-google-wallet-service.md)
+- [10 Controlled Real Integrations](docs/migration-context/10-controlled-real-integrations.md)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms ni conecta integraciones productivas.
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real y SMTP real quedan disponibles por configuracion local controlada, pero los fakes siguen siendo el default para desarrollo, CI y Playwright.

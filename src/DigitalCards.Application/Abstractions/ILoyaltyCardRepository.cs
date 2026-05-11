@@ -4,7 +4,9 @@ namespace DigitalCards.Application.Abstractions;
 
 public interface ILoyaltyCardRepository
 {
-    Task AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default);
+    Task<LoyaltyCard> AddAsync(LoyaltyCard card, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(LoyaltyCard card, CancellationToken cancellationToken = default);
 
     Task<LoyaltyCard?> FindByClientAndBusinessAsync(Guid clientId, Guid businessId, CancellationToken cancellationToken = default);
 
@@ -12,4 +14,3 @@ public interface ILoyaltyCardRepository
 
     Task<IReadOnlyList<LoyaltyCard>> ListByClientAsync(Guid clientId, CancellationToken cancellationToken = default);
 }
-

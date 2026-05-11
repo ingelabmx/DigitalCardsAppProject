@@ -2,7 +2,11 @@ using DigitalCards.Application;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Email;
+using DigitalCards.Infrastructure.Persistence.MySql;
+using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +14,253 @@ namespace DigitalCards.Application.Tests;
 
 public sealed class DigitalCardsAppServiceTests
 {
+    [Fact]
+    public void AddInfrastructure_ThrowsWhenMySqlProviderHasNoConnectionString()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "MySql"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("ConnectionStrings:DigitalCards", exception.Message);
+    }
+
+    [Fact]
+    public void AddInfrastructure_ThrowsWhenPersistenceProviderIsUnknown()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "SqlServer"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:PersistenceProvider", exception.Message);
+        Assert.DoesNotContain("Password", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AddInfrastructure_ThrowsWhenMySqlConnectionStringIsIncomplete()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "MySql",
+                ["ConnectionStrings:DigitalCards"] = "Server=localhost;Database=dcards_test;"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("ConnectionStrings:DigitalCards User ID", exception.Message);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersMySqlRepositoriesWhenConfigured()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PersistenceProvider"] = "MySql",
+                ["ConnectionStrings:DigitalCards"] = "Server=localhost;Database=dcards_test;User ID=test;Password=test;"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
+        Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
+        Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersFakeGoogleWalletByDefault()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<FakeGoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersRealGoogleWalletWhenProviderIsGoogle()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:GoogleWallet:Provider"] = "Google",
+                ["DigitalCards:GoogleWallet:IssuerId"] = "issuer-id",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test",
+                ["DigitalCards:GoogleWallet:CredentialsFilePath"] = @"C:\secure\google-wallet-service-account.json"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<GoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_UseFakeIntegrationsFalseStillEnablesRealGoogleWalletForCompatibility()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:UseFakeIntegrations"] = "false",
+                ["DigitalCards:GoogleWallet:IssuerId"] = "issuer-id",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test",
+                ["DigitalCards:GoogleWallet:CredentialsFilePath"] = @"C:\secure\google-wallet-service-account.json"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<GoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersSmtpEmailWhenProviderIsSmtp()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PublicBaseUrl"] = "https://example.test",
+                ["DigitalCards:Email:Provider"] = "Smtp",
+                ["DigitalCards:Email:Host"] = "smtp.example.test",
+                ["DigitalCards:Email:FromAddress"] = "sender@example.test",
+                ["DigitalCards:Email:UserName"] = "sender@example.test",
+                ["DigitalCards:Email:Password"] = "secret"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<SmtpEmailSender>(provider.GetRequiredService<IEmailSender>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IWalletEmailOutbox>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_SmtpEmailRequiresConfigurationBeforeConnecting()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:Email:Provider"] = "Smtp"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:Email:Host", exception.Message);
+        Assert.DoesNotContain("Password=", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AddInfrastructure_SmtpEmailRequiresPublicBaseUrl()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:Email:Provider"] = "Smtp",
+                ["DigitalCards:Email:Host"] = "smtp.example.test",
+                ["DigitalCards:Email:FromAddress"] = "sender@example.test",
+                ["DigitalCards:Email:UserName"] = "sender@example.test",
+                ["DigitalCards:Email:Password"] = "secret"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:PublicBaseUrl", exception.Message);
+        Assert.DoesNotContain("secret", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RealGoogleWalletRequiresIssuer()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:UseFakeIntegrations"] = "false",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test",
+                ["DigitalCards:GoogleWallet:CredentialsFilePath"] = @"C:\secure\google-wallet-service-account.json"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:GoogleWallet:IssuerId", exception.Message);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RealGoogleWalletRequiresCredentialsFilePath()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:GoogleWallet:Provider"] = "Google",
+                ["DigitalCards:GoogleWallet:IssuerId"] = "issuer-id",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:GoogleWallet:CredentialsFilePath", exception.Message);
+    }
+
     [Fact]
     public async Task EnrollSelectGoogleAndStamp_UsesFakeIntegrationsWithoutProductionServices()
     {
@@ -59,4 +310,3 @@ public sealed class DigitalCardsAppServiceTests
         Assert.NotNull(stamped.GoogleObjectId);
     }
 }
-

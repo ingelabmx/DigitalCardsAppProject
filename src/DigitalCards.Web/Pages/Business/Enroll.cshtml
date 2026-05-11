@@ -10,7 +10,7 @@
     @if (Model.Result is not null)
     {
         <div class="alert alert-success" role="status" data-testid="enroll-success">
-            Tarjeta creada para @Model.Result.Card.ClientUserName. Correo fake generado.
+            Tarjeta creada para @Model.Result.Card.ClientUserName. Correo generado.
             <a href="@Model.Result.EnrollmentUrl" data-testid="inline-enrollment-link">Abrir link</a>
         </div>
     }
@@ -32,4 +32,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

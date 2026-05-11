@@ -36,10 +36,14 @@ en `net8.0`, con dependencias falsas para correo y Wallets.
 
 ## Integraciones Fake
 
-El proyecto nuevo no conecta a produccion. `DigitalCards.Infrastructure` registra
-repositorios in-memory, `FakeWalletEmailOutbox` y `FakeGoogleWalletService`.
-Esto permite probar el flujo completo sin SMTP real, base de datos real ni
-credenciales reales de Wallet.
+El proyecto nuevo usa fakes por defecto. `DigitalCards.Infrastructure` registra
+repositorios in-memory, `FakeWalletEmailOutbox` y `FakeGoogleWalletService`
+cuando no se activa ningun provider real. Esto permite probar el flujo completo
+sin SMTP real, base de datos real ni credenciales reales de Wallet.
+
+Las integraciones reales de MySQL, Google Wallet y SMTP se activan solo por
+configuracion local fuera del repo, documentada en
+`docs/migration-context/10-controlled-real-integrations.md`.
 
 ## Como Ejecutar
 
@@ -64,8 +68,9 @@ dotnet test tests/DigitalCards.E2E.Tests/DigitalCards.E2E.Tests.csproj
 El legado debe mantenerse sin credenciales productivas en repo. Para este pase:
 
 - SMTP y connection string se movieron a placeholders/env vars.
-- Google Wallet requiere `GOOGLE_APPLICATION_CREDENTIALS` apuntando a un archivo
-  fuera de source control.
+- Google Wallet moderno requiere
+  `DigitalCards:GoogleWallet:CredentialsFilePath` apuntando a un archivo fuera
+  de source control.
 - El JSON de service account bajo `GW-K` se retiro del proyecto y se agrego
   `.gitignore` local.
 - Aun se deben rotar credenciales reales fuera del repo y revisar historial si
