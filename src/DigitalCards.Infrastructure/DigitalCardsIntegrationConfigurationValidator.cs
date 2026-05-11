@@ -12,6 +12,7 @@ internal static class DigitalCardsIntegrationConfigurationValidator
         IConfiguration configuration,
         DigitalCardsInfrastructureOptions options,
         GoogleWalletOptions googleWalletOptions,
+        AppleWalletOptions appleWalletOptions,
         SmtpEmailOptions emailOptions)
     {
         var persistenceProvider = ResolveProvider(options.PersistenceProvider, "InMemory");
@@ -58,10 +59,24 @@ internal static class DigitalCardsIntegrationConfigurationValidator
             ValidateGoogleWallet(googleWalletOptions);
         }
 
+        var appleWalletProvider = ResolveProvider(appleWalletOptions.Provider, "Fake");
+        ValidateKnownProvider(
+            appleWalletProvider,
+            "DigitalCards:AppleWallet:Provider",
+            "Fake",
+            "Apple");
+
+        if (IsProvider(appleWalletProvider, "Apple"))
+        {
+            throw new InvalidOperationException(
+                "DigitalCards:AppleWallet:Provider=Apple is reserved for the production Apple Wallet adapter, which is not implemented yet. Use Fake for now.");
+        }
+
         return new IntegrationProviders(
             persistenceProvider,
             emailProvider,
             googleWalletProvider,
+            appleWalletProvider,
             digitalCardsConnectionString);
     }
 
@@ -174,5 +189,6 @@ internal static class DigitalCardsIntegrationConfigurationValidator
         string PersistenceProvider,
         string EmailProvider,
         string GoogleWalletProvider,
+        string AppleWalletProvider,
         string? DigitalCardsConnectionString);
 }

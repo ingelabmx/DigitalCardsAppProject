@@ -19,6 +19,8 @@ public static class DependencyInjection
             configuration.GetSection(DigitalCardsInfrastructureOptions.SectionName));
         services.Configure<GoogleWalletOptions>(
             configuration.GetSection(GoogleWalletOptions.SectionName));
+        services.Configure<AppleWalletOptions>(
+            configuration.GetSection(AppleWalletOptions.SectionName));
         services.Configure<SmtpEmailOptions>(
             configuration.GetSection(SmtpEmailOptions.SectionName));
 
@@ -30,6 +32,9 @@ public static class DependencyInjection
         var googleWalletOptions = configuration
             .GetSection(GoogleWalletOptions.SectionName)
             .Get<GoogleWalletOptions>() ?? new GoogleWalletOptions();
+        var appleWalletOptions = configuration
+            .GetSection(AppleWalletOptions.SectionName)
+            .Get<AppleWalletOptions>() ?? new AppleWalletOptions();
         var emailOptions = configuration
             .GetSection(SmtpEmailOptions.SectionName)
             .Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
@@ -38,6 +43,7 @@ public static class DependencyInjection
             configuration,
             options,
             googleWalletOptions,
+            appleWalletOptions,
             emailOptions);
 
         if (string.Equals(providers.PersistenceProvider, "MySql", StringComparison.OrdinalIgnoreCase))
@@ -74,6 +80,11 @@ public static class DependencyInjection
         else if (string.Equals(providers.GoogleWalletProvider, "Google", StringComparison.OrdinalIgnoreCase))
         {
             services.AddScoped<IGoogleWalletService, GoogleWalletService>();
+        }
+
+        if (string.Equals(providers.AppleWalletProvider, "Fake", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IAppleWalletService, FakeAppleWalletService>();
         }
 
         return services;

@@ -11,6 +11,7 @@ public sealed class DigitalCardsAppService
     private readonly IClock _clock;
     private readonly IEmailSender _emailSender;
     private readonly IGoogleWalletService _googleWallet;
+    private readonly IAppleWalletService _appleWallet;
     private readonly ILoyaltyCardRepository _loyaltyCards;
 
     public DigitalCardsAppService(
@@ -18,6 +19,7 @@ public sealed class DigitalCardsAppService
         IBusinessRepository businesses,
         ILoyaltyCardRepository loyaltyCards,
         IGoogleWalletService googleWallet,
+        IAppleWalletService appleWallet,
         IEmailSender emailSender,
         IClock clock)
     {
@@ -25,6 +27,7 @@ public sealed class DigitalCardsAppService
         _businesses = businesses;
         _loyaltyCards = loyaltyCards;
         _googleWallet = googleWallet;
+        _appleWallet = appleWallet;
         _emailSender = emailSender;
         _clock = clock;
     }
@@ -111,6 +114,18 @@ public sealed class DigitalCardsAppService
         card.MarkGoogleIssued(result.ObjectId, result.SaveUrl);
         await _loyaltyCards.UpdateAsync(card, cancellationToken);
         return result;
+    }
+
+    public async Task<AppleWalletIssueResult?> SelectAppleWalletAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var context = await FindCardContextByTokenAsync(token, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        var (card, client, business) = context.Value;
+        return await _appleWallet.IssueAsync(card, client, business, cancellationToken);
     }
 
     public async Task<LoyaltyCardDto> AddStampAsync(AddStampCommand command, CancellationToken cancellationToken = default)

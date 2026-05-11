@@ -4,11 +4,18 @@
     ViewData["Title"] = "Apple Wallet";
 }
 
-<section class="result-panel" data-testid="apple-wallet-placeholder">
-    <h1>Apple Wallet pendiente</h1>
-    <p>
-        El endpoint existe para fijar la ruta del flujo, pero la generacion .pkpass y el web service Apple Wallet se implementaran en una fase posterior.
-    </p>
-    <a asp-page="/Wallet/Select" asp-route-token="@Model.Token">Volver</a>
-</section>
-
+@if (Model.Result is null)
+{
+    <section class="result-panel" data-testid="apple-wallet-not-found">
+        <h1>Link no valido</h1>
+        <p>El link de enrolamiento no existe o ya no esta disponible.</p>
+    </section>
+}
+else
+{
+    <section class="result-panel" data-testid="apple-wallet-pending">
+        <h1>Apple Wallet pendiente</h1>
+        <p data-testid="apple-wallet-message">@Model.Result.Message</p>
+        <a asp-page="/Wallet/Select" asp-route-token="@Model.Token">Volver</a>
+    </section>
+}

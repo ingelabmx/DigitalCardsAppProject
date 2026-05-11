@@ -102,7 +102,29 @@ public sealed class DigitalCardsAppServiceTests
         var provider = services.BuildServiceProvider();
 
         Assert.IsType<FakeGoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+        Assert.IsType<FakeAppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_ThrowsWhenAppleWalletProviderIsReal()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:AppleWallet:Provider"] = "Apple"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDigitalCardsInfrastructure(configuration));
+
+        Assert.Contains("DigitalCards:AppleWallet:Provider=Apple", exception.Message);
+        Assert.DoesNotContain(".p12", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Password", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -308,5 +330,57 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal(2, stamped.CurrentStamps);
         Assert.Equal(2, stamped.LifetimeStamps);
         Assert.NotNull(stamped.GoogleObjectId);
+    }
+
+    [Fact]
+    public async Task SelectAppleWallet_ReturnsPendingForValidToken()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddLogging();
+        services.AddDigitalCardsApplication();
+        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "apple-test",
+            "Ana",
+            "Lopez",
+            "ana@example.test"));
+
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "http://localhost"));
+
+        var result = await app.SelectAppleWalletAsync(enrollment.Card.EnrollmentToken);
+
+        Assert.NotNull(result);
+        Assert.Equal(AppleWalletIssueStatus.Pending, result!.Status);
+        Assert.Null(result.DownloadUrl);
+        Assert.Contains(".pkpass", result.Message);
+    }
+
+    [Fact]
+    public async Task SelectAppleWallet_ReturnsNullForInvalidToken()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddLogging();
+        services.AddDigitalCardsApplication();
+        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+
+        var result = await app.SelectAppleWalletAsync("missing-token");
+
+        Assert.Null(result);
     }
 }
