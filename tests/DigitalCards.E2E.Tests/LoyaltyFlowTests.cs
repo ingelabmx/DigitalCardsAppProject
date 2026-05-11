@@ -45,7 +45,12 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
         await page.GetByTestId("email-link").First.ClickAsync();
         Assert.Contains(businessName, await page.GetByTestId("wallet-select").InnerTextAsync());
+        var walletLandingUrl = page.Url;
 
+        await page.GetByTestId("apple-wallet-button").ClickAsync();
+        Assert.Contains("Apple Wallet pendiente", await page.GetByTestId("apple-wallet-pending").InnerTextAsync());
+
+        await page.GotoAsync(walletLandingUrl);
         await page.GetByTestId("google-wallet-button").ClickAsync();
         Assert.Contains("fake-google-", await page.GetByTestId("google-object-id").InnerTextAsync());
 

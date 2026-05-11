@@ -34,10 +34,19 @@ public sealed record WalletLandingDto(
 
 public sealed record GoogleWalletIssueResult(string ObjectId, string SaveUrl);
 
+public enum AppleWalletIssueStatus
+{
+    Pending
+}
+
+public sealed record AppleWalletIssueResult(
+    AppleWalletIssueStatus Status,
+    string Message,
+    string? DownloadUrl);
+
 public sealed record WalletEnrollmentEmail(
     string To,
     string ClientName,
     string BusinessName,
     string EnrollmentUrl,
     DateTimeOffset CreatedAt);
-
