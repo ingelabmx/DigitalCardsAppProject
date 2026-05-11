@@ -11,6 +11,7 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [06 Playwright Test Plan](docs/migration-context/06-playwright-test-plan.md)
 - [07 Modern ASP.NET Core Skeleton](docs/migration-context/07-modern-skeleton.md)
 - [08 MySQL Persistence Adapter](docs/migration-context/08-mysql-persistence.md)
+- [09 Google Wallet Service](docs/migration-context/09-google-wallet-service.md)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms ni conecta integraciones productivas.
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. Google Wallet real queda disponible por configuracion, pero apagado por defecto.

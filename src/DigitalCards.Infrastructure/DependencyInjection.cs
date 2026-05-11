@@ -17,6 +17,8 @@ public static class DependencyInjection
     {
         services.Configure<DigitalCardsInfrastructureOptions>(
             configuration.GetSection(DigitalCardsInfrastructureOptions.SectionName));
+        services.Configure<GoogleWalletOptions>(
+            configuration.GetSection(GoogleWalletOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
 
@@ -45,7 +47,15 @@ public static class DependencyInjection
         services.AddSingleton<FakeWalletEmailOutbox>();
         services.AddSingleton<IWalletEmailOutbox>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
         services.AddScoped<IEmailSender>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
-        services.AddScoped<IGoogleWalletService, FakeGoogleWalletService>();
+
+        if (options.UseFakeIntegrations)
+        {
+            services.AddScoped<IGoogleWalletService, FakeGoogleWalletService>();
+        }
+        else
+        {
+            services.AddScoped<IGoogleWalletService, GoogleWalletService>();
+        }
 
         return services;
     }

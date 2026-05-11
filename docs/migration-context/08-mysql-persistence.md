@@ -52,9 +52,12 @@ Wallet enrollment tokens are based on the mapped `ClientCard.CardID`.
 ## Intentional Limits
 
 - No production connection strings are committed.
-- Wallet and email integrations remain fake.
+- Wallet and email integrations remain fake by default. Google Wallet can be
+  enabled explicitly with `DigitalCards:UseFakeIntegrations=false` and the
+  required Google Wallet secrets.
 - This adapter writes rows to the existing HostGator tables when the `MySql`
   provider is enabled.
 - No DDL is executed by the application.
-- `CardIDGoogle` is limited by the existing legacy column length, so the fake
-  Google object id is stored in a shortened legacy-compatible form.
+- `CardIDGoogle` is limited by the existing legacy column length, so the app
+  stores only the Google object suffix and regenerates signed save URLs on
+  demand.

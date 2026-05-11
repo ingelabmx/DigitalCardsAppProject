@@ -25,6 +25,8 @@ public sealed class WebAppFixture : IAsyncLifetime
             UseShellExecute = false
         };
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        startInfo.Environment["DigitalCards__UseFakeIntegrations"] = "true";
+        startInfo.Environment["DigitalCards__PersistenceProvider"] = "InMemory";
 
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start DigitalCards.Web.");
 
@@ -86,4 +88,3 @@ public sealed class WebAppFixture : IAsyncLifetime
         throw new DirectoryNotFoundException("Could not locate repository root.");
     }
 }
-

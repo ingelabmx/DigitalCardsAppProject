@@ -215,10 +215,6 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
             var createdAt = AsUtc(CreationDate ?? DateTime.UtcNow);
             var currentStamps = CheckQTY ?? 0;
             var lifetimeStamps = Math.Max(HistoricCheckQTY ?? currentStamps, currentStamps);
-            var googleSaveUrl = string.IsNullOrWhiteSpace(CardIDGoogle)
-                ? null
-                : $"https://pay.google.com/gp/v/save/{CardIDGoogle}";
-
             return LoyaltyCard.Restore(
                 cardGuid,
                 LegacyIdMapper.ToGuid(UserID),
@@ -229,7 +225,7 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
                 createdAt,
                 AsUtc(LastCheck ?? CreationDate ?? DateTime.UtcNow),
                 string.IsNullOrWhiteSpace(CardIDGoogle) ? null : CardIDGoogle,
-                googleSaveUrl);
+                googleSaveUrl: null);
         }
     }
 }

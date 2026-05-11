@@ -11,10 +11,12 @@ Documentos:
 - `04-migration-target-architecture.md`: arquitectura destino propuesta en ASP.NET Core.
 - `05-migration-roadmap.md`: fases incrementales de migracion.
 - `06-playwright-test-plan.md`: plan de pruebas end-to-end.
+- `07-modern-skeleton.md`: esqueleto ASP.NET Core paralelo.
+- `08-mysql-persistence.md`: adapter MySQL para tablas legacy.
+- `09-google-wallet-service.md`: adapter real de Google Wallet y configuracion.
 
 Notas:
 
 - No se copiaron secretos encontrados.
 - No se migro codigo funcional.
 - El SQL solicitado fuera del repo no existe en esta maquina; el SQL analizado esta en `docs/db_dcards.sql`.
-

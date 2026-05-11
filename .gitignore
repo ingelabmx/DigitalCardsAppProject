@@ -204,9 +204,12 @@ PublishScripts/
 .env
 .env.*
 !.env.example
+appsettings.Local.json
+appsettings.*.Local.json
 appsettings.*.local.json
 **/GW-K/*.json
 **/*service-account*.json
+docs/migration-context/*.json
 *.p12
 *.pfx
 *.pem

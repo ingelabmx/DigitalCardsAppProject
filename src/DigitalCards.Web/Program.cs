@@ -3,6 +3,18 @@ using DigitalCards.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var userLocalConfiguration = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    ".digitalcards",
+    "appsettings.Local.json");
+
+builder.Configuration
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile(userLocalConfiguration, optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
+
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
 builder.Services.AddDigitalCardsApplication();

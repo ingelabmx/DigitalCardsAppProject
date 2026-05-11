@@ -2,8 +2,10 @@ using DigitalCards.Application;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Infrastructure;
 using DigitalCards.Infrastructure.Persistence.MySql;
+using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,6 +51,66 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersFakeGoogleWalletByDefault()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<FakeGoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersRealGoogleWalletWhenFakeIntegrationsAreDisabled()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:UseFakeIntegrations"] = "false",
+                ["DigitalCards:GoogleWallet:IssuerId"] = "issuer-id",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<GoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+    }
+
+    [Fact]
+    public async Task RealGoogleWallet_RequiresIssuerBeforeCallingGoogle()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:UseFakeIntegrations"] = "false"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+        var googleWallet = provider.GetRequiredService<IGoogleWalletService>();
+        var createdAt = DateTimeOffset.Parse("2026-05-08T00:00:00Z");
+        var client = new Client(Guid.NewGuid(), "maria-test", "Maria", "Lopez", "maria@example.test");
+        var business = new Business(Guid.NewGuid(), "Demo Business", "demo@example.test", "hash", "logo.jpg");
+        var card = new LoyaltyCard(Guid.NewGuid(), client.Id, business.Id, createdAt);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            googleWallet.IssueSaveLinkAsync(card, client, business));
+
+        Assert.Contains("DigitalCards:GoogleWallet:IssuerId", exception.Message);
     }
 
     [Fact]
