@@ -19,3 +19,7 @@ Vuelve a ejectuar:
 dotnet run --no-launch-profile --project src\DigitalCards.Web\DigitalCards.Web.csproj --urls http://localhost:5088
 Ahora abre:
 https://TU-URL.trycloudflare.com
+
+
+#Issues
+Las tarjetas quedan ligadas al dominio web.
