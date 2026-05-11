@@ -116,7 +116,15 @@ public sealed class DigitalCardsAppService
         return result;
     }
 
-    public async Task<AppleWalletIssueResult?> SelectAppleWalletAsync(string token, CancellationToken cancellationToken = default)
+    public Task<AppleWalletIssueResult?> SelectAppleWalletAsync(string token, CancellationToken cancellationToken = default)
+    {
+        return SelectAppleWalletAsync(token, baseUrl: null, cancellationToken);
+    }
+
+    public async Task<AppleWalletIssueResult?> SelectAppleWalletAsync(
+        string token,
+        string? baseUrl,
+        CancellationToken cancellationToken = default)
     {
         var context = await FindCardContextByTokenAsync(token, cancellationToken);
         if (context is null)
@@ -125,7 +133,32 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
-        return await _appleWallet.IssueAsync(card, client, business, cancellationToken);
+        var result = await _appleWallet.IssueAsync(card, client, business, cancellationToken);
+        if (result.Status != AppleWalletIssueStatus.Ready ||
+            !string.IsNullOrWhiteSpace(result.DownloadUrl) ||
+            string.IsNullOrWhiteSpace(baseUrl))
+        {
+            return result;
+        }
+
+        return result with
+        {
+            DownloadUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Apple/Download/{card.EnrollmentToken}.pkpass"
+        };
+    }
+
+    public async Task<AppleWalletPassFile?> DownloadAppleWalletPassAsync(
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindCardContextByTokenAsync(token, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        var (card, client, business) = context.Value;
+        return await _appleWallet.CreatePassAsync(card, client, business, cancellationToken);
     }
 
     public async Task<LoyaltyCardDto> AddStampAsync(AddStampCommand command, CancellationToken cancellationToken = default)
@@ -146,6 +179,8 @@ public sealed class DigitalCardsAppService
         {
             await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
         }
+
+        await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
 
         return ToDto(card, client, business);
     }

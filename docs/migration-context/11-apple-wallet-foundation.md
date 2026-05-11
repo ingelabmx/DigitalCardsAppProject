@@ -29,9 +29,9 @@ Infrastructure registers `FakeAppleWalletService` by default. It returns a
 pending result with no download URL. This makes the Razor Page and E2E flow
 exercise the real application contract while keeping Apple production disabled.
 
-`DigitalCards:AppleWallet:Provider=Apple` intentionally fails fast with a clear
-message. This prevents accidental production activation before certificate,
-package signing, web service and APNs behavior exist.
+`DigitalCards:AppleWallet:Provider=Apple` is now reserved for the signed
+`.pkpass` generator. It requires external certificate and asset configuration
+before it can be activated.
 
 ## UI Behavior
 
@@ -39,7 +39,9 @@ package signing, web service and APNs behavior exist.
 
 - valid token: shows `Apple Wallet pendiente`;
 - invalid token: shows `Link no valido`;
-- no `.pkpass`, JWT, certificate path or secret is emitted.
+- fake provider: no `.pkpass`, JWT, certificate path or secret is emitted.
+- Apple provider: redirects to `/Wallet/Apple/Download/{token}` and downloads a
+  signed `.pkpass` when certificate configuration is available.
 
 The email flow still sends the customer to `/Wallet/Select/{token}` so the user
 chooses Apple Wallet or Google Wallet from the landing page.
@@ -67,7 +69,7 @@ Before Apple Wallet can go live:
 This phase covers:
 
 - default DI registers `FakeAppleWalletService`;
-- real Apple provider fails fast;
+- real Apple provider requires complete certificate configuration;
 - selecting Apple Wallet with a valid token returns pending;
 - selecting Apple Wallet with an invalid token returns `null`;
 - Razor Page renders pending/not-found states;

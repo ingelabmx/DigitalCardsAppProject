@@ -1,8 +1,13 @@
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Security.Cryptography.Pkcs;
+using System.Text.Json;
 using DigitalCards.Application;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -96,6 +101,105 @@ public sealed class ManualIntegrationSmokeTests
         Assert.Equal(currentStampsBeforeAdd >= 9 ? 0 : currentStampsBeforeAdd + 1, stamped.CurrentStamps);
         Assert.Equal(lifetimeStampsBeforeAdd + 1, stamped.LifetimeStamps);
         Assert.NotNull(stamped.GoogleObjectId);
+    }
+
+    [ManualSmokeFact("RUN_FULL_REAL_WALLET_SMOKE")]
+    public async Task FullRealWalletSmoke_UsesMySqlGoogleSmtpAndAppleWallet()
+    {
+        var configuration = BuildLocalConfiguration(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PersistenceProvider"] = "MySql",
+            ["DigitalCards:GoogleWallet:Provider"] = "Google",
+            ["DigitalCards:Email:Provider"] = "Smtp",
+            ["DigitalCards:AppleWallet:Provider"] = "Apple"
+        });
+        using var provider = BuildProvider(configuration);
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await LoginSmokeBusinessAsync(app, configuration);
+        var userName = NewUserName("wallet");
+        var clientEmail = BuildUniqueRecipient(GetRequired(configuration, "DigitalCards:Email:SmokeRecipient"), userName);
+
+        userName = await EnsureSmokeClientAsync(app, provider, userName, clientEmail);
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            userName,
+            GetRequired(configuration, "DigitalCards:PublicBaseUrl")));
+
+        var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
+        var apple = await app.DownloadAppleWalletPassAsync(enrollment.Card.EnrollmentToken);
+        var stamped = await app.AddStampAsync(new AddStampCommand(business.Id, userName));
+
+        Assert.NotNull(google);
+        Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl);
+        Assert.NotNull(apple);
+        Assert.Equal(AppleWalletPassPackageBuilder.ContentType, apple!.ContentType);
+        Assert.EndsWith(".pkpass", apple.FileName, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(stamped.GoogleObjectId);
+    }
+
+    [ManualSmokeFact("RUN_APPLE_PKPASS_SMOKE")]
+    public async Task ApplePkpassSmoke_GeneratesSignedPackage_WithLocalCertificates()
+    {
+        var configuration = BuildLocalConfiguration(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PersistenceProvider"] = "InMemory",
+            ["DigitalCards:GoogleWallet:Provider"] = "Fake",
+            ["DigitalCards:Email:Provider"] = "Fake",
+            ["DigitalCards:AppleWallet:Provider"] = "Apple"
+        });
+        using var provider = BuildProvider(configuration);
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var userName = NewUserName("apple");
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            userName,
+            "Apple",
+            "Smoke",
+            $"{userName}@example.test"));
+
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://example.test"));
+
+        var passFile = await app.DownloadAppleWalletPassAsync(enrollment.Card.EnrollmentToken);
+
+        Assert.NotNull(passFile);
+        Assert.Equal(AppleWalletPassPackageBuilder.ContentType, passFile!.ContentType);
+        Assert.EndsWith(".pkpass", passFile.FileName, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEmpty(passFile.Content);
+
+        using var archive = new ZipArchive(new MemoryStream(passFile.Content), ZipArchiveMode.Read);
+        Assert.NotNull(archive.GetEntry("pass.json"));
+        Assert.NotNull(archive.GetEntry("manifest.json"));
+        Assert.NotNull(archive.GetEntry("signature"));
+        Assert.NotNull(archive.GetEntry("icon.png"));
+
+        using var passJson = JsonDocument.Parse(ReadEntryText(archive, "pass.json"));
+        var root = passJson.RootElement;
+        Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:PassTypeIdentifier"), root.GetProperty("passTypeIdentifier").GetString());
+        Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:TeamIdentifier"), root.GetProperty("teamIdentifier").GetString());
+        Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:OrganizationName"), root.GetProperty("organizationName").GetString());
+        Assert.True(root.TryGetProperty("storeCard", out _));
+
+        using var manifestJson = JsonDocument.Parse(ReadEntryText(archive, "manifest.json"));
+        var manifest = manifestJson.RootElement;
+        Assert.True(manifest.TryGetProperty("pass.json", out _));
+        Assert.True(manifest.TryGetProperty("icon.png", out _));
+        Assert.False(manifest.TryGetProperty("manifest.json", out _));
+        Assert.False(manifest.TryGetProperty("signature", out _));
+
+        var signature = ReadEntryBytes(archive, "signature");
+        var manifestBytes = ReadEntryBytes(archive, "manifest.json");
+        var signedCms = new SignedCms(new ContentInfo(manifestBytes), detached: true);
+        signedCms.Decode(signature);
+        var signedAttributes = signedCms.SignerInfos[0].SignedAttributes;
+        Assert.Contains(signedAttributes.Cast<CryptographicAttributeObject>(), attribute => attribute.Oid?.Value == "1.2.840.113549.1.9.5");
     }
 
     private static ServiceProvider BuildProvider(IConfiguration configuration)
@@ -193,5 +297,23 @@ public sealed class ManualIntegrationSmokeTests
         }
 
         throw new InvalidOperationException("DigitalCards:Email:SmokeRecipient must fit the legacy UserClient.UserEmail varchar(30) column.");
+    }
+
+    private static string ReadEntryText(ZipArchive archive, string entryName)
+    {
+        using var memory = new MemoryStream(ReadEntryBytes(archive, entryName));
+        using var reader = new StreamReader(memory);
+        return reader.ReadToEnd();
+    }
+
+    private static byte[] ReadEntryBytes(ZipArchive archive, string entryName)
+    {
+        var entry = archive.GetEntry(entryName)
+            ?? throw new InvalidOperationException($"The generated Apple Wallet pass is missing {entryName}.");
+
+        using var stream = entry.Open();
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return memory.ToArray();
     }
 }

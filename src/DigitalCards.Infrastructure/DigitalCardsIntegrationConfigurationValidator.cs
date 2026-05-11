@@ -68,8 +68,11 @@ internal static class DigitalCardsIntegrationConfigurationValidator
 
         if (IsProvider(appleWalletProvider, "Apple"))
         {
-            throw new InvalidOperationException(
-                "DigitalCards:AppleWallet:Provider=Apple is reserved for the production Apple Wallet adapter, which is not implemented yet. Use Fake for now.");
+            ValidateAbsoluteHttpUrl(
+                options.PublicBaseUrl,
+                "DigitalCards:PublicBaseUrl",
+                "when real Apple Wallet is enabled");
+            ValidateAppleWallet(appleWalletOptions);
         }
 
         return new IntegrationProviders(
@@ -142,6 +145,27 @@ internal static class DigitalCardsIntegrationConfigurationValidator
         }
     }
 
+    private static void ValidateAppleWallet(AppleWalletOptions options)
+    {
+        Require(options.TeamIdentifier, "DigitalCards:AppleWallet:TeamIdentifier");
+        Require(options.PassTypeIdentifier, "DigitalCards:AppleWallet:PassTypeIdentifier");
+        Require(options.OrganizationName, "DigitalCards:AppleWallet:OrganizationName");
+        Require(options.CertificatePath, "DigitalCards:AppleWallet:CertificatePath");
+        Require(options.CertificatePassword, "DigitalCards:AppleWallet:CertificatePassword");
+        Require(options.WwdrCertificatePath, "DigitalCards:AppleWallet:WwdrCertificatePath");
+        Require(options.AssetsPath, "DigitalCards:AppleWallet:AssetsPath");
+        Require(options.AuthenticationTokenSecret, "DigitalCards:AppleWallet:AuthenticationTokenSecret");
+        ValidateAbsoluteHttpsUrl(
+            options.ApnsBaseUrl,
+            "DigitalCards:AppleWallet:ApnsBaseUrl",
+            "when real Apple Wallet is enabled");
+
+        if (options.AuthenticationTokenSecret?.Length < 32)
+        {
+            throw new InvalidOperationException("DigitalCards:AppleWallet:AuthenticationTokenSecret must be at least 32 characters.");
+        }
+    }
+
     private static void ValidateAbsoluteHttpUrl(string? value, string key, string reason)
     {
         if (string.IsNullOrWhiteSpace(value) ||
@@ -149,6 +173,16 @@ internal static class DigitalCardsIntegrationConfigurationValidator
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             throw new InvalidOperationException($"{key} must be an absolute HTTP(S) URL {reason}.");
+        }
+    }
+
+    private static void ValidateAbsoluteHttpsUrl(string? value, string key, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(value) ||
+            !Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps)
+        {
+            throw new InvalidOperationException($"{key} must be an absolute HTTPS URL {reason}.");
         }
     }
 

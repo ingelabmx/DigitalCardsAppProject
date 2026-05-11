@@ -1,4 +1,5 @@
 using DigitalCards.Domain;
+using DigitalCards.Application.Models;
 
 namespace DigitalCards.Infrastructure.Persistence;
 
@@ -21,5 +22,10 @@ public sealed class InMemoryDigitalCardsStore
     public List<Business> Businesses { get; } = [];
 
     public List<LoyaltyCard> LoyaltyCards { get; } = [];
-}
 
+    public List<AppleWalletPassRecord> AppleWalletPasses { get; } = [];
+
+    public List<AppleWalletDeviceRecord> AppleWalletDevices { get; } = [];
+
+    public List<(string DeviceLibraryIdentifier, string PassTypeIdentifier, string SerialNumber, DateTimeOffset CreatedAt)> AppleWalletRegistrations { get; } = [];
+}

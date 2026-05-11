@@ -25,6 +25,7 @@ public static class DependencyInjection
             configuration.GetSection(SmtpEmailOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<AppleWalletPassPackageBuilder>();
 
         var options = configuration
             .GetSection(DigitalCardsInfrastructureOptions.SectionName)
@@ -52,6 +53,7 @@ public static class DependencyInjection
             services.AddScoped<IClientRepository, MySqlClientRepository>();
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
+            services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
         }
         else
         {
@@ -59,6 +61,7 @@ public static class DependencyInjection
             services.AddScoped<IClientRepository, InMemoryClientRepository>();
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
+            services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
         }
 
         services.AddSingleton<FakeWalletEmailOutbox>();
@@ -85,6 +88,12 @@ public static class DependencyInjection
         if (string.Equals(providers.AppleWalletProvider, "Fake", StringComparison.OrdinalIgnoreCase))
         {
             services.AddScoped<IAppleWalletService, FakeAppleWalletService>();
+            services.AddScoped<IAppleWalletPushSender, FakeAppleWalletPushSender>();
+        }
+        else if (string.Equals(providers.AppleWalletProvider, "Apple", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IAppleWalletService, AppleWalletService>();
+            services.AddScoped<IAppleWalletPushSender, AppleWalletPushSender>();
         }
 
         return services;
