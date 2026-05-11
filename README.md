@@ -23,3 +23,35 @@ https://TU-URL.trycloudflare.com
 
 #Issues
 Las tarjetas quedan ligadas al dominio web.
+
+# Legacy Wallet Sync
+Mientras Web Forms siga agregando sellos directo en HostGator, activa el worker
+moderno solo en pruebas controladas:
+
+```json
+"DigitalCards": {
+  "LegacyWalletSync": {
+    "Enabled": true,
+    "PollIntervalSeconds": 60,
+    "LookbackMinutes": 1440,
+    "BatchSize": 50
+  }
+}
+```
+
+El worker no cambia `ClientCard`; solo detecta cambios recientes y dispara patch
+Google Wallet y push Apple Wallet. Los diagnósticos seguros se activan con:
+
+```json
+"DigitalCards": {
+  "Diagnostics": {
+    "EnableWalletDiagnostics": true
+  }
+}
+```
+
+Endpoint:
+
+```text
+/internal/wallet-diagnostics/{CardID}
+```

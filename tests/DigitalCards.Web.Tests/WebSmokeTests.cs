@@ -124,6 +124,17 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
     }
 
+    [Fact]
+    public async Task WalletDiagnostics_WhenDisabled_ReturnsNotFound()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/internal/wallet-diagnostics/1");
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private FakeIntegrationFactory WithFakeIntegrations()
     {
         return new FakeIntegrationFactory(_factory);

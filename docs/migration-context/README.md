@@ -19,6 +19,7 @@ Documentos:
 - `12-apple-wallet-pkpass-initial.md`: descarga inicial `.pkpass` firmada sin tablas nuevas.
 - `13-apple-wallet-updates.md`: Apple Wallet Web Service, APNs y updates reales.
 - `13-apple-wallet-updates-hostgator.sql`: tablas nuevas para updates Apple en HostGator.
+- `14-legacy-wallet-sync-and-operations.md`: worker opcional para sellos legacy y runbook operativo.
 
 Notas:
 

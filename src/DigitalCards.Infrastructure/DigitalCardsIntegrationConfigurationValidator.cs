@@ -1,4 +1,5 @@
 using DigitalCards.Infrastructure.Email;
+using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Infrastructure.Wallets;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
@@ -163,6 +164,36 @@ internal static class DigitalCardsIntegrationConfigurationValidator
         if (options.AuthenticationTokenSecret?.Length < 32)
         {
             throw new InvalidOperationException("DigitalCards:AppleWallet:AuthenticationTokenSecret must be at least 32 characters.");
+        }
+    }
+
+    public static void ValidateLegacyWalletSync(
+        LegacyWalletSyncOptions options,
+        string persistenceProvider)
+    {
+        if (!options.Enabled)
+        {
+            return;
+        }
+
+        if (!IsProvider(persistenceProvider, "MySql"))
+        {
+            throw new InvalidOperationException("DigitalCards:LegacyWalletSync:Enabled requires DigitalCards:PersistenceProvider to be MySql.");
+        }
+
+        if (options.PollIntervalSeconds <= 0)
+        {
+            throw new InvalidOperationException("DigitalCards:LegacyWalletSync:PollIntervalSeconds must be greater than zero.");
+        }
+
+        if (options.LookbackMinutes <= 0)
+        {
+            throw new InvalidOperationException("DigitalCards:LegacyWalletSync:LookbackMinutes must be greater than zero.");
+        }
+
+        if (options.BatchSize <= 0)
+        {
+            throw new InvalidOperationException("DigitalCards:LegacyWalletSync:BatchSize must be greater than zero.");
         }
     }
 

@@ -39,6 +39,7 @@ app.MapHealthChecks("/health");
 app.MapRazorPages();
 app.MapAppleWalletPassDownloads();
 app.MapAppleWalletWebService();
+app.MapWalletDiagnostics();
 
 app.Run();
 

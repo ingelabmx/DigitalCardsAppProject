@@ -9,6 +9,7 @@
     <PackageReference Include="Dapper" Version="2.1.72" />
     <PackageReference Include="Google.Apis.Walletobjects.v1" Version="1.73.0.4115" />
     <PackageReference Include="MailKit" Version="4.16.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="MySqlConnector" Version="2.5.0" />

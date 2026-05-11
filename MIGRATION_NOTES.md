@@ -17,6 +17,7 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [12 Apple Wallet Pkpass Initial](docs/migration-context/12-apple-wallet-pkpass-initial.md)
 - [13 Apple Wallet Updates](docs/migration-context/13-apple-wallet-updates.md)
 - [13 Apple Wallet Updates HostGator SQL](docs/migration-context/13-apple-wallet-updates-hostgator.sql)
+- [14 Legacy Wallet Sync and Operations](docs/migration-context/14-legacy-wallet-sync-and-operations.md)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
 Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real, SMTP real, Apple Wallet `.pkpass` y Apple Wallet updates por Web Service/APNs quedan disponibles por configuracion local controlada; los fakes siguen siendo el default para desarrollo, CI y Playwright.

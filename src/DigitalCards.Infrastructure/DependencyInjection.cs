@@ -1,5 +1,6 @@
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Infrastructure.Email;
+using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Infrastructure.Persistence;
 using DigitalCards.Infrastructure.Persistence.MySql;
 using DigitalCards.Infrastructure.Time;
@@ -23,6 +24,8 @@ public static class DependencyInjection
             configuration.GetSection(AppleWalletOptions.SectionName));
         services.Configure<SmtpEmailOptions>(
             configuration.GetSection(SmtpEmailOptions.SectionName));
+        services.Configure<LegacyWalletSyncOptions>(
+            configuration.GetSection(LegacyWalletSyncOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<AppleWalletPassPackageBuilder>();
@@ -39,6 +42,9 @@ public static class DependencyInjection
         var emailOptions = configuration
             .GetSection(SmtpEmailOptions.SectionName)
             .Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
+        var legacySyncOptions = configuration
+            .GetSection(LegacyWalletSyncOptions.SectionName)
+            .Get<LegacyWalletSyncOptions>() ?? new LegacyWalletSyncOptions();
 
         var providers = DigitalCardsIntegrationConfigurationValidator.Validate(
             configuration,
@@ -46,6 +52,9 @@ public static class DependencyInjection
             googleWalletOptions,
             appleWalletOptions,
             emailOptions);
+        DigitalCardsIntegrationConfigurationValidator.ValidateLegacyWalletSync(
+            legacySyncOptions,
+            providers.PersistenceProvider);
 
         if (string.Equals(providers.PersistenceProvider, "MySql", StringComparison.OrdinalIgnoreCase))
         {
@@ -54,6 +63,7 @@ public static class DependencyInjection
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
+            services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
         }
         else
         {
@@ -62,6 +72,12 @@ public static class DependencyInjection
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
+        }
+
+        if (legacySyncOptions.Enabled)
+        {
+            services.AddScoped<LegacyWalletSyncProcessor>();
+            services.AddHostedService<LegacyWalletSyncWorker>();
         }
 
         services.AddSingleton<FakeWalletEmailOutbox>();
