@@ -4,6 +4,7 @@ using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Email;
 using DigitalCards.Infrastructure.Persistence.MySql;
 using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
@@ -63,10 +64,32 @@ public sealed class DigitalCardsAppServiceTests
         var provider = services.BuildServiceProvider();
 
         Assert.IsType<FakeGoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
     }
 
     [Fact]
-    public void AddInfrastructure_RegistersRealGoogleWalletWhenFakeIntegrationsAreDisabled()
+    public void AddInfrastructure_RegistersRealGoogleWalletWhenProviderIsGoogle()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:GoogleWallet:Provider"] = "Google",
+                ["DigitalCards:GoogleWallet:IssuerId"] = "issuer-id",
+                ["DigitalCards:GoogleWallet:Origins:0"] = "https://example.test"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<GoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_UseFakeIntegrationsFalseStillEnablesRealGoogleWalletForCompatibility()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -84,6 +107,56 @@ public sealed class DigitalCardsAppServiceTests
         var provider = services.BuildServiceProvider();
 
         Assert.IsType<GoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersSmtpEmailWhenProviderIsSmtp()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:Email:Provider"] = "Smtp"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<SmtpEmailSender>(provider.GetRequiredService<IEmailSender>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IWalletEmailOutbox>());
+    }
+
+    [Fact]
+    public async Task SmtpEmailSender_RequiresConfigurationBeforeConnecting()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:Email:Provider"] = "Smtp"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+        var emailSender = provider.GetRequiredService<IEmailSender>();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            emailSender.SendWalletEnrollmentAsync(new WalletEnrollmentEmail(
+                "maria@example.test",
+                "Maria Lopez",
+                "Demo Coffee",
+                "https://example.test/Wallet/Select/token",
+                DateTimeOffset.Parse("2026-05-11T00:00:00Z"))));
+
+        Assert.Contains("DigitalCards:Email:Host", exception.Message);
+        Assert.DoesNotContain("Password=", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

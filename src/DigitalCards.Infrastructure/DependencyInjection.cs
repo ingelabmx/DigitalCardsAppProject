@@ -19,12 +19,20 @@ public static class DependencyInjection
             configuration.GetSection(DigitalCardsInfrastructureOptions.SectionName));
         services.Configure<GoogleWalletOptions>(
             configuration.GetSection(GoogleWalletOptions.SectionName));
+        services.Configure<SmtpEmailOptions>(
+            configuration.GetSection(SmtpEmailOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
 
         var options = configuration
             .GetSection(DigitalCardsInfrastructureOptions.SectionName)
             .Get<DigitalCardsInfrastructureOptions>() ?? new DigitalCardsInfrastructureOptions();
+        var googleWalletOptions = configuration
+            .GetSection(GoogleWalletOptions.SectionName)
+            .Get<GoogleWalletOptions>() ?? new GoogleWalletOptions();
+        var emailOptions = configuration
+            .GetSection(SmtpEmailOptions.SectionName)
+            .Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
 
         if (string.Equals(options.PersistenceProvider, "MySql", StringComparison.OrdinalIgnoreCase))
         {
@@ -46,17 +54,44 @@ public static class DependencyInjection
 
         services.AddSingleton<FakeWalletEmailOutbox>();
         services.AddSingleton<IWalletEmailOutbox>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
-        services.AddScoped<IEmailSender>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
 
-        if (options.UseFakeIntegrations)
+        var emailProvider = ResolveProvider(emailOptions.Provider, "Fake");
+        if (string.Equals(emailProvider, "Fake", StringComparison.OrdinalIgnoreCase))
         {
-            services.AddScoped<IGoogleWalletService, FakeGoogleWalletService>();
+            services.AddScoped<IEmailSender>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
+        }
+        else if (string.Equals(emailProvider, "Smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
         }
         else
         {
+            throw new InvalidOperationException("DigitalCards:Email:Provider must be Fake or Smtp.");
+        }
+
+        var googleWalletProvider = ResolveProvider(
+            googleWalletOptions.Provider,
+            options.UseFakeIntegrations ? "Fake" : "Google");
+        if (string.Equals(googleWalletProvider, "Fake", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IGoogleWalletService, FakeGoogleWalletService>();
+        }
+        else if (string.Equals(googleWalletProvider, "Google", StringComparison.OrdinalIgnoreCase))
+        {
             services.AddScoped<IGoogleWalletService, GoogleWalletService>();
+        }
+        else
+        {
+            throw new InvalidOperationException("DigitalCards:GoogleWallet:Provider must be Fake or Google.");
         }
 
         return services;
+    }
+
+    private static string ResolveProvider(string? configuredProvider, string defaultProvider)
+    {
+        return string.IsNullOrWhiteSpace(configuredProvider)
+            ? defaultProvider
+            : configuredProvider.Trim();
     }
 }

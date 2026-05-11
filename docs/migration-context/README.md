@@ -14,6 +14,7 @@ Documentos:
 - `07-modern-skeleton.md`: esqueleto ASP.NET Core paralelo.
 - `08-mysql-persistence.md`: adapter MySQL para tablas legacy.
 - `09-google-wallet-service.md`: adapter real de Google Wallet y configuracion.
+- `10-controlled-real-integrations.md`: providers separados para MySQL, Google Wallet y SMTP real.
 
 Notas:
 

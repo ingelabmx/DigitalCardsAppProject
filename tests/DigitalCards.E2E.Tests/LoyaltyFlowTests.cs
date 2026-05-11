@@ -40,7 +40,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);
         await page.GetByTestId("enroll-submit").ClickAsync();
-        Assert.Contains("Correo fake generado", await page.GetByTestId("enroll-success").InnerTextAsync());
+        Assert.Contains("Correo generado", await page.GetByTestId("enroll-success").InnerTextAsync());
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
         await page.GetByTestId("email-link").First.ClickAsync();

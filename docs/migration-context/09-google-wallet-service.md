@@ -11,13 +11,16 @@ The default remains safe:
 ```json
 {
   "DigitalCards": {
-    "UseFakeIntegrations": true
+    "GoogleWallet": {
+      "Provider": "Fake"
+    }
   }
 }
 ```
 
-When fake integrations are enabled, `FakeGoogleWalletService` is still used by
-local development, smoke tests and Playwright flows.
+When `DigitalCards:GoogleWallet:Provider` is `Fake`,
+`FakeGoogleWalletService` is used by local development, smoke tests and
+Playwright flows.
 
 ## Implementation
 
@@ -38,7 +41,7 @@ keeps the link shorter and avoids embedding the full pass payload in email.
 Required outside source control:
 
 ```powershell
-dotnet user-secrets set "DigitalCards:UseFakeIntegrations" "false" --project src\DigitalCards.Web\DigitalCards.Web.csproj
+dotnet user-secrets set "DigitalCards:GoogleWallet:Provider" "Google" --project src\DigitalCards.Web\DigitalCards.Web.csproj
 dotnet user-secrets set "DigitalCards:GoogleWallet:IssuerId" "GOOGLE_WALLET_ISSUER_ID" --project src\DigitalCards.Web\DigitalCards.Web.csproj
 dotnet user-secrets set "DigitalCards:GoogleWallet:Origins:0" "https://your-public-origin.example" --project src\DigitalCards.Web\DigitalCards.Web.csproj
 dotnet user-secrets set "DigitalCards:GoogleWallet:CredentialsFilePath" "C:\secure-path\google-wallet-service-account.json" --project src\DigitalCards.Web\DigitalCards.Web.csproj
@@ -62,8 +65,9 @@ Example:
 ```json
 {
   "DigitalCards": {
-    "UseFakeIntegrations": false,
+    "PublicBaseUrl": "https://algo.trycloudflare.com",
     "GoogleWallet": {
+      "Provider": "Google",
       "IssuerId": "3388000000023127519",
       "Origins": [
         "https://algo.trycloudflare.com"
@@ -82,6 +86,7 @@ rotate any key that was previously committed or copied into source control.
 
 Optional settings:
 
+- `DigitalCards:GoogleWallet:Provider`
 - `DigitalCards:GoogleWallet:ApplicationName`
 - `DigitalCards:GoogleWallet:Language`
 - `DigitalCards:GoogleWallet:HexBackgroundColor`
@@ -110,13 +115,13 @@ table because the current schema has no safe column for it.
 - A public HTTPS origin for production save links.
 - Public image URLs for the card logo and hero image.
 - A real smoke test using a non-production Google Wallet issuer before enabling
-  `UseFakeIntegrations=false` outside local development.
+  `DigitalCards:GoogleWallet:Provider=Google` outside local development.
 
 ## Smoke Verification
 
 On 2026-05-11, a local smoke test was executed against the configured Google
-Wallet issuer using `UseFakeIntegrations=false`, in-memory persistence and the
-fake email outbox. The test confirmed:
+Wallet issuer using `DigitalCards:GoogleWallet:Provider=Google`, in-memory
+persistence and the fake email outbox. The test confirmed:
 
 - client registration and business enrollment still work without HostGator;
 - Google Wallet class/object creation succeeds;

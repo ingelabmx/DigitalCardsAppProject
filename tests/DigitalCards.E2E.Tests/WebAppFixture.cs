@@ -27,6 +27,9 @@ public sealed class WebAppFixture : IAsyncLifetime
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.Environment["DigitalCards__UseFakeIntegrations"] = "true";
         startInfo.Environment["DigitalCards__PersistenceProvider"] = "InMemory";
+        startInfo.Environment["DigitalCards__GoogleWallet__Provider"] = "Fake";
+        startInfo.Environment["DigitalCards__Email__Provider"] = "Fake";
+        startInfo.Environment["DigitalCards__PublicBaseUrl"] = string.Empty;
 
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start DigitalCards.Web.");
 

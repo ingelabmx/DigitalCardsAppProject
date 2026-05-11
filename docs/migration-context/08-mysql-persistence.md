@@ -23,6 +23,8 @@ To use MySQL locally:
 
 ```powershell
 $env:DigitalCards__PersistenceProvider = 'MySql'
+$env:DigitalCards__GoogleWallet__Provider = 'Fake'
+$env:DigitalCards__Email__Provider = 'Fake'
 $env:ConnectionStrings__DigitalCards = 'Server=localhost;Database=dcards_test;User ID=dcards_user;Password=LOCAL_PASSWORD;'
 dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj
 ```
@@ -53,8 +55,9 @@ Wallet enrollment tokens are based on the mapped `ClientCard.CardID`.
 
 - No production connection strings are committed.
 - Wallet and email integrations remain fake by default. Google Wallet can be
-  enabled explicitly with `DigitalCards:UseFakeIntegrations=false` and the
-  required Google Wallet secrets.
+  enabled explicitly with `DigitalCards:GoogleWallet:Provider=Google` and the
+  required Google Wallet secrets. SMTP email can be enabled separately with
+  `DigitalCards:Email:Provider=Smtp`.
 - This adapter writes rows to the existing HostGator tables when the `MySql`
   provider is enabled.
 - No DDL is executed by the application.

@@ -4,6 +4,8 @@ public sealed class GoogleWalletOptions
 {
     public const string SectionName = $"{DigitalCardsInfrastructureOptions.SectionName}:GoogleWallet";
 
+    public string? Provider { get; init; }
+
     public string? IssuerId { get; init; }
 
     public string? CredentialsFilePath { get; init; }
