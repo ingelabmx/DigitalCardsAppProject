@@ -38,23 +38,8 @@ keeps the link shorter and avoids embedding the full pass payload in email.
 
 ## Configuration
 
-Required outside source control:
-
-```powershell
-dotnet user-secrets set "DigitalCards:GoogleWallet:Provider" "Google" --project src\DigitalCards.Web\DigitalCards.Web.csproj
-dotnet user-secrets set "DigitalCards:GoogleWallet:IssuerId" "GOOGLE_WALLET_ISSUER_ID" --project src\DigitalCards.Web\DigitalCards.Web.csproj
-dotnet user-secrets set "DigitalCards:GoogleWallet:Origins:0" "https://your-public-origin.example" --project src\DigitalCards.Web\DigitalCards.Web.csproj
-dotnet user-secrets set "DigitalCards:GoogleWallet:CredentialsFilePath" "C:\secure-path\google-wallet-service-account.json" --project src\DigitalCards.Web\DigitalCards.Web.csproj
-```
-
-Alternative for the credentials path:
-
-```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\secure-path\google-wallet-service-account.json'
-```
-
-If you do not want environment variables, the modern app also loads this
-machine-local file automatically:
+Required outside source control. The modern app loads this machine-local file
+automatically:
 
 ```text
 %USERPROFILE%\.digitalcards\appsettings.Local.json
@@ -83,6 +68,8 @@ Copy its shape, but keep the real local file out of git.
 
 Do not commit the service account JSON. Store it outside the repository and
 rotate any key that was previously committed or copied into source control.
+The service account path must come from `DigitalCards:GoogleWallet:CredentialsFilePath`;
+the modern app intentionally does not depend on `GOOGLE_APPLICATION_CREDENTIALS`.
 
 Optional settings:
 

@@ -19,7 +19,7 @@ The default remains in-memory:
 }
 ```
 
-To use MySQL locally:
+To use MySQL locally with temporary environment overrides:
 
 ```powershell
 $env:DigitalCards__PersistenceProvider = 'MySql'
@@ -29,9 +29,18 @@ $env:ConnectionStrings__DigitalCards = 'Server=localhost;Database=dcards_test;Us
 dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj
 ```
 
-For the HostGator database, keep the connection string in ASP.NET Core User
-Secrets or environment variables. The repo includes a `hostgator-mysql` launch
-profile that enables the `MySql` provider, but it does not contain credentials.
+For the HostGator database, the preferred current approach is the external local
+configuration file documented in
+`docs/migration-context/10-controlled-real-integrations.md`:
+
+```text
+%USERPROFILE%\.digitalcards\appsettings.Local.json
+```
+
+The repo includes a `hostgator-mysql` launch profile that enables the `MySql`
+provider, but it does not contain credentials. Older user-secret/environment
+workflows are still possible for local experiments, but should not become the
+production handoff path.
 
 ```powershell
 dotnet user-secrets set "ConnectionStrings:DigitalCards" "Server=HOST;Port=3306;Database=DATABASE;User ID=USER;Password=PASSWORD;CharSet=utf8mb4;SslMode=Preferred;" --project src\DigitalCards.Web\DigitalCards.Web.csproj

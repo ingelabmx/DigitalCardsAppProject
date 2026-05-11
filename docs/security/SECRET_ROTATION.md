@@ -17,8 +17,10 @@ proyecto legado. Los valores reales no se documentan aqui.
 - `Web.config` y `bin/DigitalCardsApp.dll.config` usan placeholders.
 - Los code-behind de correo leen `SmtpFrom`, `SmtpHost`, `SmtpPort`,
   `SmtpUserName` y `SmtpPassword` desde variables de entorno o `appSettings`.
-- Google Wallet legacy exige `GOOGLE_APPLICATION_CREDENTIALS` y ya no usa un
-  fallback a `GW-K/*.json`.
+- Google Wallet legacy exige una credencial externa y ya no usa un fallback a
+  `GW-K/*.json`; la app moderna usa
+  `%USERPROFILE%\.digitalcards\appsettings.Local.json` con
+  `DigitalCards:GoogleWallet:CredentialsFilePath`.
 - Se retiro el JSON de service account del proyecto y se agregaron reglas de
   ignore para secretos locales.
 - Se retiraron binarios propios generados del legacy (`DigitalCardsApp.dll` y

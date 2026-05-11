@@ -113,12 +113,7 @@ public sealed class GoogleWalletService : IGoogleWalletService
         var credentialsFilePath = _options.CredentialsFilePath;
         if (string.IsNullOrWhiteSpace(credentialsFilePath))
         {
-            credentialsFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-        }
-
-        if (string.IsNullOrWhiteSpace(credentialsFilePath))
-        {
-            throw new InvalidOperationException("GOOGLE_APPLICATION_CREDENTIALS or DigitalCards:GoogleWallet:CredentialsFilePath is required when real Google Wallet is enabled.");
+            throw new InvalidOperationException("DigitalCards:GoogleWallet:CredentialsFilePath is required when real Google Wallet is enabled.");
         }
 
         if (!File.Exists(credentialsFilePath))

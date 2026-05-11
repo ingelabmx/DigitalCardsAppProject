@@ -15,4 +15,4 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [10 Controlled Real Integrations](docs/migration-context/10-controlled-real-integrations.md)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. Google Wallet real queda disponible por configuracion, pero apagado por defecto.
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real y SMTP real quedan disponibles por configuracion local controlada, pero los fakes siguen siendo el default para desarrollo, CI y Playwright.

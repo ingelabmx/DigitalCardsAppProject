@@ -80,18 +80,21 @@ public sealed class ManualIntegrationSmokeTests
         var userName = NewUserName("full");
         var clientEmail = BuildUniqueRecipient(GetRequired(configuration, "DigitalCards:Email:SmokeRecipient"), userName);
 
-        await app.RegisterClientAsync(new RegisterClientCommand(userName, "Full", "Smoke", clientEmail));
+        userName = await EnsureSmokeClientAsync(app, provider, userName, clientEmail);
         var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
             business.Id,
             userName,
             GetRequired(configuration, "DigitalCards:PublicBaseUrl")));
+        var currentStampsBeforeAdd = enrollment.Card.CurrentStamps;
+        var lifetimeStampsBeforeAdd = enrollment.Card.LifetimeStamps;
 
         var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
         Assert.NotNull(google);
         Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl);
 
         var stamped = await app.AddStampAsync(new AddStampCommand(business.Id, userName));
-        Assert.Equal(2, stamped.CurrentStamps);
+        Assert.Equal(currentStampsBeforeAdd >= 9 ? 0 : currentStampsBeforeAdd + 1, stamped.CurrentStamps);
+        Assert.Equal(lifetimeStampsBeforeAdd + 1, stamped.LifetimeStamps);
         Assert.NotNull(stamped.GoogleObjectId);
     }
 
@@ -128,6 +131,28 @@ public sealed class ManualIntegrationSmokeTests
             GetRequired(configuration, "DigitalCards:Smoke:BusinessPassword")));
 
         return business ?? throw new InvalidOperationException("Configured smoke business credentials were not accepted.");
+    }
+
+    private static async Task<string> EnsureSmokeClientAsync(
+        DigitalCardsAppService app,
+        IServiceProvider provider,
+        string userName,
+        string clientEmail)
+    {
+        try
+        {
+            var client = await app.RegisterClientAsync(new RegisterClientCommand(userName, "Full", "Smoke", clientEmail));
+            return client.UserName;
+        }
+        catch (InvalidOperationException exception) when (
+            exception.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            var clients = provider.GetRequiredService<IClientRepository>();
+            var existingClient = await clients.FindByUserNameOrEmailAsync(clientEmail);
+
+            return existingClient?.UserName
+                ?? throw new InvalidOperationException("The full smoke client email already exists but could not be loaded.");
+        }
     }
 
     private static string GetRequired(IConfiguration configuration, string key)
