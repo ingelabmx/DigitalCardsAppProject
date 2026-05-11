@@ -90,6 +90,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
+        Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
     }
 
     [Fact]
@@ -103,11 +104,12 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.IsType<FakeGoogleWalletService>(provider.GetRequiredService<IGoogleWalletService>());
         Assert.IsType<FakeAppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
+        Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
     }
 
     [Fact]
-    public void AddInfrastructure_ThrowsWhenAppleWalletProviderIsReal()
+    public void AddInfrastructure_ThrowsWhenAppleWalletProviderIsAppleWithoutConfiguration()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -122,9 +124,39 @@ public sealed class DigitalCardsAppServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() =>
             services.AddDigitalCardsInfrastructure(configuration));
 
-        Assert.Contains("DigitalCards:AppleWallet:Provider=Apple", exception.Message);
+        Assert.Contains("DigitalCards:PublicBaseUrl", exception.Message);
         Assert.DoesNotContain(".p12", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Password", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersAppleWalletWhenProviderIsApple()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DigitalCards:PublicBaseUrl"] = "https://example.test",
+                ["DigitalCards:AppleWallet:Provider"] = "Apple",
+                ["DigitalCards:AppleWallet:TeamIdentifier"] = "TEAMID1234",
+                ["DigitalCards:AppleWallet:PassTypeIdentifier"] = "pass.com.example.digitalcards",
+                ["DigitalCards:AppleWallet:OrganizationName"] = "DigitalCards",
+                ["DigitalCards:AppleWallet:CertificatePath"] = @"C:\secure\apple-pass-certificate.p12",
+                ["DigitalCards:AppleWallet:CertificatePassword"] = "secret",
+                ["DigitalCards:AppleWallet:WwdrCertificatePath"] = @"C:\secure\AppleWWDR.cer",
+                ["DigitalCards:AppleWallet:AssetsPath"] = @"C:\secure\apple-assets",
+                ["DigitalCards:AppleWallet:AuthenticationTokenSecret"] = "this-is-a-long-apple-wallet-test-secret",
+                ["DigitalCards:AppleWallet:ApnsBaseUrl"] = "https://api.push.apple.com"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDigitalCardsInfrastructure(configuration);
+
+        var provider = services.BuildServiceProvider();
+
+        Assert.IsType<AppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
+        Assert.IsType<AppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
     }
 
     [Fact]
@@ -364,6 +396,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.NotNull(result);
         Assert.Equal(AppleWalletIssueStatus.Pending, result!.Status);
         Assert.Null(result.DownloadUrl);
+        Assert.Null(result.SerialNumber);
         Assert.Contains(".pkpass", result.Message);
     }
 

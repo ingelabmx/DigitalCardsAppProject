@@ -1,5 +1,6 @@
 using DigitalCards.Application;
 using DigitalCards.Infrastructure;
+using DigitalCards.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,8 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapRazorPages();
+app.MapAppleWalletPassDownloads();
+app.MapAppleWalletWebService();
 
 app.Run();
 

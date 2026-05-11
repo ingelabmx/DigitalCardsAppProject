@@ -36,13 +36,21 @@ public sealed record GoogleWalletIssueResult(string ObjectId, string SaveUrl);
 
 public enum AppleWalletIssueStatus
 {
-    Pending
+    Pending,
+    Ready
 }
 
 public sealed record AppleWalletIssueResult(
     AppleWalletIssueStatus Status,
     string Message,
-    string? DownloadUrl);
+    string? DownloadUrl,
+    string? SerialNumber);
+
+public sealed record AppleWalletPassFile(
+    byte[] Content,
+    string ContentType,
+    string FileName,
+    string SerialNumber);
 
 public sealed record WalletEnrollmentEmail(
     string To,

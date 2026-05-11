@@ -16,6 +16,9 @@ Documentos:
 - `09-google-wallet-service.md`: adapter real de Google Wallet y configuracion.
 - `10-controlled-real-integrations.md`: providers separados para MySQL, Google Wallet y SMTP real.
 - `11-apple-wallet-foundation.md`: contrato y fake inicial para Apple Wallet.
+- `12-apple-wallet-pkpass-initial.md`: descarga inicial `.pkpass` firmada sin tablas nuevas.
+- `13-apple-wallet-updates.md`: Apple Wallet Web Service, APNs y updates reales.
+- `13-apple-wallet-updates-hostgator.sql`: tablas nuevas para updates Apple en HostGator.
 
 Notas:
 

@@ -64,6 +64,66 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("apple-wallet-not-found", html);
     }
 
+    [Fact]
+    public async Task AppleWalletDownload_WithFakeProvider_DoesNotExposePkpass()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, "webapple2");
+
+        var response = await client.GetAsync($"/Wallet/Apple/Download/{token}");
+
+        Assert.Equal(System.Net.HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.NotEqual("application/vnd.apple.pkpass", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task AppleWalletPkpassExtensionDownload_WithFakeProvider_DoesNotExposePkpass()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, "webapple3");
+
+        var response = await client.GetAsync($"/Wallet/Apple/Download/{token}.pkpass");
+
+        Assert.Equal(System.Net.HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.NotEqual("application/vnd.apple.pkpass", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task AppleWalletPkpassExtensionDownload_HeadRequest_IsRouted()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, "webapple4");
+
+        var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, $"/Wallet/Apple/Download/{token}.pkpass"));
+
+        Assert.Equal(System.Net.HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AppleWalletWebServicePassEndpoint_WithoutAuthorization_ReturnsUnauthorized()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/apple-wallet/v1/passes/pass.com.example.digitalcards/serial-123");
+
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AppleWalletWebServiceRegistrations_WithoutUpdates_ReturnsNoContent()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/apple-wallet/v1/devices/device-123/registrations/pass.com.example.digitalcards");
+
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
+    }
+
     private FakeIntegrationFactory WithFakeIntegrations()
     {
         return new FakeIntegrationFactory(_factory);
