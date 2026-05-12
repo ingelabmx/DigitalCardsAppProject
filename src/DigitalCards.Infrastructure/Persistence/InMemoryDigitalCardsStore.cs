@@ -29,6 +29,8 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<AdminUser> AdminUsers { get; } = [];
 
+    public List<AdminCredential> AdminCredentials { get; } = [];
+
     public List<Business> Businesses { get; } = [];
 
     public List<PilotBusinessAccess> PilotBusinesses { get; } = [];

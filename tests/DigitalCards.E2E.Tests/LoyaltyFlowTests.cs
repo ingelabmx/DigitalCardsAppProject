@@ -12,6 +12,58 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     }
 
     [PlaywrightFact]
+    public async Task AdminCanCreateAndResetAdminAccess_WithFakeServices()
+    {
+        using var playwright = await Playwright.CreateAsync();
+        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        var page = await browser.NewPageAsync();
+        var suffix = NewLegacySafeUserName("aa");
+        var userName = $"a{suffix[..8]}";
+        var email = $"{suffix}@ad.test";
+        const string initialPassword = "NewAdmin123!";
+        const string resetPassword = "ChangedAdmin123!";
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
+        await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
+        await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
+        await page.GetByTestId("admin-login-submit").ClickAsync();
+        await page.GetByTestId("admin-users-link").ClickAsync();
+        await page.GetByTestId("admin-users-create-link").ClickAsync();
+        await page.GetByTestId("admin-create-admin-username").FillAsync(userName);
+        await page.GetByTestId("admin-create-admin-first-name").FillAsync("Playwright");
+        await page.GetByTestId("admin-create-admin-last-name").FillAsync("Admin");
+        await page.GetByTestId("admin-create-admin-email").FillAsync(email);
+        await page.GetByTestId("admin-create-admin-password").FillAsync(initialPassword);
+        await page.GetByTestId("admin-create-admin-confirm-password").FillAsync(initialPassword);
+        await page.GetByTestId("admin-create-admin-submit").ClickAsync();
+
+        Assert.Contains("Admin creado", await page.GetByTestId("admin-create-admin-status").InnerTextAsync());
+        Assert.DoesNotContain(initialPassword, await page.ContentAsync(), StringComparison.Ordinal);
+
+        await page.GetByTestId("admin-created-admin-open-link").ClickAsync();
+        var createdAdminRow = page.GetByTestId("admin-user-row").Filter(new LocatorFilterOptions { HasText = userName });
+        await createdAdminRow.GetByTestId("admin-user-reset-password").FillAsync(resetPassword);
+        await createdAdminRow.GetByTestId("admin-user-reset-confirm").FillAsync(resetPassword);
+        await createdAdminRow.GetByTestId("admin-user-reset-submit").ClickAsync();
+        Assert.Contains("Contrasena de admin actualizada", await page.GetByTestId("admin-users-status").InnerTextAsync());
+        Assert.DoesNotContain(resetPassword, await page.ContentAsync(), StringComparison.Ordinal);
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Logout").ToString());
+        await page.GetByTestId("admin-username").FillAsync(userName);
+        await page.GetByTestId("admin-password").FillAsync(initialPassword);
+        await page.GetByTestId("admin-login-submit").ClickAsync();
+        Assert.Contains("Credenciales de admin invalidas", await page.ContentAsync());
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
+        await page.GetByTestId("admin-username").FillAsync(userName);
+        await page.GetByTestId("admin-password").FillAsync(resetPassword);
+        await page.GetByTestId("admin-login-submit").ClickAsync();
+        Assert.Contains("Playwright Admin", await page.GetByTestId("admin-dashboard-title").InnerTextAsync());
+        await page.GetByTestId("admin-businesses-link").ClickAsync();
+        Assert.True(await page.GetByTestId("admin-business-search-form").IsVisibleAsync());
+    }
+
+    [PlaywrightFact]
     public async Task AdminCreatesBusinessAndBusinessCanUseModernFlow_WithFakeServices()
     {
         using var playwright = await Playwright.CreateAsync();

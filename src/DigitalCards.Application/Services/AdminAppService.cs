@@ -7,34 +7,44 @@ namespace DigitalCards.Application.Services;
 
 public sealed class AdminAppService
 {
+    private const int AdminUserNameMaxLength = 15;
+    private const int AdminNameMaxLength = 30;
+    private const int AdminEmailMaxLength = 30;
     private const int BusinessNameMaxLength = 30;
     private const int BusinessEmailMaxLength = 30;
     private const int BusinessLogoMaxLength = 100;
     private const int NotesMaxLength = 500;
     private const string DefaultBusinessLogoPath = "/img/demo-coffee.svg";
+    private const string DuplicateAdminMessage = "An admin user with the same username or email already exists.";
     private const string DuplicateBusinessMessage = "A business with the same name or email already exists.";
 
+    private readonly IAdminCredentialRepository _adminCredentials;
     private readonly IAdminUserRepository _adminUsers;
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessRepository _businesses;
     private readonly IClock _clock;
-    private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
+    private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
+    private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
     private readonly IPilotBusinessRepository _pilotBusinesses;
 
     public AdminAppService(
         IAdminUserRepository adminUsers,
+        IAdminCredentialRepository adminCredentials,
         IBusinessRepository businesses,
         IBusinessCredentialRepository businessCredentials,
         IPilotBusinessRepository pilotBusinesses,
         IClock clock,
-        IPasswordHasher<BusinessPasswordHashSubject> passwordHasher)
+        IPasswordHasher<AdminPasswordHashSubject> adminPasswordHasher,
+        IPasswordHasher<BusinessPasswordHashSubject> businessPasswordHasher)
     {
         _adminUsers = adminUsers;
+        _adminCredentials = adminCredentials;
         _businesses = businesses;
         _businessCredentials = businessCredentials;
         _pilotBusinesses = pilotBusinesses;
         _clock = clock;
-        _passwordHasher = passwordHasher;
+        _adminPasswordHasher = adminPasswordHasher;
+        _businessPasswordHasher = businessPasswordHasher;
     }
 
     public async Task<AdminUserDto?> LoginAdminAsync(
@@ -45,13 +55,152 @@ public sealed class AdminAppService
             command.UserNameOrEmail,
             cancellationToken);
 
-        if (admin is null ||
-            !LegacyPasswordVerifier.Matches(admin.PasswordHashPlaceholder, command.Password))
+        if (admin is null)
         {
             return null;
         }
 
+        var subject = new AdminPasswordHashSubject(admin.Id);
+        var credential = await _adminCredentials.FindByAdminUserIdAsync(admin.Id, cancellationToken);
+        if (credential is not null)
+        {
+            var verification = _adminPasswordHasher.VerifyHashedPassword(
+                subject,
+                credential.PasswordHash,
+                command.Password);
+
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                return null;
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                await _adminCredentials.UpsertAsync(
+                    credential.Rehash(_adminPasswordHasher.HashPassword(subject, command.Password), _clock.UtcNow),
+                    cancellationToken);
+            }
+
+            return ToDto(admin);
+        }
+
+        if (!LegacyPasswordVerifier.Matches(admin.PasswordHashPlaceholder, command.Password))
+        {
+            return null;
+        }
+
+        var now = _clock.UtcNow;
+        await _adminCredentials.UpsertAsync(
+            new AdminCredential(
+                admin.Id,
+                _adminPasswordHasher.HashPassword(subject, command.Password),
+                now,
+                now),
+            cancellationToken);
+
         return ToDto(admin);
+    }
+
+    public async Task<IReadOnlyList<AdminUserListItemDto>> ListAdminUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var admins = await _adminUsers.ListAsync(cancellationToken);
+        return admins.Select(ToListItemDto).ToArray();
+    }
+
+    public async Task<AdminAccessResult> CreateAdminAsync(
+        CreateAdminCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var userName = command.UserName.Trim();
+        var firstName = command.FirstName.Trim();
+        var lastName = command.LastName.Trim();
+        var email = command.Email.Trim().ToLowerInvariant();
+
+        var validationError = ValidateCreateAdminCommand(
+            userName,
+            firstName,
+            lastName,
+            email,
+            command.InitialPassword,
+            command.ActingAdminUserId);
+        if (validationError is not null)
+        {
+            return FailedAdminAccess(validationError);
+        }
+
+        if (await _adminUsers.FindByUserNameOrEmailAsync(userName, cancellationToken) is not null ||
+            await _adminUsers.FindByUserNameOrEmailAsync(email, cancellationToken) is not null)
+        {
+            return FailedAdminAccess("Ya existe un admin con ese usuario o correo.");
+        }
+
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.InitialPassword);
+        AdminUser admin;
+        try
+        {
+            admin = await _adminUsers.AddAsync(
+                new AdminUser(
+                    Guid.NewGuid(),
+                    userName,
+                    firstName,
+                    lastName,
+                    email,
+                    legacyPasswordHash),
+                cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+            when (string.Equals(exception.Message, DuplicateAdminMessage, StringComparison.Ordinal))
+        {
+            return FailedAdminAccess("Ya existe un admin con ese usuario o correo.");
+        }
+
+        var now = _clock.UtcNow;
+        var subject = new AdminPasswordHashSubject(admin.Id);
+        await _adminCredentials.UpsertAsync(
+            new AdminCredential(
+                admin.Id,
+                _adminPasswordHasher.HashPassword(subject, command.InitialPassword),
+                now,
+                now),
+            cancellationToken);
+
+        return new AdminAccessResult(ToDto(admin), ErrorMessage: null);
+    }
+
+    public async Task<AdminAccessResult> ResetAdminPasswordAsync(
+        ResetAdminPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var validationError = ValidateAdminPassword(command.ActingAdminUserId, command.NewPassword);
+        if (validationError is not null)
+        {
+            return FailedAdminAccess(validationError);
+        }
+
+        var admin = await _adminUsers.FindByIdAsync(command.TargetAdminUserId, cancellationToken);
+        if (admin is null)
+        {
+            return FailedAdminAccess("El admin no existe.");
+        }
+
+        var now = _clock.UtcNow;
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        admin = await _adminUsers.UpdatePasswordAsync(
+            admin.Id,
+            legacyPasswordHash,
+            cancellationToken);
+
+        var subject = new AdminPasswordHashSubject(admin.Id);
+        await _adminCredentials.UpsertAsync(
+            new AdminCredential(
+                admin.Id,
+                _adminPasswordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+
+        return new AdminAccessResult(ToDto(admin), ErrorMessage: null);
     }
 
     public async Task<IReadOnlyList<PilotBusinessDto>> ListPilotBusinessesAsync(
@@ -129,7 +278,7 @@ public sealed class AdminAppService
         await _businessCredentials.UpsertAsync(
             new BusinessCredential(
                 business.Id,
-                _passwordHasher.HashPassword(subject, command.InitialPassword),
+                _businessPasswordHasher.HashPassword(subject, command.InitialPassword),
                 now,
                 now),
             cancellationToken);
@@ -273,7 +422,7 @@ public sealed class AdminAppService
         await _businessCredentials.UpsertAsync(
             new BusinessCredential(
                 business.Id,
-                _passwordHasher.HashPassword(subject, command.NewPassword),
+                _businessPasswordHasher.HashPassword(subject, command.NewPassword),
                 now,
                 now),
             cancellationToken);
@@ -329,6 +478,92 @@ public sealed class AdminAppService
 
         await _pilotBusinesses.UpsertAsync(access, cancellationToken);
         return access;
+    }
+
+    private static string? ValidateCreateAdminCommand(
+        string userName,
+        string firstName,
+        string lastName,
+        string email,
+        string initialPassword,
+        Guid actingAdminUserId)
+    {
+        if (actingAdminUserId == Guid.Empty)
+        {
+            return "La sesion de admin no es valida.";
+        }
+
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            return "El usuario admin es requerido.";
+        }
+
+        if (userName.Length > AdminUserNameMaxLength)
+        {
+            return $"El usuario admin no puede exceder {AdminUserNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            return "El nombre del admin es requerido.";
+        }
+
+        if (firstName.Length > AdminNameMaxLength)
+        {
+            return $"El nombre del admin no puede exceder {AdminNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            return "El apellido del admin es requerido.";
+        }
+
+        if (lastName.Length > AdminNameMaxLength)
+        {
+            return $"El apellido del admin no puede exceder {AdminNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return "El correo del admin es requerido.";
+        }
+
+        if (email.Length > AdminEmailMaxLength)
+        {
+            return $"El correo del admin no puede exceder {AdminEmailMaxLength} caracteres.";
+        }
+
+        if (!email.Contains("@", StringComparison.Ordinal))
+        {
+            return "El correo del admin no es valido.";
+        }
+
+        return ValidateAdminPassword(actingAdminUserId, initialPassword);
+    }
+
+    private static string? ValidateAdminPassword(Guid actingAdminUserId, string password)
+    {
+        if (actingAdminUserId == Guid.Empty)
+        {
+            return "La sesion de admin no es valida.";
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            return "La contrasena de admin es requerida.";
+        }
+
+        if (password.Length < 8)
+        {
+            return "La contrasena de admin debe tener al menos 8 caracteres.";
+        }
+
+        if (password.Length > 128)
+        {
+            return "La contrasena de admin no puede exceder 128 caracteres.";
+        }
+
+        return null;
     }
 
     private static string? ValidateCreateBusinessCommand(
@@ -441,6 +676,11 @@ public sealed class AdminAppService
         return new CreateBusinessResult(null, errorMessage);
     }
 
+    private static AdminAccessResult FailedAdminAccess(string errorMessage)
+    {
+        return new AdminAccessResult(null, errorMessage);
+    }
+
     private static BusinessProfileResult FailedProfile(string errorMessage)
     {
         return new BusinessProfileResult(null, errorMessage);
@@ -456,6 +696,15 @@ public sealed class AdminAppService
     private static AdminUserDto ToDto(AdminUser admin)
     {
         return new AdminUserDto(
+            admin.Id,
+            admin.UserName,
+            string.IsNullOrWhiteSpace(admin.FullName) ? admin.UserName : admin.FullName,
+            admin.Email);
+    }
+
+    private static AdminUserListItemDto ToListItemDto(AdminUser admin)
+    {
+        return new AdminUserListItemDto(
             admin.Id,
             admin.UserName,
             string.IsNullOrWhiteSpace(admin.FullName) ? admin.UserName : admin.FullName,

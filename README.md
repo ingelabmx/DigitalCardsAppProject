@@ -271,6 +271,8 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 
 - Login admin: `http://localhost:5031/Admin/Login`
 - Dashboard admin: `http://localhost:5031/Admin/Dashboard`
+- Administradores: `http://localhost:5031/Admin/AdminUsers`
+- Crear admin: `http://localhost:5031/Admin/CreateAdmin`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
@@ -280,6 +282,29 @@ si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
 de `appsettings.Local.json`. La recomendacion operativa es mover los negocios
 a `/Admin/Businesses` y dejar `AllowedBusinessEmails`/`AllowedBusinessIds` solo
 como fallback.
+
+## Administracion de acceso admin
+
+Antes de crear o resetear admins desde la app moderna contra HostGator,
+ejecuta:
+
+```text
+docs/migration-context/25-admin-access-management-hostgator.sql
+```
+
+El login admin sigue usando `UserClient.RoleID=1`, pero la app moderna migra el
+password a `ModernAdminCredential` despues del primer login correcto. Desde
+`/Admin/AdminUsers`, un admin autenticado puede:
+
+- ver admins existentes;
+- abrir `/Admin/CreateAdmin`;
+- crear admins nuevos con `RoleID=1`;
+- resetear passwords de admins existentes.
+
+No hay endpoint publico de bootstrap ni auto-registro de admin. Si no existe
+ningun admin usable, el bootstrap debe hacerse manualmente por SQL una sola vez.
+La app no muestra passwords despues del submit y no registra passwords ni hashes
+en logs.
 
 ## Registro admin de negocios
 

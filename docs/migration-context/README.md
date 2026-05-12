@@ -29,6 +29,14 @@ Documentos:
 - `19-business-operations-v1.md`: busqueda y operacion moderna de tarjetas por negocio.
 - `20-wallet-link-token-hardening.md`: links Wallet opacos y compatibilidad legacy temporal.
 - `20-wallet-link-token-hardening-hostgator.sql`: tabla nueva para hashes de tokens Wallet.
+- `21-stamp-ledger-v1.md`: auditoria operacional de sellos modernos y legacy sync.
+- `21-stamp-ledger-v1-hostgator.sql`: tabla nueva para auditoria de sellos.
+- `22-admin-pilot-management-v1.md`: administracion de negocios piloto desde UI admin.
+- `22-admin-pilot-management-hostgator.sql`: tabla nueva para negocios piloto.
+- `23-admin-business-registration-v1.md`: creacion de negocios desde UI admin.
+- `24-admin-business-management-v1.md`: edicion/reset de negocios desde UI admin.
+- `25-admin-access-management-v1.md`: creacion/reset de admins sin registro publico.
+- `25-admin-access-management-hostgator.sql`: tabla nueva para hashes modernos de admin.
 
 Notas:
 

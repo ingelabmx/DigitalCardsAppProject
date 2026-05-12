@@ -1,0 +1,86 @@
+@page
+@model DigitalCards.Web.Pages.Admin.CreateAdminModel
+@{
+    ViewData["Title"] = "Crear admin";
+}
+
+<section class="form-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Crear admin</h1>
+            <p class="lead">Crea un usuario administrador legacy-compatible. Esta pantalla requiere sesion admin.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/AdminUsers" data-testid="admin-create-admin-back-link">Administradores</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-create-admin-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.CreatedAdmin is not null)
+    {
+        <div class="created-business-summary" data-testid="admin-created-admin-result">
+            <h2>@Model.CreatedAdmin.UserName</h2>
+            <p>@Model.CreatedAdmin.Email</p>
+            <p>@Model.CreatedAdmin.Name</p>
+            <a class="btn btn-outline-primary"
+               asp-page="/Admin/AdminUsers"
+               data-testid="admin-created-admin-open-link">
+                Ver administradores
+            </a>
+        </div>
+    }
+
+    <form method="post" data-testid="admin-create-admin-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.UserName" class="form-label"></label>
+                <input asp-for="Input.UserName" class="form-control" maxlength="15" data-testid="admin-create-admin-username" />
+                <span asp-validation-for="Input.UserName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" maxlength="30" data-testid="admin-create-admin-email" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.FirstName" class="form-label"></label>
+                <input asp-for="Input.FirstName" class="form-control" maxlength="30" data-testid="admin-create-admin-first-name" />
+                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.LastName" class="form-label"></label>
+                <input asp-for="Input.LastName" class="form-control" maxlength="30" data-testid="admin-create-admin-last-name" />
+                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.InitialPassword" class="form-label"></label>
+                <input asp-for="Input.InitialPassword" class="form-control" autocomplete="new-password" data-testid="admin-create-admin-password" />
+                <span asp-validation-for="Input.InitialPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" data-testid="admin-create-admin-confirm-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit" data-testid="admin-create-admin-submit">Crear admin</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
