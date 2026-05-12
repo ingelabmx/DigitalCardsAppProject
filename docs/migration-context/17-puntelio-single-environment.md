@@ -105,6 +105,8 @@ Valores clave:
 ## Proteccion operativa
 
 - Usar clientes, correos y negocios controlados para pruebas reales.
+- Activar `DigitalCards:Pilot:Enabled=true` antes de usar datos reales para
+  que solo negocios/clientes allowlisted usen pantallas modernas.
 - No imprimir ni commitear `.p12`, JSON de service account, passwords SMTP,
   connection strings ni tokens.
 - Activar `LegacyWalletSync` solo cuando quieras que cambios hechos desde Web

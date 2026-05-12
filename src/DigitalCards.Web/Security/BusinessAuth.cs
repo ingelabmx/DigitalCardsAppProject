@@ -40,4 +40,10 @@ public static class BusinessAuth
         return user.FindFirstValue(BusinessNameClaim)
             ?? throw new InvalidOperationException("Authenticated business name claim is missing.");
     }
+
+    public static string GetBusinessEmail(ClaimsPrincipal user)
+    {
+        return user.FindFirstValue(BusinessEmailClaim)
+            ?? throw new InvalidOperationException("Authenticated business email claim is missing.");
+    }
 }

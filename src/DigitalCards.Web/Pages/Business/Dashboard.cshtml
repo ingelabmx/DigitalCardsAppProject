@@ -11,22 +11,38 @@
         <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
     </div>
 
-    <div class="action-grid">
-        <a class="action-card" asp-page="/Business/Enroll" data-testid="enroll-link">
-            <span>Asociar cliente</span>
-            <small>Genera correo con link de Wallet.</small>
-        </a>
-        <a class="action-card" asp-page="/Business/Stamp" data-testid="stamp-link">
-            <span>Agregar sello</span>
-            <small>Actualiza la tarjeta y el Wallet.</small>
-        </a>
-        <a class="action-card" asp-page="/Dev/Outbox" data-testid="dashboard-outbox-link">
-            <span>Ver outbox</span>
-            <small>Simulacion de correos enviados.</small>
-        </a>
-        <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
-            <span>Salir</span>
-            <small>Cierra la sesion del negocio.</small>
-        </a>
-    </div>
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+
+        <div class="action-grid">
+            <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
+                <span>Salir</span>
+                <small>Cierra la sesion del negocio.</small>
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="action-grid">
+            <a class="action-card" asp-page="/Business/Enroll" data-testid="enroll-link">
+                <span>Asociar cliente</span>
+                <small>Genera correo con link de Wallet.</small>
+            </a>
+            <a class="action-card" asp-page="/Business/Stamp" data-testid="stamp-link">
+                <span>Agregar sello</span>
+                <small>Actualiza la tarjeta y el Wallet.</small>
+            </a>
+            <a class="action-card" asp-page="/Dev/Outbox" data-testid="dashboard-outbox-link">
+                <span>Ver outbox</span>
+                <small>Simulacion de correos enviados.</small>
+            </a>
+            <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
+                <span>Salir</span>
+                <small>Cierra la sesion del negocio.</small>
+            </a>
+        </div>
+    }
 </section>
