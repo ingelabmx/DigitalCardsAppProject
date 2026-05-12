@@ -261,6 +261,7 @@ public sealed class AppleWalletService : IAppleWalletService
         var now = _clock.UtcNow;
         var existing = await _applePasses.FindPassAsync(passTypeIdentifier, serialNumber, cancellationToken);
         var updateTag = existing?.UpdateTag ?? CreateUpdateTag(now);
+        var lastModified = existing?.UpdatedAt ?? now;
 
         await _applePasses.UpsertPassAsync(
             new AppleWalletPassRecord(
@@ -286,7 +287,7 @@ public sealed class AppleWalletService : IAppleWalletService
             "Generated Apple Wallet pass package for serial {SerialNumber}.",
             passFile.SerialNumber);
 
-        return passFile;
+        return passFile with { LastModified = lastModified };
     }
 
     private async Task<(LoyaltyCard Card, Client Client, Business Business)?> FindCardContextBySerialAsync(

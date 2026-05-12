@@ -6,23 +6,23 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var userLocalConfiguration = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-    ".digitalcards",
-    "appsettings.Local.json");
+builder.Configuration
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.Local.json", optional: true, reloadOnChange: true);
 
 var skipUserLocalConfiguration = string.Equals(
     Environment.GetEnvironmentVariable("DigitalCards__SkipUserLocalConfiguration"),
     "true",
     StringComparison.OrdinalIgnoreCase);
 
-builder.Configuration
-    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.Local.json", optional: true, reloadOnChange: true);
-
 if (!skipUserLocalConfiguration)
 {
-    builder.Configuration.AddJsonFile(userLocalConfiguration, optional: true, reloadOnChange: true);
+    var userLocalConfigurationPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".digitalcards",
+        "appsettings.Local.json");
+
+    builder.Configuration.AddJsonFile(userLocalConfigurationPath, optional: true, reloadOnChange: true);
 }
 
 builder.Configuration

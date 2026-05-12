@@ -21,6 +21,8 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<Business> Businesses { get; } = [];
 
+    public List<BusinessCredential> BusinessCredentials { get; } = [];
+
     public List<LoyaltyCard> LoyaltyCards { get; } = [];
 
     public List<AppleWalletPassRecord> AppleWalletPasses { get; } = [];

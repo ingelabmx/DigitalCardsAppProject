@@ -17,11 +17,17 @@ public static class AppleWalletWebServiceEndpoints
                 string serialNumber,
                 AppleWalletPushTokenRequest request,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 IAppleWalletService appleWallet,
                 CancellationToken cancellationToken) =>
             {
+                var logger = loggerFactory.CreateLogger("AppleWalletWebService");
                 if (string.IsNullOrWhiteSpace(request.PushToken))
                 {
+                    logger.LogWarning(
+                        "Apple Wallet registration rejected because push token was missing for pass type {PassTypeIdentifier} serial {SerialNumber}.",
+                        passTypeIdentifier,
+                        serialNumber);
                     return Results.BadRequest();
                 }
 
@@ -32,6 +38,12 @@ public static class AppleWalletWebServiceEndpoints
                     request.PushToken,
                     GetAuthorization(httpContext),
                     cancellationToken);
+
+                logger.LogInformation(
+                    "Apple Wallet registration returned {RegistrationStatus} for pass type {PassTypeIdentifier} serial {SerialNumber}.",
+                    status,
+                    passTypeIdentifier,
+                    serialNumber);
 
                 return status switch
                 {
@@ -52,15 +64,23 @@ public static class AppleWalletWebServiceEndpoints
                 string passTypeIdentifier,
                 string serialNumber,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 IAppleWalletService appleWallet,
                 CancellationToken cancellationToken) =>
             {
+                var logger = loggerFactory.CreateLogger("AppleWalletWebService");
                 var status = await appleWallet.UnregisterDeviceAsync(
                     deviceLibraryIdentifier,
                     passTypeIdentifier,
                     serialNumber,
                     GetAuthorization(httpContext),
                     cancellationToken);
+
+                logger.LogInformation(
+                    "Apple Wallet unregistration returned {UnregistrationStatus} for pass type {PassTypeIdentifier} serial {SerialNumber}.",
+                    status,
+                    passTypeIdentifier,
+                    serialNumber);
 
                 return status switch
                 {
@@ -77,14 +97,21 @@ public static class AppleWalletWebServiceEndpoints
                 string deviceLibraryIdentifier,
                 string passTypeIdentifier,
                 string? passesUpdatedSince,
+                ILoggerFactory loggerFactory,
                 IAppleWalletService appleWallet,
                 CancellationToken cancellationToken) =>
             {
+                var logger = loggerFactory.CreateLogger("AppleWalletWebService");
                 var result = await appleWallet.ListUpdatedPassesAsync(
                     deviceLibraryIdentifier,
                     passTypeIdentifier,
                     passesUpdatedSince,
                     cancellationToken);
+
+                logger.LogInformation(
+                    "Apple Wallet update check for pass type {PassTypeIdentifier} returned {UpdatedPassCount} updated passes.",
+                    passTypeIdentifier,
+                    result?.SerialNumbers.Count ?? 0);
 
                 return result is null
                     ? Results.NoContent()
@@ -101,21 +128,30 @@ public static class AppleWalletWebServiceEndpoints
                 string passTypeIdentifier,
                 string serialNumber,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 IAppleWalletService appleWallet,
                 CancellationToken cancellationToken) =>
             {
+                var logger = loggerFactory.CreateLogger("AppleWalletWebService");
                 var result = await appleWallet.CreateUpdatedPassAsync(
                     passTypeIdentifier,
                     serialNumber,
                     GetAuthorization(httpContext),
                     cancellationToken);
 
+                logger.LogInformation(
+                    "Apple Wallet updated pass request returned {PassRequestStatus} for pass type {PassTypeIdentifier} serial {SerialNumber}.",
+                    result.Status,
+                    passTypeIdentifier,
+                    serialNumber);
+
                 return result.Status switch
                 {
                     AppleWalletPassRequestStatus.Ready => Results.File(
                         result.PassFile!.Content,
                         result.PassFile.ContentType,
-                        result.PassFile.FileName),
+                        result.PassFile.FileName,
+                        lastModified: result.PassFile.LastModified),
                     AppleWalletPassRequestStatus.Unauthorized => Results.Unauthorized(),
                     AppleWalletPassRequestStatus.NotFound => Results.NotFound(),
                     _ => Results.StatusCode(StatusCodes.Status500InternalServerError)

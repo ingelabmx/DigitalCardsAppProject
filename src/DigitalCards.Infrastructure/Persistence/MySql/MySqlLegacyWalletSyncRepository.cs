@@ -103,7 +103,7 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
         string BusinessEmail,
         string BusinessPassword,
         string? BusinessLogo,
-        bool HasRegisteredAppleDevices)
+        long HasRegisteredAppleDevices)
     {
         public LegacyWalletSyncCandidate ToCandidate()
         {
@@ -137,7 +137,7 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
                 BusinessPassword,
                 string.IsNullOrWhiteSpace(BusinessLogo) ? "/img/demo-coffee.svg" : BusinessLogo);
 
-            return new LegacyWalletSyncCandidate(card, client, business, HasRegisteredAppleDevices);
+            return new LegacyWalletSyncCandidate(card, client, business, HasRegisteredAppleDevices != 0);
         }
     }
 }
