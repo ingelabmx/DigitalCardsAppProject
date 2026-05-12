@@ -1,0 +1,90 @@
+@page "{businessId:guid}"
+@model DigitalCards.Web.Pages.Admin.BusinessProfileModel
+@{
+    ViewData["Title"] = "Administrar negocio";
+}
+
+<section class="result-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Administrar negocio</h1>
+            @if (Model.Profile is not null)
+            {
+                <p class="lead" data-testid="admin-business-profile-heading">@Model.Profile.BusinessName</p>
+            }
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Businesses" data-testid="admin-business-profile-back-link">Negocios</a>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-business-profile-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.Profile is not null)
+    {
+        <div class="business-profile-grid">
+            <form method="post"
+                  asp-page-handler="Save"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel"
+                  data-testid="admin-business-profile-form">
+                <h2>Datos del negocio</h2>
+
+                <div class="mb-3">
+                    <label asp-for="Input.BusinessName" class="form-label">Nombre</label>
+                    <input asp-for="Input.BusinessName" class="form-control" maxlength="30" data-testid="admin-business-profile-name" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.BusinessEmail" class="form-label">Correo</label>
+                    <input asp-for="Input.BusinessEmail" class="form-control" maxlength="30" data-testid="admin-business-profile-email" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.BusinessLogo" class="form-label">Logo</label>
+                    <input asp-for="Input.BusinessLogo" class="form-control" maxlength="100" data-testid="admin-business-profile-logo" />
+                    <small class="form-text text-muted">Ruta legacy o URL corta. Upload queda para un PR posterior.</small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Input.IsPilotEnabled" class="form-check-input" data-testid="admin-business-profile-pilot" />
+                    <label asp-for="Input.IsPilotEnabled" class="form-check-label">Piloto habilitado</label>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Notes" class="form-label">Notas piloto</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-business-profile-notes"></textarea>
+                </div>
+
+                <button class="btn btn-primary" type="submit" data-testid="admin-business-profile-save">Guardar cambios</button>
+            </form>
+
+            <form method="post"
+                  asp-page-handler="ResetPassword"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel"
+                  data-testid="admin-business-password-form">
+                <h2>Reset de contrasena</h2>
+                <p class="text-muted">Actualiza la credencial legacy y el hash moderno del negocio.</p>
+
+                <div class="mb-3">
+                    <label asp-for="PasswordInput.NewPassword" class="form-label">Nueva contrasena</label>
+                    <input asp-for="PasswordInput.NewPassword" class="form-control" type="password" autocomplete="new-password" data-testid="admin-business-password-new" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PasswordInput.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                    <input asp-for="PasswordInput.ConfirmPassword" class="form-control" type="password" autocomplete="new-password" data-testid="admin-business-password-confirm" />
+                </div>
+
+                <button class="btn btn-outline-danger" type="submit" data-testid="admin-business-password-submit">Actualizar contrasena</button>
+            </form>
+        </div>
+    }
+</section>

@@ -289,6 +289,134 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task UpdateBusinessProfileAsync_UpdatesBusinessFieldsAndPilotState()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var pilotBusinesses = provider.GetRequiredService<IPilotBusinessRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var created = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Edit Cafe",
+            "edit@example.test",
+            "startpass1",
+            admin!.Id,
+            EnablePilot: false,
+            Notes: null));
+
+        var result = await adminApp.UpdateBusinessProfileAsync(new UpdateBusinessProfileCommand(
+            created.Business!.BusinessId,
+            admin.Id,
+            "Edited Cafe",
+            "edited@example.test",
+            "~/Logos/edited.png",
+            IsPilotEnabled: true,
+            Notes: "habilitado desde profile"));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Edited Cafe", result.Business!.BusinessName);
+        Assert.Equal("edited@example.test", result.Business.BusinessEmail);
+        Assert.Equal("~/Logos/edited.png", result.Business.BusinessLogo);
+        Assert.True(result.Business.IsPilotEnabled);
+        Assert.Equal("habilitado desde profile", result.Business.Notes);
+
+        var business = await businesses.FindByIdAsync(created.Business.BusinessId);
+        Assert.NotNull(business);
+        Assert.Equal("Edited Cafe", business!.Name);
+        Assert.Equal("edited@example.test", business.Email);
+        Assert.Equal("~/Logos/edited.png", business.LogoPath);
+        var pilot = await pilotBusinesses.FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(pilot);
+        Assert.True(pilot!.IsEnabled);
+    }
+
+    [Fact]
+    public async Task UpdateBusinessProfileAsync_WhenDuplicateNameOrEmail_ReturnsSafeError()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var created = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Duplicate Check Cafe",
+            "dupcheck@example.test",
+            "startpass1",
+            admin!.Id,
+            EnablePilot: false,
+            Notes: null));
+
+        var duplicateName = await adminApp.UpdateBusinessProfileAsync(new UpdateBusinessProfileCommand(
+            created.Business!.BusinessId,
+            admin.Id,
+            "Demo Coffee",
+            "dupcheck@example.test",
+            "/img/demo-coffee.svg",
+            IsPilotEnabled: false,
+            Notes: null));
+        var duplicateEmail = await adminApp.UpdateBusinessProfileAsync(new UpdateBusinessProfileCommand(
+            created.Business.BusinessId,
+            admin.Id,
+            "Duplicate Check Cafe",
+            "demo@digitalcards.test",
+            "/img/demo-coffee.svg",
+            IsPilotEnabled: false,
+            Notes: null));
+
+        Assert.False(duplicateName.Succeeded);
+        Assert.Equal("Ya existe un negocio con ese nombre.", duplicateName.ErrorMessage);
+        Assert.False(duplicateEmail.Succeeded);
+        Assert.Equal("Ya existe un negocio con ese correo.", duplicateEmail.ErrorMessage);
+        Assert.DoesNotContain("password", duplicateName.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("password", duplicateEmail.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ResetBusinessPasswordAsync_UpdatesLegacyAndModernCredentials()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var credentials = provider.GetRequiredService<IBusinessCredentialRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        const string oldPassword = "startpass1";
+        const string newPassword = "newpass123";
+        var created = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Reset Cafe",
+            "reset@example.test",
+            oldPassword,
+            admin!.Id,
+            EnablePilot: true,
+            Notes: null));
+
+        var result = await adminApp.ResetBusinessPasswordAsync(new ResetBusinessPasswordCommand(
+            created.Business!.BusinessId,
+            admin.Id,
+            newPassword));
+
+        Assert.True(result.Succeeded);
+        var business = await businesses.FindByIdAsync(created.Business.BusinessId);
+        Assert.NotNull(business);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(newPassword), business!.PasswordHashPlaceholder);
+        Assert.DoesNotContain(newPassword, business.PasswordHashPlaceholder, StringComparison.Ordinal);
+        var credential = await credentials.FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(newPassword, credential!.PasswordHash, StringComparison.Ordinal);
+
+        Assert.Null(await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "reset@example.test",
+            oldPassword)));
+        Assert.NotNull(await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "reset@example.test",
+            newPassword)));
+    }
+
+    [Fact]
     public async Task LoginBusiness_WithLegacyPassword_CreatesModernCredential()
     {
         var services = CreateDefaultServices();

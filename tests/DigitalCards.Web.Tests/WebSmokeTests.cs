@@ -215,7 +215,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111" })
         {
             var response = await client.GetAsync(path);
 
@@ -411,6 +411,94 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("pilot-business-blocked", dashboardHtml);
         Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_UpdatesBusinessAndResetsPassword()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("pf");
+        var businessName = $"Biz {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        var updatedName = $"Upd {suffix[..8]}";
+        var updatedEmail = $"{suffix}@up.test";
+        const string oldPassword = "StartPass123!";
+        const string newPassword = "ChangedPass123!";
+
+        await LoginAdminAsync(client);
+        var createToken = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
+        await client.PostAsync(
+            "/Admin/CreateBusiness",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = businessName,
+                ["Input.BusinessEmail"] = businessEmail,
+                ["Input.InitialPassword"] = oldPassword,
+                ["Input.ConfirmPassword"] = oldPassword,
+                ["Input.EnablePilot"] = "false",
+                ["__RequestVerificationToken"] = createToken
+            }));
+
+        Guid businessId;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            businessId = store.Businesses.Single(existing => existing.Email == businessEmail).Id;
+        }
+
+        var listHtml = await client.GetStringAsync($"/Admin/Businesses?Query={businessEmail}");
+        Assert.Contains("admin-manage-business", listHtml);
+
+        var profilePath = $"/Admin/BusinessProfile/{businessId}";
+        var saveToken = await GetAntiforgeryTokenAsync(client, profilePath);
+        var saveResponse = await client.PostAsync(
+            $"{profilePath}?handler=Save",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = updatedName,
+                ["Input.BusinessEmail"] = updatedEmail,
+                ["Input.BusinessLogo"] = "~/Logos/updated.png",
+                ["Input.IsPilotEnabled"] = "true",
+                ["Input.Notes"] = "actualizado por web test",
+                ["__RequestVerificationToken"] = saveToken
+            }));
+        var saveHtml = await saveResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, saveResponse.StatusCode);
+        Assert.Contains("Negocio actualizado", saveHtml);
+        Assert.Contains(updatedName, saveHtml);
+        Assert.Contains("~/Logos/updated.png", saveHtml);
+
+        var resetToken = ExtractAntiforgeryToken(saveHtml);
+        var resetResponse = await client.PostAsync(
+            $"{profilePath}?handler=ResetPassword",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["PasswordInput.NewPassword"] = newPassword,
+                ["PasswordInput.ConfirmPassword"] = newPassword,
+                ["__RequestVerificationToken"] = resetToken
+            }));
+        var resetHtml = await resetResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
+        Assert.Contains("Contrasena de negocio actualizada", resetHtml);
+        Assert.DoesNotContain(newPassword, resetHtml, StringComparison.Ordinal);
+
+        var oldLogin = await LoginBusinessAsync(client, updatedEmail, oldPassword);
+        Assert.Equal(HttpStatusCode.OK, oldLogin.StatusCode);
+        var newLogin = await LoginBusinessAsync(client, updatedEmail, newPassword);
+        Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains(updatedName, dashboardHtml);
+        Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
     }
 
     [Fact]

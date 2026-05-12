@@ -112,6 +112,49 @@ public sealed class MySqlBusinessRepository : IBusinessRepository
         return rows.Select(row => row.ToDomain()).ToArray();
     }
 
+    public async Task<Business> UpdateAsync(Business business, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            update Business
+            set BusinessName = @BusinessName,
+                BusinessPassword = @BusinessPassword,
+                BusinessEmail = @BusinessEmail,
+                BusinessLogo = @BusinessLogo
+            where BusinessID = @BusinessId;
+            """;
+
+        try
+        {
+            await using var connection = _connectionFactory.Create();
+            var affected = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        BusinessId = LegacyIdMapper.ToInt32(business.Id),
+                        BusinessName = business.Name,
+                        BusinessPassword = business.PasswordHashPlaceholder,
+                        BusinessEmail = business.Email,
+                        BusinessLogo = business.LogoPath
+                    },
+                    cancellationToken: cancellationToken));
+
+            if (affected == 0)
+            {
+                throw new InvalidOperationException("Business was not found.");
+            }
+
+            return await FindByIdAsync(business.Id, cancellationToken)
+                ?? throw new InvalidOperationException("Updated legacy business could not be loaded.");
+        }
+        catch (MySqlException ex) when (ex.Number == 1062)
+        {
+            throw new InvalidOperationException(
+                "A business with the same name or email already exists.",
+                ex);
+        }
+    }
+
     private async Task<Business?> FindByLegacyIdAsync(int businessId, CancellationToken cancellationToken)
     {
         const string sql = """

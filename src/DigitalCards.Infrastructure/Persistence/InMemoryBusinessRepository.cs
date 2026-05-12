@@ -66,4 +66,33 @@ public sealed class InMemoryBusinessRepository : IBusinessRepository
             return Task.FromResult<IReadOnlyList<Business>>(_store.Businesses.ToArray());
         }
     }
+
+    public Task<Business> UpdateAsync(Business business, CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var index = _store.Businesses.FindIndex(existing => existing.Id == business.Id);
+            if (index < 0)
+            {
+                throw new InvalidOperationException("Business was not found.");
+            }
+
+            if (_store.Businesses.Any(existing =>
+                existing.Id != business.Id &&
+                string.Equals(existing.Name, business.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("A business with the same name or email already exists.");
+            }
+
+            if (_store.Businesses.Any(existing =>
+                existing.Id != business.Id &&
+                string.Equals(existing.Email, business.Email, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("A business with the same name or email already exists.");
+            }
+
+            _store.Businesses[index] = business;
+            return Task.FromResult(business);
+        }
+    }
 }

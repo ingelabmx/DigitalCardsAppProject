@@ -23,6 +23,36 @@ public sealed record CreateBusinessResult(
     public bool Succeeded => Business is not null;
 }
 
+public sealed record BusinessProfileDto(
+    Guid BusinessId,
+    string BusinessName,
+    string BusinessEmail,
+    string BusinessLogo,
+    bool IsPilotEnabled,
+    string? Notes,
+    DateTimeOffset? PilotUpdatedAt);
+
+public sealed record BusinessProfileResult(
+    BusinessProfileDto? Business,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Business is not null;
+}
+
+public sealed record UpdateBusinessProfileCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    string BusinessName,
+    string BusinessEmail,
+    string BusinessLogo,
+    bool IsPilotEnabled,
+    string? Notes);
+
+public sealed record ResetBusinessPasswordCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    string NewPassword);
+
 public sealed record PilotBusinessDto(
     Guid BusinessId,
     string BusinessName,
