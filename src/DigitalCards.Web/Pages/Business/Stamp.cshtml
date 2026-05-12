@@ -29,7 +29,6 @@
     }
 
     <form method="post" data-testid="stamp-form">
-        <input asp-for="Input.BusinessId" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         <div class="mb-3">
@@ -45,4 +44,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

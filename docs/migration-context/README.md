@@ -20,6 +20,7 @@ Documentos:
 - `13-apple-wallet-updates.md`: Apple Wallet Web Service, APNs y updates reales.
 - `13-apple-wallet-updates-hostgator.sql`: tablas nuevas para updates Apple en HostGator.
 - `14-legacy-wallet-sync-and-operations.md`: worker opcional para sellos legacy y runbook operativo.
+- `15-business-auth-hardening.md`: autenticacion cookie de negocio y proteccion de paginas modernas.
 
 Notas:
 

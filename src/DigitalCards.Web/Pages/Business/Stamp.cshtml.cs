@@ -1,11 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Business;
 
+[Authorize(Policy = BusinessAuth.Policy)]
 public sealed class StampModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
@@ -20,9 +23,8 @@ public sealed class StampModel : PageModel
 
     public LoyaltyCardDto? Result { get; private set; }
 
-    public void OnGet(Guid businessId)
+    public void OnGet()
     {
-        Input.BusinessId = businessId;
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -34,8 +36,9 @@ public sealed class StampModel : PageModel
 
         try
         {
+            var businessId = BusinessAuth.GetBusinessId(User);
             Result = await _appService.AddStampAsync(
-                new AddStampCommand(Input.BusinessId, Input.UserNameOrEmail),
+                new AddStampCommand(businessId, Input.UserNameOrEmail),
                 cancellationToken);
 
             return Page();
@@ -49,12 +52,8 @@ public sealed class StampModel : PageModel
 
     public sealed class InputModel
     {
-        [Required]
-        public Guid BusinessId { get; set; }
-
         [Display(Name = "Usuario o correo del cliente")]
         [Required]
         public string UserNameOrEmail { get; set; } = string.Empty;
     }
 }
-

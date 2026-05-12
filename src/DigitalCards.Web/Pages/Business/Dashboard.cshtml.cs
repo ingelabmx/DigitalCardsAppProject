@@ -1,9 +1,12 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Business;
 
+[Authorize(Policy = BusinessAuth.Policy)]
 public sealed class DashboardModel : PageModel
 {
     private readonly IBusinessRepository _businesses;
@@ -13,21 +16,18 @@ public sealed class DashboardModel : PageModel
         _businesses = businesses;
     }
 
-    public Guid BusinessId { get; private set; }
-
     public string BusinessName { get; private set; } = string.Empty;
 
-    public async Task<IActionResult> OnGetAsync(Guid businessId, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
+        var businessId = BusinessAuth.GetBusinessId(User);
         var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
         if (business is null)
         {
-            return RedirectToPage("/Business/Login");
+            return RedirectToPage("/Business/Logout");
         }
 
-        BusinessId = business.Id;
         BusinessName = business.Name;
         return Page();
     }
 }
-

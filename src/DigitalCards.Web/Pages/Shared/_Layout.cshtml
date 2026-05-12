@@ -22,9 +22,21 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-page="/Register">Registro cliente</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Business/Login">Login negocio</a>
-                        </li>
+                        @if (User.HasClaim(claim => claim.Type == BusinessAuth.BusinessIdClaim))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Business/Dashboard">Negocio</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Business/Logout" data-testid="business-logout-link">Salir</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Business/Login">Login negocio</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
                         </li>

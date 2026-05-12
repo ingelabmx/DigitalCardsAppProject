@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -18,8 +20,11 @@ public sealed class LoginModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
+        return User.HasClaim(claim => claim.Type == BusinessAuth.BusinessIdClaim)
+            ? RedirectToPage("/Business/Dashboard")
+            : Page();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -39,7 +44,16 @@ public sealed class LoginModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Business/Dashboard", new { businessId = business.Id });
+        await HttpContext.SignInAsync(
+            BusinessAuth.Scheme,
+            BusinessAuth.CreatePrincipal(business),
+            new AuthenticationProperties
+            {
+                IsPersistent = false,
+                IssuedUtc = DateTimeOffset.UtcNow
+            });
+
+        return RedirectToPage("/Business/Dashboard");
     }
 
     public sealed class InputModel
@@ -55,4 +69,3 @@ public sealed class LoginModel : PageModel
         public string Password { get; set; } = string.Empty;
     }
 }
-

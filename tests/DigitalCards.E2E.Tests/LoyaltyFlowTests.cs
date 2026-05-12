@@ -37,6 +37,9 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains(businessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
 
         var stampUrl = await page.GetByTestId("stamp-link").GetAttributeAsync("href");
+        var enrollUrl = await page.GetByTestId("enroll-link").GetAttributeAsync("href");
+        Assert.DoesNotContain("businessId", enrollUrl, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("businessId", stampUrl, StringComparison.OrdinalIgnoreCase);
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);
         await page.GetByTestId("enroll-submit").ClickAsync();
