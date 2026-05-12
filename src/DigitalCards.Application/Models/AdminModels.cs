@@ -92,3 +92,18 @@ public sealed record SetPilotBusinessCommand(
     Guid AdminUserId,
     bool IsEnabled,
     string? Notes);
+
+public sealed record PilotClientDto(
+    Guid ClientId,
+    string UserName,
+    string ClientName,
+    string ClientEmail,
+    bool IsEnabled,
+    string? Notes,
+    DateTimeOffset? UpdatedAt);
+
+public sealed record SetPilotClientCommand(
+    Guid ClientId,
+    Guid AdminUserId,
+    bool IsEnabled,
+    string? Notes);

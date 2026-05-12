@@ -35,6 +35,8 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<PilotBusinessAccess> PilotBusinesses { get; } = [];
 
+    public List<PilotClientAccess> PilotClients { get; } = [];
+
     public List<BusinessCredential> BusinessCredentials { get; } = [];
 
     public List<LoyaltyCard> LoyaltyCards { get; } = [];

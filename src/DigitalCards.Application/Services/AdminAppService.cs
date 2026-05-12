@@ -22,17 +22,21 @@ public sealed class AdminAppService
     private readonly IAdminUserRepository _adminUsers;
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessRepository _businesses;
+    private readonly IClientRepository _clients;
     private readonly IClock _clock;
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
     private readonly IPilotBusinessRepository _pilotBusinesses;
+    private readonly IPilotClientRepository _pilotClients;
 
     public AdminAppService(
         IAdminUserRepository adminUsers,
         IAdminCredentialRepository adminCredentials,
         IBusinessRepository businesses,
         IBusinessCredentialRepository businessCredentials,
+        IClientRepository clients,
         IPilotBusinessRepository pilotBusinesses,
+        IPilotClientRepository pilotClients,
         IClock clock,
         IPasswordHasher<AdminPasswordHashSubject> adminPasswordHasher,
         IPasswordHasher<BusinessPasswordHashSubject> businessPasswordHasher)
@@ -41,7 +45,9 @@ public sealed class AdminAppService
         _adminCredentials = adminCredentials;
         _businesses = businesses;
         _businessCredentials = businessCredentials;
+        _clients = clients;
         _pilotBusinesses = pilotBusinesses;
+        _pilotClients = pilotClients;
         _clock = clock;
         _adminPasswordHasher = adminPasswordHasher;
         _businessPasswordHasher = businessPasswordHasher;
@@ -450,11 +456,71 @@ public sealed class AdminAppService
         return ToPilotBusinessDto(business, access);
     }
 
+    public async Task<IReadOnlyList<PilotClientDto>> ListPilotClientsAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var clients = await _clients.SearchAsync(query, cancellationToken);
+        var pilotRecords = await _pilotClients.ListAsync(cancellationToken);
+        var byClientId = pilotRecords.ToDictionary(record => record.ClientId);
+
+        return clients
+            .OrderBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
+            .Select(client =>
+            {
+                byClientId.TryGetValue(client.Id, out var pilot);
+                return ToPilotClientDto(client, pilot);
+            })
+            .ToArray();
+    }
+
+    public async Task<PilotClientDto?> SetPilotClientAsync(
+        SetPilotClientCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await _clients.FindByIdAsync(command.ClientId, cancellationToken);
+        if (client is null)
+        {
+            return null;
+        }
+
+        var access = await UpsertPilotClientAsync(
+            command.ClientId,
+            command.IsEnabled,
+            command.Notes,
+            command.AdminUserId,
+            cancellationToken);
+        return ToPilotClientDto(client, access);
+    }
+
     private static bool MatchesQuery(Business business, string query)
     {
         return string.IsNullOrWhiteSpace(query) ||
             business.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             business.Email.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<PilotClientAccess> UpsertPilotClientAsync(
+        Guid clientId,
+        bool isEnabled,
+        string? notes,
+        Guid adminUserId,
+        CancellationToken cancellationToken)
+    {
+        var now = _clock.UtcNow;
+        var existing = await _pilotClients.FindByClientIdAsync(clientId, cancellationToken);
+        var access = existing is null
+            ? new PilotClientAccess(
+                clientId,
+                isEnabled,
+                notes,
+                now,
+                now,
+                adminUserId)
+            : existing.WithState(isEnabled, notes, now, adminUserId);
+
+        await _pilotClients.UpsertAsync(access, cancellationToken);
+        return access;
     }
 
     private async Task<PilotBusinessAccess> UpsertPilotBusinessAsync(
@@ -729,6 +795,18 @@ public sealed class AdminAppService
             business.Name,
             business.Email,
             business.LogoPath,
+            access?.IsEnabled ?? false,
+            access?.Notes,
+            access?.UpdatedAt);
+    }
+
+    private static PilotClientDto ToPilotClientDto(Client client, PilotClientAccess? access)
+    {
+        return new PilotClientDto(
+            client.Id,
+            client.UserName,
+            client.FullName,
+            client.Email,
             access?.IsEnabled ?? false,
             access?.Notes,
             access?.UpdatedAt);

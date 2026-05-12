@@ -9,14 +9,17 @@ public sealed class PilotAccessService
     private readonly IClientRepository _clients;
     private readonly PilotOptions _options;
     private readonly IPilotBusinessRepository _pilotBusinesses;
+    private readonly IPilotClientRepository _pilotClients;
 
     public PilotAccessService(
         IClientRepository clients,
         IPilotBusinessRepository pilotBusinesses,
+        IPilotClientRepository pilotClients,
         IOptions<PilotOptions> options)
     {
         _clients = clients;
         _pilotBusinesses = pilotBusinesses;
+        _pilotClients = pilotClients;
         _options = options.Value;
     }
 
@@ -61,13 +64,19 @@ public sealed class PilotAccessService
         }
 
         var value = userNameOrEmail.Trim();
-        if (IsEmail(value))
+        var client = await _clients.FindByUserNameOrEmailAsync(value, cancellationToken);
+        if (client is not null)
         {
-            return CheckClientEmail(value);
+            var access = await _pilotClients.FindByClientIdAsync(client.Id, cancellationToken);
+            if (access?.IsEnabled == true)
+            {
+                return PilotAccessResult.Allowed;
+            }
+
+            return CheckClientEmail(client.Email);
         }
 
-        var client = await _clients.FindByUserNameOrEmailAsync(value, cancellationToken);
-        return client is null ? PilotAccessResult.Allowed : CheckClientEmail(client.Email);
+        return IsEmail(value) ? CheckClientEmail(value) : PilotAccessResult.Allowed;
     }
 
     private PilotAccessResult CheckClientEmail(string email)
