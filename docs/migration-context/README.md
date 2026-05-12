@@ -37,6 +37,8 @@ Documentos:
 - `24-admin-business-management-v1.md`: edicion/reset de negocios desde UI admin.
 - `25-admin-access-management-v1.md`: creacion/reset de admins sin registro publico.
 - `25-admin-access-management-hostgator.sql`: tabla nueva para hashes modernos de admin.
+- `26-client-pilot-management-v1.md`: administracion de clientes piloto desde UI admin.
+- `26-client-pilot-management-hostgator.sql`: tabla nueva para clientes piloto.
 
 Notas:
 

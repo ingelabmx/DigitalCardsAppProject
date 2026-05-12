@@ -70,6 +70,36 @@ public sealed class MySqlClientRepository : IClientRepository
         return row?.ToDomain();
     }
 
+    public async Task<IReadOnlyList<Client>> SearchAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select UserID,
+                   UserName,
+                   FirstName,
+                   Lastname,
+                   UserEmail
+            from UserClient
+            where RoleID = 2
+              and (
+                    @Query = ''
+                 or lower(UserName) like concat('%', lower(@Query), '%')
+                 or lower(UserEmail) like concat('%', lower(@Query), '%')
+                 or lower(FirstName) like concat('%', lower(@Query), '%')
+                 or lower(Lastname) like concat('%', lower(@Query), '%')
+              )
+            order by UserName
+            limit 50;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.QueryAsync<ClientRow>(
+            new CommandDefinition(sql, new { Query = query.Trim() }, cancellationToken: cancellationToken));
+
+        return rows.Select(row => row.ToDomain()).ToArray();
+    }
+
     private sealed record ClientRow(
         int UserID,
         string UserName,

@@ -117,6 +117,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-submit").ClickAsync();
 
+        await EnablePilotClientAsync(page, userName);
+
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(updatedBusinessEmail);
         await page.GetByTestId("business-password").FillAsync(updatedBusinessPassword);
@@ -153,6 +155,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-submit").ClickAsync();
         Assert.Contains("registrado", await page.GetByTestId("register-success").InnerTextAsync());
+
+        await EnablePilotClientAsync(page, userName);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(businessEmail);
@@ -241,6 +245,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-submit").ClickAsync();
 
+        await EnablePilotClientAsync(page, userName);
+
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(GetBusinessEmail());
         await page.GetByTestId("business-password").FillAsync(GetBusinessPassword());
@@ -263,6 +269,24 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
         Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+    }
+
+    private async Task EnablePilotClientAsync(IPage page, string userName)
+    {
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Clients").ToString());
+
+        if (await page.GetByTestId("admin-login-form").IsVisibleAsync())
+        {
+            await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
+            await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
+            await page.GetByTestId("admin-login-submit").ClickAsync();
+            await page.GetByTestId("admin-clients-link").ClickAsync();
+        }
+
+        await page.GetByTestId("admin-client-search-input").FillAsync(userName);
+        await page.GetByTestId("admin-client-search-submit").ClickAsync();
+        await page.GetByTestId("admin-enable-client-pilot").First.ClickAsync();
+        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-client-status").InnerTextAsync());
     }
 
     private async Task DisableDemoBusinessPilotAsync(IPage page)

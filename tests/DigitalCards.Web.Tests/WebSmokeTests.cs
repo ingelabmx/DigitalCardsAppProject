@@ -215,7 +215,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin", "/Admin/Clients" })
         {
             var response = await client.GetAsync(path);
 
@@ -311,6 +311,105 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var blockedAgainHtml = await client.GetStringAsync("/Business/Dashboard");
         Assert.Contains("pilot-business-blocked", blockedAgainHtml);
+    }
+
+    [Fact]
+    public async Task AdminClients_EnableAndDisablePilotClientControlsModernAccess()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true",
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("pc");
+        var email = $"{userName}@blocked.test";
+        await RegisterClientAsync(fake.Factory, userName, email);
+        Guid clientId;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            clientId = store.Clients.Single(existing => existing.UserName == userName).Id;
+        }
+
+        await LoginBusinessAsync(client);
+        var blockedToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+        var blockedResponse = await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = blockedToken
+            }));
+        var blockedHtml = await blockedResponse.Content.ReadAsStringAsync();
+
+        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", blockedHtml);
+        Assert.DoesNotContain("Correo generado", blockedHtml);
+
+        await LoginAdminAsync(client);
+        var searchHtml = await client.GetStringAsync($"/Admin/Clients?Query={userName}");
+        Assert.Contains("admin-client-row", searchHtml);
+        Assert.Contains(userName, searchHtml);
+        Assert.Contains(email, searchHtml);
+        Assert.DoesNotContain("password", searchHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("hash", searchHtml, StringComparison.OrdinalIgnoreCase);
+
+        var enableToken = ExtractAntiforgeryToken(searchHtml);
+        var enableResponse = await client.PostAsync(
+            $"/Admin/Clients?handler=Enable&Query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["clientId"] = clientId.ToString(),
+                ["notes"] = "cliente piloto web test",
+                ["__RequestVerificationToken"] = enableToken
+            }));
+        var enableHtml = await enableResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
+        Assert.Contains("Piloto habilitado", enableHtml);
+
+        var allowedToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+        var allowedResponse = await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = allowedToken
+            }));
+        var allowedHtml = await allowedResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, allowedResponse.StatusCode);
+        Assert.Contains("Correo generado", allowedHtml);
+
+        var disableToken = ExtractAntiforgeryToken(enableHtml);
+        var disableResponse = await client.PostAsync(
+            $"/Admin/Clients?handler=Disable&Query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["clientId"] = clientId.ToString(),
+                ["__RequestVerificationToken"] = disableToken
+            }));
+        var disableHtml = await disableResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
+        Assert.Contains("Piloto deshabilitado", disableHtml);
+
+        var blockedAgainToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+        var blockedAgainResponse = await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = blockedAgainToken
+            }));
+        var blockedAgainHtml = await blockedAgainResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, blockedAgainResponse.StatusCode);
+        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", blockedAgainHtml);
+        Assert.DoesNotContain("Correo generado", blockedAgainHtml);
     }
 
     [Fact]

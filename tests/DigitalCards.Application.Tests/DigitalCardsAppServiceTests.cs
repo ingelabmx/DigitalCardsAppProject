@@ -100,6 +100,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<MySqlStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
         Assert.IsType<MySqlPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
+        Assert.IsType<MySqlPilotClientRepository>(provider.GetRequiredService<IPilotClientRepository>());
     }
 
     [Fact]
@@ -121,6 +122,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
         Assert.IsType<InMemoryPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
+        Assert.IsType<InMemoryPilotClientRepository>(provider.GetRequiredService<IPilotClientRepository>());
     }
 
     [Fact]
@@ -337,6 +339,66 @@ public sealed class DigitalCardsAppServiceTests
         var listed = Assert.Single(businesses);
         Assert.False(listed.IsEnabled);
         Assert.Equal("pausado", listed.Notes);
+    }
+
+    [Fact]
+    public async Task SetPilotClientAsync_UpsertsPilotState()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "pilotclient1",
+            "Pilot",
+            "Client",
+            "pilotclient1@example.test"));
+
+        var enabled = await adminApp.SetPilotClientAsync(new SetPilotClientCommand(
+            client.Id,
+            admin!.Id,
+            IsEnabled: true,
+            Notes: "cliente piloto"));
+        var disabled = await adminApp.SetPilotClientAsync(new SetPilotClientCommand(
+            client.Id,
+            admin.Id,
+            IsEnabled: false,
+            Notes: "pausado"));
+        var clients = await adminApp.ListPilotClientsAsync("pilotclient1");
+
+        Assert.NotNull(enabled);
+        Assert.True(enabled!.IsEnabled);
+        Assert.NotNull(disabled);
+        Assert.False(disabled!.IsEnabled);
+        var listed = Assert.Single(clients);
+        Assert.Equal(client.Id, listed.ClientId);
+        Assert.Equal("pilotclient1", listed.UserName);
+        Assert.False(listed.IsEnabled);
+        Assert.Equal("pausado", listed.Notes);
+    }
+
+    [Fact]
+    public async Task ListPilotClientsAsync_SearchesLegacyClientsWithoutPasswordData()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        await app.RegisterClientAsync(new RegisterClientCommand(
+            "lookupclient1",
+            "Lookup",
+            "Client",
+            "lookupclient1@example.test"));
+
+        var clients = await adminApp.ListPilotClientsAsync("lookupclient1");
+
+        var client = Assert.Single(clients);
+        Assert.Equal("lookupclient1", client.UserName);
+        Assert.Equal("lookupclient1@example.test", client.ClientEmail);
+        Assert.False(client.IsEnabled);
+        Assert.DoesNotContain("password", string.Join(' ', client.UserName, client.ClientName, client.ClientEmail), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("hash", string.Join(' ', client.UserName, client.ClientName, client.ClientEmail), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

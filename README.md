@@ -211,7 +211,7 @@ puede cambiar `AllowLegacyCardIdTokens` a `false`.
 ## Piloto controlado
 
 Cuando `app.puntelio.com` use datos reales, activa el piloto para que solo los
-negocios y clientes allowlisted usen las pantallas modernas:
+negocios y clientes habilitados usen las pantallas modernas:
 
 ```json
 {
@@ -232,10 +232,12 @@ Con el piloto activo:
 - negocios fuera del allowlist pueden iniciar sesion, pero ven bloqueo en
   `/Business/Dashboard`, `/Business/Enroll`, `/Business/Cards` y
   `/Business/Stamp`;
+- clientes no habilitados quedan bloqueados para enroll, reenvio de link Wallet
+  y sellos modernos;
 - Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
   publicas por token/autorizacion propia;
-- si no hay allowlist de clientes, los enrolamientos/sellos modernos quedan
-  bloqueados para clientes existentes.
+- `AllowedClientEmails` y `AllowedClientEmailDomains` quedan solo como fallback
+  temporal; la fuente operativa principal es `/Admin/Clients`.
 
 Rollback rapido:
 
@@ -274,6 +276,7 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Administradores: `http://localhost:5031/Admin/AdminUsers`
 - Crear admin: `http://localhost:5031/Admin/CreateAdmin`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
+- Clientes piloto: `http://localhost:5031/Admin/Clients`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
 
@@ -282,6 +285,20 @@ si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
 de `appsettings.Local.json`. La recomendacion operativa es mover los negocios
 a `/Admin/Businesses` y dejar `AllowedBusinessEmails`/`AllowedBusinessIds` solo
 como fallback.
+
+Antes de administrar clientes piloto desde la app moderna contra HostGator,
+ejecuta:
+
+```text
+docs/migration-context/26-client-pilot-management-hostgator.sql
+```
+
+Con `DigitalCards:Pilot:Enabled=true`, un cliente puede usar enroll, reenvio de
+link Wallet y sellos modernos si esta habilitado en `ModernPilotClient` o si
+sigue permitido por `AllowedClientEmails` / `AllowedClientEmailDomains`.
+
+La recomendacion operativa es buscar clientes en `/Admin/Clients`, habilitarlos
+desde la UI y dejar el allowlist local de clientes vacio salvo rollback.
 
 ## Administracion de acceso admin
 

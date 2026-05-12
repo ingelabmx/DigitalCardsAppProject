@@ -73,6 +73,7 @@ public static class DependencyInjection
             services.AddScoped<IWalletLinkTokenRepository, MySqlWalletLinkTokenRepository>();
             services.AddScoped<IStampLedgerRepository, MySqlStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
+            services.AddScoped<IPilotClientRepository, MySqlPilotClientRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
         }
         else
@@ -88,6 +89,7 @@ public static class DependencyInjection
             services.AddScoped<IWalletLinkTokenRepository, InMemoryWalletLinkTokenRepository>();
             services.AddScoped<IStampLedgerRepository, InMemoryStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();
+            services.AddScoped<IPilotClientRepository, InMemoryPilotClientRepository>();
         }
 
         if (legacySyncOptions.Enabled)

@@ -9,5 +9,8 @@ public interface IClientRepository
     Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<Client?> FindByUserNameOrEmailAsync(string value, CancellationToken cancellationToken = default);
-}
 
+    Task<IReadOnlyList<Client>> SearchAsync(
+        string query,
+        CancellationToken cancellationToken = default);
+}
