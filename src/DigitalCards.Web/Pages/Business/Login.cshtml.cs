@@ -11,10 +11,14 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class LoginModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(DigitalCardsAppService appService)
+    public LoginModel(
+        DigitalCardsAppService appService,
+        ILogger<LoginModel> logger)
     {
         _appService = appService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -40,10 +44,12 @@ public sealed class LoginModel : PageModel
 
         if (business is null)
         {
+            _logger.LogWarning("Business login failed for {BusinessEmail}.", MaskEmail(Input.Email));
             ModelState.AddModelError(string.Empty, "Credenciales de negocio invalidas.");
             return Page();
         }
 
+        _logger.LogInformation("Business login succeeded for business {BusinessId}.", business.Id);
         await HttpContext.SignInAsync(
             BusinessAuth.Scheme,
             BusinessAuth.CreatePrincipal(business),
@@ -54,6 +60,13 @@ public sealed class LoginModel : PageModel
             });
 
         return RedirectToPage("/Business/Dashboard");
+    }
+
+    private static string MaskEmail(string email)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        var atIndex = normalized.IndexOf('@');
+        return atIndex <= 1 ? "***" : string.Concat(normalized[0], "***", normalized[atIndex..]);
     }
 
     public sealed class InputModel

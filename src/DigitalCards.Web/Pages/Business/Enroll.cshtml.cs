@@ -16,15 +16,18 @@ public sealed class EnrollModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<EnrollModel> _logger;
     private readonly PilotAccessService _pilotAccess;
 
     public EnrollModel(
         DigitalCardsAppService appService,
         IConfiguration configuration,
+        ILogger<EnrollModel> logger,
         PilotAccessService pilotAccess)
     {
         _appService = appService;
         _configuration = configuration;
+        _logger = logger;
         _pilotAccess = pilotAccess;
     }
 
@@ -46,6 +49,9 @@ public sealed class EnrollModel : PageModel
     {
         if (!SetPilotBusinessBlock())
         {
+            _logger.LogWarning(
+                "Modern enroll blocked by pilot for business {BusinessId}.",
+                BusinessAuth.GetBusinessId(User));
             ModelState.AddModelError(string.Empty, PilotBlockMessage!);
             return Page();
         }
@@ -60,6 +66,9 @@ public sealed class EnrollModel : PageModel
             var clientAccess = await _pilotAccess.CheckClientAsync(Input.UserNameOrEmail, cancellationToken);
             if (!clientAccess.IsAllowed)
             {
+                _logger.LogWarning(
+                    "Modern enroll blocked by client pilot allowlist for business {BusinessId}.",
+                    BusinessAuth.GetBusinessId(User));
                 ModelState.AddModelError(string.Empty, clientAccess.Message!);
                 return Page();
             }
@@ -69,10 +78,18 @@ public sealed class EnrollModel : PageModel
                 new EnrollClientCommand(businessId, Input.UserNameOrEmail, GetBaseUrl()),
                 cancellationToken);
 
+            _logger.LogInformation(
+                "Modern enroll completed for business {BusinessId} card {CardId}.",
+                businessId,
+                Result.Card.Id);
             return Page();
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(
+                "Modern enroll failed for business {BusinessId}: {FailureReason}.",
+                BusinessAuth.GetBusinessId(User),
+                ex.Message);
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }

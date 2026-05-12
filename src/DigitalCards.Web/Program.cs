@@ -1,6 +1,7 @@
 using DigitalCards.Application;
 using DigitalCards.Infrastructure;
 using DigitalCards.Web;
+using DigitalCards.Web.Operations;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -32,6 +33,7 @@ builder.Configuration
 
 builder.Services.Configure<PilotOptions>(builder.Configuration.GetSection(PilotOptions.SectionName));
 builder.Services.AddScoped<PilotAccessService>();
+builder.Services.AddDigitalCardsOperations(builder.Configuration);
 builder.Services.AddRazorPages();
 builder.Services
     .AddAuthentication(BusinessAuth.Scheme)
@@ -56,11 +58,12 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim(BusinessAuth.BusinessIdClaim);
     });
 });
-builder.Services.AddHealthChecks();
 builder.Services.AddDigitalCardsApplication();
 builder.Services.AddDigitalCardsInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseDigitalCardsForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -75,7 +78,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHealthChecks("/health");
+app.MapDigitalCardsHealthChecks();
 app.MapRazorPages();
 app.MapAppleWalletPassDownloads();
 app.MapAppleWalletWebService();

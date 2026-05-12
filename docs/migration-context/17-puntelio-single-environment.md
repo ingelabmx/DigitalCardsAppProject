@@ -118,6 +118,7 @@ Valores clave:
 ```powershell
 Get-Content "$env:USERPROFILE\.digitalcards\appsettings.Local.json" -Raw | ConvertFrom-Json | Out-Null
 Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
+Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
 dotnet test DigitalCardsApp.Modern.sln
 $env:RUN_PLAYWRIGHT='1'; dotnet test tests\DigitalCards.E2E.Tests\DigitalCards.E2E.Tests.csproj
 Remove-Item Env:\RUN_PLAYWRIGHT -ErrorAction SilentlyContinue
