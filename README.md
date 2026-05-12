@@ -273,6 +273,7 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Dashboard admin: `http://localhost:5031/Admin/Dashboard`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
+- Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
 
 Con `DigitalCards:Pilot:Enabled=true`, un negocio puede usar el flujo moderno
 si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
@@ -300,6 +301,24 @@ mismo tiempo. Si marcas `Habilitar piloto`, tambien crea/actualiza
 
 No hay email automatico al negocio en esta version. El admin define y comunica
 el password inicial manualmente; la app no lo muestra despues del submit.
+
+## Administracion admin de negocios
+
+Desde `/Admin/Businesses`, el boton `Administrar` abre
+`/Admin/BusinessProfile/{businessId}`.
+
+El admin puede:
+
+- corregir `BusinessName`;
+- corregir `BusinessEmail`;
+- ajustar `BusinessLogo` como ruta manual compatible con `varchar(100)`;
+- habilitar/deshabilitar piloto y editar notas;
+- resetear contrasena del negocio.
+
+El reset de contrasena actualiza ambos mecanismos: `Business.BusinessPassword`
+con el hash legacy de 25 caracteres y `ModernBusinessCredential` con hash
+moderno. No hay SQL nuevo para este flujo; requiere las mismas tablas de
+password hardening y pilot management ya documentadas.
 
 ## Password hardening negocio
 

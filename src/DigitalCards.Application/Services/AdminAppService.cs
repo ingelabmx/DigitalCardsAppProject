@@ -9,8 +9,10 @@ public sealed class AdminAppService
 {
     private const int BusinessNameMaxLength = 30;
     private const int BusinessEmailMaxLength = 30;
+    private const int BusinessLogoMaxLength = 100;
     private const int NotesMaxLength = 500;
     private const string DefaultBusinessLogoPath = "/img/demo-coffee.svg";
+    private const string DuplicateBusinessMessage = "A business with the same name or email already exists.";
 
     private readonly IAdminUserRepository _adminUsers;
     private readonly IBusinessCredentialRepository _businessCredentials;
@@ -116,7 +118,7 @@ public sealed class AdminAppService
         catch (InvalidOperationException exception)
             when (string.Equals(
                 exception.Message,
-                "A business with the same name or email already exists.",
+                DuplicateBusinessMessage,
                 StringComparison.Ordinal))
         {
             return FailedCreate("Ya existe un negocio con ese nombre o correo.");
@@ -148,6 +150,138 @@ public sealed class AdminAppService
         return new CreateBusinessResult(ToPilotBusinessDto(business, access), ErrorMessage: null);
     }
 
+    public async Task<BusinessProfileDto?> GetBusinessProfileAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        if (business is null)
+        {
+            return null;
+        }
+
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
+        return ToBusinessProfileDto(business, access);
+    }
+
+    public async Task<BusinessProfileResult> UpdateBusinessProfileAsync(
+        UpdateBusinessProfileCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var businessName = command.BusinessName.Trim();
+        var businessEmail = command.BusinessEmail.Trim().ToLowerInvariant();
+        var businessLogo = NormalizeBusinessLogo(command.BusinessLogo);
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return FailedProfile("El negocio no existe.");
+        }
+
+        var validationError = ValidateBusinessProfile(
+            businessName,
+            businessEmail,
+            businessLogo,
+            command.AdminUserId,
+            command.Notes);
+        if (validationError is not null)
+        {
+            return FailedProfile(validationError);
+        }
+
+        var sameName = await _businesses.FindByNameAsync(businessName, cancellationToken);
+        if (sameName is not null && sameName.Id != business.Id)
+        {
+            return FailedProfile("Ya existe un negocio con ese nombre.");
+        }
+
+        var sameEmail = await _businesses.FindByEmailAsync(businessEmail, cancellationToken);
+        if (sameEmail is not null && sameEmail.Id != business.Id)
+        {
+            return FailedProfile("Ya existe un negocio con ese correo.");
+        }
+
+        try
+        {
+            business = await _businesses.UpdateAsync(
+                new Business(
+                    business.Id,
+                    businessName,
+                    businessEmail,
+                    business.PasswordHashPlaceholder,
+                    businessLogo),
+                cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+            when (string.Equals(exception.Message, DuplicateBusinessMessage, StringComparison.Ordinal))
+        {
+            return FailedProfile("Ya existe un negocio con ese nombre o correo.");
+        }
+
+        var access = await UpsertPilotBusinessAsync(
+            business.Id,
+            command.IsPilotEnabled,
+            command.Notes,
+            command.AdminUserId,
+            cancellationToken);
+
+        return new BusinessProfileResult(ToBusinessProfileDto(business, access), ErrorMessage: null);
+    }
+
+    public async Task<BusinessProfileResult> ResetBusinessPasswordAsync(
+        ResetBusinessPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return FailedProfile("La sesion de admin no es valida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.NewPassword))
+        {
+            return FailedProfile("La contrasena nueva es requerida.");
+        }
+
+        if (command.NewPassword.Length < 8)
+        {
+            return FailedProfile("La contrasena nueva debe tener al menos 8 caracteres.");
+        }
+
+        if (command.NewPassword.Length > 128)
+        {
+            return FailedProfile("La contrasena nueva no puede exceder 128 caracteres.");
+        }
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return FailedProfile("El negocio no existe.");
+        }
+
+        var now = _clock.UtcNow;
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        business = await _businesses.UpdateAsync(
+            new Business(
+                business.Id,
+                business.Name,
+                business.Email,
+                legacyPasswordHash,
+                business.LogoPath),
+            cancellationToken);
+
+        var subject = new BusinessPasswordHashSubject(business.Id);
+        await _businessCredentials.UpsertAsync(
+            new BusinessCredential(
+                business.Id,
+                _passwordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
+        return new BusinessProfileResult(ToBusinessProfileDto(business, access), ErrorMessage: null);
+    }
+
     public async Task<PilotBusinessDto?> SetPilotBusinessAsync(
         SetPilotBusinessCommand command,
         CancellationToken cancellationToken = default)
@@ -158,19 +292,12 @@ public sealed class AdminAppService
             return null;
         }
 
-        var now = _clock.UtcNow;
-        var existing = await _pilotBusinesses.FindByBusinessIdAsync(command.BusinessId, cancellationToken);
-        var access = existing is null
-            ? new PilotBusinessAccess(
-                command.BusinessId,
-                command.IsEnabled,
-                command.Notes,
-                now,
-                now,
-                command.AdminUserId)
-            : existing.WithState(command.IsEnabled, command.Notes, now, command.AdminUserId);
-
-        await _pilotBusinesses.UpsertAsync(access, cancellationToken);
+        var access = await UpsertPilotBusinessAsync(
+            command.BusinessId,
+            command.IsEnabled,
+            command.Notes,
+            command.AdminUserId,
+            cancellationToken);
         return ToPilotBusinessDto(business, access);
     }
 
@@ -179,6 +306,29 @@ public sealed class AdminAppService
         return string.IsNullOrWhiteSpace(query) ||
             business.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             business.Email.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<PilotBusinessAccess> UpsertPilotBusinessAsync(
+        Guid businessId,
+        bool isEnabled,
+        string? notes,
+        Guid adminUserId,
+        CancellationToken cancellationToken)
+    {
+        var now = _clock.UtcNow;
+        var existing = await _pilotBusinesses.FindByBusinessIdAsync(businessId, cancellationToken);
+        var access = existing is null
+            ? new PilotBusinessAccess(
+                businessId,
+                isEnabled,
+                notes,
+                now,
+                now,
+                adminUserId)
+            : existing.WithState(isEnabled, notes, now, adminUserId);
+
+        await _pilotBusinesses.UpsertAsync(access, cancellationToken);
+        return access;
     }
 
     private static string? ValidateCreateBusinessCommand(
@@ -236,9 +386,71 @@ public sealed class AdminAppService
         return null;
     }
 
+    private static string? ValidateBusinessProfile(
+        string businessName,
+        string businessEmail,
+        string businessLogo,
+        Guid adminUserId,
+        string? notes)
+    {
+        if (adminUserId == Guid.Empty)
+        {
+            return "La sesion de admin no es valida.";
+        }
+
+        if (string.IsNullOrWhiteSpace(businessName))
+        {
+            return "El nombre del negocio es requerido.";
+        }
+
+        if (businessName.Length > BusinessNameMaxLength)
+        {
+            return $"El nombre del negocio no puede exceder {BusinessNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(businessEmail))
+        {
+            return "El correo del negocio es requerido.";
+        }
+
+        if (businessEmail.Length > BusinessEmailMaxLength)
+        {
+            return $"El correo del negocio no puede exceder {BusinessEmailMaxLength} caracteres.";
+        }
+
+        if (!businessEmail.Contains("@", StringComparison.Ordinal))
+        {
+            return "El correo del negocio no es valido.";
+        }
+
+        if (businessLogo.Length > BusinessLogoMaxLength)
+        {
+            return $"El logo del negocio no puede exceder {BusinessLogoMaxLength} caracteres.";
+        }
+
+        if (notes?.Length > NotesMaxLength)
+        {
+            return $"Las notas no pueden exceder {NotesMaxLength} caracteres.";
+        }
+
+        return null;
+    }
+
     private static CreateBusinessResult FailedCreate(string errorMessage)
     {
         return new CreateBusinessResult(null, errorMessage);
+    }
+
+    private static BusinessProfileResult FailedProfile(string errorMessage)
+    {
+        return new BusinessProfileResult(null, errorMessage);
+    }
+
+    private static string NormalizeBusinessLogo(string businessLogo)
+    {
+        return string.IsNullOrWhiteSpace(businessLogo)
+            ? DefaultBusinessLogoPath
+            : businessLogo.Trim();
     }
 
     private static AdminUserDto ToDto(AdminUser admin)
@@ -256,6 +468,18 @@ public sealed class AdminAppService
             business.Id,
             business.Name,
             business.Email,
+            access?.IsEnabled ?? false,
+            access?.Notes,
+            access?.UpdatedAt);
+    }
+
+    private static BusinessProfileDto ToBusinessProfileDto(Business business, PilotBusinessAccess? access)
+    {
+        return new BusinessProfileDto(
+            business.Id,
+            business.Name,
+            business.Email,
+            business.LogoPath,
             access?.IsEnabled ?? false,
             access?.Notes,
             access?.UpdatedAt);

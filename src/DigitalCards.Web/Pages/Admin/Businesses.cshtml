@@ -55,6 +55,14 @@
                             <small>Actualizado @business.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
                         }
                     </div>
+                    <div class="pilot-business-actions">
+                        <a class="btn btn-outline-primary"
+                           asp-page="/Admin/BusinessProfile"
+                           asp-route-businessId="@business.BusinessId"
+                           data-testid="admin-manage-business">
+                            Administrar
+                        </a>
+                    </div>
                     <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-form">
                         <input type="hidden" name="businessId" value="@business.BusinessId" />
                         <label class="form-label" for="enable-notes-@business.BusinessId">Notas</label>

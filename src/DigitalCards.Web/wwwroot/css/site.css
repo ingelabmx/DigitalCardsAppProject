@@ -261,7 +261,8 @@ h1 {
 }
 
 .pilot-business-form,
-.pilot-business-inline-form {
+.pilot-business-inline-form,
+.pilot-business-actions {
   grid-column: 1 / -1;
 }
 
@@ -270,9 +271,33 @@ h1 {
   gap: 0.65rem;
 }
 
+.pilot-business-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.business-profile-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+}
+
+.business-profile-panel {
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.business-profile-panel h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.85rem;
+}
+
 @media (max-width: 760px) {
   .app-surface,
   .business-card-grid,
+  .business-profile-grid,
   .wallet-actions,
   .metric-row {
     grid-template-columns: 1fr;

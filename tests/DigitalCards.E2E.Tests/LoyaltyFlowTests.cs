@@ -20,7 +20,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var suffix = NewLegacySafeUserName("bz");
         var businessName = $"Biz {suffix[..8]}";
         var businessEmail = $"{suffix}@biz.test";
+        var updatedBusinessName = $"Upd {suffix[..8]}";
+        var updatedBusinessEmail = $"{suffix}@up.test";
         const string businessPassword = "StartPass123!";
+        const string updatedBusinessPassword = "ChangedPass123!";
         var userName = NewLegacySafeUserName("u");
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
@@ -40,6 +43,21 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-created-business-result").InnerTextAsync());
         Assert.DoesNotContain(businessPassword, await page.ContentAsync(), StringComparison.Ordinal);
 
+        await page.GetByTestId("admin-created-business-open-link").ClickAsync();
+        await page.GetByTestId("admin-manage-business").First.ClickAsync();
+        await page.GetByTestId("admin-business-profile-name").FillAsync(updatedBusinessName);
+        await page.GetByTestId("admin-business-profile-email").FillAsync(updatedBusinessEmail);
+        await page.GetByTestId("admin-business-profile-logo").FillAsync("~/Logos/playwright.png");
+        await page.GetByTestId("admin-business-profile-notes").FillAsync("actualizado desde playwright");
+        await page.GetByTestId("admin-business-profile-save").ClickAsync();
+        Assert.Contains("Negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
+
+        await page.GetByTestId("admin-business-password-new").FillAsync(updatedBusinessPassword);
+        await page.GetByTestId("admin-business-password-confirm").FillAsync(updatedBusinessPassword);
+        await page.GetByTestId("admin-business-password-submit").ClickAsync();
+        Assert.Contains("Contrasena de negocio actualizada", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
+        Assert.DoesNotContain(updatedBusinessPassword, await page.ContentAsync(), StringComparison.Ordinal);
+
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Register").ToString());
         await page.GetByTestId("register-username").FillAsync(userName);
         await page.GetByTestId("register-first-name").FillAsync("Nuevo");
@@ -48,10 +66,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-submit").ClickAsync();
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
-        await page.GetByTestId("business-email").FillAsync(businessEmail);
-        await page.GetByTestId("business-password").FillAsync(businessPassword);
+        await page.GetByTestId("business-email").FillAsync(updatedBusinessEmail);
+        await page.GetByTestId("business-password").FillAsync(updatedBusinessPassword);
         await page.GetByTestId("business-login-submit").ClickAsync();
-        Assert.Contains(businessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
+        Assert.Contains(updatedBusinessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
 
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);
@@ -60,7 +78,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
         await page.GetByTestId("email-link").First.ClickAsync();
-        Assert.Contains(businessName, await page.GetByTestId("wallet-select").InnerTextAsync());
+        Assert.Contains(updatedBusinessName, await page.GetByTestId("wallet-select").InnerTextAsync());
     }
 
     [PlaywrightFact]

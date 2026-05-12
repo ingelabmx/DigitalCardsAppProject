@@ -13,4 +13,6 @@ public interface IBusinessRepository
     Task<Business?> FindByNameAsync(string name, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Business>> ListAsync(CancellationToken cancellationToken = default);
+
+    Task<Business> UpdateAsync(Business business, CancellationToken cancellationToken = default);
 }
