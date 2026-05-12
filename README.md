@@ -168,6 +168,31 @@ La accion de sello valida que la tarjeta pertenezca al negocio autenticado.
 Web Forms sigue vivo como fallback, pero el dashboard moderno ya dirige la
 operacion de sellos a `Tarjetas y sellos`.
 
+## Wallet links opacos
+
+Los correos nuevos ya no deben exponer `CardID` directo. Antes de probar contra
+HostGator, ejecuta:
+
+```text
+docs/migration-context/20-wallet-link-token-hardening-hostgator.sql
+```
+
+Configuracion de transicion:
+
+```json
+{
+  "DigitalCards": {
+    "WalletLinks": {
+      "AllowLegacyCardIdTokens": true
+    }
+  }
+}
+```
+
+Con compatibilidad activa, links viejos por `CardID` siguen funcionando. Los
+links nuevos usan tokens opacos guardados solo como hash. En un PR futuro se
+puede cambiar `AllowLegacyCardIdTokens` a `false`.
+
 ## Piloto controlado
 
 Cuando `app.puntelio.com` use datos reales, activa el piloto para que solo los

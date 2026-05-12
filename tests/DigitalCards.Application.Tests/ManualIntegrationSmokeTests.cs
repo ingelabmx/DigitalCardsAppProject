@@ -40,7 +40,8 @@ public sealed class ManualIntegrationSmokeTests
         var messages = await outbox.ListAsync();
         Assert.Contains(messages, message => message.To == clientEmail);
 
-        var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        var google = await app.SelectGoogleWalletAsync(publicToken);
         Assert.NotNull(google);
         Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl);
 
@@ -93,7 +94,8 @@ public sealed class ManualIntegrationSmokeTests
         var currentStampsBeforeAdd = enrollment.Card.CurrentStamps;
         var lifetimeStampsBeforeAdd = enrollment.Card.LifetimeStamps;
 
-        var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        var google = await app.SelectGoogleWalletAsync(publicToken);
         Assert.NotNull(google);
         Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl);
 
@@ -125,8 +127,9 @@ public sealed class ManualIntegrationSmokeTests
             userName,
             GetRequired(configuration, "DigitalCards:PublicBaseUrl")));
 
-        var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
-        var apple = await app.DownloadAppleWalletPassAsync(enrollment.Card.EnrollmentToken);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        var google = await app.SelectGoogleWalletAsync(publicToken);
+        var apple = await app.DownloadAppleWalletPassAsync(publicToken);
         var stamped = await app.AddStampAsync(new AddStampCommand(business.Id, userName));
 
         Assert.NotNull(google);
@@ -167,7 +170,8 @@ public sealed class ManualIntegrationSmokeTests
             client.UserName,
             "https://example.test"));
 
-        var passFile = await app.DownloadAppleWalletPassAsync(enrollment.Card.EnrollmentToken);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        var passFile = await app.DownloadAppleWalletPassAsync(publicToken);
 
         Assert.NotNull(passFile);
         Assert.Equal(AppleWalletPassPackageBuilder.ContentType, passFile!.ContentType);
@@ -265,6 +269,15 @@ public sealed class ManualIntegrationSmokeTests
         return string.IsNullOrWhiteSpace(value)
             ? throw new InvalidOperationException($"{key} is required for this manual smoke test.")
             : value;
+    }
+
+    private static string ExtractWalletToken(string enrollmentUrl)
+    {
+        const string marker = "/Wallet/Select/";
+        var index = enrollmentUrl.IndexOf(marker, StringComparison.Ordinal);
+        return index < 0
+            ? throw new InvalidOperationException("Wallet link was not found.")
+            : enrollmentUrl[(index + marker.Length)..];
     }
 
     private static string NewUserName(string prefix)

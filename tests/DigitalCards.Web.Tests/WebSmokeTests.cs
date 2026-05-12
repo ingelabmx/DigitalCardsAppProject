@@ -452,12 +452,48 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Correo reenviado", html);
-        Assert.Contains($"https://app.puntelio.com/Wallet/Select/{enrollment.Card.EnrollmentToken}", html);
+        Assert.Contains("https://app.puntelio.com/Wallet/Select/", html);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
 
         using var scope = fake.Factory.Services.CreateScope();
         var outbox = scope.ServiceProvider.GetRequiredService<IWalletEmailOutbox>();
         var messages = await outbox.ListAsync();
-        Assert.Equal($"https://app.puntelio.com/Wallet/Select/{enrollment.Card.EnrollmentToken}", messages[0].EnrollmentUrl);
+        Assert.StartsWith("https://app.puntelio.com/Wallet/Select/", messages[0].EnrollmentUrl);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, messages[0].EnrollmentUrl, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(enrollment.Card.EnrollmentToken, ExtractWalletToken(messages[0].EnrollmentUrl));
+    }
+
+    [Fact]
+    public async Task OutboxEmail_UsesOpaqueWalletLinkToken()
+    {
+        using var fake = WithFakeIntegrations();
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, "opaqueweb1");
+
+        using var scope = fake.Factory.Services.CreateScope();
+        var outbox = scope.ServiceProvider.GetRequiredService<IWalletEmailOutbox>();
+        var messages = await outbox.ListAsync();
+
+        Assert.Single(messages);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, messages[0].EnrollmentUrl, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(enrollment.Card.EnrollmentToken, ExtractWalletToken(messages[0].EnrollmentUrl));
+    }
+
+    [Fact]
+    public async Task WalletLanding_LegacyCardIdTokenCanBeDisabled()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:WalletLinks:AllowLegacyCardIdTokens"] = "false"
+        });
+        var client = fake.Factory.CreateClient();
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, "legacyoff1");
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+
+        var legacyHtml = await client.GetStringAsync($"/Wallet/Select/{enrollment.Card.EnrollmentToken}");
+        var publicHtml = await client.GetStringAsync($"/Wallet/Select/{publicToken}");
+
+        Assert.Contains("wallet-not-found", legacyHtml);
+        Assert.Contains("wallet-select", publicHtml);
     }
 
     [Fact]
@@ -614,9 +650,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         var client = fake.Factory.CreateClient();
         var userName = NewLegacySafeUserName("wd");
-        var token = await CreateEnrollmentTokenAsync(fake.Factory, userName);
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
 
-        var json = await client.GetStringAsync($"/internal/wallet-diagnostics/{token}");
+        var json = await client.GetStringAsync($"/internal/wallet-diagnostics/{enrollment.Card.EnrollmentToken}");
 
         Assert.Contains("\"clientUserName\"", json);
         Assert.Contains(userName, json);
@@ -721,7 +757,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         WebApplicationFactory<Program> factory,
         string userName)
     {
-        return (await CreateEnrollmentAsync(factory, userName)).Card.EnrollmentToken;
+        return ExtractWalletToken((await CreateEnrollmentAsync(factory, userName)).EnrollmentUrl);
     }
 
     private static async Task<EnrollClientResult> CreateEnrollmentAsync(
@@ -850,6 +886,15 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         return match.Success
             ? WebUtility.HtmlDecode(match.Groups["value"].Value)
             : throw new InvalidOperationException("Antiforgery token was not found in the response.");
+    }
+
+    private static string ExtractWalletToken(string enrollmentUrl)
+    {
+        const string marker = "/Wallet/Select/";
+        var index = enrollmentUrl.IndexOf(marker, StringComparison.Ordinal);
+        return index < 0
+            ? throw new InvalidOperationException("Wallet link was not found.")
+            : enrollmentUrl[(index + marker.Length)..];
     }
 
     private static bool HasBusinessCookie(HttpResponseMessage response)

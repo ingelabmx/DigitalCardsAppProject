@@ -5,6 +5,7 @@ using DigitalCards.Infrastructure.Persistence;
 using DigitalCards.Infrastructure.Persistence.MySql;
 using DigitalCards.Infrastructure.Time;
 using DigitalCards.Infrastructure.Wallets;
+using DigitalCards.Infrastructure.WalletLinks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,9 +27,12 @@ public static class DependencyInjection
             configuration.GetSection(SmtpEmailOptions.SectionName));
         services.Configure<LegacyWalletSyncOptions>(
             configuration.GetSection(LegacyWalletSyncOptions.SectionName));
+        services.Configure<WalletLinkOptions>(
+            configuration.GetSection(WalletLinkOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<AppleWalletPassPackageBuilder>();
+        services.AddScoped<IWalletLinkTokenService, WalletLinkTokenService>();
 
         var options = configuration
             .GetSection(DigitalCardsInfrastructureOptions.SectionName)
@@ -64,6 +68,7 @@ public static class DependencyInjection
             services.AddScoped<IBusinessCredentialRepository, MySqlBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
+            services.AddScoped<IWalletLinkTokenRepository, MySqlWalletLinkTokenRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
         }
         else
@@ -74,6 +79,7 @@ public static class DependencyInjection
             services.AddScoped<IBusinessCredentialRepository, InMemoryBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
+            services.AddScoped<IWalletLinkTokenRepository, InMemoryWalletLinkTokenRepository>();
         }
 
         if (legacySyncOptions.Enabled)

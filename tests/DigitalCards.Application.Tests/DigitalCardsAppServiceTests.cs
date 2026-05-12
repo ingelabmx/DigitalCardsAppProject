@@ -93,6 +93,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
+        Assert.IsType<MySqlWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
     }
 
     [Fact]
@@ -109,6 +110,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
+        Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
     }
 
     [Fact]
@@ -415,14 +417,30 @@ public sealed class DigitalCardsAppServiceTests
             "http://localhost"));
 
         Assert.Contains("/Wallet/Select/", enrollment.EnrollmentUrl);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        Assert.NotEqual(enrollment.Card.EnrollmentToken, publicToken);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, enrollment.EnrollmentUrl, StringComparison.OrdinalIgnoreCase);
 
         var outbox = provider.GetRequiredService<IWalletEmailOutbox>();
         var messages = await outbox.ListAsync();
 
         Assert.Single(messages);
         Assert.Equal("maria@example.test", messages[0].To);
+        Assert.Equal(enrollment.EnrollmentUrl, messages[0].EnrollmentUrl);
 
-        var google = await app.SelectGoogleWalletAsync(enrollment.Card.EnrollmentToken);
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var tokenRecord = Assert.Single(store.WalletLinkTokens);
+        Assert.Equal(enrollment.Card.Id, tokenRecord.CardId);
+        Assert.Equal(WalletLinkPurposes.WalletSelect, tokenRecord.Purpose);
+        Assert.Equal(64, tokenRecord.TokenHash.Length);
+        Assert.DoesNotContain(publicToken, tokenRecord.TokenHash, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(publicToken, tokenRecord.TokenSuffix);
+
+        var landing = await app.GetWalletLandingAsync(publicToken);
+        Assert.NotNull(landing);
+        Assert.Equal(publicToken, landing!.Token);
+
+        var google = await app.SelectGoogleWalletAsync(publicToken);
 
         Assert.NotNull(google);
         Assert.StartsWith("fake-google-", google!.ObjectId);
@@ -461,13 +479,38 @@ public sealed class DigitalCardsAppServiceTests
             client.UserName,
             "http://localhost"));
 
-        var result = await app.SelectAppleWalletAsync(enrollment.Card.EnrollmentToken);
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        var result = await app.SelectAppleWalletAsync(publicToken);
 
         Assert.NotNull(result);
         Assert.Equal(AppleWalletIssueStatus.Pending, result!.Status);
         Assert.Null(result.DownloadUrl);
         Assert.Null(result.SerialNumber);
         Assert.Contains(".pkpass", result.Message);
+    }
+
+    [Fact]
+    public async Task LegacyCardIdToken_WorksOnlyWhenCompatibilityIsEnabled()
+    {
+        var compatibleProvider = CreateDefaultServices().BuildServiceProvider();
+        var compatibleApp = compatibleProvider.GetRequiredService<DigitalCardsAppService>();
+        var compatibleEnrollment = await CreateEnrollmentAsync(compatibleApp, "compat-token");
+
+        var legacyLanding = await compatibleApp.GetWalletLandingAsync(compatibleEnrollment.Card.EnrollmentToken);
+
+        Assert.NotNull(legacyLanding);
+
+        var hardenedServices = CreateDefaultServices(new Dictionary<string, string?>
+        {
+            ["DigitalCards:WalletLinks:AllowLegacyCardIdTokens"] = "false"
+        });
+        var hardenedProvider = hardenedServices.BuildServiceProvider();
+        var hardenedApp = hardenedProvider.GetRequiredService<DigitalCardsAppService>();
+        var hardenedEnrollment = await CreateEnrollmentAsync(hardenedApp, "blocked-token");
+        var publicToken = ExtractWalletToken(hardenedEnrollment.EnrollmentUrl);
+
+        Assert.Null(await hardenedApp.GetWalletLandingAsync(hardenedEnrollment.Card.EnrollmentToken));
+        Assert.NotNull(await hardenedApp.GetWalletLandingAsync(publicToken));
     }
 
     [Fact]
@@ -487,13 +530,49 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Null(result);
     }
 
-    private static ServiceCollection CreateDefaultServices()
+    private static async Task<EnrollClientResult> CreateEnrollmentAsync(
+        DigitalCardsAppService app,
+        string userName)
     {
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            userName,
+            "Token",
+            "User",
+            $"{userName}@example.test"));
+
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        return await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "http://localhost"));
+    }
+
+    private static string ExtractWalletToken(string enrollmentUrl)
+    {
+        const string marker = "/Wallet/Select/";
+        var index = enrollmentUrl.IndexOf(marker, StringComparison.Ordinal);
+        return index < 0
+            ? throw new InvalidOperationException("Wallet link was not found.")
+            : enrollmentUrl[(index + marker.Length)..];
+    }
+
+    private static ServiceCollection CreateDefaultServices(IReadOnlyDictionary<string, string?>? configurationValues = null)
+    {
+        var configurationBuilder = new ConfigurationBuilder();
+        if (configurationValues is not null)
+        {
+            configurationBuilder.AddInMemoryCollection(configurationValues);
+        }
+
+        var configuration = configurationBuilder.Build();
         var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddSingleton<IConfiguration>(configuration);
         services.AddLogging();
         services.AddDigitalCardsApplication();
-        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+        services.AddDigitalCardsInfrastructure(configuration);
         return services;
     }
 }

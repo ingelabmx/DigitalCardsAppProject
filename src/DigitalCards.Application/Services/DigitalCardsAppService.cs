@@ -17,6 +17,7 @@ public sealed class DigitalCardsAppService
     private readonly IAppleWalletPassRepository _appleWalletPasses;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
+    private readonly IWalletLinkTokenService _walletLinkTokens;
 
     public DigitalCardsAppService(
         IClientRepository clients,
@@ -28,7 +29,8 @@ public sealed class DigitalCardsAppService
         IAppleWalletPassRepository appleWalletPasses,
         IEmailSender emailSender,
         IClock clock,
-        IPasswordHasher<BusinessPasswordHashSubject> passwordHasher)
+        IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
+        IWalletLinkTokenService walletLinkTokens)
     {
         _clients = clients;
         _businesses = businesses;
@@ -40,6 +42,7 @@ public sealed class DigitalCardsAppService
         _emailSender = emailSender;
         _clock = clock;
         _passwordHasher = passwordHasher;
+        _walletLinkTokens = walletLinkTokens;
     }
 
     public async Task<ClientDto> RegisterClientAsync(RegisterClientCommand command, CancellationToken cancellationToken = default)
@@ -118,7 +121,11 @@ public sealed class DigitalCardsAppService
             card = await _loyaltyCards.AddAsync(card, cancellationToken);
         }
 
-        var enrollmentUrl = $"{command.BaseUrl.TrimEnd('/')}/Wallet/Select/{card.EnrollmentToken}";
+        var publicToken = await _walletLinkTokens.CreateTokenAsync(
+            card.Id,
+            WalletLinkPurposes.WalletSelect,
+            cancellationToken);
+        var enrollmentUrl = $"{command.BaseUrl.TrimEnd('/')}/Wallet/Select/{publicToken}";
         await _emailSender.SendWalletEnrollmentAsync(
             new WalletEnrollmentEmail(client.Email, client.FullName, business.Name, enrollmentUrl, _clock.UtcNow),
             cancellationToken);
@@ -136,7 +143,7 @@ public sealed class DigitalCardsAppService
 
         var (card, client, business) = context.Value;
         return new WalletLandingDto(
-            card.EnrollmentToken,
+            token,
             business.Name,
             client.FullName,
             card.CurrentStamps,
@@ -191,7 +198,7 @@ public sealed class DigitalCardsAppService
 
         return result with
         {
-            DownloadUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Apple/Download/{card.EnrollmentToken}.pkpass"
+            DownloadUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Apple/Download/{token}.pkpass"
         };
     }
 
@@ -308,7 +315,11 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
-        var enrollmentUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Select/{card.EnrollmentToken}";
+        var publicToken = await _walletLinkTokens.CreateTokenAsync(
+            card.Id,
+            WalletLinkPurposes.WalletSelect,
+            cancellationToken);
+        var enrollmentUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Select/{publicToken}";
         await _emailSender.SendWalletEnrollmentAsync(
             new WalletEnrollmentEmail(client.Email, client.FullName, business.Name, enrollmentUrl, _clock.UtcNow),
             cancellationToken);
@@ -345,7 +356,21 @@ public sealed class DigitalCardsAppService
         string token,
         CancellationToken cancellationToken)
     {
-        var card = await _loyaltyCards.FindByEnrollmentTokenAsync(token, cancellationToken);
+        LoyaltyCard? card = null;
+        var cardId = await _walletLinkTokens.ResolveCardIdAsync(
+            token,
+            WalletLinkPurposes.WalletSelect,
+            cancellationToken);
+
+        if (cardId is not null)
+        {
+            card = await _loyaltyCards.FindByIdAsync(cardId.Value, cancellationToken);
+        }
+        else if (_walletLinkTokens.AllowLegacyCardIdTokens)
+        {
+            card = await _loyaltyCards.FindByEnrollmentTokenAsync(token, cancellationToken);
+        }
+
         if (card is null)
         {
             return null;
