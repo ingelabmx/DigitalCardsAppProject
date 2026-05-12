@@ -67,6 +67,9 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("business-card-stamp-submit").ClickAsync();
         Assert.Equal("2", await page.GetByTestId("business-card-current-stamps").InnerTextAsync());
         Assert.Equal("Emitida", await page.GetByTestId("business-card-google-status").InnerTextAsync());
+        var ledgerText = await page.GetByTestId("stamp-ledger-list").InnerTextAsync();
+        Assert.Contains("ModernBusiness", ledgerText);
+        Assert.Contains("Sellos: 1 -> 2", ledgerText);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, $"/Client/Cards?UserName={userName}").ToString());
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();

@@ -94,6 +94,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
         Assert.IsType<MySqlWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
+        Assert.IsType<MySqlStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
     }
 
     [Fact]
@@ -111,6 +112,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
+        Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
     }
 
     [Fact]
@@ -514,6 +516,59 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task AddStampToCardAsync_RecordsModernBusinessStampLedger()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "ledger-ok");
+
+        var detail = await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+
+        Assert.NotNull(detail);
+        Assert.Equal(2, detail!.CurrentStamps);
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var records = await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5);
+        var record = Assert.Single(records);
+        Assert.Equal(StampLedgerSource.ModernBusiness, record.Source);
+        Assert.Equal(business.Id, record.ActorBusinessId);
+        Assert.Equal(1, record.PreviousCheckQTY);
+        Assert.Equal(2, record.NewCheckQTY);
+        Assert.Equal(1, record.PreviousHistoricCheckQTY);
+        Assert.Equal(2, record.NewHistoricCheckQTY);
+        Assert.False(record.GoogleWalletAttempted);
+        Assert.True(record.AppleWalletAttempted);
+        Assert.True(record.AppleWalletSucceeded);
+        Assert.Null(record.ErrorSummary);
+    }
+
+    [Fact]
+    public async Task AddStampToCardAsync_WhenWalletFails_RecordsSafeErrorSummary()
+    {
+        var services = CreateDefaultServices();
+        services.AddScoped<IAppleWalletService, ThrowingAppleWalletService>();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "ledger-fail");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            app.AddStampToCardAsync(business!.Id, enrollment.Card.Id));
+
+        Assert.Equal("apple push failed with token secret-token", exception.Message);
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single(await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5));
+        Assert.Equal("InvalidOperationException", record.ErrorSummary);
+        Assert.DoesNotContain("secret-token", record.ErrorSummary, StringComparison.OrdinalIgnoreCase);
+        Assert.True(record.AppleWalletAttempted);
+        Assert.False(record.AppleWalletSucceeded);
+    }
+
+    [Fact]
     public async Task SelectAppleWallet_ReturnsNullForInvalidToken()
     {
         var services = new ServiceCollection();
@@ -574,5 +629,78 @@ public sealed class DigitalCardsAppServiceTests
         services.AddDigitalCardsApplication();
         services.AddDigitalCardsInfrastructure(configuration);
         return services;
+    }
+
+    private sealed class ThrowingAppleWalletService : IAppleWalletService
+    {
+        public Task<AppleWalletIssueResult> IssueAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new AppleWalletIssueResult(
+                AppleWalletIssueStatus.Pending,
+                "Pending",
+                DownloadUrl: null,
+                SerialNumber: null));
+        }
+
+        public Task<AppleWalletPassFile> CreatePassAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletPassRequestResult> CreateUpdatedPassAsync(
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletRegistrationStatus> RegisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string pushToken,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletUnregistrationStatus> UnregisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletUpdatedPasses?> ListUpdatedPassesAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string? previousLastUpdated,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task NotifyPassUpdatedAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("apple push failed with token secret-token");
+        }
     }
 }

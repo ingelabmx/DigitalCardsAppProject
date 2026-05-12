@@ -20,10 +20,13 @@ public sealed class LegacyWalletSyncProcessorTests
         var repository = new FakeLegacyWalletSyncRepository(candidate);
         var google = new RecordingGoogleWalletService();
         var apple = new RecordingAppleWalletService();
+        var ledger = new RecordingStampLedgerRepository();
         var processor = new LegacyWalletSyncProcessor(
             repository,
             google,
             apple,
+            ledger,
+            new FixedClock(),
             NullLogger<LegacyWalletSyncProcessor>.Instance);
         var fingerprints = new Dictionary<Guid, string>();
 
@@ -34,6 +37,13 @@ public sealed class LegacyWalletSyncProcessorTests
         Assert.Equal(new LegacyWalletSyncRunResult(1, 0, 1, 0), second);
         Assert.Equal(1, google.PatchCount);
         Assert.Equal(1, apple.NotifyCount);
+        var record = Assert.Single(ledger.Records);
+        Assert.Equal(StampLedgerSource.LegacySync, record.Source);
+        Assert.Equal(card.Id, record.CardId);
+        Assert.True(record.GoogleWalletAttempted);
+        Assert.True(record.GoogleWalletSucceeded);
+        Assert.True(record.AppleWalletAttempted);
+        Assert.True(record.AppleWalletSucceeded);
     }
 
     [Fact]
@@ -54,10 +64,13 @@ public sealed class LegacyWalletSyncProcessorTests
                 HasRegisteredAppleDevices: true));
         var google = new RecordingGoogleWalletService(failPatch: true);
         var apple = new RecordingAppleWalletService();
+        var ledger = new RecordingStampLedgerRepository();
         var processor = new LegacyWalletSyncProcessor(
             repository,
             google,
             apple,
+            ledger,
+            new FixedClock(),
             NullLogger<LegacyWalletSyncProcessor>.Instance);
 
         var result = await processor.SyncAsync(
@@ -70,6 +83,12 @@ public sealed class LegacyWalletSyncProcessorTests
         Assert.Equal(1, result.Failed);
         Assert.Equal(1, google.PatchCount);
         Assert.Equal(1, apple.NotifyCount);
+        Assert.Equal(2, ledger.Records.Count);
+        Assert.Equal("InvalidOperationException", ledger.Records[0].ErrorSummary);
+        Assert.True(ledger.Records[0].GoogleWalletAttempted);
+        Assert.False(ledger.Records[0].GoogleWalletSucceeded);
+        Assert.True(ledger.Records[1].AppleWalletAttempted);
+        Assert.True(ledger.Records[1].AppleWalletSucceeded);
     }
 
     private static LoyaltyCard CreateCard(string? googleObjectId, Guid? id = null)
@@ -114,6 +133,35 @@ public sealed class LegacyWalletSyncProcessorTests
         {
             return Task.FromResult(_candidates);
         }
+    }
+
+    private sealed class RecordingStampLedgerRepository : IStampLedgerRepository
+    {
+        public List<StampLedgerRecord> Records { get; } = [];
+
+        public Task AddAsync(StampLedgerRecord record, CancellationToken cancellationToken = default)
+        {
+            Records.Add(record with { Id = Records.Count + 1 });
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<StampLedgerRecord>> ListRecentByCardIdAsync(
+            Guid cardId,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<StampLedgerRecord>>(
+                Records
+                    .Where(record => record.CardId == cardId)
+                    .OrderByDescending(record => record.CreatedAt)
+                    .Take(limit)
+                    .ToArray());
+        }
+    }
+
+    private sealed class FixedClock : IClock
+    {
+        public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-05-11T22:00:00Z");
     }
 
     private sealed class RecordingGoogleWalletService : IGoogleWalletService

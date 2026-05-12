@@ -17,6 +17,7 @@ public sealed class DigitalCardsAppService
     private readonly IAppleWalletPassRepository _appleWalletPasses;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
+    private readonly IStampLedgerRepository _stampLedger;
     private readonly IWalletLinkTokenService _walletLinkTokens;
 
     public DigitalCardsAppService(
@@ -30,6 +31,7 @@ public sealed class DigitalCardsAppService
         IEmailSender emailSender,
         IClock clock,
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
+        IStampLedgerRepository stampLedger,
         IWalletLinkTokenService walletLinkTokens)
     {
         _clients = clients;
@@ -42,6 +44,7 @@ public sealed class DigitalCardsAppService
         _emailSender = emailSender;
         _clock = clock;
         _passwordHasher = passwordHasher;
+        _stampLedger = stampLedger;
         _walletLinkTokens = walletLinkTokens;
     }
 
@@ -227,15 +230,13 @@ public sealed class DigitalCardsAppService
             throw new InvalidOperationException("Client is not enrolled with this business.");
         }
 
-        card.AddStamp(_clock.UtcNow);
-        await _loyaltyCards.UpdateAsync(card, cancellationToken);
-
-        if (card.GoogleObjectId is not null)
-        {
-            await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
-        }
-
-        await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
+        await AddStampAndNotifyWalletsAsync(
+            card,
+            client,
+            business,
+            StampLedgerSource.ModernBusiness,
+            actorBusinessId: business.Id,
+            cancellationToken);
 
         return ToDto(card, client, business);
     }
@@ -290,15 +291,14 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
-        card.AddStamp(_clock.UtcNow);
-        await _loyaltyCards.UpdateAsync(card, cancellationToken);
+        await AddStampAndNotifyWalletsAsync(
+            card,
+            client,
+            business,
+            StampLedgerSource.ModernBusiness,
+            actorBusinessId: business.Id,
+            cancellationToken);
 
-        if (card.GoogleObjectId is not null)
-        {
-            await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
-        }
-
-        await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
         return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
     }
 
@@ -438,6 +438,8 @@ public sealed class DigitalCardsAppService
             appleDeviceCount = devices.Count;
         }
 
+        var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
+
         return new BusinessCardDto(
             card.Id,
             card.EnrollmentToken,
@@ -449,6 +451,126 @@ public sealed class DigitalCardsAppService
             !string.IsNullOrWhiteSpace(card.GoogleObjectId),
             applePass is not null,
             appleDeviceCount,
-            applePass?.UpdatedAt);
+            applePass?.UpdatedAt,
+            recentEvents.Select(ToStampLedgerEventDto).ToArray());
+    }
+
+    private async Task AddStampAndNotifyWalletsAsync(
+        LoyaltyCard card,
+        Client client,
+        Business business,
+        StampLedgerSource source,
+        Guid? actorBusinessId,
+        CancellationToken cancellationToken)
+    {
+        var previousCheckQty = card.CurrentStamps;
+        var previousHistoricCheckQty = card.LifetimeStamps;
+        card.AddStamp(_clock.UtcNow);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
+
+        var googleAttempted = false;
+        var googleSucceeded = false;
+        var appleAttempted = false;
+        var appleSucceeded = false;
+
+        try
+        {
+            if (card.GoogleObjectId is not null)
+            {
+                googleAttempted = true;
+                await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
+                googleSucceeded = true;
+            }
+
+            appleAttempted = true;
+            await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
+            appleSucceeded = true;
+
+            await RecordStampLedgerAsync(
+                card,
+                source,
+                actorBusinessId,
+                previousCheckQty,
+                previousHistoricCheckQty,
+                googleAttempted,
+                googleSucceeded,
+                appleAttempted,
+                appleSucceeded,
+                errorSummary: null,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await RecordStampLedgerAsync(
+                card,
+                source,
+                actorBusinessId,
+                previousCheckQty,
+                previousHistoricCheckQty,
+                googleAttempted,
+                googleSucceeded,
+                appleAttempted,
+                appleSucceeded,
+                SafeErrorSummary(exception),
+                cancellationToken);
+            throw;
+        }
+    }
+
+    private async Task RecordStampLedgerAsync(
+        LoyaltyCard card,
+        StampLedgerSource source,
+        Guid? actorBusinessId,
+        int previousCheckQty,
+        int previousHistoricCheckQty,
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded,
+        string? errorSummary,
+        CancellationToken cancellationToken)
+    {
+        await _stampLedger.AddAsync(
+            new StampLedgerRecord(
+                0,
+                card.Id,
+                card.BusinessId,
+                card.ClientId,
+                source,
+                actorBusinessId,
+                previousCheckQty,
+                card.CurrentStamps,
+                previousHistoricCheckQty,
+                card.LifetimeStamps,
+                card.LastStampedAt,
+                googleAttempted,
+                googleSucceeded,
+                appleAttempted,
+                appleSucceeded,
+                errorSummary,
+                _clock.UtcNow),
+            cancellationToken);
+    }
+
+    private static StampLedgerEventDto ToStampLedgerEventDto(StampLedgerRecord record)
+    {
+        return new StampLedgerEventDto(
+            record.CreatedAt,
+            record.Source,
+            record.PreviousCheckQTY,
+            record.NewCheckQTY,
+            record.PreviousHistoricCheckQTY,
+            record.NewHistoricCheckQTY,
+            record.ObservedLastCheck,
+            record.GoogleWalletAttempted,
+            record.GoogleWalletSucceeded,
+            record.AppleWalletAttempted,
+            record.AppleWalletSucceeded,
+            record.ErrorSummary);
+    }
+
+    private static string SafeErrorSummary(Exception exception)
+    {
+        return exception.GetType().Name;
     }
 }
