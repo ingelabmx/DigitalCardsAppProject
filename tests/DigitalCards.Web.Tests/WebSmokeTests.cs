@@ -207,6 +207,113 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminPages_WithoutCookie_RedirectToLogin()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses" })
+        {
+            var response = await client.GetAsync(path);
+
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Contains("/Admin/Login", response.Headers.Location?.OriginalString);
+        }
+    }
+
+    [Fact]
+    public async Task AdminLogin_WithValidLegacyAdminCredentials_EmitsAdminCookie()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await LoginAdminAsync(client);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Admin/Dashboard", response.Headers.Location?.OriginalString);
+        Assert.True(HasAdminCookie(response));
+        Assert.False(HasBusinessCookie(response));
+    }
+
+    [Fact]
+    public async Task AdminLogin_WithBusinessCredentials_DoesNotEmitAdminCookie()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await LoginAdminAsync(
+            client,
+            userNameOrEmail: "demo@digitalcards.test",
+            password: "business123");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Credenciales de admin invalidas", html);
+        Assert.False(HasAdminCookie(response));
+    }
+
+    [Fact]
+    public async Task AdminBusinesses_EnableAndDisablePilotBusinessControlsModernAccess()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        await LoginBusinessAsync(client);
+        var blockedHtml = await client.GetStringAsync("/Business/Dashboard");
+        Assert.Contains("pilot-business-blocked", blockedHtml);
+
+        await LoginAdminAsync(client);
+        var enableToken = await GetAntiforgeryTokenAsync(client, "/Admin/Businesses");
+        var enableResponse = await client.PostAsync(
+            "/Admin/Businesses?handler=Enable",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["businessId"] = "11111111-1111-1111-1111-111111111111",
+                ["notes"] = "piloto web test",
+                ["__RequestVerificationToken"] = enableToken
+            }));
+        var enableHtml = await enableResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
+        Assert.Contains("Piloto habilitado", enableHtml);
+
+        var allowedHtml = await client.GetStringAsync("/Business/Dashboard");
+        Assert.DoesNotContain("pilot-business-blocked", allowedHtml);
+        Assert.Contains("cards-link", allowedHtml);
+
+        var disableToken = ExtractAntiforgeryToken(enableHtml);
+        var disableResponse = await client.PostAsync(
+            "/Admin/Businesses?handler=Disable",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["businessId"] = "11111111-1111-1111-1111-111111111111",
+                ["__RequestVerificationToken"] = disableToken
+            }));
+        var disableHtml = await disableResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
+        Assert.Contains("Piloto deshabilitado", disableHtml);
+
+        var blockedAgainHtml = await client.GetStringAsync("/Business/Dashboard");
+        Assert.Contains("pilot-business-blocked", blockedAgainHtml);
+    }
+
+    [Fact]
     public async Task BusinessPages_WithValidCookie_ReturnOk()
     {
         using var fake = WithFakeIntegrations();
@@ -894,6 +1001,22 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             }));
     }
 
+    private static async Task<HttpResponseMessage> LoginAdminAsync(
+        HttpClient client,
+        string userNameOrEmail = "admin@digitalcards.test",
+        string password = "admin123")
+    {
+        var token = await GetAntiforgeryTokenAsync(client, "/Admin/Login");
+        return await client.PostAsync(
+            "/Admin/Login",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userNameOrEmail,
+                ["Input.Password"] = password,
+                ["__RequestVerificationToken"] = token
+            }));
+    }
+
     private static async Task<string> GetAntiforgeryTokenAsync(HttpClient client, string path)
     {
         var html = await client.GetStringAsync(path);
@@ -933,6 +1056,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     {
         return response.Headers.TryGetValues("Set-Cookie", out var values) &&
             values.Any(value => value.Contains(".DigitalCards.Business=", StringComparison.Ordinal));
+    }
+
+    private static bool HasAdminCookie(HttpResponseMessage response)
+    {
+        return response.Headers.TryGetValues("Set-Cookie", out var values) &&
+            values.Any(value => value.Contains(".DigitalCards.Admin=", StringComparison.Ordinal));
     }
 
     private static bool HasExpiredBusinessCookie(HttpResponseMessage response)

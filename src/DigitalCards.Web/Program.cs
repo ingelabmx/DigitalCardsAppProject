@@ -47,6 +47,17 @@ builder.Services
         options.AccessDeniedPath = "/Business/Login";
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    })
+    .AddCookie(AdminAuth.Scheme, options =>
+    {
+        options.Cookie.Name = ".DigitalCards.Admin";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.LoginPath = "/Admin/Login";
+        options.AccessDeniedPath = "/Admin/Login";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -56,6 +67,13 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.RequireClaim(BusinessAuth.RoleClaim, BusinessAuth.Role);
         policy.RequireClaim(BusinessAuth.BusinessIdClaim);
+    });
+    options.AddPolicy(AdminAuth.Policy, policy =>
+    {
+        policy.AuthenticationSchemes.Add(AdminAuth.Scheme);
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(AdminAuth.RoleClaim, AdminAuth.Role);
+        policy.RequireClaim(AdminAuth.AdminUserIdClaim);
     });
 });
 builder.Services.AddDigitalCardsApplication();

@@ -37,7 +37,7 @@ public sealed class DashboardModel : PageModel
         }
 
         BusinessName = business.Name;
-        var pilotAccess = _pilotAccess.CheckBusiness(business.Id, business.Email);
+        var pilotAccess = await _pilotAccess.CheckBusinessAsync(business.Id, business.Email, cancellationToken);
         if (!pilotAccess.IsAllowed)
         {
             PilotBlockMessage = pilotAccess.Message;

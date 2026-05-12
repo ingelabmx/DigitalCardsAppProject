@@ -258,6 +258,27 @@ Runbook:
 docs/migration-context/18-pilot-readiness.md
 ```
 
+## Admin piloto
+
+Antes de administrar negocios piloto desde la app moderna contra HostGator,
+ejecuta:
+
+```text
+docs/migration-context/22-admin-pilot-management-hostgator.sql
+```
+
+El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
+
+- Login admin: `http://localhost:5031/Admin/Login`
+- Dashboard admin: `http://localhost:5031/Admin/Dashboard`
+- Negocios piloto: `http://localhost:5031/Admin/Businesses`
+
+Con `DigitalCards:Pilot:Enabled=true`, un negocio puede usar el flujo moderno
+si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
+de `appsettings.Local.json`. La recomendacion operativa es mover los negocios
+a `/Admin/Businesses` y dejar `AllowedBusinessEmails`/`AllowedBusinessIds` solo
+como fallback.
+
 ## Password hardening negocio
 
 La app moderna migra passwords de negocio gradualmente a una tabla nueva,

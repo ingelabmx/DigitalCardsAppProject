@@ -64,24 +64,28 @@ public static class DependencyInjection
         {
             services.AddSingleton(new MySqlConnectionFactory(providers.DigitalCardsConnectionString!));
             services.AddScoped<IClientRepository, MySqlClientRepository>();
+            services.AddScoped<IAdminUserRepository, MySqlAdminUserRepository>();
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
             services.AddScoped<IBusinessCredentialRepository, MySqlBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, MySqlWalletLinkTokenRepository>();
             services.AddScoped<IStampLedgerRepository, MySqlStampLedgerRepository>();
+            services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
         }
         else
         {
             services.AddSingleton<InMemoryDigitalCardsStore>();
             services.AddScoped<IClientRepository, InMemoryClientRepository>();
+            services.AddScoped<IAdminUserRepository, InMemoryAdminUserRepository>();
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
             services.AddScoped<IBusinessCredentialRepository, InMemoryBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, InMemoryWalletLinkTokenRepository>();
             services.AddScoped<IStampLedgerRepository, InMemoryStampLedgerRepository>();
+            services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();
         }
 
         if (legacySyncOptions.Enabled)

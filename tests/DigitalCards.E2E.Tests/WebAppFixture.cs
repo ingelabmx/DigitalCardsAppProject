@@ -31,6 +31,8 @@ public sealed class WebAppFixture : IAsyncLifetime
         startInfo.Environment["DigitalCards__AppleWallet__Provider"] = "Fake";
         startInfo.Environment["DigitalCards__Email__Provider"] = "Fake";
         startInfo.Environment["DigitalCards__PublicBaseUrl"] = string.Empty;
+        startInfo.Environment["DigitalCards__Pilot__Enabled"] = "true";
+        startInfo.Environment["DigitalCards__Pilot__AllowedClientEmailDomains__0"] = "e.test";
         startInfo.Environment["DigitalCards__SkipUserLocalConfiguration"] = "true";
 
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start DigitalCards.Web.");

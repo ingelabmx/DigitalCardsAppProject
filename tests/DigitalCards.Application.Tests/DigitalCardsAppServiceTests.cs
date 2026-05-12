@@ -90,11 +90,13 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
+        Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
         Assert.IsType<MySqlWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<MySqlStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
+        Assert.IsType<MySqlPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
     }
 
     [Fact]
@@ -110,9 +112,71 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeAppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
         Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+        Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
+        Assert.IsType<InMemoryPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
+    }
+
+    [Fact]
+    public async Task LoginAdmin_WithLegacyRoleAdminCredentials_ReturnsAdmin()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "admin@digitalcards.test",
+            "admin123"));
+
+        Assert.NotNull(admin);
+        Assert.Equal("admin@digitalcards.test", admin!.Email);
+        Assert.Equal("DCAdmin", admin.UserName);
+    }
+
+    [Fact]
+    public async Task LoginAdmin_WithBusinessCredentials_ReturnsNull()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.Null(admin);
+    }
+
+    [Fact]
+    public async Task SetPilotBusinessAsync_UpsertsPilotState()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var business = await provider.GetRequiredService<IBusinessRepository>()
+            .FindByEmailAsync("demo@digitalcards.test");
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        var enabled = await adminApp.SetPilotBusinessAsync(new SetPilotBusinessCommand(
+            business!.Id,
+            admin!.Id,
+            IsEnabled: true,
+            Notes: "piloto inicial"));
+        var disabled = await adminApp.SetPilotBusinessAsync(new SetPilotBusinessCommand(
+            business.Id,
+            admin.Id,
+            IsEnabled: false,
+            Notes: "pausado"));
+        var businesses = await adminApp.ListPilotBusinessesAsync("demo");
+
+        Assert.NotNull(enabled);
+        Assert.True(enabled!.IsEnabled);
+        Assert.NotNull(disabled);
+        Assert.False(disabled!.IsEnabled);
+        var listed = Assert.Single(businesses);
+        Assert.False(listed.IsEnabled);
+        Assert.Equal("pausado", listed.Notes);
     }
 
     [Fact]

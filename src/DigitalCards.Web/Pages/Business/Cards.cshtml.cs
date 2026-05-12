@@ -52,7 +52,7 @@ public sealed class CardsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        if (!SetPilotBusinessBlock())
+        if (!await SetPilotBusinessBlockAsync(cancellationToken))
         {
             return Page();
         }
@@ -153,7 +153,7 @@ public sealed class CardsModel : PageModel
 
     private async Task<bool> ValidateOperationAsync(CancellationToken cancellationToken)
     {
-        if (!SetPilotBusinessBlock())
+        if (!await SetPilotBusinessBlockAsync(cancellationToken))
         {
             ModelState.AddModelError(string.Empty, PilotBlockMessage!);
             return false;
@@ -178,9 +178,9 @@ public sealed class CardsModel : PageModel
         return true;
     }
 
-    private bool SetPilotBusinessBlock()
+    private async Task<bool> SetPilotBusinessBlockAsync(CancellationToken cancellationToken)
     {
-        var access = _pilotAccess.CheckAuthenticatedBusiness(User);
+        var access = await _pilotAccess.CheckAuthenticatedBusinessAsync(User, cancellationToken);
         if (!access.IsAllowed)
         {
             PilotBlockMessage = access.Message;

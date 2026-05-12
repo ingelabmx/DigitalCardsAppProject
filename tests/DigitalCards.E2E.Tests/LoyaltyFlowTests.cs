@@ -22,6 +22,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var businessPassword = GetBusinessPassword();
         var businessName = GetBusinessName();
 
+        await EnableDemoBusinessPilotAsync(page);
+
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Register").ToString());
         await page.GetByTestId("register-username").FillAsync(userName);
         await page.GetByTestId("register-first-name").FillAsync("Maria");
@@ -75,6 +77,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();
         Assert.Contains("Sellos actuales: 2", cardText);
         Assert.Contains("Google emitida", cardText);
+
+        await DisableDemoBusinessPilotAsync(page);
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
+        Assert.Contains("no esta habilitado", await page.GetByTestId("pilot-business-blocked").InnerTextAsync());
     }
 
     [PlaywrightFact]
@@ -85,6 +91,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var page = await browser.NewPageAsync();
         var userName = NewLegacySafeUserName("p");
 
+        await EnableDemoBusinessPilotAsync(page);
         await CreateEnrollmentAsync(page, userName);
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
         var enrollmentUrl = await page.GetByTestId("email-link").First.GetAttributeAsync("href");
@@ -121,6 +128,26 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("enroll-submit").ClickAsync();
     }
 
+    private async Task EnableDemoBusinessPilotAsync(IPage page)
+    {
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
+        await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
+        await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
+        await page.GetByTestId("admin-login-submit").ClickAsync();
+        Assert.Contains("Admin", await page.GetByTestId("admin-dashboard-title").InnerTextAsync());
+
+        await page.GetByTestId("admin-businesses-link").ClickAsync();
+        await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
+        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+    }
+
+    private async Task DisableDemoBusinessPilotAsync(IPage page)
+    {
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Businesses").ToString());
+        await page.GetByTestId("admin-disable-pilot").First.ClickAsync();
+        Assert.Contains("Piloto deshabilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+    }
+
     private static string NewLegacySafeUserName(string prefix)
     {
         return $"{prefix}{Guid.NewGuid():N}"[..12];
@@ -139,5 +166,15 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     private static string GetBusinessName()
     {
         return Environment.GetEnvironmentVariable("E2E_BUSINESS_NAME") ?? "Demo Coffee";
+    }
+
+    private static string GetAdminEmail()
+    {
+        return Environment.GetEnvironmentVariable("E2E_ADMIN_EMAIL") ?? "admin@digitalcards.test";
+    }
+
+    private static string GetAdminPassword()
+    {
+        return Environment.GetEnvironmentVariable("E2E_ADMIN_PASSWORD") ?? "admin123";
     }
 }

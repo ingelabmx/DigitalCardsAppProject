@@ -1,0 +1,24 @@
+@page
+@model DigitalCards.Web.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard admin";
+}
+
+<section class="app-surface">
+    <div>
+        <p class="eyebrow">Admin</p>
+        <h1 data-testid="admin-dashboard-title">@Model.AdminName</h1>
+        <p class="lead">Administra que negocios pueden usar el flujo moderno en app.puntelio.com.</p>
+    </div>
+
+    <div class="action-grid">
+        <a class="action-card" asp-page="/Admin/Businesses" data-testid="admin-businesses-link">
+            <span>Negocios piloto</span>
+            <small>Habilita o deshabilita negocios existentes.</small>
+        </a>
+        <a class="action-card" asp-page="/Admin/Logout" data-testid="admin-logout-link">
+            <span>Salir admin</span>
+            <small>Cierra la sesion de administrador.</small>
+        </a>
+    </div>
+</section>
