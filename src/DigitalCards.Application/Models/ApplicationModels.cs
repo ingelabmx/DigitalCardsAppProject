@@ -24,6 +24,21 @@ public sealed record LoyaltyCardDto(
 
 public sealed record EnrollClientResult(LoyaltyCardDto Card, string EnrollmentUrl);
 
+public sealed record BusinessCardDto(
+    Guid Id,
+    string EnrollmentToken,
+    ClientDto Client,
+    string BusinessName,
+    int CurrentStamps,
+    int LifetimeStamps,
+    DateTimeOffset LastStampedAt,
+    bool GoogleIssued,
+    bool AppleTracked,
+    int AppleRegisteredDeviceCount,
+    DateTimeOffset? AppleUpdatedAt);
+
+public sealed record ResendWalletEmailResult(BusinessCardDto Card, string EnrollmentUrl);
+
 public sealed record WalletLandingDto(
     string Token,
     string BusinessName,

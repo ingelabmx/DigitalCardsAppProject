@@ -27,13 +27,13 @@
     else
     {
         <div class="action-grid">
+            <a class="action-card" asp-page="/Business/Cards" data-testid="cards-link">
+                <span>Tarjetas y sellos</span>
+                <small>Busca clientes, reenvia Wallet y agrega sellos.</small>
+            </a>
             <a class="action-card" asp-page="/Business/Enroll" data-testid="enroll-link">
                 <span>Asociar cliente</span>
                 <small>Genera correo con link de Wallet.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Stamp" data-testid="stamp-link">
-                <span>Agregar sello</span>
-                <small>Actualiza la tarjeta y el Wallet.</small>
             </a>
             <a class="action-card" asp-page="/Dev/Outbox" data-testid="dashboard-outbox-link">
                 <span>Ver outbox</span>

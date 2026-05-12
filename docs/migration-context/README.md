@@ -25,7 +25,7 @@ Documentos:
 - `16-business-password-hardening-hostgator.sql`: tabla nueva para hashes modernos de negocio.
 - `17-puntelio-single-environment.md`: configuracion unica con `app.puntelio.com`, Cloudflare Tunnel y Wallets.
 - `18-pilot-readiness.md`: guardrails de piloto para usar `app.puntelio.com` con datos reales.
-- `19-production-readiness.md`: health/readiness, proxy headers, Data Protection y runbook operativo.
+- `19-business-operations-v1.md`: busqueda y operacion moderna de tarjetas por negocio.
 
 Notas:
 

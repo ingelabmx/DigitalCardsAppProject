@@ -23,7 +23,6 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [16 Business Password Hardening HostGator SQL](docs/migration-context/16-business-password-hardening-hostgator.sql)
 - [17 Puntelio Single Environment](docs/migration-context/17-puntelio-single-environment.md)
 - [18 Pilot Readiness](docs/migration-context/18-pilot-readiness.md)
-- [19 Production Readiness](docs/migration-context/19-production-readiness.md)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real, SMTP real, Apple Wallet `.pkpass` y Apple Wallet updates por Web Service/APNs quedan disponibles por configuracion local controlada; los fakes siguen siendo el default para desarrollo, CI y Playwright. El flujo moderno de negocio ahora usa cookie auth, ya no depende de `businessId` visible en URL/formularios y migra passwords de negocio a hashes modernos sin modificar la columna legacy.
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real, SMTP real, Apple Wallet `.pkpass` y Apple Wallet updates por Web Service/APNs quedan disponibles por configuracion local controlada; los fakes siguen siendo el default para desarrollo, CI y Playwright. El flujo moderno de negocio ahora usa cookie auth, ya no depende de `businessId` visible en URL/formularios, migra passwords de negocio a hashes modernos sin modificar la columna legacy y empieza la operacion diaria desde `/Business/Cards`.

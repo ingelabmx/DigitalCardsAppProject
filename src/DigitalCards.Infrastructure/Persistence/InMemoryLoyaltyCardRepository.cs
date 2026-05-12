@@ -45,6 +45,11 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
             card.ClientId == clientId && card.BusinessId == businessId));
     }
 
+    public Task<LoyaltyCard?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_store.LoyaltyCards.SingleOrDefault(card => card.Id == id));
+    }
+
     public Task<LoyaltyCard?> FindByEnrollmentTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_store.LoyaltyCards.SingleOrDefault(card =>
@@ -55,5 +60,51 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
     {
         return Task.FromResult<IReadOnlyList<LoyaltyCard>>(
             _store.LoyaltyCards.Where(card => card.ClientId == clientId).ToArray());
+    }
+
+    public Task<IReadOnlyList<LoyaltyCard>> SearchByBusinessAsync(
+        Guid businessId,
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = query.Trim();
+
+        lock (_store.Sync)
+        {
+            var cards = _store.LoyaltyCards
+                .Where(card => card.BusinessId == businessId)
+                .Where(card => MatchesClient(card.ClientId, normalizedQuery))
+                .OrderByDescending(card => card.LastStampedAt)
+                .Take(Math.Max(1, limit))
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyList<LoyaltyCard>>(cards);
+        }
+    }
+
+    private bool MatchesClient(Guid clientId, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+
+        var client = _store.Clients.SingleOrDefault(candidate => candidate.Id == clientId);
+        if (client is null)
+        {
+            return false;
+        }
+
+        return Contains(client.UserName, query) ||
+            Contains(client.Email, query) ||
+            Contains(client.FirstName, query) ||
+            Contains(client.LastName, query) ||
+            Contains(client.FullName, query);
+    }
+
+    private static bool Contains(string value, string query)
+    {
+        return value.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 }

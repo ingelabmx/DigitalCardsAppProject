@@ -1,8 +1,11 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using DigitalCards.Application;
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
+using DigitalCards.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -213,7 +216,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
         {
             var response = await client.GetAsync(path);
 
@@ -294,7 +297,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
         {
             var response = await client.GetAsync(path);
             var html = await response.Content.ReadAsStringAsync();
@@ -345,16 +348,116 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("pilot-business-blocked", html);
         Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", html);
         Assert.DoesNotContain("data-testid=\"enroll-link\"", html);
-        Assert.DoesNotContain("data-testid=\"stamp-link\"", html);
+        Assert.DoesNotContain("data-testid=\"cards-link\"", html);
 
-        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp" })
+        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
         {
             var blockedPage = await client.GetStringAsync(path);
 
             Assert.Contains("pilot-business-blocked", blockedPage);
             Assert.DoesNotContain("data-testid=\"enroll-form\"", blockedPage);
             Assert.DoesNotContain("data-testid=\"stamp-form\"", blockedPage);
+            Assert.DoesNotContain("data-testid=\"business-card-search-form\"", blockedPage);
         }
+    }
+
+    [Fact]
+    public async Task BusinessCards_SearchShowsOnlyAuthenticatedBusinessCards()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("bc");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        SeedOtherBusinessCard(fake.Factory, "othercard1");
+
+        var html = await client.GetStringAsync($"/Business/Cards?Query={userName}");
+
+        Assert.Contains("business-card-results", html);
+        Assert.Contains(userName, html);
+        Assert.Contains(enrollment.Card.Id.ToString(), html);
+        Assert.DoesNotContain("othercard1", html);
+        Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BusinessCards_RejectsCardFromAnotherBusiness()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var otherCardId = SeedOtherBusinessCard(fake.Factory, "othercard2");
+
+        var html = await client.GetStringAsync($"/Business/Cards?Query=othercard2&CardId={otherCardId}");
+
+        Assert.Contains("No se encontraron tarjetas para este negocio.", html);
+        Assert.Contains("La tarjeta no existe para este negocio.", html);
+        Assert.DoesNotContain("business-card-stamp-submit", html);
+    }
+
+    [Fact]
+    public async Task BusinessCards_StampByCardIdValidatesBusinessOwner()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var otherCardId = SeedOtherBusinessCard(fake.Factory, "othercard3");
+        var token = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+
+        var response = await client.PostAsync(
+            $"/Business/Cards?handler=Stamp&cardId={otherCardId}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("La tarjeta no existe para este negocio.", html);
+        Assert.Equal(1, FindInMemoryCard(fake.Factory, otherCardId).CurrentStamps);
+    }
+
+    [Fact]
+    public async Task BusinessCards_ResendEmailUsesConfiguredPublicBaseUrl()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PublicBaseUrl"] = "https://app.puntelio.com"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("br");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        var token = await GetAntiforgeryTokenAsync(client, $"/Business/Cards?Query={userName}&CardId={enrollment.Card.Id}");
+
+        var response = await client.PostAsync(
+            $"/Business/Cards?handler=Resend&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Correo reenviado", html);
+        Assert.Contains($"https://app.puntelio.com/Wallet/Select/{enrollment.Card.EnrollmentToken}", html);
+
+        using var scope = fake.Factory.Services.CreateScope();
+        var outbox = scope.ServiceProvider.GetRequiredService<IWalletEmailOutbox>();
+        var messages = await outbox.ListAsync();
+        Assert.Equal($"https://app.puntelio.com/Wallet/Select/{enrollment.Card.EnrollmentToken}", messages[0].EnrollmentUrl);
     }
 
     [Fact]
@@ -618,6 +721,13 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         WebApplicationFactory<Program> factory,
         string userName)
     {
+        return (await CreateEnrollmentAsync(factory, userName)).Card.EnrollmentToken;
+    }
+
+    private static async Task<EnrollClientResult> CreateEnrollmentAsync(
+        WebApplicationFactory<Program> factory,
+        string userName)
+    {
         using var scope = factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
 
@@ -636,7 +746,53 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             client.UserName,
             "http://localhost"));
 
-        return enrollment.Card.EnrollmentToken;
+        return enrollment;
+    }
+
+    private static Guid SeedOtherBusinessCard(
+        WebApplicationFactory<Program> factory,
+        string userName)
+    {
+        using var scope = factory.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var business = new Business(
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            "Other Business",
+            "other@digitalcards.test",
+            "business123",
+            "/img/demo-coffee.svg");
+        var client = new Client(
+            Guid.NewGuid(),
+            userName,
+            "Other",
+            "Client",
+            $"{userName}@example.test");
+        var card = new LoyaltyCard(Guid.NewGuid(), client.Id, business.Id, DateTimeOffset.UtcNow);
+
+        lock (store.Sync)
+        {
+            if (store.Businesses.All(existing => existing.Id != business.Id))
+            {
+                store.Businesses.Add(business);
+            }
+
+            store.Clients.Add(client);
+            store.LoyaltyCards.Add(card);
+        }
+
+        return card.Id;
+    }
+
+    private static LoyaltyCard FindInMemoryCard(
+        WebApplicationFactory<Program> factory,
+        Guid cardId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        lock (store.Sync)
+        {
+            return store.LoyaltyCards.Single(card => card.Id == cardId);
+        }
     }
 
     private static async Task RegisterClientAsync(
