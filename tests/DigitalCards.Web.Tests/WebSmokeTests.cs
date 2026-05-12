@@ -45,6 +45,120 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task HealthEndpoint_DoesNotRequireReadinessDependencies()
+    {
+        using var fake = WithFakeIntegrations(MySqlUnavailableOverrides());
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/health");
+
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task ReadinessEndpoint_WithFakeIntegrations_ReturnsHealthyJson()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/health/ready");
+        var json = await response.Content.ReadAsStringAsync();
+
+        response.EnsureSuccessStatusCode();
+        Assert.Contains("\"status\":\"Healthy\"", json);
+        Assert.Contains("\"name\":\"configuration\"", json);
+        Assert.Contains("\"name\":\"mysql\"", json);
+    }
+
+    [Fact]
+    public async Task ReadinessEndpoint_WhenMySqlUnavailable_DoesNotExposeConnectionString()
+    {
+        using var fake = WithFakeIntegrations(MySqlUnavailableOverrides());
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await client.GetAsync("/health/ready");
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Contains("\"status\":\"Unhealthy\"", json);
+        Assert.Contains("MySQL readiness query failed.", json);
+        Assert.DoesNotContain("SUPER_SECRET", json);
+        Assert.DoesNotContain("ConnectionStrings", json);
+        Assert.DoesNotContain("Server=127.0.0.1", json);
+    }
+
+    [Fact]
+    public async Task ForwardedHeaders_MarkAuthCookieSecure_WhenOriginalSchemeIsHttps()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Operations:TrustAllForwardedHeaders"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        client.DefaultRequestHeaders.TryAddWithoutValidation("X-Forwarded-Proto", "https");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("X-Forwarded-Host", "app.puntelio.com");
+
+        var response = await LoginBusinessAsync(client);
+
+        Assert.True(response.Headers.TryGetValues("Set-Cookie", out var values));
+        Assert.Contains(values, value =>
+            value.Contains(".DigitalCards.Business=", StringComparison.Ordinal) &&
+            value.Contains("secure", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task DataProtectionKeys_WhenPersisted_KeepBusinessCookieValidAfterRestart()
+    {
+        var keysPath = Path.Combine(Path.GetTempPath(), $"digitalcards-dp-{Guid.NewGuid():N}");
+        var overrides = new Dictionary<string, string?>
+        {
+            ["DigitalCards:Operations:DataProtectionKeysPath"] = keysPath,
+            ["DigitalCards:Operations:RequireDataProtectionKeysForReadiness"] = "true"
+        };
+
+        try
+        {
+            string businessCookie;
+            using (var first = WithFakeIntegrations(overrides))
+            {
+                var client = first.Factory.CreateClient(new WebApplicationFactoryClientOptions
+                {
+                    AllowAutoRedirect = false
+                });
+                var response = await LoginBusinessAsync(client);
+                businessCookie = response.Headers
+                    .GetValues("Set-Cookie")
+                    .Single(value => value.Contains(".DigitalCards.Business=", StringComparison.Ordinal))
+                    .Split(';')[0];
+            }
+
+            using var second = WithFakeIntegrations(overrides);
+            var restartedClient = second.Factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+            restartedClient.DefaultRequestHeaders.TryAddWithoutValidation("Cookie", businessCookie);
+
+            var dashboard = await restartedClient.GetAsync("/Business/Dashboard");
+
+            Assert.Equal(HttpStatusCode.OK, dashboard.StatusCode);
+        }
+        finally
+        {
+            if (Directory.Exists(keysPath))
+            {
+                Directory.Delete(keysPath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task BusinessDashboard_WithoutCookie_RedirectsToLogin()
     {
         using var fake = WithFakeIntegrations();
@@ -520,6 +634,15 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         return new FakeIntegrationFactory(_factory, configurationOverrides);
     }
 
+    private static IReadOnlyDictionary<string, string?> MySqlUnavailableOverrides()
+    {
+        return new Dictionary<string, string?>
+        {
+            ["DigitalCards:PersistenceProvider"] = "MySql",
+            ["ConnectionStrings:DigitalCards"] = "Server=127.0.0.1;Port=1;Database=digitalcards;User ID=test;Password=SUPER_SECRET;CharSet=utf8mb4;SslMode=Preferred;Connection Timeout=1;"
+        };
+    }
+
     private sealed class FakeIntegrationFactory : IDisposable
     {
         private static readonly IReadOnlyDictionary<string, string?> Overrides = new Dictionary<string, string?>
@@ -561,6 +684,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                         ["DigitalCards:AppleWallet:Provider"] = "Fake",
                         ["DigitalCards:Email:Provider"] = "Fake",
                         ["DigitalCards:PublicBaseUrl"] = string.Empty,
+                        ["DigitalCards:Operations:EnableForwardedHeaders"] = "true",
+                        ["DigitalCards:Operations:TrustAllForwardedHeaders"] = "false",
+                        ["DigitalCards:Operations:DataProtectionKeysPath"] = string.Empty,
+                        ["DigitalCards:Operations:RequireDataProtectionKeysForReadiness"] = "false",
                         ["DigitalCards:Pilot:Enabled"] = "false"
                     };
 

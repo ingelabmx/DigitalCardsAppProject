@@ -13,13 +13,16 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class StampModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly ILogger<StampModel> _logger;
     private readonly PilotAccessService _pilotAccess;
 
     public StampModel(
         DigitalCardsAppService appService,
+        ILogger<StampModel> logger,
         PilotAccessService pilotAccess)
     {
         _appService = appService;
+        _logger = logger;
         _pilotAccess = pilotAccess;
     }
 
@@ -41,6 +44,9 @@ public sealed class StampModel : PageModel
     {
         if (!SetPilotBusinessBlock())
         {
+            _logger.LogWarning(
+                "Modern stamp blocked by pilot for business {BusinessId}.",
+                BusinessAuth.GetBusinessId(User));
             ModelState.AddModelError(string.Empty, PilotBlockMessage!);
             return Page();
         }
@@ -55,6 +61,9 @@ public sealed class StampModel : PageModel
             var clientAccess = await _pilotAccess.CheckClientAsync(Input.UserNameOrEmail, cancellationToken);
             if (!clientAccess.IsAllowed)
             {
+                _logger.LogWarning(
+                    "Modern stamp blocked by client pilot allowlist for business {BusinessId}.",
+                    BusinessAuth.GetBusinessId(User));
                 ModelState.AddModelError(string.Empty, clientAccess.Message!);
                 return Page();
             }
@@ -64,10 +73,20 @@ public sealed class StampModel : PageModel
                 new AddStampCommand(businessId, Input.UserNameOrEmail),
                 cancellationToken);
 
+            _logger.LogInformation(
+                "Modern stamp completed for business {BusinessId} card {CardId} current stamps {CurrentStamps} lifetime stamps {LifetimeStamps}.",
+                businessId,
+                Result.Id,
+                Result.CurrentStamps,
+                Result.LifetimeStamps);
             return Page();
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(
+                "Modern stamp failed for business {BusinessId}: {FailureReason}.",
+                BusinessAuth.GetBusinessId(User),
+                ex.Message);
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }

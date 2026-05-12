@@ -55,7 +55,7 @@ public sealed class SmtpEmailSender : IEmailSender
         await client.SendAsync(message, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
 
-        _logger.LogInformation("Sent wallet enrollment email to {Recipient}.", email.To);
+        _logger.LogInformation("Sent wallet enrollment email to {Recipient}.", MaskEmail(email.To));
     }
 
     private void ValidateOptions()
@@ -103,6 +103,13 @@ public sealed class SmtpEmailSender : IEmailSender
 
             Gracias por usar DigitalCards.
             """;
+    }
+
+    private static string MaskEmail(string email)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        var atIndex = normalized.IndexOf('@');
+        return atIndex <= 1 ? "***" : string.Concat(normalized[0], "***", normalized[atIndex..]);
     }
 
     private static string BuildHtmlBody(WalletEnrollmentEmail email)
