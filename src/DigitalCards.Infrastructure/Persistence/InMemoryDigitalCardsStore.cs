@@ -30,4 +30,6 @@ public sealed class InMemoryDigitalCardsStore
     public List<AppleWalletDeviceRecord> AppleWalletDevices { get; } = [];
 
     public List<(string DeviceLibraryIdentifier, string PassTypeIdentifier, string SerialNumber, DateTimeOffset CreatedAt)> AppleWalletRegistrations { get; } = [];
+
+    public List<WalletLinkTokenRecord> WalletLinkTokens { get; } = [];
 }
