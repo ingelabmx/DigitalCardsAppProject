@@ -24,7 +24,11 @@ public static class AppleWalletPassDownloadEndpoints
                     }
 
                     SetNoStore(httpContext.Response);
-                    return Results.File(passFile.Content, passFile.ContentType, passFile.FileName);
+                    return Results.File(
+                        passFile.Content,
+                        passFile.ContentType,
+                        passFile.FileName,
+                        lastModified: passFile.LastModified);
                 }
                 catch (InvalidOperationException)
                 {

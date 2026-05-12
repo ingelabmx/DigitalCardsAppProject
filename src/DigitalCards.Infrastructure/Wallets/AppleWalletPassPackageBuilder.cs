@@ -52,7 +52,8 @@ public sealed class AppleWalletPassPackageBuilder
             BuildZip(files),
             ContentType,
             $"{serialNumber}.pkpass",
-            serialNumber);
+            serialNumber,
+            DateTimeOffset.UtcNow);
     }
 
     public byte[] BuildPassJson(
@@ -107,11 +108,19 @@ public sealed class AppleWalletPassPackageBuilder
                 secondaryFields = new[]
                 {
                     Field("client", "Cliente", client.FullName),
-                    Field("currentStamps", "Sellos", card.CurrentStamps.ToString(CultureInfo.InvariantCulture))
+                    Field(
+                        "currentStamps",
+                        "Sellos",
+                        card.CurrentStamps.ToString(CultureInfo.InvariantCulture),
+                        "Sellos actualizados: %@")
                 },
                 auxiliaryFields = new[]
                 {
-                    Field("lifetimeStamps", "Historico", card.LifetimeStamps.ToString(CultureInfo.InvariantCulture)),
+                    Field(
+                        "lifetimeStamps",
+                        "Historico",
+                        card.LifetimeStamps.ToString(CultureInfo.InvariantCulture),
+                        "Historico actualizado: %@"),
                     Field("createdAt", "Alta", card.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
                 },
                 backFields = new[]
@@ -250,13 +259,14 @@ public sealed class AppleWalletPassPackageBuilder
         return card.Id.ToString("N");
     }
 
-    private static object Field(string key, string label, string value)
+    private static object Field(string key, string label, string value, string? changeMessage = null)
     {
         return new
         {
             key,
             label,
-            value
+            value,
+            changeMessage
         };
     }
 

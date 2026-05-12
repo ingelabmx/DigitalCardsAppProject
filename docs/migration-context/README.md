@@ -23,6 +23,7 @@ Documentos:
 - `15-business-auth-hardening.md`: autenticacion cookie de negocio y proteccion de paginas modernas.
 - `16-business-password-hardening.md`: migracion progresiva de passwords de negocio.
 - `16-business-password-hardening-hostgator.sql`: tabla nueva para hashes modernos de negocio.
+- `17-puntelio-single-environment.md`: configuracion unica con `app.puntelio.com`, Cloudflare Tunnel y Wallets.
 
 Notas:
 

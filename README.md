@@ -1,52 +1,130 @@
 # DigitalCardsApp
+
+## Ejecutar local
+
+```powershell
 cd C:\Users\eguillen\source\repos\DigitalCardsAppProject
 dotnet build DigitalCardsApp.Modern.sln
 dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj --launch-profile http
-http://localhost:5088
+```
 
+La app escucha en:
 
-# Cerrar antes de compilar
+```text
+http://localhost:5031
+```
+
+Si hay una instancia previa corriendo:
+
+```powershell
 Get-Process DigitalCards.Web -ErrorAction SilentlyContinue | Stop-Process
-dotnet build DigitalCardsApp.Modern.sln
+```
 
+## Configuracion real unica
 
-#Cloudflare
-Despues de dotnet run:
-cloudflared tunnel --url http://localhost:5088
-Update: PublicBaseUrl
+La app moderna carga una sola configuracion externa real:
 
-Vuelve a ejectuar:
-dotnet run --no-launch-profile --project src\DigitalCards.Web\DigitalCards.Web.csproj --urls http://localhost:5088
-Ahora abre:
-https://TU-URL.trycloudflare.com
+```text
+C:\Users\eguillen\.digitalcards\appsettings.Local.json
+```
 
+Ese archivo queda fuera del repo y debe contener MySQL HostGator, Google
+Wallet, Apple Wallet, SMTP y `PublicBaseUrl`.
 
-#Issues
-Las tarjetas quedan ligadas al dominio web.
+Para crear una base segura desde el ejemplo sin copiar secretos al repo:
 
-# Login negocio moderno
+```powershell
+New-Item -ItemType Directory "$env:USERPROFILE\.digitalcards" -Force
+Copy-Item docs\config\appsettings.local.example.json "$env:USERPROFILE\.digitalcards\appsettings.Local.json"
+notepad "$env:USERPROFILE\.digitalcards\appsettings.Local.json"
+```
 
-El flujo ASP.NET Core moderno usa cookie auth para negocio:
+Validar que el JSON sea correcto sin imprimir secretos:
 
-- Login: `http://localhost:5088/Business/Login`
-- Dashboard protegido: `http://localhost:5088/Business/Dashboard`
-- Logout: `http://localhost:5088/Business/Logout`
+```powershell
+Get-Content "$env:USERPROFILE\.digitalcards\appsettings.Local.json" -Raw | ConvertFrom-Json | Out-Null
+```
 
-Las paginas `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`
-requieren cookie valida. Ya no se debe pasar `businessId` por URL ni por hidden
-input; el negocio se toma desde los claims de la sesion.
-
-Para pruebas automatizadas con fakes, se puede ignorar la configuracion local
-real:
+Para pruebas automatizadas con fakes, se puede ignorar esta configuracion real:
 
 ```powershell
 $env:DigitalCards__SkipUserLocalConfiguration='true'
 ```
 
-Si la app real no arranca por configuracion, valida que
-`%USERPROFILE%\.digitalcards\appsettings.Local.json` sea JSON valido.
+## Cloudflare con `app.puntelio.com`
 
-# Password hardening negocio
+`app.puntelio.com` es la URL canonica para correos, Google Wallet y Apple
+Wallet. Apple Wallet guarda esta URL dentro del `.pkpass`, asi que no debe
+cambiarse despues de instalar tarjetas.
+
+Crear tunnel nombrado:
+
+```powershell
+cloudflared tunnel login
+cloudflared tunnel create puntelio-app
+cloudflared tunnel route dns puntelio-app app.puntelio.com
+```
+
+Config local sugerida de Cloudflare:
+
+```yaml
+tunnel: puntelio-app
+credentials-file: C:\Users\eguillen\.cloudflared\<TUNNEL_ID>.json
+
+ingress:
+  - hostname: app.puntelio.com
+    service: http://localhost:5031
+  - service: http_status:404
+```
+
+Ejecutar:
+
+```powershell
+cloudflared tunnel run puntelio-app
+dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj --launch-profile http
+```
+
+Validar:
+
+```powershell
+Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
+```
+
+En `appsettings.Local.json`, usar:
+
+```json
+{
+  "DigitalCards": {
+    "PublicBaseUrl": "https://app.puntelio.com",
+    "GoogleWallet": {
+      "Origins": ["https://app.puntelio.com"]
+    }
+  }
+}
+```
+
+Tambien agrega `https://app.puntelio.com` como origin permitido en Google
+Wallet.
+
+Runbook completo:
+
+```text
+docs/migration-context/17-puntelio-single-environment.md
+```
+
+## Login negocio moderno
+
+El flujo ASP.NET Core moderno usa cookie auth para negocio:
+
+- Login: `http://localhost:5031/Business/Login`
+- Dashboard protegido: `http://localhost:5031/Business/Dashboard`
+- Logout: `http://localhost:5031/Business/Logout`
+
+Las paginas `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`
+requieren cookie valida. Ya no se debe pasar `businessId` por URL ni por hidden
+input; el negocio se toma desde los claims de la sesion.
+
+## Password hardening negocio
 
 La app moderna migra passwords de negocio gradualmente a una tabla nueva,
 sin modificar `Business.BusinessPassword` para no romper Web Forms.
@@ -61,28 +139,33 @@ El primer login correcto con password legacy crea el hash moderno en
 `ModernBusinessCredential`. Los siguientes logins modernos validan contra esa
 credencial.
 
-# Legacy Wallet Sync
+## Legacy Wallet Sync
+
 Mientras Web Forms siga agregando sellos directo en HostGator, activa el worker
 moderno solo en pruebas controladas:
 
 ```json
-"DigitalCards": {
-  "LegacyWalletSync": {
-    "Enabled": true,
-    "PollIntervalSeconds": 60,
-    "LookbackMinutes": 1440,
-    "BatchSize": 50
+{
+  "DigitalCards": {
+    "LegacyWalletSync": {
+      "Enabled": true,
+      "PollIntervalSeconds": 60,
+      "LookbackMinutes": 1440,
+      "BatchSize": 50
+    }
   }
 }
 ```
 
 El worker no cambia `ClientCard`; solo detecta cambios recientes y dispara patch
-Google Wallet y push Apple Wallet. Los diagnósticos seguros se activan con:
+Google Wallet y push Apple Wallet. Los diagnosticos seguros se activan con:
 
 ```json
-"DigitalCards": {
-  "Diagnostics": {
-    "EnableWalletDiagnostics": true
+{
+  "DigitalCards": {
+    "Diagnostics": {
+      "EnableWalletDiagnostics": true
+    }
   }
 }
 ```

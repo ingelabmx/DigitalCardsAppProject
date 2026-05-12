@@ -50,7 +50,8 @@ public sealed record AppleWalletPassFile(
     byte[] Content,
     string ContentType,
     string FileName,
-    string SerialNumber);
+    string SerialNumber,
+    DateTimeOffset LastModified);
 
 public sealed record WalletEnrollmentEmail(
     string To,
