@@ -136,8 +136,54 @@
                             </button>
                         </form>
                     </div>
+
+                    <div class="stamp-ledger" data-testid="stamp-ledger-list">
+                        <h3>Auditoria de sellos</h3>
+                        @if (Model.Detail.RecentStampEvents.Count == 0)
+                        {
+                            <p class="text-muted" data-testid="stamp-ledger-empty">Aun no hay eventos registrados para esta tarjeta.</p>
+                        }
+                        else
+                        {
+                            <div class="stamp-ledger-items">
+                                @foreach (var item in Model.Detail.RecentStampEvents)
+                                {
+                                    <div class="stamp-ledger-item" data-testid="stamp-ledger-event">
+                                        <div>
+                                            <strong>@item.Source</strong>
+                                            <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                        </div>
+                                        <p>
+                                            Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY
+                                            &middot; Historicos: @item.PreviousHistoricCheckQTY -> @item.NewHistoricCheckQTY
+                                        </p>
+                                        <p>
+                                            Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
+                                            &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
+                                        </p>
+                                        @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                                        {
+                                            <p class="text-danger">Error: @item.ErrorSummary</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
     }
 </section>
+
+@functions {
+    private static string WalletStatus(bool attempted, bool succeeded)
+    {
+        if (!attempted)
+        {
+            return "No aplica";
+        }
+
+        return succeeded ? "OK" : "Fallo";
+    }
+}

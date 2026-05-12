@@ -35,7 +35,8 @@ public sealed record BusinessCardDto(
     bool GoogleIssued,
     bool AppleTracked,
     int AppleRegisteredDeviceCount,
-    DateTimeOffset? AppleUpdatedAt);
+    DateTimeOffset? AppleUpdatedAt,
+    IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
 
 public sealed record ResendWalletEmailResult(BusinessCardDto Card, string EnrollmentUrl);
 

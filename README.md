@@ -168,6 +168,21 @@ La accion de sello valida que la tarjeta pertenezca al negocio autenticado.
 Web Forms sigue vivo como fallback, pero el dashboard moderno ya dirige la
 operacion de sellos a `Tarjetas y sellos`.
 
+## Auditoria de sellos
+
+Antes de probar auditoria contra HostGator, ejecuta:
+
+```text
+docs/migration-context/21-stamp-ledger-v1-hostgator.sql
+```
+
+La tabla `StampLedger` registra sellos modernos y cambios detectados por
+`LegacyWalletSync`. El detalle de `/Business/Cards` muestra los ultimos eventos
+con origen, sellos antes/despues y estado de updates Apple/Google.
+
+No hay backfill historico. La auditoria empieza desde el despliegue de este
+PR y no guarda tokens, JWTs, push tokens, passwords ni connection strings.
+
 ## Wallet links opacos
 
 Los correos nuevos ya no deben exponer `CardID` directo. Antes de probar contra

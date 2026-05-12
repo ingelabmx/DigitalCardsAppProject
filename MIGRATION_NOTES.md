@@ -27,6 +27,8 @@ Indice de contexto para iniciar la migracion ordenada de `DigitalCardsApp`:
 - [19 Business Operations v1](docs/migration-context/19-business-operations-v1.md)
 - [20 Wallet Link Token Hardening](docs/migration-context/20-wallet-link-token-hardening.md)
 - [20 Wallet Link Token Hardening HostGator SQL](docs/migration-context/20-wallet-link-token-hardening-hostgator.sql)
+- [21 Stamp Ledger v1](docs/migration-context/21-stamp-ledger-v1.md)
+- [21 Stamp Ledger v1 HostGator SQL](docs/migration-context/21-stamp-ledger-v1-hostgator.sql)
 - [Secret Rotation Notes](docs/security/SECRET_ROTATION.md)
 
-Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real, SMTP real, Apple Wallet `.pkpass` y Apple Wallet updates por Web Service/APNs quedan disponibles por configuracion local controlada; los fakes siguen siendo el default para desarrollo, CI y Playwright. El flujo moderno de negocio ahora usa cookie auth, ya no depende de `businessId` visible en URL/formularios, migra passwords de negocio a hashes modernos sin modificar la columna legacy, empieza la operacion diaria desde `/Business/Cards` y usa links Wallet opacos para correos nuevos.
+Esta fase agrega contexto documental y un esqueleto ASP.NET Core paralelo. No reemplaza todavia la aplicacion Web Forms. MySQL HostGator, Google Wallet real, SMTP real, Apple Wallet `.pkpass` y Apple Wallet updates por Web Service/APNs quedan disponibles por configuracion local controlada; los fakes siguen siendo el default para desarrollo, CI y Playwright. El flujo moderno de negocio ahora usa cookie auth, ya no depende de `businessId` visible en URL/formularios, migra passwords de negocio a hashes modernos sin modificar la columna legacy, empieza la operacion diaria desde `/Business/Cards`, usa links Wallet opacos para correos nuevos y registra auditoria de sellos en `StampLedger`.

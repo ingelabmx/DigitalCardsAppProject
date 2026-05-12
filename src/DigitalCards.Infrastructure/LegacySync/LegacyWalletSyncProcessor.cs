@@ -7,19 +7,25 @@ namespace DigitalCards.Infrastructure.LegacySync;
 public sealed class LegacyWalletSyncProcessor
 {
     private readonly IAppleWalletService _appleWallet;
+    private readonly IClock _clock;
     private readonly IGoogleWalletService _googleWallet;
     private readonly ILegacyWalletSyncRepository _legacySync;
     private readonly ILogger<LegacyWalletSyncProcessor> _logger;
+    private readonly IStampLedgerRepository _stampLedger;
 
     public LegacyWalletSyncProcessor(
         ILegacyWalletSyncRepository legacySync,
         IGoogleWalletService googleWallet,
         IAppleWalletService appleWallet,
+        IStampLedgerRepository stampLedger,
+        IClock clock,
         ILogger<LegacyWalletSyncProcessor> logger)
     {
         _legacySync = legacySync;
         _googleWallet = googleWallet;
         _appleWallet = appleWallet;
+        _stampLedger = stampLedger;
+        _clock = clock;
         _logger = logger;
     }
 
@@ -44,31 +50,58 @@ public sealed class LegacyWalletSyncProcessor
                 continue;
             }
 
+            var googleAttempted = false;
+            var googleSucceeded = false;
+            var appleAttempted = false;
+            var appleSucceeded = false;
+
             try
             {
                 if (!string.IsNullOrWhiteSpace(candidate.Card.GoogleObjectId))
                 {
+                    googleAttempted = true;
                     await _googleWallet.PatchStampStateAsync(
                         candidate.Card,
                         candidate.Client,
                         candidate.Business,
                         cancellationToken);
+                    googleSucceeded = true;
                 }
 
                 if (candidate.HasRegisteredAppleDevices)
                 {
+                    appleAttempted = true;
                     await _appleWallet.NotifyPassUpdatedAsync(
                         candidate.Card,
                         candidate.Client,
                         candidate.Business,
                         cancellationToken);
+                    appleSucceeded = true;
                 }
+
+                await RecordLedgerAsync(
+                    candidate,
+                    googleAttempted,
+                    googleSucceeded,
+                    appleAttempted,
+                    appleSucceeded,
+                    errorSummary: null,
+                    cancellationToken);
 
                 syncedFingerprints[candidate.Card.Id] = fingerprint;
                 synced++;
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
+                await RecordLedgerAsync(
+                    candidate,
+                    googleAttempted,
+                    googleSucceeded,
+                    appleAttempted,
+                    appleSucceeded,
+                    SafeErrorSummary(exception),
+                    cancellationToken);
+
                 failed++;
                 _logger.LogWarning(
                     exception,
@@ -90,5 +123,42 @@ public sealed class LegacyWalletSyncProcessor
             card.LastStampedAt.ToUnixTimeMilliseconds(),
             card.GoogleObjectId ?? string.Empty,
             candidate.HasRegisteredAppleDevices ? "apple" : string.Empty);
+    }
+
+    private async Task RecordLedgerAsync(
+        LegacyWalletSyncCandidate candidate,
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded,
+        string? errorSummary,
+        CancellationToken cancellationToken)
+    {
+        var card = candidate.Card;
+        await _stampLedger.AddAsync(
+            new StampLedgerRecord(
+                0,
+                card.Id,
+                card.BusinessId,
+                card.ClientId,
+                StampLedgerSource.LegacySync,
+                null,
+                card.CurrentStamps,
+                card.CurrentStamps,
+                card.LifetimeStamps,
+                card.LifetimeStamps,
+                card.LastStampedAt,
+                googleAttempted,
+                googleSucceeded,
+                appleAttempted,
+                appleSucceeded,
+                errorSummary,
+                _clock.UtcNow),
+            cancellationToken);
+    }
+
+    private static string SafeErrorSummary(Exception exception)
+    {
+        return exception.GetType().Name;
     }
 }

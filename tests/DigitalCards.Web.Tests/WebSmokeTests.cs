@@ -464,6 +464,38 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessCards_ShowsStampLedgerAfterModernStamp()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("sl");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        var token = await GetAntiforgeryTokenAsync(
+            client,
+            $"/Business/Cards?Query={userName}&CardId={enrollment.Card.Id}");
+
+        var response = await client.PostAsync(
+            $"/Business/Cards?handler=Stamp&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+        var text = Regex.Replace(WebUtility.HtmlDecode(html), "\\s+", " ");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("stamp-ledger-event", html);
+        Assert.Contains("ModernBusiness", text);
+        Assert.Contains("Sellos: 1 -> 2", text);
+        Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("jwt", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task OutboxEmail_UsesOpaqueWalletLinkToken()
     {
         using var fake = WithFakeIntegrations();
