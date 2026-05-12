@@ -4,6 +4,7 @@ using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Persistence;
 using DigitalCards.Infrastructure.Email;
 using DigitalCards.Infrastructure.Persistence.MySql;
 using DigitalCards.Infrastructure.Wallets;
@@ -89,6 +90,7 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
+        Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
     }
@@ -106,6 +108,74 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeAppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
         Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+        Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
+    }
+
+    [Fact]
+    public async Task LoginBusiness_WithLegacyPassword_CreatesModernCredential()
+    {
+        var services = CreateDefaultServices();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var credentials = provider.GetRequiredService<IBusinessCredentialRepository>();
+
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.NotNull(business);
+        var credential = await credentials.FindByBusinessIdAsync(business!.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain("business123", credential!.PasswordHash, StringComparison.Ordinal);
+        Assert.True(credential.PasswordHash.Length > 25);
+    }
+
+    [Fact]
+    public async Task LoginBusiness_UsesModernCredentialAfterLegacyMigration()
+    {
+        var services = CreateDefaultServices();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+
+        var firstLogin = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.NotNull(firstLogin);
+
+        var original = store.Businesses.Single();
+        store.Businesses[0] = new Business(
+            original.Id,
+            original.Name,
+            original.Email,
+            "legacy-password-changed",
+            original.LogoPath);
+
+        var secondLogin = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.NotNull(secondLogin);
+        Assert.Equal(firstLogin!.Id, secondLogin!.Id);
+    }
+
+    [Fact]
+    public async Task LoginBusiness_WithInvalidLegacyPassword_DoesNotCreateModernCredential()
+    {
+        var services = CreateDefaultServices();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var credentials = provider.GetRequiredService<IBusinessCredentialRepository>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var businessId = store.Businesses.Single().Id;
+
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "wrong-password"));
+
+        Assert.Null(business);
+        Assert.Null(await credentials.FindByBusinessIdAsync(businessId));
     }
 
     [Fact]
@@ -415,5 +485,15 @@ public sealed class DigitalCardsAppServiceTests
         var result = await app.SelectAppleWalletAsync("missing-token");
 
         Assert.Null(result);
+    }
+
+    private static ServiceCollection CreateDefaultServices()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddLogging();
+        services.AddDigitalCardsApplication();
+        services.AddDigitalCardsInfrastructure(new ConfigurationBuilder().Build());
+        return services;
     }
 }

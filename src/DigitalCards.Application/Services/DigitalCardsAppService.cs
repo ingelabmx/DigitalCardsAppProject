@@ -1,11 +1,13 @@
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Domain;
+using Microsoft.AspNetCore.Identity;
 
 namespace DigitalCards.Application.Services;
 
 public sealed class DigitalCardsAppService
 {
+    private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessRepository _businesses;
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
@@ -13,23 +15,28 @@ public sealed class DigitalCardsAppService
     private readonly IGoogleWalletService _googleWallet;
     private readonly IAppleWalletService _appleWallet;
     private readonly ILoyaltyCardRepository _loyaltyCards;
+    private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
 
     public DigitalCardsAppService(
         IClientRepository clients,
         IBusinessRepository businesses,
+        IBusinessCredentialRepository businessCredentials,
         ILoyaltyCardRepository loyaltyCards,
         IGoogleWalletService googleWallet,
         IAppleWalletService appleWallet,
         IEmailSender emailSender,
-        IClock clock)
+        IClock clock,
+        IPasswordHasher<BusinessPasswordHashSubject> passwordHasher)
     {
         _clients = clients;
         _businesses = businesses;
+        _businessCredentials = businessCredentials;
         _loyaltyCards = loyaltyCards;
         _googleWallet = googleWallet;
         _appleWallet = appleWallet;
         _emailSender = emailSender;
         _clock = clock;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<ClientDto> RegisterClientAsync(RegisterClientCommand command, CancellationToken cancellationToken = default)
@@ -50,10 +57,48 @@ public sealed class DigitalCardsAppService
     public async Task<BusinessDto?> LoginBusinessAsync(BusinessLoginCommand command, CancellationToken cancellationToken = default)
     {
         var business = await _businesses.FindByEmailAsync(command.Email, cancellationToken);
-        if (business is null || !LegacyPasswordVerifier.Matches(business.PasswordHashPlaceholder, command.Password))
+        if (business is null)
         {
             return null;
         }
+
+        var subject = new BusinessPasswordHashSubject(business.Id);
+        var credential = await _businessCredentials.FindByBusinessIdAsync(business.Id, cancellationToken);
+        if (credential is not null)
+        {
+            var verification = _passwordHasher.VerifyHashedPassword(
+                subject,
+                credential.PasswordHash,
+                command.Password);
+
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                return null;
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                await _businessCredentials.UpsertAsync(
+                    credential.Rehash(_passwordHasher.HashPassword(subject, command.Password), _clock.UtcNow),
+                    cancellationToken);
+            }
+
+            return ToDto(business);
+        }
+
+        if (!LegacyPasswordVerifier.Matches(business.PasswordHashPlaceholder, command.Password))
+        {
+            return null;
+        }
+
+        var now = _clock.UtcNow;
+        await _businessCredentials.UpsertAsync(
+            new BusinessCredential(
+                business.Id,
+                _passwordHasher.HashPassword(subject, command.Password),
+                now,
+                now),
+            cancellationToken);
 
         return ToDto(business);
     }

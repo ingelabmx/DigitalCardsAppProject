@@ -46,6 +46,21 @@ $env:DigitalCards__SkipUserLocalConfiguration='true'
 Si la app real no arranca por configuracion, valida que
 `%USERPROFILE%\.digitalcards\appsettings.Local.json` sea JSON valido.
 
+# Password hardening negocio
+
+La app moderna migra passwords de negocio gradualmente a una tabla nueva,
+sin modificar `Business.BusinessPassword` para no romper Web Forms.
+
+Antes de probar este cambio contra MySQL HostGator, ejecutar el SQL:
+
+```text
+docs/migration-context/16-business-password-hardening-hostgator.sql
+```
+
+El primer login correcto con password legacy crea el hash moderno en
+`ModernBusinessCredential`. Los siguientes logins modernos validan contra esa
+credencial.
+
 # Legacy Wallet Sync
 Mientras Web Forms siga agregando sellos directo en HostGator, activa el worker
 moderno solo en pruebas controladas:

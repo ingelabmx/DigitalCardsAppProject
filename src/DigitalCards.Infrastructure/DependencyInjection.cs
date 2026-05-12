@@ -61,6 +61,7 @@ public static class DependencyInjection
             services.AddSingleton(new MySqlConnectionFactory(providers.DigitalCardsConnectionString!));
             services.AddScoped<IClientRepository, MySqlClientRepository>();
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
+            services.AddScoped<IBusinessCredentialRepository, MySqlBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
@@ -70,6 +71,7 @@ public static class DependencyInjection
             services.AddSingleton<InMemoryDigitalCardsStore>();
             services.AddScoped<IClientRepository, InMemoryClientRepository>();
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
+            services.AddScoped<IBusinessCredentialRepository, InMemoryBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
         }
