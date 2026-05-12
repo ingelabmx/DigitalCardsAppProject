@@ -1,0 +1,88 @@
+@page
+@model DigitalCards.Web.Pages.Admin.CreateBusinessModel
+@{
+    ViewData["Title"] = "Crear negocio";
+}
+
+<section class="form-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Crear negocio</h1>
+            <p class="lead">Registra un negocio legacy-compatible y, si aplica, habilitalo para el piloto moderno.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Businesses" data-testid="admin-create-business-back-link">Negocios</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-create-business-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.CreatedBusiness is not null)
+    {
+        <div class="created-business-summary" data-testid="admin-created-business-result">
+            <h2>@Model.CreatedBusiness.BusinessName</h2>
+            <p>@Model.CreatedBusiness.BusinessEmail</p>
+            <p>
+                <span class="badge @(Model.CreatedBusiness.IsEnabled ? "text-bg-success" : "text-bg-secondary")">
+                    @(Model.CreatedBusiness.IsEnabled ? "Piloto habilitado" : "Piloto deshabilitado")
+                </span>
+            </p>
+            <a class="btn btn-outline-primary"
+               asp-page="/Admin/Businesses"
+               asp-route-query="@Model.CreatedBusiness.BusinessEmail"
+               data-testid="admin-created-business-open-link">
+                Ver en negocios
+            </a>
+        </div>
+    }
+
+    <form method="post" data-testid="admin-create-business-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Input.BusinessName" class="form-label"></label>
+            <input asp-for="Input.BusinessName" class="form-control" maxlength="30" data-testid="admin-create-business-name" />
+            <span asp-validation-for="Input.BusinessName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.BusinessEmail" class="form-label"></label>
+            <input asp-for="Input.BusinessEmail" class="form-control" maxlength="30" data-testid="admin-create-business-email" />
+            <span asp-validation-for="Input.BusinessEmail" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.InitialPassword" class="form-label"></label>
+                <input asp-for="Input.InitialPassword" class="form-control" data-testid="admin-create-business-password" />
+                <span asp-validation-for="Input.InitialPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" data-testid="admin-create-business-confirm-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="Input.EnablePilot" class="form-check-input" data-testid="admin-create-business-enable-pilot" />
+            <label asp-for="Input.EnablePilot" class="form-check-label"></label>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Notes" class="form-label"></label>
+            <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-create-business-notes"></textarea>
+            <span asp-validation-for="Input.Notes" class="text-danger"></span>
+        </div>
+
+        <button class="btn btn-primary" type="submit" data-testid="admin-create-business-submit">Crear negocio</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

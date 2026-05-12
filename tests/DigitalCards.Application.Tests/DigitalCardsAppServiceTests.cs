@@ -10,6 +10,8 @@ using DigitalCards.Infrastructure.Persistence.MySql;
 using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DigitalCards.Application.Tests;
 
@@ -177,6 +179,113 @@ public sealed class DigitalCardsAppServiceTests
         var listed = Assert.Single(businesses);
         Assert.False(listed.IsEnabled);
         Assert.Equal("pausado", listed.Notes);
+    }
+
+    [Fact]
+    public async Task CreateBusinessAsync_CreatesLegacyBusinessModernCredentialAndPilotAccess()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var credentials = provider.GetRequiredService<IBusinessCredentialRepository>();
+        var pilotBusinesses = provider.GetRequiredService<IPilotBusinessRepository>();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        const string password = "startpass1";
+
+        var result = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Fresh Cafe",
+            "fresh@example.test",
+            password,
+            admin!.Id,
+            EnablePilot: true,
+            Notes: "piloto creado desde admin"));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Business);
+        Assert.Equal("Fresh Cafe", result.Business!.BusinessName);
+        Assert.Equal("fresh@example.test", result.Business.BusinessEmail);
+        Assert.True(result.Business.IsEnabled);
+
+        var business = await businesses.FindByEmailAsync("fresh@example.test");
+        Assert.NotNull(business);
+        Assert.Equal("/img/demo-coffee.svg", business!.LogoPath);
+        Assert.Equal(25, business.PasswordHashPlaceholder.Length);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(password), business.PasswordHashPlaceholder);
+        Assert.DoesNotContain(password, business.PasswordHashPlaceholder, StringComparison.Ordinal);
+
+        var credential = await credentials.FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(credential);
+        Assert.True(credential!.PasswordHash.Length > 25);
+        Assert.DoesNotContain(password, credential.PasswordHash, StringComparison.Ordinal);
+
+        var pilot = await pilotBusinesses.FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(pilot);
+        Assert.True(pilot!.IsEnabled);
+        Assert.Equal(admin.Id, pilot.UpdatedByAdminUserId);
+
+        var login = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "fresh@example.test",
+            password));
+        Assert.NotNull(login);
+        Assert.Equal(business.Id, login!.Id);
+    }
+
+    [Fact]
+    public async Task CreateBusinessAsync_WhenDuplicateNameOrEmail_ReturnsSafeError()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        var duplicateName = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Demo Coffee",
+            "unique@example.test",
+            "startpass1",
+            admin!.Id,
+            EnablePilot: false,
+            Notes: null));
+        var duplicateEmail = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Unique Cafe",
+            "demo@digitalcards.test",
+            "startpass1",
+            admin.Id,
+            EnablePilot: false,
+            Notes: null));
+
+        Assert.False(duplicateName.Succeeded);
+        Assert.Equal("Ya existe un negocio con ese nombre.", duplicateName.ErrorMessage);
+        Assert.False(duplicateEmail.Succeeded);
+        Assert.Equal("Ya existe un negocio con ese correo.", duplicateEmail.ErrorMessage);
+        Assert.DoesNotContain("password", duplicateName.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("password", duplicateEmail.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CreateBusinessAsync_WithoutPilot_DoesNotEnablePilotBusiness()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var pilotBusinesses = provider.GetRequiredService<IPilotBusinessRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        var result = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Quiet Cafe",
+            "quiet@example.test",
+            "startpass1",
+            admin!.Id,
+            EnablePilot: false,
+            Notes: null));
+
+        Assert.True(result.Succeeded);
+        Assert.False(result.Business!.IsEnabled);
+        Assert.Null(await pilotBusinesses.FindByBusinessIdAsync(result.Business.BusinessId));
     }
 
     [Fact]
@@ -676,6 +785,12 @@ public sealed class DigitalCardsAppServiceTests
         return index < 0
             ? throw new InvalidOperationException("Wallet link was not found.")
             : enrollmentUrl[(index + marker.Length)..];
+    }
+
+    private static string ExpectedLegacyBusinessPasswordHash(string password)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password))).ToLowerInvariant();
+        return hash[..25];
     }
 
     private static ServiceCollection CreateDefaultServices(IReadOnlyDictionary<string, string?>? configurationValues = null)

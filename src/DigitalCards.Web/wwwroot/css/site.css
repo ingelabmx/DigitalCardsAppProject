@@ -217,6 +217,24 @@ h1 {
   margin: 0.35rem 0 0;
 }
 
+.created-business-summary {
+  background: #f6f7f9;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.created-business-summary h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+.created-business-summary p {
+  color: #697586;
+  margin-bottom: 0.5rem;
+}
+
 .pilot-business-list {
   display: grid;
   gap: 0.85rem;

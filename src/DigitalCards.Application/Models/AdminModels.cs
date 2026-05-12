@@ -8,6 +8,21 @@ public sealed record AdminUserDto(
     string Name,
     string Email);
 
+public sealed record CreateBusinessCommand(
+    string BusinessName,
+    string BusinessEmail,
+    string InitialPassword,
+    Guid AdminUserId,
+    bool EnablePilot,
+    string? Notes);
+
+public sealed record CreateBusinessResult(
+    PilotBusinessDto? Business,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Business is not null;
+}
+
 public sealed record PilotBusinessDto(
     Guid BusinessId,
     string BusinessName,

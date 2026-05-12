@@ -11,7 +11,10 @@
             <h1>Negocios piloto</h1>
             <p class="lead">Habilita o deshabilita negocios existentes para usar el flujo moderno.</p>
         </div>
-        <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-businesses-back-link">Dashboard</a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" asp-page="/Admin/CreateBusiness" data-testid="admin-businesses-create-link">Crear negocio</a>
+            <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-businesses-back-link">Dashboard</a>
+        </div>
     </div>
 
     <form method="get" class="search-row" data-testid="admin-business-search-form">
