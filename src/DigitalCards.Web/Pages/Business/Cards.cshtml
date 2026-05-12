@@ -1,0 +1,143 @@
+@page
+@model DigitalCards.Web.Pages.Business.CardsModel
+@{
+    ViewData["Title"] = "Tarjetas de negocio";
+}
+
+<section class="result-panel business-cards">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Operacion</p>
+            <h1>Tarjetas de clientes</h1>
+            <p class="lead">Busca una tarjeta, reenvia el link Wallet y aplica sellos desde el detalle validado del negocio.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="cards-back-link">Dashboard</a>
+    </div>
+
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+    }
+    else
+    {
+        <form method="get" class="search-row" data-testid="business-card-search-form">
+            <label asp-for="Query" class="form-label visually-hidden"></label>
+            <input asp-for="Query" class="form-control" placeholder="username o correo" data-testid="business-card-search-input" />
+            <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
+        </form>
+
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        @if (Model.StatusMessage is not null)
+        {
+            <div class="alert alert-success" role="status" data-testid="business-card-status">
+                @Model.StatusMessage
+                @if (Model.ResentEnrollmentUrl is not null)
+                {
+                    <a href="@Model.ResentEnrollmentUrl" data-testid="resent-enrollment-link">Abrir link</a>
+                }
+            </div>
+        }
+
+        @if (Model.IsClientPilotBlocked)
+        {
+            <div class="alert alert-warning" role="status" data-testid="pilot-client-blocked">
+                @Model.ClientPilotBlockMessage
+            </div>
+        }
+
+        <div class="business-card-grid">
+            <div class="business-card-list">
+                <h2>Resultados</h2>
+
+                @if (string.IsNullOrWhiteSpace(Model.Query))
+                {
+                    <p class="text-muted" data-testid="business-card-empty-search">Escribe un usuario o correo para buscar.</p>
+                }
+                else if (Model.Results.Count == 0)
+                {
+                    <p class="text-muted" data-testid="business-card-no-results">No se encontraron tarjetas para este negocio.</p>
+                }
+                else
+                {
+                    <div class="list-group" data-testid="business-card-results">
+                        @foreach (var card in Model.Results)
+                        {
+                            <a class="list-group-item list-group-item-action"
+                               asp-page="/Business/Cards"
+                               asp-route-query="@Model.Query"
+                               asp-route-cardId="@card.Id"
+                               data-testid="business-card-result">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <strong>@card.Client.UserName</strong>
+                                    <span>@card.CurrentStamps sellos</span>
+                                </div>
+                                <small>@card.Client.Email</small>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="business-card-detail" data-testid="business-card-detail">
+                @if (Model.Detail is null)
+                {
+                    <h2>Detalle</h2>
+                    <p class="text-muted">Selecciona una tarjeta para operar.</p>
+                }
+                else
+                {
+                    <div class="detail-heading">
+                        <div>
+                            <h2>@Model.Detail.Client.UserName</h2>
+                            <p>@Model.Detail.Client.FirstName @Model.Detail.Client.LastName · @Model.Detail.Client.Email</p>
+                        </div>
+                        <span class="badge text-bg-light">@Model.Detail.BusinessName</span>
+                    </div>
+
+                    <div class="metric-row metric-row-wide">
+                        <div class="metric">
+                            <span>Sellos actuales</span>
+                            <strong data-testid="business-card-current-stamps">@Model.Detail.CurrentStamps</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Sellos historicos</span>
+                            <strong data-testid="business-card-lifetime-stamps">@Model.Detail.LifetimeStamps</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Google Wallet</span>
+                            <strong data-testid="business-card-google-status">@(Model.Detail.GoogleIssued ? "Emitida" : "Pendiente")</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Apple Wallet</span>
+                            <strong data-testid="business-card-apple-status">@(Model.Detail.AppleTracked ? "Tracked" : "Pendiente")</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Dispositivos Apple</span>
+                            <strong data-testid="business-card-apple-devices">@Model.Detail.AppleRegisteredDeviceCount</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Ultimo update</span>
+                            <strong data-testid="business-card-last-update">@Model.Detail.LastStampedAt.ToLocalTime().ToString("g")</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                            <button class="btn btn-outline-primary" type="submit" disabled="@Model.IsClientPilotBlocked" data-testid="business-card-resend-submit">
+                                Reenviar link Wallet
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                            <button class="btn btn-primary" type="submit" disabled="@Model.IsClientPilotBlocked" data-testid="business-card-stamp-submit">
+                                Agregar sello
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</section>

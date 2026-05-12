@@ -36,10 +36,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("business-login-submit").ClickAsync();
         Assert.Contains(businessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
 
-        var stampUrl = await page.GetByTestId("stamp-link").GetAttributeAsync("href");
         var enrollUrl = await page.GetByTestId("enroll-link").GetAttributeAsync("href");
+        var cardsUrl = await page.GetByTestId("cards-link").GetAttributeAsync("href");
         Assert.DoesNotContain("businessId", enrollUrl, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("businessId", stampUrl, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("businessId", cardsUrl, StringComparison.OrdinalIgnoreCase);
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);
         await page.GetByTestId("enroll-submit").ClickAsync();
@@ -57,11 +57,16 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("google-wallet-button").ClickAsync();
         Assert.Contains("fake-google-", await page.GetByTestId("google-object-id").InnerTextAsync());
 
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, stampUrl!).ToString());
-        await page.GetByTestId("stamp-username").FillAsync(userName);
-        await page.GetByTestId("stamp-submit").ClickAsync();
-        Assert.Equal("2", await page.GetByTestId("current-stamps").InnerTextAsync());
-        Assert.Equal("Actualizada", await page.GetByTestId("google-status").InnerTextAsync());
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, cardsUrl!).ToString());
+        await page.GetByTestId("business-card-search-input").FillAsync(userName);
+        await page.GetByTestId("business-card-search-submit").ClickAsync();
+        await page.GetByTestId("business-card-result").First.ClickAsync();
+        Assert.Contains(userName, await page.GetByTestId("business-card-detail").InnerTextAsync());
+        await page.GetByTestId("business-card-resend-submit").ClickAsync();
+        Assert.Contains("Correo reenviado", await page.GetByTestId("business-card-status").InnerTextAsync());
+        await page.GetByTestId("business-card-stamp-submit").ClickAsync();
+        Assert.Equal("2", await page.GetByTestId("business-card-current-stamps").InnerTextAsync());
+        Assert.Equal("Emitida", await page.GetByTestId("business-card-google-status").InnerTextAsync());
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, $"/Client/Cards?UserName={userName}").ToString());
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();

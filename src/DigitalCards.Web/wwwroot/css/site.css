@@ -136,10 +136,60 @@ h1 {
   font-size: 1.35rem;
 }
 
+.page-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.search-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 1rem 0;
+}
+
+.business-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+}
+
+.business-card-list,
+.business-card-detail {
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.detail-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.detail-heading p {
+  color: #697586;
+  margin-bottom: 0;
+}
+
+.metric-row-wide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 760px) {
   .app-surface,
+  .business-card-grid,
   .wallet-actions,
   .metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .page-heading,
+  .search-row {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

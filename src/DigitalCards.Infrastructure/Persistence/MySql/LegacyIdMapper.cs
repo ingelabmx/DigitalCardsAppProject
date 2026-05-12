@@ -23,11 +23,23 @@ internal static class LegacyIdMapper
         return Convert.ToInt32(value[20..], 16);
     }
 
+    public static int? TryGuidToInt32(Guid id)
+    {
+        try
+        {
+            return ToInt32(id);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     public static int? TryTokenToInt32(string token)
     {
         if (Guid.TryParse(token, out var guid))
         {
-            return ToInt32(guid);
+            return TryGuidToInt32(guid);
         }
 
         return int.TryParse(token, out var id) ? id : null;

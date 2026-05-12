@@ -14,6 +14,7 @@ public sealed class DigitalCardsAppService
     private readonly IEmailSender _emailSender;
     private readonly IGoogleWalletService _googleWallet;
     private readonly IAppleWalletService _appleWallet;
+    private readonly IAppleWalletPassRepository _appleWalletPasses;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
 
@@ -24,6 +25,7 @@ public sealed class DigitalCardsAppService
         ILoyaltyCardRepository loyaltyCards,
         IGoogleWalletService googleWallet,
         IAppleWalletService appleWallet,
+        IAppleWalletPassRepository appleWalletPasses,
         IEmailSender emailSender,
         IClock clock,
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher)
@@ -34,6 +36,7 @@ public sealed class DigitalCardsAppService
         _loyaltyCards = loyaltyCards;
         _googleWallet = googleWallet;
         _appleWallet = appleWallet;
+        _appleWalletPasses = appleWalletPasses;
         _emailSender = emailSender;
         _clock = clock;
         _passwordHasher = passwordHasher;
@@ -230,6 +233,91 @@ public sealed class DigitalCardsAppService
         return ToDto(card, client, business);
     }
 
+    public async Task<IReadOnlyList<BusinessCardDto>> SearchBusinessCardsAsync(
+        Guid businessId,
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await RequireBusinessAsync(businessId, cancellationToken);
+        var cards = await _loyaltyCards.SearchByBusinessAsync(business.Id, query, limit: 25, cancellationToken);
+        var results = new List<BusinessCardDto>(cards.Count);
+
+        foreach (var card in cards)
+        {
+            var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+            if (client is null)
+            {
+                continue;
+            }
+
+            results.Add(await ToBusinessCardDtoAsync(card, client, business, cancellationToken));
+        }
+
+        return results;
+    }
+
+    public async Task<BusinessCardDto?> GetBusinessCardDetailAsync(
+        Guid businessId,
+        Guid cardId,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        var (card, client, business) = context.Value;
+        return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
+    }
+
+    public async Task<BusinessCardDto?> AddStampToCardAsync(
+        Guid businessId,
+        Guid cardId,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        var (card, client, business) = context.Value;
+        card.AddStamp(_clock.UtcNow);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
+
+        if (card.GoogleObjectId is not null)
+        {
+            await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
+        }
+
+        await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
+        return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
+    }
+
+    public async Task<ResendWalletEmailResult?> ResendWalletEmailAsync(
+        Guid businessId,
+        Guid cardId,
+        string baseUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        var (card, client, business) = context.Value;
+        var enrollmentUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Select/{card.EnrollmentToken}";
+        await _emailSender.SendWalletEnrollmentAsync(
+            new WalletEnrollmentEmail(client.Email, client.FullName, business.Name, enrollmentUrl, _clock.UtcNow),
+            cancellationToken);
+
+        return new ResendWalletEmailResult(
+            await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
+            enrollmentUrl);
+    }
+
     public async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsAsync(string userNameOrEmail, CancellationToken cancellationToken = default)
     {
         var client = await RequireClientAsync(userNameOrEmail, cancellationToken);
@@ -269,6 +357,22 @@ public sealed class DigitalCardsAppService
         return client is null || business is null ? null : (card, client, business);
     }
 
+    private async Task<(LoyaltyCard Card, Client Client, Business Business)?> FindBusinessCardContextAsync(
+        Guid businessId,
+        Guid cardId,
+        CancellationToken cancellationToken)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        var card = await _loyaltyCards.FindByIdAsync(cardId, cancellationToken);
+        if (business is null || card is null || card.BusinessId != business.Id)
+        {
+            return null;
+        }
+
+        var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+        return client is null ? null : (card, client, business);
+    }
+
     private static ClientDto ToDto(Client client)
     {
         return new ClientDto(client.Id, client.UserName, client.FirstName, client.LastName, client.Email);
@@ -290,5 +394,36 @@ public sealed class DigitalCardsAppService
             card.LifetimeStamps,
             card.GoogleObjectId,
             card.GoogleSaveUrl);
+    }
+
+    private async Task<BusinessCardDto> ToBusinessCardDtoAsync(
+        LoyaltyCard card,
+        Client client,
+        Business business,
+        CancellationToken cancellationToken)
+    {
+        var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
+        var appleDeviceCount = 0;
+        if (applePass is not null)
+        {
+            var devices = await _appleWalletPasses.ListDevicesForPassAsync(
+                applePass.PassTypeIdentifier,
+                applePass.SerialNumber,
+                cancellationToken);
+            appleDeviceCount = devices.Count;
+        }
+
+        return new BusinessCardDto(
+            card.Id,
+            card.EnrollmentToken,
+            ToDto(client),
+            business.Name,
+            card.CurrentStamps,
+            card.LifetimeStamps,
+            card.LastStampedAt,
+            !string.IsNullOrWhiteSpace(card.GoogleObjectId),
+            applePass is not null,
+            appleDeviceCount,
+            applePass?.UpdatedAt);
     }
 }

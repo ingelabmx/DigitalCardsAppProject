@@ -25,7 +25,7 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         var cardId = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, ToInsertParameters(card), cancellationToken: cancellationToken));
 
-        return await FindByIdAsync(cardId, cancellationToken)
+        return await FindByLegacyIdAsync(cardId, cancellationToken)
             ?? throw new InvalidOperationException("Inserted legacy card could not be loaded.");
     }
 
@@ -73,6 +73,12 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
             }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
+    }
+
+    public async Task<LoyaltyCard?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var legacyId = LegacyIdMapper.TryGuidToInt32(id);
+        return legacyId is null ? null : await FindByLegacyIdAsync(legacyId.Value, cancellationToken);
     }
 
     public async Task<LoyaltyCard?> FindByEnrollmentTokenAsync(string token, CancellationToken cancellationToken = default)
@@ -127,7 +133,50 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         return rows.Select(row => row.ToDomain()).ToArray();
     }
 
-    private async Task<LoyaltyCard?> FindByIdAsync(int cardId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<LoyaltyCard>> SearchByBusinessAsync(
+        Guid businessId,
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select cc.CardID,
+                   cc.CardIDGoogle,
+                   cc.CreationDate,
+                   cc.CheckQTY,
+                   cc.LastCheck,
+                   cc.UserID,
+                   cc.BusinessID,
+                   cc.HistoricCheckQTY
+            from ClientCard cc
+            inner join UserClient uc on uc.UserID = cc.UserID
+            where cc.BusinessID = @BusinessId
+              and (
+                    @HasQuery = 0
+                 or lower(uc.UserName) like @Pattern
+                 or lower(uc.UserEmail) like @Pattern
+                 or lower(uc.FirstName) like @Pattern
+                 or lower(uc.Lastname) like @Pattern
+              )
+            order by cc.LastCheck desc, cc.CreationDate desc
+            limit @Limit;
+            """;
+
+        var normalizedQuery = query.Trim().ToLowerInvariant();
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.QueryAsync<LoyaltyCardRow>(
+            new CommandDefinition(sql, new
+            {
+                BusinessId = LegacyIdMapper.ToInt32(businessId),
+                HasQuery = string.IsNullOrWhiteSpace(normalizedQuery) ? 0 : 1,
+                Pattern = $"%{EscapeLike(normalizedQuery)}%",
+                Limit = Math.Max(1, Math.Min(limit, 100))
+            }, cancellationToken: cancellationToken));
+
+        return rows.Select(row => row.ToDomain()).ToArray();
+    }
+
+    private async Task<LoyaltyCard?> FindByLegacyIdAsync(int cardId, CancellationToken cancellationToken)
     {
         const string sql = """
             select CardID,
@@ -148,6 +197,14 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
             new CommandDefinition(sql, new { CardId = cardId }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
+    }
+
+    private static string EscapeLike(string value)
+    {
+        return value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("%", "\\%", StringComparison.Ordinal)
+            .Replace("_", "\\_", StringComparison.Ordinal);
     }
 
     private static object ToInsertParameters(LoyaltyCard card)

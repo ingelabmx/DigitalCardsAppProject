@@ -118,11 +118,26 @@ El flujo ASP.NET Core moderno usa cookie auth para negocio:
 
 - Login: `http://localhost:5031/Business/Login`
 - Dashboard protegido: `http://localhost:5031/Business/Dashboard`
+- Tarjetas y sellos: `http://localhost:5031/Business/Cards`
 - Logout: `http://localhost:5031/Business/Logout`
 
-Las paginas `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`
-requieren cookie valida. Ya no se debe pasar `businessId` por URL ni por hidden
-input; el negocio se toma desde los claims de la sesion.
+Las paginas `/Business/Dashboard`, `/Business/Enroll`, `/Business/Cards` y
+`/Business/Stamp` requieren cookie valida. Ya no se debe pasar `businessId` por
+URL ni por hidden input; el negocio se toma desde los claims de la sesion.
+
+## Operacion moderna de tarjetas
+
+El flujo recomendado para negocio es `/Business/Cards`:
+
+1. buscar cliente por username o correo;
+2. abrir la tarjeta cliente-negocio;
+3. revisar sellos, Google Wallet, Apple Wallet y dispositivos Apple;
+4. reenviar el correo/link Wallet si hace falta;
+5. agregar sello desde el detalle de la tarjeta.
+
+La accion de sello valida que la tarjeta pertenezca al negocio autenticado.
+Web Forms sigue vivo como fallback, pero el dashboard moderno ya dirige la
+operacion de sellos a `Tarjetas y sellos`.
 
 ## Piloto controlado
 
@@ -146,7 +161,8 @@ negocios y clientes allowlisted usen las pantallas modernas:
 Con el piloto activo:
 
 - negocios fuera del allowlist pueden iniciar sesion, pero ven bloqueo en
-  `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`;
+  `/Business/Dashboard`, `/Business/Enroll`, `/Business/Cards` y
+  `/Business/Stamp`;
 - Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
   publicas por token/autorizacion propia;
 - si no hay allowlist de clientes, los enrolamientos/sellos modernos quedan
