@@ -8,28 +8,42 @@ public sealed class PilotAccessService
 {
     private readonly IClientRepository _clients;
     private readonly PilotOptions _options;
+    private readonly IPilotBusinessRepository _pilotBusinesses;
 
     public PilotAccessService(
         IClientRepository clients,
+        IPilotBusinessRepository pilotBusinesses,
         IOptions<PilotOptions> options)
     {
         _clients = clients;
+        _pilotBusinesses = pilotBusinesses;
         _options = options.Value;
     }
 
-    public PilotAccessResult CheckAuthenticatedBusiness(System.Security.Claims.ClaimsPrincipal user)
+    public Task<PilotAccessResult> CheckAuthenticatedBusinessAsync(
+        System.Security.Claims.ClaimsPrincipal user,
+        CancellationToken cancellationToken)
     {
-        return CheckBusiness(BusinessAuth.GetBusinessId(user), BusinessAuth.GetBusinessEmail(user));
+        return CheckBusinessAsync(
+            BusinessAuth.GetBusinessId(user),
+            BusinessAuth.GetBusinessEmail(user),
+            cancellationToken);
     }
 
-    public PilotAccessResult CheckBusiness(Guid businessId, string businessEmail)
+    public async Task<PilotAccessResult> CheckBusinessAsync(
+        Guid businessId,
+        string businessEmail,
+        CancellationToken cancellationToken)
     {
         if (!_options.Enabled)
         {
             return PilotAccessResult.Allowed;
         }
 
-        if (IsAllowedBusinessId(businessId) || IsAllowedEmail(businessEmail, _options.AllowedBusinessEmails))
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(businessId, cancellationToken);
+        if (access?.IsEnabled == true ||
+            IsAllowedBusinessId(businessId) ||
+            IsAllowedEmail(businessEmail, _options.AllowedBusinessEmails))
         {
             return PilotAccessResult.Allowed;
         }

@@ -1,0 +1,70 @@
+@page
+@model DigitalCards.Web.Pages.Admin.BusinessesModel
+@{
+    ViewData["Title"] = "Negocios piloto";
+}
+
+<section class="result-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Negocios piloto</h1>
+            <p class="lead">Habilita o deshabilita negocios existentes para usar el flujo moderno.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-businesses-back-link">Dashboard</a>
+    </div>
+
+    <form method="get" class="search-row" data-testid="admin-business-search-form">
+        <label asp-for="Query" class="form-label visually-hidden"></label>
+        <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-business-search-input" />
+        <button class="btn btn-primary" type="submit" data-testid="admin-business-search-submit">Buscar</button>
+    </form>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (Model.StatusMessage is not null)
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-business-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.Businesses.Count == 0)
+    {
+        <p class="text-muted" data-testid="admin-business-no-results">No se encontraron negocios.</p>
+    }
+    else
+    {
+        <div class="pilot-business-list" data-testid="admin-business-list">
+            @foreach (var business in Model.Businesses)
+            {
+                <article class="pilot-business-item" data-testid="admin-business-row">
+                    <div>
+                        <h2>@business.BusinessName</h2>
+                        <p>@business.BusinessEmail</p>
+                    </div>
+                    <div>
+                        <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-pilot-status">
+                            @(business.IsEnabled ? "Piloto habilitado" : "Piloto deshabilitado")
+                        </span>
+                        @if (business.UpdatedAt is not null)
+                        {
+                            <small>Actualizado @business.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
+                        }
+                    </div>
+                    <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-form">
+                        <input type="hidden" name="businessId" value="@business.BusinessId" />
+                        <label class="form-label" for="enable-notes-@business.BusinessId">Notas</label>
+                        <textarea id="enable-notes-@business.BusinessId" name="notes" class="form-control" rows="2" data-testid="admin-business-notes">@business.Notes</textarea>
+                        <button class="btn btn-primary" type="submit" data-testid="admin-enable-pilot">Habilitar piloto</button>
+                    </form>
+                    <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form">
+                        <input type="hidden" name="businessId" value="@business.BusinessId" />
+                        <input type="hidden" name="notes" value="@business.Notes" />
+                        <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-pilot">Deshabilitar piloto</button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>

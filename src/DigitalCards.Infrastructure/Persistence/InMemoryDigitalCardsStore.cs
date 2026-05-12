@@ -7,6 +7,14 @@ public sealed class InMemoryDigitalCardsStore
 {
     public InMemoryDigitalCardsStore()
     {
+        AdminUsers.Add(new AdminUser(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            "DCAdmin",
+            "DigitalCards",
+            "Admin",
+            "admin@digitalcards.test",
+            "admin123"));
+
         Businesses.Add(new Business(
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
             "Demo Coffee",
@@ -19,7 +27,11 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<Client> Clients { get; } = [];
 
+    public List<AdminUser> AdminUsers { get; } = [];
+
     public List<Business> Businesses { get; } = [];
+
+    public List<PilotBusinessAccess> PilotBusinesses { get; } = [];
 
     public List<BusinessCredential> BusinessCredentials { get; } = [];
 

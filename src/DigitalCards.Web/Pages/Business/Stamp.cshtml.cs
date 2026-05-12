@@ -35,14 +35,14 @@ public sealed class StampModel : PageModel
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
 
-    public void OnGet()
+    public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        SetPilotBusinessBlock();
+        await SetPilotBusinessBlockAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        if (!SetPilotBusinessBlock())
+        if (!await SetPilotBusinessBlockAsync(cancellationToken))
         {
             _logger.LogWarning(
                 "Modern stamp blocked by pilot for business {BusinessId}.",
@@ -92,9 +92,9 @@ public sealed class StampModel : PageModel
         }
     }
 
-    private bool SetPilotBusinessBlock()
+    private async Task<bool> SetPilotBusinessBlockAsync(CancellationToken cancellationToken)
     {
-        var access = _pilotAccess.CheckAuthenticatedBusiness(User);
+        var access = await _pilotAccess.CheckAuthenticatedBusinessAsync(User, cancellationToken);
         if (!access.IsAllowed)
         {
             PilotBlockMessage = access.Message;
