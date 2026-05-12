@@ -88,6 +88,7 @@ Validar:
 
 ```powershell
 Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
+Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
 ```
 
 En `appsettings.Local.json`, usar:
@@ -110,6 +111,34 @@ Runbook completo:
 
 ```text
 docs/migration-context/17-puntelio-single-environment.md
+```
+
+## Production readiness local
+
+Para que cookies de negocio sobrevivan reinicios, configura Data Protection
+fuera del repo:
+
+```json
+{
+  "DigitalCards": {
+    "Operations": {
+      "EnableForwardedHeaders": true,
+      "TrustAllForwardedHeaders": false,
+      "KnownProxies": [],
+      "DataProtectionKeysPath": "C:\\Users\\eguillen\\.digitalcards\\data-protection-keys",
+      "RequireDataProtectionKeysForReadiness": true
+    }
+  }
+}
+```
+
+`/health` valida que la app este viva. `/health/ready` valida configuracion
+critica y MySQL cuando `PersistenceProvider=MySql`.
+
+Runbook:
+
+```text
+docs/migration-context/19-production-readiness.md
 ```
 
 ## Login negocio moderno
@@ -224,3 +253,17 @@ Endpoint:
 ```text
 /internal/wallet-diagnostics/{CardID-or-enrollment-token}
 ```
+
+## Smoke real minimo
+
+```powershell
+Get-Content "$env:USERPROFILE\.digitalcards\appsettings.Local.json" -Raw | ConvertFrom-Json | Out-Null
+cloudflared tunnel --config "$env:USERPROFILE\.cloudflared\config.yml" run puntelio-app
+dotnet run --project src\DigitalCards.Web\DigitalCards.Web.csproj --launch-profile http
+Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
+Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
+```
+
+Despues valida manualmente: login negocio allowlisted, enroll cliente
+allowlisted, correo real, Apple Wallet en iPhone, Google Wallet, agregar sello
+moderno y update en ambas Wallets.
