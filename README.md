@@ -124,6 +124,55 @@ Las paginas `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`
 requieren cookie valida. Ya no se debe pasar `businessId` por URL ni por hidden
 input; el negocio se toma desde los claims de la sesion.
 
+## Piloto controlado
+
+Cuando `app.puntelio.com` use datos reales, activa el piloto para que solo los
+negocios y clientes allowlisted usen las pantallas modernas:
+
+```json
+{
+  "DigitalCards": {
+    "Pilot": {
+      "Enabled": true,
+      "AllowedBusinessIds": [],
+      "AllowedBusinessEmails": ["NEGOCIO_TEST_EMAIL"],
+      "AllowedClientEmails": ["CLIENTE_TEST_EMAIL"],
+      "AllowedClientEmailDomains": ["example.test"]
+    }
+  }
+}
+```
+
+Con el piloto activo:
+
+- negocios fuera del allowlist pueden iniciar sesion, pero ven bloqueo en
+  `/Business/Dashboard`, `/Business/Enroll` y `/Business/Stamp`;
+- Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
+  publicas por token/autorizacion propia;
+- si no hay allowlist de clientes, los enrolamientos/sellos modernos quedan
+  bloqueados para clientes existentes.
+
+Rollback rapido:
+
+```json
+{
+  "DigitalCards": {
+    "Pilot": {
+      "Enabled": false
+    },
+    "LegacyWalletSync": {
+      "Enabled": false
+    }
+  }
+}
+```
+
+Runbook:
+
+```text
+docs/migration-context/18-pilot-readiness.md
+```
+
 ## Password hardening negocio
 
 La app moderna migra passwords de negocio gradualmente a una tabla nueva,
@@ -173,5 +222,5 @@ Google Wallet y push Apple Wallet. Los diagnosticos seguros se activan con:
 Endpoint:
 
 ```text
-/internal/wallet-diagnostics/{CardID}
+/internal/wallet-diagnostics/{CardID-or-enrollment-token}
 ```

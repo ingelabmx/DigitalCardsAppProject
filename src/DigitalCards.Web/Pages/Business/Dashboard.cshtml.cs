@@ -1,4 +1,5 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,13 +11,21 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class DashboardModel : PageModel
 {
     private readonly IBusinessRepository _businesses;
+    private readonly PilotAccessService _pilotAccess;
 
-    public DashboardModel(IBusinessRepository businesses)
+    public DashboardModel(
+        IBusinessRepository businesses,
+        PilotAccessService pilotAccess)
     {
         _businesses = businesses;
+        _pilotAccess = pilotAccess;
     }
 
     public string BusinessName { get; private set; } = string.Empty;
+
+    public string? PilotBlockMessage { get; private set; }
+
+    public bool IsPilotBlocked => PilotBlockMessage is not null;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -28,6 +37,12 @@ public sealed class DashboardModel : PageModel
         }
 
         BusinessName = business.Name;
+        var pilotAccess = _pilotAccess.CheckBusiness(business.Id, business.Email);
+        if (!pilotAccess.IsAllowed)
+        {
+            PilotBlockMessage = pilotAccess.Message;
+        }
+
         return Page();
     }
 }

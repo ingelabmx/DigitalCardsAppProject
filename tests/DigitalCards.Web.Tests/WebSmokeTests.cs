@@ -166,6 +166,116 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task Pilot_WithAllowedBusinessEmail_AllowsBusinessPages()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true",
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test",
+            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp" })
+        {
+            var response = await client.GetAsync(path);
+            var html = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.DoesNotContain("pilot-business-blocked", html);
+        }
+    }
+
+    [Fact]
+    public async Task Pilot_WithAllowedBusinessId_AllowsDashboard()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true",
+            ["DigitalCards:Pilot:AllowedBusinessIds:0"] = "11111111-1111-1111-1111-111111111111",
+            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+
+        var html = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("data-testid=\"enroll-link\"", html);
+        Assert.DoesNotContain("pilot-business-blocked", html);
+    }
+
+    [Fact]
+    public async Task Pilot_WithBlockedBusiness_ShowsMessageAndHidesModernActions()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true",
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "other@digitalcards.test",
+            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+
+        var html = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("pilot-business-blocked", html);
+        Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", html);
+        Assert.DoesNotContain("data-testid=\"enroll-link\"", html);
+        Assert.DoesNotContain("data-testid=\"stamp-link\"", html);
+
+        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp" })
+        {
+            var blockedPage = await client.GetStringAsync(path);
+
+            Assert.Contains("pilot-business-blocked", blockedPage);
+            Assert.DoesNotContain("data-testid=\"enroll-form\"", blockedPage);
+            Assert.DoesNotContain("data-testid=\"stamp-form\"", blockedPage);
+        }
+    }
+
+    [Fact]
+    public async Task Pilot_BlocksEnrollForClientOutsideAllowlist()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true",
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test",
+            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "allowed.test"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("pb");
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@blocked.test");
+
+        var token = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+        var response = await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", html);
+        Assert.DoesNotContain("Correo generado", html);
+    }
+
+    [Fact]
     public async Task AppleWalletPage_WithValidToken_ReturnsPendingState()
     {
         using var fake = WithFakeIntegrations();
@@ -176,6 +286,23 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("Apple Wallet pendiente", html);
         Assert.Contains("apple-wallet-pending", html);
+    }
+
+    [Fact]
+    public async Task WalletLanding_RemainsPublic_WhenPilotIsEnabled()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true"
+        });
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, "pilotwallet");
+
+        var html = await client.GetStringAsync($"/Wallet/Select/{token}");
+
+        Assert.Contains("wallet-select", html);
+        Assert.Contains("Apple Wallet", html);
+        Assert.Contains("Google Wallet", html);
     }
 
     [Fact]
@@ -261,9 +388,33 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private FakeIntegrationFactory WithFakeIntegrations()
+    [Fact]
+    public async Task WalletDiagnostics_WhenEnabled_ReturnsSafeOperationalState()
     {
-        return new FakeIntegrationFactory(_factory);
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Diagnostics:EnableWalletDiagnostics"] = "true"
+        });
+        var client = fake.Factory.CreateClient();
+        var userName = NewLegacySafeUserName("wd");
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, userName);
+
+        var json = await client.GetStringAsync($"/internal/wallet-diagnostics/{token}");
+
+        Assert.Contains("\"clientUserName\"", json);
+        Assert.Contains(userName, json);
+        Assert.Contains("\"businessName\"", json);
+        Assert.Contains("Demo Coffee", json);
+        Assert.Contains("\"currentStamps\"", json);
+        Assert.DoesNotContain($"{userName}@example.test", json);
+        Assert.DoesNotContain("business123", json);
+        Assert.DoesNotContain("Password", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionString", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private FakeIntegrationFactory WithFakeIntegrations(IReadOnlyDictionary<string, string?>? configurationOverrides = null)
+    {
+        return new FakeIntegrationFactory(_factory, configurationOverrides);
     }
 
     private sealed class FakeIntegrationFactory : IDisposable
@@ -276,12 +427,15 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             ["DigitalCards__AppleWallet__Provider"] = "Fake",
             ["DigitalCards__Email__Provider"] = "Fake",
             ["DigitalCards__PublicBaseUrl"] = string.Empty,
+            ["DigitalCards__Pilot__Enabled"] = "false",
             ["DigitalCards__SkipUserLocalConfiguration"] = "true"
         };
 
         private readonly Dictionary<string, string?> _previousValues;
 
-        public FakeIntegrationFactory(WebApplicationFactory<Program> baseFactory)
+        public FakeIntegrationFactory(
+            WebApplicationFactory<Program> baseFactory,
+            IReadOnlyDictionary<string, string?>? configurationOverrides)
         {
             _previousValues = Overrides.ToDictionary(
                 pair => pair.Key,
@@ -296,15 +450,26 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             {
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
-                    configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                    var values = new Dictionary<string, string?>
                     {
                         ["DigitalCards:UseFakeIntegrations"] = "true",
                         ["DigitalCards:PersistenceProvider"] = "InMemory",
                         ["DigitalCards:GoogleWallet:Provider"] = "Fake",
                         ["DigitalCards:AppleWallet:Provider"] = "Fake",
                         ["DigitalCards:Email:Provider"] = "Fake",
-                        ["DigitalCards:PublicBaseUrl"] = string.Empty
-                    });
+                        ["DigitalCards:PublicBaseUrl"] = string.Empty,
+                        ["DigitalCards:Pilot:Enabled"] = "false"
+                    };
+
+                    if (configurationOverrides is not null)
+                    {
+                        foreach (var pair in configurationOverrides)
+                        {
+                            values[pair.Key] = pair.Value;
+                        }
+                    }
+
+                    configuration.AddInMemoryCollection(values);
                 });
             });
         }
@@ -349,7 +514,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
     private static async Task RegisterClientAsync(
         WebApplicationFactory<Program> factory,
-        string userName)
+        string userName,
+        string? email = null)
     {
         using var scope = factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
@@ -358,7 +524,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             userName,
             "Web",
             "Auth",
-            $"{userName}@example.test"));
+            email ?? $"{userName}@example.test"));
     }
 
     private static async Task<HttpResponseMessage> LoginBusinessAsync(

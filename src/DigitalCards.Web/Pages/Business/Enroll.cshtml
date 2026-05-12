@@ -7,6 +7,13 @@
 <section class="form-panel">
     <h1>Asociar cliente con negocio</h1>
 
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+    }
+
     @if (Model.Result is not null)
     {
         <div class="alert alert-success" role="status" data-testid="enroll-success">
@@ -15,17 +22,20 @@
         </div>
     }
 
-    <form method="post" data-testid="enroll-form">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    @if (!Model.IsPilotBlocked)
+    {
+        <form method="post" data-testid="enroll-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <div class="mb-3">
-            <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
-            <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="enroll-username" />
-            <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
-        </div>
+            <div class="mb-3">
+                <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
+                <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="enroll-username" />
+                <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+            </div>
 
-        <button class="btn btn-primary" type="submit" data-testid="enroll-submit">Asociar</button>
-    </form>
+            <button class="btn btn-primary" type="submit" data-testid="enroll-submit">Asociar</button>
+        </form>
+    }
 </section>
 
 @section Scripts {

@@ -1,6 +1,7 @@
 using DigitalCards.Application;
 using DigitalCards.Infrastructure;
 using DigitalCards.Web;
+using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -29,6 +30,8 @@ builder.Configuration
     .AddEnvironmentVariables()
     .AddCommandLine(args);
 
+builder.Services.Configure<PilotOptions>(builder.Configuration.GetSection(PilotOptions.SectionName));
+builder.Services.AddScoped<PilotAccessService>();
 builder.Services.AddRazorPages();
 builder.Services
     .AddAuthentication(BusinessAuth.Scheme)

@@ -7,6 +7,13 @@
 <section class="form-panel">
     <h1>Agregar sello</h1>
 
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+    }
+
     @if (Model.Result is not null)
     {
         <div class="alert alert-success" role="status" data-testid="stamp-success">
@@ -28,17 +35,20 @@
         </div>
     }
 
-    <form method="post" data-testid="stamp-form">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    @if (!Model.IsPilotBlocked)
+    {
+        <form method="post" data-testid="stamp-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <div class="mb-3">
-            <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
-            <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="stamp-username" />
-            <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
-        </div>
+            <div class="mb-3">
+                <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
+                <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="stamp-username" />
+                <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+            </div>
 
-        <button class="btn btn-primary" type="submit" data-testid="stamp-submit">Agregar sello</button>
-    </form>
+            <button class="btn btn-primary" type="submit" data-testid="stamp-submit">Agregar sello</button>
+        </form>
+    }
 </section>
 
 @section Scripts {
