@@ -1,0 +1,66 @@
+@page
+@model DigitalCards.Web.Pages.Admin.AdminUsersModel
+@{
+    ViewData["Title"] = "Administradores";
+}
+
+<section class="result-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Administradores</h1>
+            <p class="lead">Crea admins y resetea accesos sin exponer un registro publico.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" asp-page="/Admin/CreateAdmin" data-testid="admin-users-create-link">Crear admin</a>
+            <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-users-back-link">Dashboard</a>
+        </div>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (Model.StatusMessage is not null)
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-users-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.AdminUsers.Count == 0)
+    {
+        <p class="text-muted" data-testid="admin-users-no-results">No se encontraron administradores.</p>
+    }
+    else
+    {
+        <div class="pilot-business-list" data-testid="admin-users-list">
+            @foreach (var admin in Model.AdminUsers)
+            {
+                <article class="pilot-business-item" data-testid="admin-user-row">
+                    <div>
+                        <h2 data-testid="admin-user-name">@admin.UserName</h2>
+                        <p data-testid="admin-user-email">@admin.Email</p>
+                        <small>@admin.Name</small>
+                    </div>
+                    <form method="post" asp-page-handler="ResetPassword" class="pilot-business-form">
+                        <input type="hidden" name="targetAdminUserId" value="@admin.Id" />
+                        <label class="form-label" for="new-password-@admin.Id">Nueva contrasena</label>
+                        <input id="new-password-@admin.Id"
+                               name="newPassword"
+                               class="form-control"
+                               type="password"
+                               autocomplete="new-password"
+                               data-testid="admin-user-reset-password" />
+                        <label class="form-label" for="confirm-password-@admin.Id">Confirmar contrasena</label>
+                        <input id="confirm-password-@admin.Id"
+                               name="confirmPassword"
+                               class="form-control"
+                               type="password"
+                               autocomplete="new-password"
+                               data-testid="admin-user-reset-confirm" />
+                        <button class="btn btn-outline-danger" type="submit" data-testid="admin-user-reset-submit">Actualizar contrasena</button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>

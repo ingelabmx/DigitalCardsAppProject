@@ -215,7 +215,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin" })
         {
             var response = await client.GetAsync(path);
 
@@ -499,6 +499,132 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains(updatedName, dashboardHtml);
         Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task AdminCreateAdmin_CreatesAdminWithModernCredentialAndAllowsLogin()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("ad");
+        var userName = $"a{suffix[..8]}";
+        var email = $"{suffix}@ad.test";
+        const string password = "NewAdmin123!";
+
+        await LoginAdminAsync(client);
+        var token = await GetAntiforgeryTokenAsync(client, "/Admin/CreateAdmin");
+        var response = await client.PostAsync(
+            "/Admin/CreateAdmin",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserName"] = userName,
+                ["Input.FirstName"] = "New",
+                ["Input.LastName"] = "Admin",
+                ["Input.Email"] = email,
+                ["Input.InitialPassword"] = password,
+                ["Input.ConfirmPassword"] = password,
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("admin-create-admin-status", html);
+        Assert.Contains(userName, html);
+        Assert.DoesNotContain(password, html, StringComparison.Ordinal);
+
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            var admin = store.AdminUsers.Single(existing => existing.Email == email);
+            Assert.Equal(25, admin.PasswordHashPlaceholder.Length);
+            Assert.DoesNotContain(password, admin.PasswordHashPlaceholder, StringComparison.Ordinal);
+            Assert.Contains(store.AdminCredentials, credential => credential.AdminUserId == admin.Id);
+        }
+
+        var loginClient = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var loginResponse = await LoginAdminAsync(loginClient, userName, password);
+
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+        Assert.True(HasAdminCookie(loginResponse));
+    }
+
+    [Fact]
+    public async Task AdminUsers_ResetAdminPasswordInvalidatesOldPassword()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("ra");
+        var userName = $"a{suffix[..8]}";
+        var email = $"{suffix}@ad.test";
+        const string oldPassword = "NewAdmin123!";
+        const string newPassword = "ChangedAdmin123!";
+
+        await LoginAdminAsync(client);
+        var createToken = await GetAntiforgeryTokenAsync(client, "/Admin/CreateAdmin");
+        await client.PostAsync(
+            "/Admin/CreateAdmin",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserName"] = userName,
+                ["Input.FirstName"] = "Reset",
+                ["Input.LastName"] = "Admin",
+                ["Input.Email"] = email,
+                ["Input.InitialPassword"] = oldPassword,
+                ["Input.ConfirmPassword"] = oldPassword,
+                ["__RequestVerificationToken"] = createToken
+            }));
+
+        Guid adminUserId;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            adminUserId = store.AdminUsers.Single(existing => existing.Email == email).Id;
+        }
+
+        var usersHtml = await client.GetStringAsync("/Admin/AdminUsers");
+        Assert.Contains("admin-user-row", usersHtml);
+        var resetToken = ExtractAntiforgeryToken(usersHtml);
+        var resetResponse = await client.PostAsync(
+            "/Admin/AdminUsers?handler=ResetPassword",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["targetAdminUserId"] = adminUserId.ToString("D"),
+                ["newPassword"] = newPassword,
+                ["confirmPassword"] = newPassword,
+                ["__RequestVerificationToken"] = resetToken
+            }));
+        var resetHtml = await resetResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
+        Assert.Contains("Contrasena de admin actualizada", resetHtml);
+        Assert.DoesNotContain(newPassword, resetHtml, StringComparison.Ordinal);
+
+        var oldLoginClient = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var oldLogin = await LoginAdminAsync(oldLoginClient, userName, oldPassword);
+        var oldLoginHtml = await oldLogin.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, oldLogin.StatusCode);
+        Assert.Contains("Credenciales de admin invalidas", oldLoginHtml);
+
+        var newLoginClient = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var newLogin = await LoginAdminAsync(newLoginClient, userName, newPassword);
+
+        Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
+        Assert.True(HasAdminCookie(newLogin));
     }
 
     [Fact]

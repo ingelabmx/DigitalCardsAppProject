@@ -65,6 +65,7 @@ public static class DependencyInjection
             services.AddSingleton(new MySqlConnectionFactory(providers.DigitalCardsConnectionString!));
             services.AddScoped<IClientRepository, MySqlClientRepository>();
             services.AddScoped<IAdminUserRepository, MySqlAdminUserRepository>();
+            services.AddScoped<IAdminCredentialRepository, MySqlAdminCredentialRepository>();
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
             services.AddScoped<IBusinessCredentialRepository, MySqlBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
@@ -79,6 +80,7 @@ public static class DependencyInjection
             services.AddSingleton<InMemoryDigitalCardsStore>();
             services.AddScoped<IClientRepository, InMemoryClientRepository>();
             services.AddScoped<IAdminUserRepository, InMemoryAdminUserRepository>();
+            services.AddScoped<IAdminCredentialRepository, InMemoryAdminCredentialRepository>();
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
             services.AddScoped<IBusinessCredentialRepository, InMemoryBusinessCredentialRepository>();
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();

@@ -93,6 +93,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
+        Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
@@ -115,6 +116,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
+        Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
@@ -137,6 +139,54 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task LoginAdmin_WithLegacyPassword_CreatesModernCredential()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var credentials = provider.GetRequiredService<IAdminCredentialRepository>();
+
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "admin@digitalcards.test",
+            "admin123"));
+
+        Assert.NotNull(admin);
+        var credential = await credentials.FindByAdminUserIdAsync(admin!.Id);
+        Assert.NotNull(credential);
+        Assert.True(credential!.PasswordHash.Length > 25);
+        Assert.DoesNotContain("admin123", credential.PasswordHash, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LoginAdmin_UsesModernCredentialAfterLegacyMigration()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+
+        var firstLogin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        Assert.NotNull(firstLogin);
+
+        var original = store.AdminUsers.Single();
+        store.AdminUsers[0] = new AdminUser(
+            original.Id,
+            original.UserName,
+            original.FirstName,
+            original.LastName,
+            original.Email,
+            "legacy-password-changed");
+
+        var secondLogin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        Assert.NotNull(secondLogin);
+        Assert.Equal(original.Id, secondLogin!.Id);
+    }
+
+    [Fact]
     public async Task LoginAdmin_WithBusinessCredentials_ReturnsNull()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();
@@ -147,6 +197,114 @@ public sealed class DigitalCardsAppServiceTests
             "business123"));
 
         Assert.Null(admin);
+    }
+
+    [Fact]
+    public async Task CreateAdminAsync_CreatesLegacyAdminAndModernCredential()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admins = provider.GetRequiredService<IAdminUserRepository>();
+        var credentials = provider.GetRequiredService<IAdminCredentialRepository>();
+        var actingAdmin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        const string password = "NewAdmin123!";
+
+        var result = await adminApp.CreateAdminAsync(new CreateAdminCommand(
+            "OpsAdmin",
+            "Ops",
+            "Admin",
+            "ops@example.test",
+            password,
+            actingAdmin!.Id));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("OpsAdmin", result.Admin!.UserName);
+        Assert.Equal("ops@example.test", result.Admin.Email);
+
+        var admin = await admins.FindByUserNameOrEmailAsync("OpsAdmin");
+        Assert.NotNull(admin);
+        Assert.Equal(25, admin!.PasswordHashPlaceholder.Length);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(password), admin.PasswordHashPlaceholder);
+        Assert.DoesNotContain(password, admin.PasswordHashPlaceholder, StringComparison.Ordinal);
+
+        var credential = await credentials.FindByAdminUserIdAsync(admin.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(password, credential!.PasswordHash, StringComparison.Ordinal);
+
+        var login = await adminApp.LoginAdminAsync(new AdminLoginCommand("OpsAdmin", password));
+        Assert.NotNull(login);
+    }
+
+    [Fact]
+    public async Task CreateAdminAsync_WhenDuplicateUserNameOrEmail_ReturnsSafeError()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var actingAdmin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+
+        var duplicateUserName = await adminApp.CreateAdminAsync(new CreateAdminCommand(
+            "DCAdmin",
+            "Unique",
+            "Admin",
+            "unique@example.test",
+            "NewAdmin123!",
+            actingAdmin!.Id));
+        var duplicateEmail = await adminApp.CreateAdminAsync(new CreateAdminCommand(
+            "UniqueAdmin",
+            "Unique",
+            "Admin",
+            "admin@digitalcards.test",
+            "NewAdmin123!",
+            actingAdmin.Id));
+
+        Assert.False(duplicateUserName.Succeeded);
+        Assert.Equal("Ya existe un admin con ese usuario o correo.", duplicateUserName.ErrorMessage);
+        Assert.False(duplicateEmail.Succeeded);
+        Assert.Equal("Ya existe un admin con ese usuario o correo.", duplicateEmail.ErrorMessage);
+        Assert.DoesNotContain("password", duplicateUserName.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("password", duplicateEmail.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ResetAdminPasswordAsync_UpdatesLegacyAndModernCredentials()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admins = provider.GetRequiredService<IAdminUserRepository>();
+        var credentials = provider.GetRequiredService<IAdminCredentialRepository>();
+        var actingAdmin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        const string oldPassword = "NewAdmin123!";
+        const string newPassword = "ChangedAdmin123!";
+        var created = await adminApp.CreateAdminAsync(new CreateAdminCommand(
+            "ResetAdmin",
+            "Reset",
+            "Admin",
+            "reset@example.test",
+            oldPassword,
+            actingAdmin!.Id));
+
+        var result = await adminApp.ResetAdminPasswordAsync(new ResetAdminPasswordCommand(
+            created.Admin!.Id,
+            actingAdmin.Id,
+            newPassword));
+
+        Assert.True(result.Succeeded);
+        var admin = await admins.FindByIdAsync(created.Admin.Id);
+        Assert.NotNull(admin);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(newPassword), admin!.PasswordHashPlaceholder);
+        Assert.DoesNotContain(newPassword, admin.PasswordHashPlaceholder, StringComparison.Ordinal);
+        var credential = await credentials.FindByAdminUserIdAsync(admin.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(newPassword, credential!.PasswordHash, StringComparison.Ordinal);
+
+        Assert.Null(await adminApp.LoginAdminAsync(new AdminLoginCommand("ResetAdmin", oldPassword)));
+        Assert.NotNull(await adminApp.LoginAdminAsync(new AdminLoginCommand("ResetAdmin", newPassword)));
     }
 
     [Fact]

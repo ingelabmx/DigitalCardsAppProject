@@ -8,6 +8,32 @@ public sealed record AdminUserDto(
     string Name,
     string Email);
 
+public sealed record AdminUserListItemDto(
+    Guid Id,
+    string UserName,
+    string Name,
+    string Email);
+
+public sealed record AdminAccessResult(
+    AdminUserDto? Admin,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Admin is not null;
+}
+
+public sealed record CreateAdminCommand(
+    string UserName,
+    string FirstName,
+    string LastName,
+    string Email,
+    string InitialPassword,
+    Guid ActingAdminUserId);
+
+public sealed record ResetAdminPasswordCommand(
+    Guid TargetAdminUserId,
+    Guid ActingAdminUserId,
+    string NewPassword);
+
 public sealed record CreateBusinessCommand(
     string BusinessName,
     string BusinessEmail,
