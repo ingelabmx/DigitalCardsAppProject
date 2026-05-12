@@ -272,12 +272,34 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Login admin: `http://localhost:5031/Admin/Login`
 - Dashboard admin: `http://localhost:5031/Admin/Dashboard`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
+- Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 
 Con `DigitalCards:Pilot:Enabled=true`, un negocio puede usar el flujo moderno
 si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
 de `appsettings.Local.json`. La recomendacion operativa es mover los negocios
 a `/Admin/Businesses` y dejar `AllowedBusinessEmails`/`AllowedBusinessIds` solo
 como fallback.
+
+## Registro admin de negocios
+
+El admin moderno puede registrar negocios basicos sin tocar Web Forms desde
+`/Admin/CreateBusiness`.
+
+Antes de usarlo contra HostGator, confirma que ya se aplicaron:
+
+```text
+docs/migration-context/16-business-password-hardening-hostgator.sql
+docs/migration-context/22-admin-pilot-management-hostgator.sql
+```
+
+Este flujo inserta en la tabla legacy `Business`, respeta los limites actuales
+`BusinessName varchar(30)` y `BusinessEmail varchar(30)`, usa
+`/img/demo-coffee.svg` como logo default y crea `ModernBusinessCredential` al
+mismo tiempo. Si marcas `Habilitar piloto`, tambien crea/actualiza
+`ModernPilotBusiness`.
+
+No hay email automatico al negocio en esta version. El admin define y comunica
+el password inicial manualmente; la app no lo muestra despues del submit.
 
 ## Password hardening negocio
 

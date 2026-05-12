@@ -12,6 +12,58 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     }
 
     [PlaywrightFact]
+    public async Task AdminCreatesBusinessAndBusinessCanUseModernFlow_WithFakeServices()
+    {
+        using var playwright = await Playwright.CreateAsync();
+        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        var page = await browser.NewPageAsync();
+        var suffix = NewLegacySafeUserName("bz");
+        var businessName = $"Biz {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        const string businessPassword = "StartPass123!";
+        var userName = NewLegacySafeUserName("u");
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
+        await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
+        await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
+        await page.GetByTestId("admin-login-submit").ClickAsync();
+        await page.GetByTestId("admin-create-business-link").ClickAsync();
+        await page.GetByTestId("admin-create-business-name").FillAsync(businessName);
+        await page.GetByTestId("admin-create-business-email").FillAsync(businessEmail);
+        await page.GetByTestId("admin-create-business-password").FillAsync(businessPassword);
+        await page.GetByTestId("admin-create-business-confirm-password").FillAsync(businessPassword);
+        await page.GetByTestId("admin-create-business-enable-pilot").CheckAsync();
+        await page.GetByTestId("admin-create-business-notes").FillAsync("creado desde playwright");
+        await page.GetByTestId("admin-create-business-submit").ClickAsync();
+
+        Assert.Contains("Negocio creado", await page.GetByTestId("admin-create-business-status").InnerTextAsync());
+        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-created-business-result").InnerTextAsync());
+        Assert.DoesNotContain(businessPassword, await page.ContentAsync(), StringComparison.Ordinal);
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Register").ToString());
+        await page.GetByTestId("register-username").FillAsync(userName);
+        await page.GetByTestId("register-first-name").FillAsync("Nuevo");
+        await page.GetByTestId("register-last-name").FillAsync("Cliente");
+        await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
+        await page.GetByTestId("register-submit").ClickAsync();
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
+        await page.GetByTestId("business-email").FillAsync(businessEmail);
+        await page.GetByTestId("business-password").FillAsync(businessPassword);
+        await page.GetByTestId("business-login-submit").ClickAsync();
+        Assert.Contains(businessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
+
+        await page.GetByTestId("enroll-link").ClickAsync();
+        await page.GetByTestId("enroll-username").FillAsync(userName);
+        await page.GetByTestId("enroll-submit").ClickAsync();
+        Assert.Contains("Correo generado", await page.GetByTestId("enroll-success").InnerTextAsync());
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
+        await page.GetByTestId("email-link").First.ClickAsync();
+        Assert.Contains(businessName, await page.GetByTestId("wallet-select").InnerTextAsync());
+    }
+
+    [PlaywrightFact]
     public async Task ClientBusinessGoogleWalletAndStampFlow_WorksWithFakeServices()
     {
         using var playwright = await Playwright.CreateAsync();
@@ -137,6 +189,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("Admin", await page.GetByTestId("admin-dashboard-title").InnerTextAsync());
 
         await page.GetByTestId("admin-businesses-link").ClickAsync();
+        await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
+        await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
         Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
     }
@@ -144,6 +198,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     private async Task DisableDemoBusinessPilotAsync(IPage page)
     {
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Businesses").ToString());
+        await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
+        await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-disable-pilot").First.ClickAsync();
         Assert.Contains("Piloto deshabilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
     }

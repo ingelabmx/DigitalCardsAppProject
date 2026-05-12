@@ -215,7 +215,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness" })
         {
             var response = await client.GetAsync(path);
 
@@ -311,6 +311,106 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var blockedAgainHtml = await client.GetStringAsync("/Business/Dashboard");
         Assert.Contains("pilot-business-blocked", blockedAgainHtml);
+    }
+
+    [Fact]
+    public async Task AdminCreateBusiness_CreatesBusinessWithModernCredentialAndPilotAccess()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("nb");
+        var businessName = $"Biz {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        const string password = "StartPass123!";
+
+        await LoginAdminAsync(client);
+        var token = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
+        var response = await client.PostAsync(
+            "/Admin/CreateBusiness",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = businessName,
+                ["Input.BusinessEmail"] = businessEmail,
+                ["Input.InitialPassword"] = password,
+                ["Input.ConfirmPassword"] = password,
+                ["Input.EnablePilot"] = "true",
+                ["Input.Notes"] = "negocio creado en web test",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("admin-create-business-status", html);
+        Assert.Contains("Piloto habilitado", html);
+        Assert.Contains(businessName, html);
+        Assert.DoesNotContain(password, html, StringComparison.Ordinal);
+
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            var business = store.Businesses.Single(existing => existing.Email == businessEmail);
+            Assert.Equal(25, business.PasswordHashPlaceholder.Length);
+            Assert.DoesNotContain(password, business.PasswordHashPlaceholder, StringComparison.Ordinal);
+            Assert.Contains(store.BusinessCredentials, credential => credential.BusinessId == business.Id);
+            Assert.Contains(store.PilotBusinesses, pilot => pilot.BusinessId == business.Id && pilot.IsEnabled);
+        }
+
+        var loginResponse = await LoginBusinessAsync(client, businessEmail, password);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains(businessName, dashboardHtml);
+        Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task AdminCreateBusiness_WithoutPilot_CreatesBlockedBusinessWhenPilotIsEnabled()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Pilot:Enabled"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("db");
+        var businessName = $"Biz {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        const string password = "StartPass123!";
+
+        await LoginAdminAsync(client);
+        var token = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
+        var response = await client.PostAsync(
+            "/Admin/CreateBusiness",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = businessName,
+                ["Input.BusinessEmail"] = businessEmail,
+                ["Input.InitialPassword"] = password,
+                ["Input.ConfirmPassword"] = password,
+                ["Input.EnablePilot"] = "false",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Negocio creado", html);
+        Assert.Contains("Piloto deshabilitado", html);
+        Assert.DoesNotContain(password, html, StringComparison.Ordinal);
+
+        var loginResponse = await LoginBusinessAsync(client, businessEmail, password);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("pilot-business-blocked", dashboardHtml);
+        Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", dashboardHtml);
     }
 
     [Fact]
