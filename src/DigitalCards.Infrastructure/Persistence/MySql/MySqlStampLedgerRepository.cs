@@ -139,25 +139,42 @@ public sealed class MySqlStampLedgerRepository : IStampLedgerRepository
             : new DateTimeOffset(value.ToUniversalTime());
     }
 
-    private sealed record StampLedgerRow(
-        long ID,
-        int CardID,
-        int BusinessID,
-        int UserID,
-        string Source,
-        int? ActorBusinessID,
-        int PreviousCheckQTY,
-        int NewCheckQTY,
-        int PreviousHistoricCheckQTY,
-        int NewHistoricCheckQTY,
-        DateTime ObservedLastCheck,
-        bool GoogleWalletAttempted,
-        bool GoogleWalletSucceeded,
-        bool AppleWalletAttempted,
-        bool AppleWalletSucceeded,
-        string? ErrorSummary,
-        DateTime CreatedAt)
+    private sealed class StampLedgerRow
     {
+        public int ID { get; set; }
+
+        public int CardID { get; set; }
+
+        public int BusinessID { get; set; }
+
+        public int UserID { get; set; }
+
+        public string Source { get; set; } = string.Empty;
+
+        public int? ActorBusinessID { get; set; }
+
+        public int PreviousCheckQTY { get; set; }
+
+        public int NewCheckQTY { get; set; }
+
+        public int PreviousHistoricCheckQTY { get; set; }
+
+        public int NewHistoricCheckQTY { get; set; }
+
+        public DateTime ObservedLastCheck { get; set; }
+
+        public bool GoogleWalletAttempted { get; set; }
+
+        public bool GoogleWalletSucceeded { get; set; }
+
+        public bool AppleWalletAttempted { get; set; }
+
+        public bool AppleWalletSucceeded { get; set; }
+
+        public string? ErrorSummary { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
         public StampLedgerRecord ToModel()
         {
             return new StampLedgerRecord(
