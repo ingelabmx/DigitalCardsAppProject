@@ -411,22 +411,47 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         using (var scope = fake.Factory.Services.CreateScope())
         {
             var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
             var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
                 "demo@digitalcards.test",
                 "business123"));
             await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
             await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+            var card = store.LoyaltyCards.Single(item => item.Id == enrollment.Card.Id);
+            store.StampLedger.Add(new StampLedgerRecord(
+                9901,
+                card.Id,
+                card.BusinessId,
+                card.ClientId,
+                StampLedgerSource.LegacySync,
+                null,
+                card.CurrentStamps - 1,
+                card.CurrentStamps,
+                card.LifetimeStamps - 1,
+                card.LifetimeStamps,
+                card.LastStampedAt,
+                GoogleWalletAttempted: true,
+                GoogleWalletSucceeded: false,
+                AppleWalletAttempted: false,
+                AppleWalletSucceeded: false,
+                "Google Wallet fallo seguro",
+                DateTimeOffset.UtcNow));
         }
 
         await LoginAdminAsync(http);
         var html = await http.GetStringAsync($"/Admin/Support?Query={userName}");
 
         Assert.Contains("admin-support-results", html);
+        Assert.Contains("admin-support-filters", html);
         Assert.Contains("LegacyWalletSync:", html);
         Assert.Contains("Activo", html);
         Assert.Contains(userName, html);
         Assert.Contains("Demo Coffee", html);
         Assert.Contains("Emitida", html);
+        Assert.Contains("admin-support-operational-state", html);
+        Assert.Contains("Errores recientes seguros", html);
+        Assert.Contains("Google Wallet fallo seguro", html);
+        Assert.Contains("LegacySync", html);
         Assert.Contains("ModernBusiness", html);
         Assert.Contains("Sellos:", html);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
@@ -477,6 +502,69 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("auth-token", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PasswordHash", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionStrings", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AdminSupport_ExportsSafeDiagnosticsCsvWithFiltersWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:LegacyWalletSync:Enabled"] = "true"
+        });
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("sc");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+            var card = store.LoyaltyCards.Single(item => item.Id == enrollment.Card.Id);
+            store.StampLedger.Add(new StampLedgerRecord(
+                9902,
+                card.Id,
+                card.BusinessId,
+                card.ClientId,
+                StampLedgerSource.LegacySync,
+                null,
+                card.CurrentStamps - 1,
+                card.CurrentStamps,
+                card.LifetimeStamps - 1,
+                card.LifetimeStamps,
+                card.LastStampedAt,
+                GoogleWalletAttempted: true,
+                GoogleWalletSucceeded: false,
+                AppleWalletAttempted: false,
+                AppleWalletSucceeded: false,
+                "Google Wallet fallo seguro",
+                DateTimeOffset.UtcNow));
+        }
+
+        await LoginAdminAsync(http);
+        var response = await http.GetAsync($"/Admin/Support?handler=ExportCsv&ClientFilter={userName}&BusinessFilter=Demo&WalletIssuesOnly=true");
+        var csv = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("attachment", response.Content.Headers.ContentDisposition?.DispositionType);
+        Assert.Contains("support-diagnostic-", response.Content.Headers.ContentDisposition?.FileName);
+        Assert.Contains("CardSuffix,ClientUserName,BusinessName", csv);
+        Assert.Contains(userName, csv);
+        Assert.Contains("Demo Coffee", csv);
+        Assert.Contains(",True,", csv);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, csv, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", csv, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push-token", csv, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("auth-token", csv, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", csv, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionStrings", csv, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

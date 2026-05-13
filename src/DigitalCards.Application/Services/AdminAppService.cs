@@ -577,7 +577,14 @@ public sealed class AdminAppService
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeSupportQuery(query.Query);
-        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        var normalizedBusinessFilter = NormalizeSupportQuery(query.BusinessFilter ?? string.Empty);
+        var normalizedClientFilter = NormalizeSupportQuery(query.ClientFilter ?? string.Empty);
+        var hasAnyFilter = query.WalletIssuesOnly ||
+            query.From.HasValue ||
+            query.To.HasValue ||
+            !string.IsNullOrWhiteSpace(normalizedBusinessFilter) ||
+            !string.IsNullOrWhiteSpace(normalizedClientFilter);
+        if (string.IsNullOrWhiteSpace(normalizedQuery) && !hasAnyFilter)
         {
             return new AdminSupportResult(string.Empty, [], [], []);
         }
@@ -590,9 +597,14 @@ public sealed class AdminAppService
             cards[exactCard.Id] = exactCard;
         }
 
-        var clients = (await _clients.SearchAsync(normalizedQuery, cancellationToken))
-            .Take(10)
-            .ToArray();
+        var clientSearchTerm = string.IsNullOrWhiteSpace(normalizedClientFilter)
+            ? normalizedQuery
+            : normalizedClientFilter;
+        var clients = string.IsNullOrWhiteSpace(clientSearchTerm)
+            ? Array.Empty<Client>()
+            : (await _clients.SearchAsync(clientSearchTerm, cancellationToken))
+                .Take(10)
+                .ToArray();
         foreach (var client in clients)
         {
             var clientCards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
@@ -605,8 +617,11 @@ public sealed class AdminAppService
         var businesses = await _businesses.ListAsync(cancellationToken);
         var pilotBusinesses = await _pilotBusinesses.ListAsync(cancellationToken);
         var pilotByBusinessId = pilotBusinesses.ToDictionary(record => record.BusinessId);
+        var businessSearchTerm = string.IsNullOrWhiteSpace(normalizedBusinessFilter)
+            ? normalizedQuery
+            : normalizedBusinessFilter;
         var matchingBusinesses = businesses
-            .Where(business => MatchesQuery(business, normalizedQuery))
+            .Where(business => MatchesQuery(business, businessSearchTerm))
             .OrderBy(business => business.Name, StringComparer.OrdinalIgnoreCase)
             .Take(10)
             .ToArray();
@@ -615,7 +630,7 @@ public sealed class AdminAppService
         {
             var businessCards = await _loyaltyCards.SearchByBusinessAsync(
                 business.Id,
-                query: string.Empty,
+                query: normalizedClientFilter,
                 limit: 10,
                 cancellationToken);
             foreach (var card in businessCards)
@@ -647,10 +662,12 @@ public sealed class AdminAppService
         foreach (var card in cards.Values
             .OrderByDescending(card => card.LastStampedAt)
             .ThenBy(card => card.Id)
-            .Take(25))
+            .Where(card => IsWithinSupportRange(card, query.From, query.To))
+            .Take(50))
         {
             var cardDto = await ToSupportCardDtoAsync(card, cancellationToken);
-            if (cardDto is not null)
+            if (cardDto is not null &&
+                (!query.WalletIssuesOnly || cardDto.WalletIssueCount > 0))
             {
                 cardDtos.Add(cardDto);
             }
@@ -660,7 +677,7 @@ public sealed class AdminAppService
             normalizedQuery,
             clientDtos,
             businessDtos,
-            cardDtos);
+            cardDtos.Take(25).ToArray());
     }
 
     public async Task<AdminReportsDto> GetReportsAsync(CancellationToken cancellationToken = default)
@@ -772,6 +789,18 @@ public sealed class AdminAppService
 
         var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 8, cancellationToken);
         var issueCount = recentEvents.Count(HasWalletIssue);
+        var legacyEvents = recentEvents
+            .Where(item => item.Source == StampLedgerSource.LegacySync)
+            .OrderByDescending(item => item.CreatedAt)
+            .ToArray();
+        var safeErrors = recentEvents
+            .Where(HasWalletIssue)
+            .OrderByDescending(item => item.CreatedAt)
+            .Select(ToSafeSupportError)
+            .Where(error => !string.IsNullOrWhiteSpace(error))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(3)
+            .ToArray();
 
         return new AdminSupportCardDto(
             card.Id,
@@ -789,7 +818,42 @@ public sealed class AdminAppService
             applePass?.UpdateTag,
             Suffix(applePass?.SerialNumber, 8),
             issueCount,
+            legacyEvents.Length,
+            legacyEvents.FirstOrDefault()?.CreatedAt,
+            safeErrors,
             recentEvents.Select(ToStampLedgerEventDto).ToArray());
+    }
+
+    private static bool IsWithinSupportRange(
+        LoyaltyCard card,
+        DateTimeOffset? from,
+        DateTimeOffset? to)
+    {
+        return (!from.HasValue || card.LastStampedAt >= from.Value) &&
+            (!to.HasValue || card.LastStampedAt <= to.Value);
+    }
+
+    private static string ToSafeSupportError(StampLedgerRecord item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+        {
+            return item.ErrorSummary.Length <= 160
+                ? item.ErrorSummary
+                : item.ErrorSummary[..160];
+        }
+
+        var failed = new List<string>(capacity: 2);
+        if (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded)
+        {
+            failed.Add("Google Wallet fallo");
+        }
+
+        if (item.AppleWalletAttempted && !item.AppleWalletSucceeded)
+        {
+            failed.Add("Apple Wallet fallo");
+        }
+
+        return string.Join(", ", failed);
     }
 
     private static bool HasWalletIssue(StampLedgerRecord item)

@@ -901,6 +901,43 @@ h1 {
   gap: 1rem;
 }
 
+.support-filter-panel {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.support-filter-panel .search-row {
+  margin: 0;
+}
+
+.support-filter-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.support-operational-state,
+.support-safe-errors {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.support-safe-errors {
+  color: #991b1b;
+  display: grid;
+}
+
+.support-safe-errors h4,
+.support-safe-errors p {
+  margin: 0;
+}
+
 .support-card {
   border: 1px solid #dde3ea;
   border-radius: 8px;
@@ -1199,7 +1236,8 @@ h1 {
   .legacy-shell .admin-action-grid,
   .legacy-admin-row,
   .admin-report-metrics,
-  .admin-report-business-row {
+  .admin-report-business-row,
+  .support-filter-grid {
     grid-template-columns: 1fr;
   }
 

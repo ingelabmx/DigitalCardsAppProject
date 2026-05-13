@@ -14,10 +14,34 @@
         <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-support-back-link">Dashboard</a>
     </div>
 
-    <form method="get" class="search-row" data-testid="admin-support-search-form">
-        <label asp-for="Query" class="form-label visually-hidden"></label>
-        <input asp-for="Query" class="form-control" placeholder="usuario, correo, negocio, CardID o URL Wallet" data-testid="admin-support-search-input" />
-        <button class="btn btn-primary" type="submit" data-testid="admin-support-search-submit">Buscar</button>
+    <form method="get" class="support-filter-panel" data-testid="admin-support-search-form">
+        <div class="search-row">
+            <label asp-for="Query" class="form-label visually-hidden"></label>
+            <input asp-for="Query" class="form-control" placeholder="usuario, correo, negocio, CardID o URL Wallet" data-testid="admin-support-search-input" />
+            <button class="btn btn-primary" type="submit" data-testid="admin-support-search-submit">Buscar</button>
+        </div>
+        <div class="support-filter-grid" data-testid="admin-support-filters">
+            <div>
+                <label asp-for="BusinessFilter" class="form-label">Negocio</label>
+                <input asp-for="BusinessFilter" class="form-control" placeholder="nombre o email" data-testid="admin-support-business-filter" />
+            </div>
+            <div>
+                <label asp-for="ClientFilter" class="form-label">Cliente</label>
+                <input asp-for="ClientFilter" class="form-control" placeholder="username o email" data-testid="admin-support-client-filter" />
+            </div>
+            <div>
+                <label asp-for="From" class="form-label">Desde</label>
+                <input asp-for="From" class="form-control" type="date" data-testid="admin-support-from-filter" />
+            </div>
+            <div>
+                <label asp-for="To" class="form-label">Hasta</label>
+                <input asp-for="To" class="form-control" type="date" data-testid="admin-support-to-filter" />
+            </div>
+        </div>
+        <div class="form-check">
+            <input asp-for="WalletIssuesOnly" class="form-check-input" data-testid="admin-support-wallet-issues-filter" />
+            <label asp-for="WalletIssuesOnly" class="form-check-label">Mostrar solo tarjetas con alertas Wallet recientes</label>
+        </div>
     </form>
 
     <div class="support-sync-status" data-testid="admin-support-sync-status">
@@ -50,7 +74,21 @@
                 <a class="btn btn-outline-primary"
                    asp-page-handler="Export"
                    asp-route-Query="@Model.Query"
+                   asp-route-BusinessFilter="@Model.BusinessFilter"
+                   asp-route-ClientFilter="@Model.ClientFilter"
+                   asp-route-WalletIssuesOnly="@Model.WalletIssuesOnly"
+                   asp-route-From="@Model.From"
+                   asp-route-To="@Model.To"
                    data-testid="admin-support-export-json">Exportar diagnostico JSON</a>
+                <a class="btn btn-outline-secondary"
+                   asp-page-handler="ExportCsv"
+                   asp-route-Query="@Model.Query"
+                   asp-route-BusinessFilter="@Model.BusinessFilter"
+                   asp-route-ClientFilter="@Model.ClientFilter"
+                   asp-route-WalletIssuesOnly="@Model.WalletIssuesOnly"
+                   asp-route-From="@Model.From"
+                   asp-route-To="@Model.To"
+                   data-testid="admin-support-export-csv">Exportar CSV</a>
             </div>
 
             @if (Model.Result.Clients.Count > 0)
@@ -149,6 +187,26 @@
                                         update tag @card.AppleUpdateTag &middot;
                                         actualizado @card.AppleUpdatedAt?.ToLocalTime().ToString("g")
                                     </p>
+                                }
+
+                                <div class="support-operational-state" data-testid="admin-support-operational-state">
+                                    <span>LegacySync: @(card.LegacySyncEventCount > 0 ? $"{card.LegacySyncEventCount} evento(s)" : "sin eventos recientes")</span>
+                                    @if (card.LastLegacySyncAt is not null)
+                                    {
+                                        <span>Ultimo legacy @card.LastLegacySyncAt?.ToLocalTime().ToString("g")</span>
+                                    }
+                                    <span>Errores seguros: @card.RecentSafeErrors.Count</span>
+                                </div>
+
+                                @if (card.RecentSafeErrors.Count > 0)
+                                {
+                                    <div class="support-safe-errors" data-testid="admin-support-safe-errors">
+                                        <h4>Errores recientes seguros</h4>
+                                        @foreach (var error in card.RecentSafeErrors)
+                                        {
+                                            <p>@error</p>
+                                        }
+                                    </div>
                                 }
 
                                 <h4>Eventos recientes</h4>

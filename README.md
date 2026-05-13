@@ -351,12 +351,15 @@ opera la tarjeta desde `/Business/Cards`.
 - estado Google Wallet y Apple Wallet;
 - dispositivos Apple registrados;
 - ultimos eventos de `StampLedger`;
+- ultimos errores seguros de Wallet;
+- conteo de eventos detectados por `LegacyWalletSync`;
 - estado de configuracion de `LegacyWalletSync`.
 
-Tambien permite descargar un JSON de diagnostico desde `Exportar diagnostico
-JSON` para evidencia interna de soporte. Es una vista solo lectura. No muestra
-tokens Wallet, enrollment tokens, push
-tokens, JWTs, passwords, hashes, certificados ni connection strings.
+Tambien permite filtrar por negocio, cliente, rango de fecha y tarjetas con
+alertas Wallet. Los exports `JSON` y `CSV` son para evidencia interna de
+soporte. Es una vista solo lectura. No muestra tokens Wallet, enrollment
+tokens, push tokens, JWTs, passwords, hashes, certificados ni connection
+strings.
 
 ## Paridad con Web Forms
 

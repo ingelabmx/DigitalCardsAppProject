@@ -32,41 +32,61 @@ public sealed class SupportModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Query { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? BusinessFilter { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? ClientFilter { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool WalletIssuesOnly { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTimeOffset? From { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTimeOffset? To { get; set; }
+
     public AdminSupportResult? Result { get; private set; }
 
     public LegacyWalletSyncOptions LegacyWalletSync => _legacyWalletSyncOptions;
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(Query))
+        if (!HasSupportCriteria())
         {
             return;
         }
 
-        Result = await _adminApp.SearchSupportAsync(
-            new AdminSupportQuery(Query),
-            cancellationToken);
+        Result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
 
         _logger.LogInformation(
-            "Admin {AdminUserId} searched support center with query length {QueryLength}.",
+            "Admin {AdminUserId} searched support center with query length {QueryLength} and filters enabled {HasFilters}.",
             AdminAuth.GetAdminUserId(User),
-            Query.Trim().Length);
+            Query?.Trim().Length ?? 0,
+            HasSupportFilters());
     }
 
     public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(Query))
+        if (!HasSupportCriteria())
         {
-            return BadRequest("Query is required.");
+            return BadRequest("Query or filter is required.");
         }
 
-        var result = await _adminApp.SearchSupportAsync(
-            new AdminSupportQuery(Query),
-            cancellationToken);
+        var result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
         var export = new
         {
             generatedAt = DateTimeOffset.UtcNow,
             result.Query,
+            filters = new
+            {
+                BusinessFilter,
+                ClientFilter,
+                WalletIssuesOnly,
+                From,
+                To
+            },
             legacyWalletSync = new
             {
                 _legacyWalletSyncOptions.Enabled,
@@ -96,7 +116,7 @@ public sealed class SupportModel : PageModel
         _logger.LogInformation(
             "Admin {AdminUserId} exported support diagnostics with query length {QueryLength}.",
             AdminAuth.GetAdminUserId(User),
-            Query.Trim().Length);
+            Query?.Trim().Length ?? 0);
 
         return File(
             Encoding.UTF8.GetBytes(json),
@@ -104,9 +124,78 @@ public sealed class SupportModel : PageModel
             fileName);
     }
 
+    public async Task<IActionResult> OnGetExportCsvAsync(CancellationToken cancellationToken)
+    {
+        if (!HasSupportCriteria())
+        {
+            return BadRequest("Query or filter is required.");
+        }
+
+        var result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
+        var csv = new StringBuilder();
+        csv.AppendLine("CardSuffix,ClientUserName,BusinessName,CurrentStamps,LifetimeStamps,GoogleIssued,AppleTracked,AppleDevices,WalletIssueCount,LegacySyncEventCount,LastStampedAt");
+        foreach (var card in result.Cards)
+        {
+            csv.Append(Csv(Suffix(card.CardId))).Append(',')
+                .Append(Csv(card.Client.UserName)).Append(',')
+                .Append(Csv(card.Business.BusinessName)).Append(',')
+                .Append(card.CurrentStamps).Append(',')
+                .Append(card.LifetimeStamps).Append(',')
+                .Append(card.GoogleIssued).Append(',')
+                .Append(card.AppleTracked).Append(',')
+                .Append(card.AppleRegisteredDeviceCount).Append(',')
+                .Append(card.WalletIssueCount).Append(',')
+                .Append(card.LegacySyncEventCount).Append(',')
+                .Append(Csv(card.LastStampedAt.ToString("o")))
+                .AppendLine();
+        }
+
+        var fileName = $"support-diagnostic-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.csv";
+        _logger.LogInformation(
+            "Admin {AdminUserId} exported support diagnostics CSV with query length {QueryLength}.",
+            AdminAuth.GetAdminUserId(User),
+            Query?.Trim().Length ?? 0);
+
+        return File(
+            Encoding.UTF8.GetBytes(csv.ToString()),
+            "text/csv",
+            fileName);
+    }
+
     public static string Suffix(Guid id)
     {
         var value = id.ToString("N");
         return value[^8..];
+    }
+
+    private AdminSupportQuery CreateSupportQuery()
+    {
+        return new AdminSupportQuery(
+            Query ?? string.Empty,
+            BusinessFilter,
+            ClientFilter,
+            WalletIssuesOnly,
+            From,
+            To);
+    }
+
+    private bool HasSupportCriteria()
+    {
+        return !string.IsNullOrWhiteSpace(Query) || HasSupportFilters();
+    }
+
+    private bool HasSupportFilters()
+    {
+        return !string.IsNullOrWhiteSpace(BusinessFilter) ||
+            !string.IsNullOrWhiteSpace(ClientFilter) ||
+            WalletIssuesOnly ||
+            From.HasValue ||
+            To.HasValue;
+    }
+
+    private static string Csv(string? value)
+    {
+        value ??= string.Empty;
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }
