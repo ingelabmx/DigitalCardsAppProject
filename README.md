@@ -373,6 +373,13 @@ El inventario visual Web Forms que guia la paridad de UI moderna esta en:
 docs/migration-context/41-legacy-ui-inventory-v1.md
 ```
 
+Las paginas autenticadas modernas ya usan un shell con sidebar/header/footer
+inspirado en Web Forms. Detalle:
+
+```text
+docs/migration-context/42-modern-legacy-shell-v1.md
+```
+
 La regla de trabajo es reemplazar Web Forms por negocio, no globalmente. Web
 Forms sigue vivo como fallback hasta que cada negocio complete los gates de
 paridad, smoke real, soporte y rollback.
