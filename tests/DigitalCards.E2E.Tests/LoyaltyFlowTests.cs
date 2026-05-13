@@ -199,6 +199,11 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("ModernBusiness", ledgerText);
         Assert.Contains("Sellos: 1 -> 2", ledgerText);
 
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
+        Assert.True(await page.GetByTestId("business-dashboard-summary").IsVisibleAsync());
+        Assert.Contains(userName, await page.GetByTestId("business-dashboard-recent-cards").InnerTextAsync());
+        Assert.Contains("ModernBusiness", await page.GetByTestId("business-dashboard-ledger").InnerTextAsync());
+
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Login").ToString());
         await page.GetByTestId("client-login-username").FillAsync(userName);
         await page.GetByTestId("client-login-password").FillAsync(clientPassword);

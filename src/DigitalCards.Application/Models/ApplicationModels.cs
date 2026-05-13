@@ -73,6 +73,31 @@ public sealed record BusinessCardDto(
 
 public sealed record ResendWalletEmailResult(BusinessCardDto Card, string EnrollmentUrl);
 
+public sealed record BusinessDashboardDto(
+    BusinessDto Business,
+    int RecentCardCount,
+    int CurrentStampTotal,
+    int LifetimeStampTotal,
+    int GoogleIssuedCount,
+    int AppleTrackedCount,
+    int AppleRegisteredDeviceCount,
+    int WalletIssueCount,
+    IReadOnlyList<BusinessCardDto> RecentCards,
+    IReadOnlyList<BusinessDashboardStampEventDto> RecentStampEvents);
+
+public sealed record BusinessDashboardStampEventDto(
+    Guid CardId,
+    string ClientUserName,
+    DateTimeOffset CreatedAt,
+    StampLedgerSource Source,
+    int PreviousCheckQTY,
+    int NewCheckQTY,
+    bool GoogleWalletAttempted,
+    bool GoogleWalletSucceeded,
+    bool AppleWalletAttempted,
+    bool AppleWalletSucceeded,
+    string? ErrorSummary);
+
 public sealed record WalletLandingDto(
     string Token,
     string BusinessName,

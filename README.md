@@ -168,6 +168,19 @@ La accion de sello valida que la tarjeta pertenezca al negocio autenticado.
 Web Forms sigue vivo como fallback, pero el dashboard moderno ya dirige la
 operacion de sellos a `Tarjetas y sellos`.
 
+`/Business/Dashboard` muestra un resumen operativo seguro del negocio
+autenticado:
+
+- tarjetas recientes;
+- sellos actuales e historicos del lote reciente;
+- conteo Google Wallet y Apple Wallet;
+- alertas recientes de Wallet;
+- eventos recientes de `StampLedger`.
+
+El dashboard no muestra `businessId`, tokens Wallet, JWTs, push tokens,
+passwords ni connection strings. Para operar una tarjeta, abre
+`/Business/Cards` desde el link de tarjeta reciente.
+
 ## Auditoria de sellos
 
 Antes de probar auditoria contra HostGator, ejecuta:

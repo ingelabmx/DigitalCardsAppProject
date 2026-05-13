@@ -294,6 +294,55 @@ h1 {
   margin-bottom: 0.85rem;
 }
 
+.business-dashboard-summary {
+  display: grid;
+  gap: 1rem;
+}
+
+.business-dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.business-dashboard-panel {
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.business-dashboard-panel h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.85rem;
+}
+
+.dashboard-card-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dashboard-card-row {
+  align-items: center;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  color: #1f2933;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.85rem;
+  text-decoration: none;
+}
+
+.dashboard-card-row:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.dashboard-card-row span {
+  color: #697586;
+  display: block;
+}
+
 .client-dashboard-summary {
   display: grid;
   gap: 1rem;
@@ -351,6 +400,7 @@ h1 {
 @media (max-width: 760px) {
   .app-surface,
   .business-card-grid,
+  .business-dashboard-grid,
   .business-profile-grid,
   .client-card-preview-grid,
   .client-profile-panel dl,

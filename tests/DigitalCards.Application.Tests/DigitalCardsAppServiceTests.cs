@@ -1320,6 +1320,43 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task GetBusinessDashboardAsync_ReturnsRecentCardsWalletStateAndLedger()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "bizdash1");
+        var token = ExtractWalletToken(enrollment.EnrollmentUrl);
+        await app.SelectGoogleWalletAsync(token);
+        await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+
+        var dashboard = await app.GetBusinessDashboardAsync(business.Id);
+
+        Assert.NotNull(dashboard);
+        Assert.Equal("Demo Coffee", dashboard!.Business.Name);
+        Assert.Equal(1, dashboard.RecentCardCount);
+        Assert.Equal(2, dashboard.CurrentStampTotal);
+        Assert.Equal(2, dashboard.LifetimeStampTotal);
+        Assert.Equal(1, dashboard.GoogleIssuedCount);
+        var card = Assert.Single(dashboard.RecentCards);
+        Assert.Equal("bizdash1", card.Client.UserName);
+        Assert.True(card.GoogleIssued);
+        var ledger = Assert.Single(dashboard.RecentStampEvents);
+        Assert.Equal(card.Id, ledger.CardId);
+        Assert.Equal("bizdash1", ledger.ClientUserName);
+        Assert.Equal(StampLedgerSource.ModernBusiness, ledger.Source);
+        Assert.Equal(1, ledger.PreviousCheckQTY);
+        Assert.Equal(2, ledger.NewCheckQTY);
+        Assert.True(ledger.GoogleWalletAttempted);
+        Assert.True(ledger.GoogleWalletSucceeded);
+        Assert.True(ledger.AppleWalletAttempted);
+        Assert.True(ledger.AppleWalletSucceeded);
+        Assert.Equal(0, dashboard.WalletIssueCount);
+    }
+
+    [Fact]
     public async Task SelectAppleWallet_ReturnsNullForInvalidToken()
     {
         var services = new ServiceCollection();
