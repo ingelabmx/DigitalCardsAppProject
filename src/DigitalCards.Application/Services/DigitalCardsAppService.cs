@@ -9,6 +9,14 @@ namespace DigitalCards.Application.Services;
 
 public sealed class DigitalCardsAppService
 {
+    private const int BrandingNameMaxLength = 80;
+    private const int BrandingLogoMaxLength = 200;
+    private const int BrandingDescriptionMaxLength = 280;
+    private const string DefaultPrimaryColor = "#111827";
+    private const string DefaultSecondaryColor = "#2563eb";
+    private const string DefaultProgramName = "Tarjeta de lealtad";
+    private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
+
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessBrandingRepository _businessBranding;
     private readonly IBusinessRepository _businesses;
@@ -416,6 +424,59 @@ public sealed class DigitalCardsAppService
             cancellationToken);
 
         return ToDto(business);
+    }
+
+    public async Task<BusinessBrandingSettingsDto?> GetBusinessBrandingSettingsAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        return business is null ? null : await ToBusinessBrandingSettingsAsync(business, cancellationToken);
+    }
+
+    public async Task<BusinessSelfServiceBrandingResult> UpdateBusinessBrandingAsync(
+        UpdateBusinessSelfServiceBrandingCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return new BusinessSelfServiceBrandingResult(null, "El negocio no existe.");
+        }
+
+        var publicName = NormalizeBrandingValue(command.PublicName, business.Name);
+        var logoPath = NormalizeBrandingValue(command.LogoPath, business.LogoPath);
+        var primaryColor = NormalizeBrandingValue(command.PrimaryColor, DefaultPrimaryColor);
+        var secondaryColor = NormalizeBrandingValue(command.SecondaryColor, DefaultSecondaryColor);
+        var programName = NormalizeBrandingValue(command.ProgramName, DefaultProgramName);
+        var programDescription = NormalizeBrandingValue(command.ProgramDescription, DefaultProgramDescription);
+        var validationError = ValidateBusinessBranding(
+            publicName,
+            logoPath,
+            primaryColor,
+            secondaryColor,
+            programName,
+            programDescription);
+        if (validationError is not null)
+        {
+            return new BusinessSelfServiceBrandingResult(null, validationError);
+        }
+
+        await _businessBranding.UpsertAsync(
+            new BusinessBranding(
+                business.Id,
+                publicName,
+                logoPath,
+                primaryColor,
+              secondaryColor,
+              programName,
+              programDescription,
+              _clock.UtcNow,
+              updatedByAdminUserId: null),
+          cancellationToken);
+
+        var settings = await ToBusinessBrandingSettingsAsync(business, cancellationToken);
+        return new BusinessSelfServiceBrandingResult(settings, ErrorMessage: null);
     }
 
     public async Task<EnrollClientResult> EnrollClientAsync(EnrollClientCommand command, CancellationToken cancellationToken = default)
@@ -1024,6 +1085,30 @@ public sealed class DigitalCardsAppService
             branding.ProgramDescription);
     }
 
+    private async Task<BusinessBrandingSettingsDto> ToBusinessBrandingSettingsAsync(
+        Business business,
+        CancellationToken cancellationToken)
+    {
+        var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
+        return new BusinessBrandingSettingsDto(
+            business.Id,
+            business.DisplayName,
+            business.Email,
+            ToBrandingDto(business, branding));
+    }
+
+    private static BusinessBrandingDto ToBrandingDto(Business business, BusinessBranding? branding)
+    {
+        return new BusinessBrandingDto(
+            branding?.PublicName ?? business.Name,
+            branding?.LogoPath ?? business.LogoPath,
+            branding?.PrimaryColor ?? DefaultPrimaryColor,
+            branding?.SecondaryColor ?? DefaultSecondaryColor,
+            branding?.ProgramName ?? DefaultProgramName,
+            branding?.ProgramDescription ?? DefaultProgramDescription,
+            branding?.UpdatedAt);
+    }
+
     private WalletEnrollmentEmail CreateWalletEnrollmentEmail(
         Client client,
         Business business,
@@ -1244,6 +1329,72 @@ public sealed class DigitalCardsAppService
         return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
             (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
             (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
+    }
+
+    private static string? ValidateBusinessBranding(
+        string publicName,
+        string logoPath,
+        string primaryColor,
+        string secondaryColor,
+        string programName,
+        string programDescription)
+    {
+        if (string.IsNullOrWhiteSpace(publicName))
+        {
+            return "El nombre publico es requerido.";
+        }
+
+        if (publicName.Length > BrandingNameMaxLength)
+        {
+            return $"El nombre publico no puede exceder {BrandingNameMaxLength} caracteres.";
+        }
+
+        if (logoPath.Length > BrandingLogoMaxLength)
+        {
+            return $"El logo de marca no puede exceder {BrandingLogoMaxLength} caracteres.";
+        }
+
+        if (!IsHexColor(primaryColor))
+        {
+            return "El color primario debe usar formato #RRGGBB.";
+        }
+
+        if (!IsHexColor(secondaryColor))
+        {
+            return "El color secundario debe usar formato #RRGGBB.";
+        }
+
+        if (string.IsNullOrWhiteSpace(programName))
+        {
+            return "El nombre del programa es requerido.";
+        }
+
+        if (programName.Length > BrandingNameMaxLength)
+        {
+            return $"El nombre del programa no puede exceder {BrandingNameMaxLength} caracteres.";
+        }
+
+        if (programDescription.Length > BrandingDescriptionMaxLength)
+        {
+            return $"La descripcion del programa no puede exceder {BrandingDescriptionMaxLength} caracteres.";
+        }
+
+        return null;
+    }
+
+    private static string NormalizeBrandingValue(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static bool IsHexColor(string value)
+    {
+        return value.Length == 7 &&
+            value[0] == '#' &&
+            value.Skip(1).All(character =>
+                (character >= '0' && character <= '9') ||
+                (character >= 'a' && character <= 'f') ||
+                (character >= 'A' && character <= 'F'));
     }
 
     private static string CreateOpaqueToken()

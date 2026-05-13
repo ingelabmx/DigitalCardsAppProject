@@ -770,6 +770,49 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task UpdateBusinessBrandingAsync_WhenBusinessSelfService_StoresBrandingAndFeedsWalletLanding()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.NotNull(business);
+
+        var result = await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business!.Id,
+            "Self Service Cafe",
+            "/uploads/business-logos/demo/logo.png",
+            "#112233",
+            "#445566",
+            "Self Rewards",
+            "Sellos desde autoservicio."));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Self Service Cafe", result.Settings!.Branding.PublicName);
+        Assert.Equal("#112233", result.Settings.Branding.PrimaryColor);
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "selfbrand",
+            "Self",
+            "Brand",
+            "selfbrand@example.test",
+            "ClientPass123!"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        var landing = await app.GetWalletLandingAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+
+        Assert.NotNull(landing);
+        Assert.Equal("Self Service Cafe", landing!.BusinessName);
+        Assert.Equal("/uploads/business-logos/demo/logo.png", landing.LogoPath);
+        Assert.Equal("#112233", landing.PrimaryColor);
+        Assert.Equal("#445566", landing.SecondaryColor);
+    }
+
+    [Fact]
     public async Task ResetBusinessPasswordAsync_UpdatesLegacyAndModernCredentials()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

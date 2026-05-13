@@ -11,7 +11,7 @@ public sealed class BusinessBranding
         string programName,
         string programDescription,
         DateTimeOffset updatedAt,
-        Guid updatedByAdminUserId)
+        Guid? updatedByAdminUserId)
     {
         if (businessId == Guid.Empty)
         {
@@ -45,5 +45,5 @@ public sealed class BusinessBranding
 
     public DateTimeOffset UpdatedAt { get; }
 
-    public Guid UpdatedByAdminUserId { get; }
+    public Guid? UpdatedByAdminUserId { get; }
 }

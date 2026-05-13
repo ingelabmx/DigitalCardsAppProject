@@ -166,11 +166,13 @@ El flujo ASP.NET Core moderno usa cookie auth para negocio:
 - Login: `http://localhost:5031/Business/Login`
 - Dashboard protegido: `http://localhost:5031/Business/Dashboard`
 - Tarjetas y sellos: `http://localhost:5031/Business/Cards`
+- Branding Wallet: `http://localhost:5031/Business/Branding`
 - Logout: `http://localhost:5031/Business/Logout`
 
 Las paginas `/Business/Dashboard`, `/Business/Enroll`, `/Business/Cards` y
-`/Business/Stamp` requieren cookie valida. Ya no se debe pasar `businessId` por
-URL ni por hidden input; el negocio se toma desde los claims de la sesion.
+`/Business/Stamp` requieren cookie valida. `/Business/Branding` tambien requiere
+cookie valida y negocio habilitado en piloto. Ya no se debe pasar `businessId`
+por URL ni por hidden input; el negocio se toma desde los claims de la sesion.
 
 ## Operacion moderna de tarjetas
 
@@ -533,6 +535,16 @@ Forms no depende de esta tabla.
 
 El admin tambien puede subir logo publico desde la misma seccion. Los archivos
 se guardan fuera del repo y se sirven desde `/uploads/business-logos/...`.
+
+El negocio tambien puede editar branding publico desde `/Business/Branding`.
+Ese self-service esta limitado a nombre publico, logo Wallet, colores, nombre
+del programa y descripcion. El negocio no puede cambiar email, password, estado
+piloto ni activacion desde esa pantalla; esos controles siguen siendo de admin.
+Antes de habilitarlo contra HostGator, aplica:
+
+```text
+docs/migration-context/48-business-self-service-v1-hostgator.sql
+```
 Configuracion real recomendada:
 
 ```json

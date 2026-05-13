@@ -973,7 +973,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
         {
             var response = await client.GetAsync(path);
 
@@ -1336,7 +1336,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
         {
             var response = await client.GetAsync(path);
             var html = await response.Content.ReadAsStringAsync();
@@ -1403,6 +1403,75 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessBranding_AllowsBusinessToUpdatePublicBrandingAndUploadLogo()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-business-logo-{Guid.NewGuid():N}");
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Branding:LogoUploads:Path"] = uploadRoot,
+            ["DigitalCards:Branding:LogoUploads:RequestPath"] = "/uploads/business-logos"
+        });
+        try
+        {
+            var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+            await LoginBusinessAsync(client);
+            var getHtml = await client.GetStringAsync("/Business/Branding");
+
+            Assert.Contains("business-branding-form", getHtml);
+            Assert.Contains("Demo Coffee", getHtml);
+
+            var token = ExtractAntiforgeryToken(getHtml);
+            using var form = new MultipartFormDataContent
+            {
+                { new StringContent("Self Managed Coffee"), "Input.PublicName" },
+                { new StringContent("Self Rewards"), "Input.ProgramName" },
+                { new StringContent("Branding editado por negocio."), "Input.ProgramDescription" },
+                { new StringContent("/img/demo-coffee.svg"), "Input.LogoPath" },
+                { new StringContent("#102030"), "Input.PrimaryColor" },
+                { new StringContent("#405060"), "Input.SecondaryColor" },
+                { new StringContent(token), "__RequestVerificationToken" }
+            };
+            var file = new ByteArrayContent(TinyPng());
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            form.Add(file, "Input.LogoUpload", "logo.png");
+
+            var response = await client.PostAsync("/Business/Branding", form);
+            var html = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("Branding actualizado", html);
+            Assert.Contains("Self Managed Coffee", html);
+            Assert.Contains("#102030", html);
+            Assert.DoesNotContain(uploadRoot, html);
+            Assert.DoesNotContain("password", html, StringComparison.OrdinalIgnoreCase);
+
+            string logoPath;
+            using (var scope = fake.Factory.Services.CreateScope())
+            {
+                var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+                var branding = Assert.Single(store.BusinessBranding);
+                logoPath = branding.LogoPath;
+                Assert.Equal("Self Rewards", branding.ProgramName);
+            }
+
+            Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
+            var logoResponse = await client.GetAsync(logoPath);
+            Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
+            Assert.Equal(TinyPng(), await logoResponse.Content.ReadAsByteArrayAsync());
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Pilot_WithBlockedBusiness_ShowsMessageAndHidesModernActions()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
@@ -1423,7 +1492,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("data-testid=\"enroll-link\"", html);
         Assert.DoesNotContain("data-testid=\"cards-link\"", html);
 
-        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards" })
+        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
         {
             var blockedPage = await client.GetStringAsync(path);
 
