@@ -209,6 +209,28 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("Sellos actuales: 2", cardText);
         Assert.Contains("Google emitida", cardText);
 
+        const string changedClientPassword = "ChangedClient123!";
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Dashboard").ToString());
+        await page.GetByTestId("client-dashboard-change-password-link").ClickAsync();
+        await page.GetByTestId("client-current-password").FillAsync(clientPassword);
+        await page.GetByTestId("client-new-password").FillAsync(changedClientPassword);
+        await page.GetByTestId("client-confirm-password").FillAsync(changedClientPassword);
+        await page.GetByTestId("client-change-password-submit").ClickAsync();
+        Assert.Contains("Contrasena de cliente actualizada", await page.GetByTestId("client-change-password-status").InnerTextAsync());
+        Assert.DoesNotContain(changedClientPassword, await page.ContentAsync(), StringComparison.Ordinal);
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Logout").ToString());
+        await page.GetByTestId("client-login-username").FillAsync(userName);
+        await page.GetByTestId("client-login-password").FillAsync(clientPassword);
+        await page.GetByTestId("client-login-submit").ClickAsync();
+        Assert.Contains("Credenciales de cliente invalidas", await page.ContentAsync());
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Login").ToString());
+        await page.GetByTestId("client-login-username").FillAsync(userName);
+        await page.GetByTestId("client-login-password").FillAsync(changedClientPassword);
+        await page.GetByTestId("client-login-submit").ClickAsync();
+        Assert.Contains("Maria Lopez", await page.GetByTestId("client-dashboard-title").InnerTextAsync());
+
         await DisableDemoBusinessPilotAsync(page);
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
         Assert.Contains("no esta habilitado", await page.GetByTestId("pilot-business-blocked").InnerTextAsync());

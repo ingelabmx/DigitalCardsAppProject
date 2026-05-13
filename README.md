@@ -315,6 +315,30 @@ El login usa `UserClient.RoleID=2` y crea una cookie separada
 `/Client/Cards` para ver solo sus propias tarjetas. Los links Wallet mostrados
 ahi usan tokens opacos nuevos y no exponen `CardID` directo.
 
+## Password hardening cliente
+
+Antes de usar hashes modernos de cliente contra HostGator, ejecuta:
+
+```text
+docs/migration-context/28-client-password-hardening-hostgator.sql
+```
+
+El login cliente moderno usa `UserClient.RoleID=2`. Si el cliente todavia no
+tiene fila en `ModernClientCredential`, el primer login correcto con password
+legacy crea el hash moderno. El registro moderno crea ambos valores: el hash
+legacy en `UserClient.UserPassword` para Web Forms y el hash moderno para
+ASP.NET Core.
+
+El cliente puede cambiar su password desde:
+
+```text
+http://localhost:5031/Client/ChangePassword
+```
+
+El cambio actualiza `UserClient.UserPassword` y `ModernClientCredential`. La app
+no muestra el password despues del submit y no registra passwords ni hashes en
+logs.
+
 ## Administracion de acceso admin
 
 Antes de crear o resetear admins desde la app moderna contra HostGator,

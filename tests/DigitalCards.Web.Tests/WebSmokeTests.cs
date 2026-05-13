@@ -770,7 +770,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Client/Dashboard", "/Client/Cards" })
+        foreach (var path in new[] { "/Client/Dashboard", "/Client/Cards", "/Client/ChangePassword" })
         {
             var response = await client.GetAsync(path);
 
@@ -841,6 +841,39 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Demo Coffee", html);
         Assert.DoesNotContain(secondUserName, html);
         Assert.DoesNotContain("client-cards-username", html);
+    }
+
+    [Fact]
+    public async Task ClientChangePassword_UpdatesPasswordWithoutRenderingSecret()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("cp");
+        const string oldPassword = "clientpass1";
+        const string newPassword = "changedpass1";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", oldPassword);
+        await LoginClientAsync(http, userName, oldPassword);
+
+        var change = await ChangeClientPasswordAsync(http, oldPassword, newPassword);
+        var html = await change.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+        Assert.Contains("Contrasena de cliente actualizada", html);
+        Assert.DoesNotContain(newPassword, html, StringComparison.Ordinal);
+
+        var logout = await http.GetAsync("/Client/Logout");
+        Assert.Equal(HttpStatusCode.Redirect, logout.StatusCode);
+
+        var oldLogin = await LoginClientAsync(http, userName, oldPassword);
+        Assert.Equal(HttpStatusCode.OK, oldLogin.StatusCode);
+        Assert.False(HasClientCookie(oldLogin));
+
+        var newLogin = await LoginClientAsync(http, userName, newPassword);
+        Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
+        Assert.True(HasClientCookie(newLogin));
     }
 
     [Fact]
@@ -1508,6 +1541,23 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             {
                 ["Input.UserNameOrEmail"] = userNameOrEmail,
                 ["Input.Password"] = password,
+                ["__RequestVerificationToken"] = token
+            }));
+    }
+
+    private static async Task<HttpResponseMessage> ChangeClientPasswordAsync(
+        HttpClient client,
+        string currentPassword,
+        string newPassword)
+    {
+        var token = await GetAntiforgeryTokenAsync(client, "/Client/ChangePassword");
+        return await client.PostAsync(
+            "/Client/ChangePassword",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.CurrentPassword"] = currentPassword,
+                ["Input.NewPassword"] = newPassword,
+                ["Input.ConfirmPassword"] = newPassword,
                 ["__RequestVerificationToken"] = token
             }));
     }

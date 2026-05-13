@@ -40,6 +40,8 @@ Documentos:
 - `26-client-pilot-management-v1.md`: administracion de clientes piloto desde UI admin.
 - `26-client-pilot-management-hostgator.sql`: tabla nueva para clientes piloto.
 - `27-client-dashboard-v1.md`: login/dashboard moderno de cliente con cookie propia.
+- `28-client-password-hardening-v1.md`: hashes modernos de cliente y cambio de contrasena.
+- `28-client-password-hardening-hostgator.sql`: tabla nueva para credenciales modernas de cliente.
 
 Notas:
 
