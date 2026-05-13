@@ -4,11 +4,21 @@
     ViewData["Title"] = "Dashboard negocio";
 }
 
-<section class="app-surface">
-    <div>
-        <p class="eyebrow">Negocio</p>
-        <h1 data-testid="business-dashboard-title">@Model.BusinessName</h1>
-        <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
+<section class="app-surface business-dashboard-shell" data-testid="business-dashboard-shell">
+    <div class="business-hero-grid">
+        <div>
+            <p class="eyebrow">Negocio</p>
+            <h1 data-testid="business-dashboard-title">@Model.BusinessName</h1>
+            <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
+        </div>
+        <div class="business-flow-card" data-testid="business-flow-steps">
+            <span>Flujo diario</span>
+            <ol>
+                <li>Buscar tarjeta</li>
+                <li>Reenviar Wallet</li>
+                <li>Agregar sello</li>
+            </ol>
+        </div>
     </div>
 
     @if (Model.IsPilotBlocked)
@@ -17,7 +27,7 @@
             @Model.PilotBlockMessage
         </div>
 
-        <div class="action-grid">
+        <div class="action-grid business-action-grid">
             <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
                 <span>Salir</span>
                 <small>Cierra la sesion del negocio.</small>

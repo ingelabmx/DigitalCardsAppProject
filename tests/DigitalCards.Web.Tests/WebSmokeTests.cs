@@ -982,6 +982,25 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessEnrollAndStamp_UseLegacyParityPanels()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+
+        var enrollHtml = await client.GetStringAsync("/Business/Enroll");
+        var stampHtml = await client.GetStringAsync("/Business/Stamp");
+
+        Assert.Contains("business-enroll-panel", enrollHtml);
+        Assert.Contains("business-form-card", enrollHtml);
+        Assert.Contains("business-stamp-panel", stampHtml);
+        Assert.Contains("business-form-card", stampHtml);
+    }
+
+    [Fact]
     public async Task BusinessEnrollAndStamp_UseAuthenticatedBusiness_WhenBusinessIdIsTampered()
     {
         using var fake = WithFakeIntegrations();
@@ -1389,6 +1408,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         await LoginBusinessAsync(client);
         var html = await client.GetStringAsync("/Business/Dashboard");
 
+        Assert.Contains("business-dashboard-shell", html);
+        Assert.Contains("business-flow-steps", html);
         Assert.Contains("business-dashboard-summary", html);
         Assert.Contains("business-dashboard-card-count", html);
         Assert.Contains("business-dashboard-current-stamps", html);
@@ -1516,11 +1537,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
         SeedOtherBusinessCard(fake.Factory, "othercard1");
 
-        var html = await client.GetStringAsync($"/Business/Cards?Query={userName}");
+        var html = await client.GetStringAsync($"/Business/Cards?Query={userName}&CardId={enrollment.Card.Id}");
 
         Assert.Contains("business-card-results", html);
         Assert.Contains(userName, html);
         Assert.Contains(enrollment.Card.Id.ToString(), html);
+        Assert.Contains("business-qr-scanner", html);
+        Assert.Contains("business-detail-card-face", html);
+        Assert.Contains("business-wallet-status-row", html);
         Assert.DoesNotContain("othercard1", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
     }

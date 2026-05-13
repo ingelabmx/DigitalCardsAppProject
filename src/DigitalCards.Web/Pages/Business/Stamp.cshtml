@@ -4,8 +4,15 @@
     ViewData["Title"] = "Agregar sello";
 }
 
-<section class="form-panel">
-    <h1>Agregar sello</h1>
+<section class="form-panel business-operation-panel" data-testid="business-stamp-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Checadas</p>
+            <h1>Agregar sello</h1>
+            <p class="lead">Aplicacion rapida por username o correo; la operacion completa vive en Tarjetas.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Business/Cards">Tarjetas</a>
+    </div>
 
     @if (Model.IsPilotBlocked)
     {
@@ -37,7 +44,7 @@
 
     @if (!Model.IsPilotBlocked)
     {
-        <form method="post" data-testid="stamp-form">
+        <form method="post" class="business-form-card" data-testid="stamp-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">

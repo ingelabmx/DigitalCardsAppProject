@@ -22,11 +22,25 @@
     }
     else
     {
-        <form method="get" class="search-row" data-testid="business-card-search-form">
-            <label asp-for="Query" class="form-label visually-hidden"></label>
-            <input asp-for="Query" class="form-control" placeholder="username o correo" data-testid="business-card-search-input" />
-            <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
-        </form>
+        <div class="business-card-toolbar">
+            <form method="get" class="search-row" data-testid="business-card-search-form">
+                <label asp-for="Query" class="form-label visually-hidden"></label>
+                <input asp-for="Query" class="form-control" placeholder="username, correo o QR" data-testid="business-card-search-input" />
+                <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
+            </form>
+
+            <div class="qr-scanner-panel" data-business-qr-scanner data-testid="business-qr-scanner">
+                <div>
+                    <strong>Lector QR</strong>
+                    <span data-qr-status>Listo</span>
+                </div>
+                <div class="qr-scanner-actions">
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-qr-start data-testid="business-qr-start">Escanear</button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-qr-stop data-testid="business-qr-stop">Detener</button>
+                </div>
+                <video class="qr-scanner-video" autoplay muted playsinline data-qr-video aria-label="Vista de camara QR"></video>
+            </div>
+        </div>
 
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -90,6 +104,20 @@
                         <span class="badge text-bg-light">@Model.Detail.BusinessName</span>
                     </div>
 
+                    <div class="business-detail-card-face" data-testid="business-detail-card-face">
+                        <div>
+                            <span>Tarjeta digital</span>
+                            <strong>@Model.Detail.BusinessName</strong>
+                            <small>@Model.Detail.Client.UserName</small>
+                        </div>
+                        <div class="business-stamp-track" aria-label="Sellos actuales">
+                            @for (var stamp = 1; stamp <= 10; stamp++)
+                            {
+                                <span class="@(stamp <= Model.Detail.CurrentStamps ? "filled" : null)"></span>
+                            }
+                        </div>
+                    </div>
+
                     <div class="metric-row metric-row-wide">
                         <div class="metric">
                             <span>Sellos actuales</span>
@@ -115,6 +143,15 @@
                             <span>Ultimo update</span>
                             <strong data-testid="business-card-last-update">@Model.Detail.LastStampedAt.ToLocalTime().ToString("g")</strong>
                         </div>
+                    </div>
+
+                    <div class="business-wallet-status-row" data-testid="business-wallet-status-row">
+                        <span class="@(Model.Detail.GoogleIssued ? "wallet-status-ok" : "wallet-status-pending")">
+                            Google @(Model.Detail.GoogleIssued ? "emitida" : "pendiente")
+                        </span>
+                        <span class="@(Model.Detail.AppleTracked ? "wallet-status-ok" : "wallet-status-pending")">
+                            Apple @(Model.Detail.AppleTracked ? "activa" : "pendiente")
+                        </span>
                     </div>
 
                     <div class="form-actions">
@@ -179,4 +216,8 @@
 
         return succeeded ? "OK" : "Fallo";
     }
+}
+
+@section Scripts {
+    <script src="~/js/business-cards.js" asp-append-version="true"></script>
 }
