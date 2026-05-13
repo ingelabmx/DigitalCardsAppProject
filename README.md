@@ -151,12 +151,27 @@ Para operar app y tunnel con pasos repetibles, usa:
 .\ops\windows\check-puntelio-health.ps1
 ```
 
+Para operar en background con PID/logs:
+
+```powershell
+.\ops\windows\start-puntelio-stack.ps1
+.\ops\windows\get-puntelio-status.ps1
+.\ops\windows\show-puntelio-logs.ps1
+```
+
+Reinicio y paro:
+
+```powershell
+.\ops\windows\restart-puntelio-stack.ps1
+.\ops\windows\stop-puntelio-stack.ps1
+```
+
 Estos scripts no instalan servicios ni imprimen secretos. El runbook para
-convertirlos en operacion estable, con logs, reinicio, Data Protection y
-rollback, esta en:
+operacion estable, con logs, reinicio, Data Protection y rollback, esta en:
 
 ```text
 docs/migration-context/36-production-service-hosting-v1.md
+docs/migration-context/50-ops-service-hosting-v2.md
 ```
 
 ## Login negocio moderno

@@ -1,15 +1,19 @@
 param(
-    [string]$BaseUrl = "https://app.puntelio.com"
+    [string]$BaseUrl = "https://app.puntelio.com",
+    [int]$TimeoutSeconds = 15
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$health = Invoke-WebRequest "$BaseUrl/health" -UseBasicParsing
-$ready = Invoke-WebRequest "$BaseUrl/health/ready" -UseBasicParsing
+$healthUri = "$BaseUrl/health"
+$readyUri = "$BaseUrl/health/ready"
+$health = Invoke-WebRequest $healthUri -UseBasicParsing -TimeoutSec $TimeoutSeconds
+$ready = Invoke-WebRequest $readyUri -UseBasicParsing -TimeoutSec $TimeoutSeconds
 
 [pscustomobject]@{
+    BaseUrl = $BaseUrl
     HealthStatusCode = [int]$health.StatusCode
     ReadyStatusCode = [int]$ready.StatusCode
+    CheckedAt = (Get-Date).ToString("o")
 }
-
