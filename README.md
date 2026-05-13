@@ -344,7 +344,9 @@ rollback, y no depender de admin para cada cliente en el flujo normal.
 - ultimos eventos de `StampLedger`;
 - estado de configuracion de `LegacyWalletSync`.
 
-Es una vista solo lectura. No muestra tokens Wallet, enrollment tokens, push
+Tambien permite descargar un JSON de diagnostico desde `Exportar diagnostico
+JSON` para evidencia interna de soporte. Es una vista solo lectura. No muestra
+tokens Wallet, enrollment tokens, push
 tokens, JWTs, passwords, hashes, certificados ni connection strings.
 
 ## Paridad con Web Forms

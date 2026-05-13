@@ -414,6 +414,49 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminSupport_ExportsSafeDiagnosticsJsonWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:LegacyWalletSync:Enabled"] = "true"
+        });
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("sx");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+        }
+
+        await LoginAdminAsync(http);
+        var response = await http.GetAsync($"/Admin/Support?handler=Export&Query={userName}");
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("attachment", response.Content.Headers.ContentDisposition?.DispositionType);
+        Assert.Contains("support-diagnostic-", response.Content.Headers.ContentDisposition?.FileName);
+        Assert.Contains("\"legacyWalletSync\"", json);
+        Assert.Contains(userName, json);
+        Assert.Contains("Demo Coffee", json);
+        Assert.Contains("ModernBusiness", json);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push-token", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("auth-token", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionStrings", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AdminCreateBusiness_CreatesBusinessWithModernCredentialAndPilotAccess()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
