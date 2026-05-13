@@ -519,7 +519,29 @@ La app moderna usa ese branding en:
 - dashboard y tarjetas del cliente.
 
 Si no existe branding, la app usa `Business.BusinessName` y `BusinessLogo`. Web
-Forms no depende de esta tabla. El upload de logos queda para un PR posterior.
+Forms no depende de esta tabla.
+
+El admin tambien puede subir logo publico desde la misma seccion. Los archivos
+se guardan fuera del repo y se sirven desde `/uploads/business-logos/...`.
+Configuracion real recomendada:
+
+```json
+{
+  "DigitalCards": {
+    "Branding": {
+      "LogoUploads": {
+        "Path": "C:\\Users\\eguillen\\.digitalcards\\uploads\\business-logos",
+        "RequestPath": "/uploads/business-logos",
+        "MaxBytes": 2097152
+      }
+    }
+  }
+}
+```
+
+Google Wallet usa ese logo como URL publica HTTPS. Apple Wallet embebe
+`logo.png` y `logo@2x.png` cuando el logo subido es PNG; JPG/JPEG/WebP quedan
+para UI, correo y Google Wallet hasta agregar conversion de imagen.
 
 ## Plantillas de correo
 

@@ -1,6 +1,7 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
+using DigitalCards.Web.Branding;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,16 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class BusinessProfileModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly BusinessLogoUploadService _logoUploads;
     private readonly ILogger<BusinessProfileModel> _logger;
 
-    public BusinessProfileModel(AdminAppService adminApp, ILogger<BusinessProfileModel> logger)
+    public BusinessProfileModel(
+        AdminAppService adminApp,
+        BusinessLogoUploadService logoUploads,
+        ILogger<BusinessProfileModel> logger)
     {
         _adminApp = adminApp;
+        _logoUploads = logoUploads;
         _logger = logger;
     }
 
@@ -116,12 +122,27 @@ public sealed class BusinessProfileModel : PageModel
 
     public async Task<IActionResult> OnPostBrandingAsync(Guid businessId, CancellationToken cancellationToken)
     {
+        var logoPath = BrandingInput.LogoPath;
+        if (BrandingInput.LogoUpload is { Length: > 0 })
+        {
+            var upload = await _logoUploads.SaveAsync(businessId, BrandingInput.LogoUpload, cancellationToken);
+            if (!upload.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, upload.ErrorMessage ?? "No se pudo subir el logo.");
+                ClearPasswordFields();
+                await LoadAsync(businessId, cancellationToken);
+                return Page();
+            }
+
+            logoPath = upload.PublicPath!;
+        }
+
         var result = await _adminApp.UpdateBusinessBrandingAsync(
             new UpdateBusinessBrandingCommand(
                 businessId,
                 AdminAuth.GetAdminUserId(User),
                 BrandingInput.PublicName,
-                BrandingInput.LogoPath,
+                logoPath,
                 BrandingInput.PrimaryColor,
                 BrandingInput.SecondaryColor,
                 BrandingInput.ProgramName,
@@ -218,6 +239,8 @@ public sealed class BusinessProfileModel : PageModel
         public string PublicName { get; set; } = string.Empty;
 
         public string LogoPath { get; set; } = string.Empty;
+
+        public IFormFile? LogoUpload { get; set; }
 
         public string PrimaryColor { get; set; } = string.Empty;
 

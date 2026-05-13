@@ -1,4 +1,5 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Infrastructure.Branding;
 using DigitalCards.Infrastructure.Email;
 using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Infrastructure.Persistence;
@@ -29,6 +30,8 @@ public static class DependencyInjection
             configuration.GetSection(LegacyWalletSyncOptions.SectionName));
         services.Configure<WalletLinkOptions>(
             configuration.GetSection(WalletLinkOptions.SectionName));
+        services.Configure<BusinessLogoUploadOptions>(
+            configuration.GetSection(BusinessLogoUploadOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();

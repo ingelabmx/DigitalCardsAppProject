@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using DigitalCards.Application;
 using DigitalCards.Application.Abstractions;
@@ -623,6 +624,117 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains(updatedName, dashboardHtml);
         Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_UploadsBrandingLogoToPublicPath()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-web-logo-{Guid.NewGuid():N}");
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Branding:LogoUploads:Path"] = uploadRoot,
+            ["DigitalCards:Branding:LogoUploads:RequestPath"] = "/uploads/business-logos"
+        });
+        try
+        {
+            var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+
+            await LoginAdminAsync(client);
+            var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+            var token = await GetAntiforgeryTokenAsync(client, profilePath);
+            using var form = new MultipartFormDataContent
+            {
+                { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
+                { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
+                { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("/img/demo-coffee.svg"), "BrandingInput.LogoPath" },
+                { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
+                { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
+                { new StringContent(token), "__RequestVerificationToken" }
+            };
+            var file = new ByteArrayContent(TinyPng());
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            form.Add(file, "BrandingInput.LogoUpload", "logo.png");
+
+            var response = await client.PostAsync($"{profilePath}?handler=Branding", form);
+            var html = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("Branding del negocio actualizado", html);
+            Assert.DoesNotContain(uploadRoot, html);
+
+            string logoPath;
+            using (var scope = fake.Factory.Services.CreateScope())
+            {
+                var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+                logoPath = store.BusinessBranding.Single(
+                    branding => branding.BusinessId == Guid.Parse("11111111-1111-1111-1111-111111111111")).LogoPath;
+            }
+
+            Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
+            var logoResponse = await client.GetAsync(logoPath);
+            Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
+            Assert.Equal(TinyPng(), await logoResponse.Content.ReadAsByteArrayAsync());
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_RejectsInvalidBrandingLogoUpload()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-web-logo-{Guid.NewGuid():N}");
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Branding:LogoUploads:Path"] = uploadRoot,
+            ["DigitalCards:Branding:LogoUploads:RequestPath"] = "/uploads/business-logos"
+        });
+        try
+        {
+            var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+
+            await LoginAdminAsync(client);
+            var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+            var token = await GetAntiforgeryTokenAsync(client, profilePath);
+            using var form = new MultipartFormDataContent
+            {
+                { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
+                { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
+                { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("/img/demo-coffee.svg"), "BrandingInput.LogoPath" },
+                { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
+                { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
+                { new StringContent(token), "__RequestVerificationToken" }
+            };
+            var file = new ByteArrayContent("<svg></svg>"u8.ToArray());
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/svg+xml");
+            form.Add(file, "BrandingInput.LogoUpload", "logo.svg");
+
+            var response = await client.PostAsync($"{profilePath}?handler=Branding", form);
+            var html = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("El logo debe ser PNG, JPG, JPEG o WebP", html);
+            Assert.DoesNotContain("/uploads/business-logos/", html);
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -1884,5 +1996,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     private static string NewLegacySafeUserName(string prefix)
     {
         return $"{prefix}{Guid.NewGuid():N}"[..12];
+    }
+
+    private static byte[] TinyPng()
+    {
+        return Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
     }
 }

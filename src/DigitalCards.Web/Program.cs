@@ -1,10 +1,14 @@
 using DigitalCards.Application;
 using DigitalCards.Infrastructure;
+using DigitalCards.Infrastructure.Branding;
 using DigitalCards.Web;
+using DigitalCards.Web.Branding;
 using DigitalCards.Web.Operations;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +37,7 @@ builder.Configuration
 
 builder.Services.Configure<PilotOptions>(builder.Configuration.GetSection(PilotOptions.SectionName));
 builder.Services.AddScoped<PilotAccessService>();
+builder.Services.AddScoped<BusinessLogoUploadService>();
 builder.Services.AddDigitalCardsOperations(builder.Configuration);
 builder.Services.AddRazorPages();
 builder.Services
@@ -108,6 +113,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+var logoUploadOptions = app.Services.GetRequiredService<IOptions<BusinessLogoUploadOptions>>().Value;
+var logoUploadRoot = logoUploadOptions.GetPhysicalRoot();
+Directory.CreateDirectory(logoUploadRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(logoUploadRoot),
+    RequestPath = logoUploadOptions.GetRequestPath()
+});
 
 app.UseRouting();
 

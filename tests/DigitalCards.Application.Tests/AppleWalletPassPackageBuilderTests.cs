@@ -2,7 +2,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DigitalCards.Domain;
+using DigitalCards.Infrastructure.Branding;
 using DigitalCards.Infrastructure.Wallets;
+using Microsoft.Extensions.Options;
 
 namespace DigitalCards.Application.Tests;
 
@@ -61,6 +63,58 @@ public sealed class AppleWalletPassPackageBuilderTests
         Assert.DoesNotContain("signature", manifest.Keys);
     }
 
+    [Fact]
+    public void BuildUnsignedFiles_EmbedsUploadedPngBusinessLogo()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-logo-{Guid.NewGuid():N}");
+        var assetsRoot = Path.Combine(uploadRoot, "assets");
+        var card = CreateCard();
+        var client = CreateClient(card.ClientId);
+        var businessLogoFolder = Path.Combine(uploadRoot, card.BusinessId.ToString("N"));
+        var logoBytes = TinyPng();
+        try
+        {
+            Directory.CreateDirectory(assetsRoot);
+            Directory.CreateDirectory(businessLogoFolder);
+            File.WriteAllBytes(Path.Combine(assetsRoot, "icon.png"), TinyPng());
+            File.WriteAllBytes(Path.Combine(businessLogoFolder, "logo.png"), logoBytes);
+
+            var builder = new AppleWalletPassPackageBuilder(Options.Create(new BusinessLogoUploadOptions
+            {
+                Path = uploadRoot,
+                RequestPath = "/uploads/business-logos"
+            }));
+            var options = new AppleWalletOptions
+            {
+                TeamIdentifier = "TEAMID1234",
+                PassTypeIdentifier = "pass.com.example.digitalcards",
+                OrganizationName = "DigitalCards",
+                AssetsPath = assetsRoot
+            };
+            var business = new Business(
+                card.BusinessId,
+                "Demo Coffee",
+                "demo@example.test",
+                "hash",
+                $"/uploads/business-logos/{card.BusinessId:N}/logo.png");
+
+            var files = builder.BuildUnsignedFiles(card, client, business, options);
+
+            Assert.True(files.ContainsKey("icon.png"));
+            Assert.True(files.ContainsKey("logo.png"));
+            Assert.True(files.ContainsKey("logo@2x.png"));
+            Assert.Equal(logoBytes, files["logo.png"]);
+            Assert.Equal(logoBytes, files["logo@2x.png"]);
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
+    }
+
     private static AppleWalletOptions CreateOptions()
     {
         return new AppleWalletOptions
@@ -69,6 +123,12 @@ public sealed class AppleWalletPassPackageBuilderTests
             PassTypeIdentifier = "pass.com.example.digitalcards",
             OrganizationName = "DigitalCards"
         };
+    }
+
+    private static byte[] TinyPng()
+    {
+        return Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
     }
 
     private static LoyaltyCard CreateCard()

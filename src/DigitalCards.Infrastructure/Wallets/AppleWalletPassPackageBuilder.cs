@@ -7,6 +7,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DigitalCards.Application.Models;
 using DigitalCards.Domain;
+using DigitalCards.Infrastructure.Branding;
+using Microsoft.Extensions.Options;
 
 namespace DigitalCards.Infrastructure.Wallets;
 
@@ -33,6 +35,20 @@ public sealed class AppleWalletPassPackageBuilder
         "manifest.json",
         "signature"
     };
+
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    private readonly BusinessLogoUploadOptions _logoUploadOptions;
+
+    public AppleWalletPassPackageBuilder()
+        : this(Options.Create(new BusinessLogoUploadOptions()))
+    {
+    }
+
+    public AppleWalletPassPackageBuilder(IOptions<BusinessLogoUploadOptions> logoUploadOptions)
+    {
+        _logoUploadOptions = logoUploadOptions.Value;
+    }
 
     public AppleWalletPassFile Build(
         LoyaltyCard card,
@@ -160,7 +176,23 @@ public sealed class AppleWalletPassPackageBuilder
             files[asset.Key] = asset.Value;
         }
 
+        if (TryLoadUploadedLogoPng(business.LogoPath) is { } logoBytes)
+        {
+            files["logo.png"] = logoBytes;
+            files["logo@2x.png"] = logoBytes;
+        }
+
         return files;
+    }
+
+    public IReadOnlyDictionary<string, byte[]> BuildUnsignedFiles(
+        LoyaltyCard card,
+        Client client,
+        Business business,
+        AppleWalletOptions options,
+        AppleWalletPassBuildSettings? settings = null)
+    {
+        return BuildUnsignedFiles(card, client, business, options, CreateSerialNumber(card), settings);
     }
 
     private static IReadOnlyDictionary<string, byte[]> LoadAssets(AppleWalletOptions options)
@@ -189,6 +221,40 @@ public sealed class AppleWalletPassPackageBuilder
         }
 
         return files;
+    }
+
+    private byte[]? TryLoadUploadedLogoPng(string? logoPath)
+    {
+        if (string.IsNullOrWhiteSpace(logoPath) ||
+            !logoPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var requestPath = _logoUploadOptions.GetRequestPath();
+        if (!logoPath.StartsWith($"{requestPath}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var relativePath = logoPath[(requestPath.Length + 1)..]
+            .Replace('/', Path.DirectorySeparatorChar);
+        var root = _logoUploadOptions.GetPhysicalRoot();
+        var physicalPath = Path.GetFullPath(Path.Combine(root, relativePath));
+        var normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+            Path.DirectorySeparatorChar;
+
+        if (!physicalPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase) ||
+            !File.Exists(physicalPath))
+        {
+            return null;
+        }
+
+        var bytes = File.ReadAllBytes(physicalPath);
+        return bytes.Length >= PngSignature.Length &&
+            bytes.AsSpan(0, PngSignature.Length).SequenceEqual(PngSignature)
+            ? bytes
+            : null;
     }
 
     private static byte[] SignManifest(byte[] manifestBytes, AppleWalletOptions options)

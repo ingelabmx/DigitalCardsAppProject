@@ -106,14 +106,31 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-profile-save").ClickAsync();
         Assert.Contains("Negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
 
-        await page.GetByTestId("admin-business-branding-public-name").FillAsync(publicBrandName);
-        await page.GetByTestId("admin-business-branding-program-name").FillAsync("Playwright Rewards");
-        await page.GetByTestId("admin-business-branding-description").FillAsync("Programa de sellos para Playwright.");
-        await page.GetByTestId("admin-business-branding-logo").FillAsync("/img/playwright-brand.svg");
-        await page.GetByTestId("admin-business-branding-primary").FillAsync("#123456");
-        await page.GetByTestId("admin-business-branding-secondary").FillAsync("#abcdef");
-        await page.GetByTestId("admin-business-branding-submit").ClickAsync();
-        Assert.Contains("Branding del negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
+        var logoFile = Path.Combine(Path.GetTempPath(), $"playwright-logo-{Guid.NewGuid():N}.png");
+        await File.WriteAllBytesAsync(logoFile, TinyPng());
+        try
+        {
+            await page.GetByTestId("admin-business-branding-public-name").FillAsync(publicBrandName);
+            await page.GetByTestId("admin-business-branding-program-name").FillAsync("Playwright Rewards");
+            await page.GetByTestId("admin-business-branding-description").FillAsync("Programa de sellos para Playwright.");
+            await page.GetByTestId("admin-business-branding-logo").FillAsync("/img/playwright-brand.svg");
+            await page.GetByTestId("admin-business-branding-logo-upload").SetInputFilesAsync(logoFile);
+            await page.GetByTestId("admin-business-branding-primary").FillAsync("#123456");
+            await page.GetByTestId("admin-business-branding-secondary").FillAsync("#abcdef");
+            await page.GetByTestId("admin-business-branding-submit").ClickAsync();
+            Assert.Contains("Branding del negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
+            await page.GotoAsync(page.Url.Split('?')[0]);
+            Assert.Contains(
+                "/uploads/business-logos/",
+                await page.GetByTestId("admin-business-branding-logo").InputValueAsync());
+        }
+        finally
+        {
+            if (File.Exists(logoFile))
+            {
+                File.Delete(logoFile);
+            }
+        }
 
         await page.GetByTestId("admin-business-password-new").FillAsync(updatedBusinessPassword);
         await page.GetByTestId("admin-business-password-confirm").FillAsync(updatedBusinessPassword);
@@ -353,5 +370,11 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     private static string GetAdminPassword()
     {
         return Environment.GetEnvironmentVariable("E2E_ADMIN_PASSWORD") ?? "admin123";
+    }
+
+    private static byte[] TinyPng()
+    {
+        return Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
     }
 }
