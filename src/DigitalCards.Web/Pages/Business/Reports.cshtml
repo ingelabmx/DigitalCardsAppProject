@@ -1,0 +1,168 @@
+@page
+@model DigitalCards.Web.Pages.Business.ReportsModel
+@{
+    ViewData["Title"] = "Reportes negocio";
+}
+
+<section class="result-panel business-reports" data-testid="business-reports">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Negocio</p>
+            <h1>Reportes</h1>
+            <p class="lead">Resumen operativo de tarjetas, sellos, clientes y Wallets del negocio autenticado.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="business-reports-back-link">Dashboard</a>
+    </div>
+
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+    }
+    else if (Model.Reports is null)
+    {
+        <p class="text-muted">No hay datos disponibles.</p>
+    }
+    else
+    {
+        <div class="metric-row business-report-metrics">
+            <div class="metric">
+                <span>Tarjetas</span>
+                <strong data-testid="business-report-card-count">@Model.Reports.CardCount</strong>
+                <small>@Model.Reports.CardsCreatedLast30Days en 30 dias</small>
+            </div>
+            <div class="metric">
+                <span>Clientes</span>
+                <strong data-testid="business-report-client-count">@Model.Reports.ClientCount</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos actuales</span>
+                <strong data-testid="business-report-current-stamps">@Model.Reports.CurrentStampTotal</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos historicos</span>
+                <strong data-testid="business-report-lifetime-stamps">@Model.Reports.LifetimeStampTotal</strong>
+                <small>@Model.Reports.StampsLast30Days eventos en 30 dias</small>
+            </div>
+            <div class="metric">
+                <span>Google Wallet</span>
+                <strong data-testid="business-report-google-count">@Model.Reports.GoogleIssuedCount emitidas</strong>
+                <small>@Model.Reports.GooglePendingCount pendientes</small>
+            </div>
+            <div class="metric">
+                <span>Apple Wallet</span>
+                <strong data-testid="business-report-apple-count">@Model.Reports.AppleTrackedCount activas</strong>
+                <small>@Model.Reports.ApplePendingCount pendientes</small>
+            </div>
+            <div class="metric">
+                <span>Alertas Wallet</span>
+                <strong data-testid="business-report-wallet-issues">@Model.Reports.WalletIssueCount</strong>
+            </div>
+        </div>
+
+        <div class="business-dashboard-grid">
+            <section class="business-dashboard-panel">
+                <h2>Sellos por periodo</h2>
+                @if (Model.Reports.StampPeriods.Count == 0)
+                {
+                    <p class="text-muted" data-testid="business-report-no-periods">No hay eventos recientes de sellos.</p>
+                }
+                else
+                {
+                    <div class="dashboard-card-list" data-testid="business-report-periods">
+                        @foreach (var period in Model.Reports.StampPeriods)
+                        {
+                            <div class="dashboard-card-row compact" data-testid="business-report-period">
+                                <div>
+                                    <strong>@period.Period</strong>
+                                    <span>periodo</span>
+                                </div>
+                                <div>
+                                    <strong>@period.StampCount</strong>
+                                    <span>sellos</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="business-dashboard-panel">
+                <h2>Clientes recientes</h2>
+                @if (Model.Reports.RecentClients.Count == 0)
+                {
+                    <p class="text-muted" data-testid="business-report-no-clients">No hay clientes recientes.</p>
+                }
+                else
+                {
+                    <div class="dashboard-card-list" data-testid="business-report-recent-clients">
+                        @foreach (var client in Model.Reports.RecentClients)
+                        {
+                            <a class="dashboard-card-row"
+                               asp-page="/Business/Cards"
+                               asp-route-query="@client.UserName"
+                               data-testid="business-report-recent-client">
+                                <div>
+                                    <strong>@client.UserName</strong>
+                                    <span>@client.Email</span>
+                                </div>
+                                <div>
+                                    <strong>@client.CardCount</strong>
+                                    <span>tarjeta(s)</span>
+                                </div>
+                                <div>
+                                    <strong>@client.LastActivityAt.ToLocalTime().ToString("g")</strong>
+                                    <span>ultima actividad</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <section class="business-dashboard-panel">
+            <h2>Errores Wallet recientes</h2>
+            @if (Model.Reports.RecentWalletIssues.Count == 0)
+            {
+                <p class="text-muted" data-testid="business-report-no-wallet-issues">No hay alertas Wallet recientes.</p>
+            }
+            else
+            {
+                <div class="stamp-ledger-items" data-testid="business-report-wallet-issues-list">
+                    @foreach (var item in Model.Reports.RecentWalletIssues)
+                    {
+                        <div class="stamp-ledger-item" data-testid="business-report-wallet-issue">
+                            <div>
+                                <strong>@item.ClientUserName</strong>
+                                <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                            <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
+                            <p>
+                                Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
+                                &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                            {
+                                <p class="text-danger">Error: @item.ErrorSummary</p>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+</section>
+
+@functions {
+    private static string WalletStatus(bool attempted, bool succeeded)
+    {
+        if (!attempted)
+        {
+            return "No aplica";
+        }
+
+        return succeeded ? "OK" : "Fallo";
+    }
+}

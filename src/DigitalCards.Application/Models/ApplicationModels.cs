@@ -130,6 +130,33 @@ public sealed record BusinessDashboardStampEventDto(
     bool AppleWalletSucceeded,
     string? ErrorSummary);
 
+public sealed record BusinessReportsDto(
+    BusinessDto Business,
+    int CardCount,
+    int CardsCreatedLast30Days,
+    int ClientCount,
+    int CurrentStampTotal,
+    int LifetimeStampTotal,
+    int StampsLast30Days,
+    int GoogleIssuedCount,
+    int GooglePendingCount,
+    int AppleTrackedCount,
+    int ApplePendingCount,
+    int AppleRegisteredDeviceCount,
+    int WalletIssueCount,
+    IReadOnlyList<BusinessReportPeriodDto> StampPeriods,
+    IReadOnlyList<BusinessReportClientDto> RecentClients,
+    IReadOnlyList<BusinessDashboardStampEventDto> RecentWalletIssues);
+
+public sealed record BusinessReportPeriodDto(string Period, int StampCount);
+
+public sealed record BusinessReportClientDto(
+    Guid ClientId,
+    string UserName,
+    string Email,
+    int CardCount,
+    DateTimeOffset LastActivityAt);
+
 public sealed record WalletLandingDto(
     string Token,
     string BusinessName,
