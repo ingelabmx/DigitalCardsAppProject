@@ -52,7 +52,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Client dashboard | Pilot | `/Client/Dashboard` and `/Client/Cards` show owned cards only with legacy-style visual shell. |
 | Change password | Ready | Updates legacy and modern credentials. |
 | Forgot/reset password | Ready | One-time hashed reset tokens via email. |
-| Wallet landing | Ready | Public token-based landing remains outside cookie auth. |
+| Wallet landing | Ready | Public token-based landing remains outside cookie auth and uses business branding. |
 | Full profile editing | Legacy Only | Modern client profile edit is not implemented. |
 | Client history beyond current cards | Partial | Card state is visible; detailed historical activity is not complete. |
 

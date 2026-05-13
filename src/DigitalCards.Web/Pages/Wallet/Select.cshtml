@@ -13,9 +13,28 @@
 }
 else
 {
-    <section class="wallet-panel" data-testid="wallet-select">
-        <p class="eyebrow">Tarjeta digital</p>
-        <h1>@Model.Landing.BusinessName</h1>
+    var primaryColor = Model.Landing.PrimaryColor ?? "#111827";
+    var secondaryColor = Model.Landing.SecondaryColor ?? "#5d87ff";
+    var fallbackInitials = Model.Landing.BusinessName[..Math.Min(Model.Landing.BusinessName.Length, 2)].ToUpperInvariant();
+
+    <section class="wallet-panel wallet-public-panel"
+             style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;"
+             data-testid="wallet-select">
+        <div class="wallet-public-brand">
+            @if (!string.IsNullOrWhiteSpace(Model.Landing.LogoPath))
+            {
+                <img src="@Model.Landing.LogoPath" alt="@Model.Landing.BusinessName logo" data-testid="wallet-business-logo" />
+            }
+            else
+            {
+                <span>@fallbackInitials</span>
+            }
+            <div>
+                <p class="eyebrow">Tarjeta digital</p>
+                <h1>@Model.Landing.BusinessName</h1>
+            </div>
+        </div>
+
         <p class="lead">Tarjeta de @Model.Landing.ClientName con @Model.Landing.CurrentStamps sellos actuales.</p>
 
         <div class="metric-row">
@@ -33,6 +52,13 @@ else
             </div>
         </div>
 
+        <div class="wallet-public-stamps" aria-label="Sellos actuales">
+            @for (var stamp = 1; stamp <= 10; stamp++)
+            {
+                <span class="@(stamp <= Math.Min(Model.Landing.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
+            }
+        </div>
+
         <div class="wallet-actions">
             <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
                asp-page="/Wallet/Apple"
@@ -45,4 +71,3 @@ else
         </div>
     </section>
 }
-

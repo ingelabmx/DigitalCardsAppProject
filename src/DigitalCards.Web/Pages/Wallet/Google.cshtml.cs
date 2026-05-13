@@ -15,9 +15,11 @@ public sealed class GoogleModel : PageModel
 
     public GoogleWalletIssueResult? Result { get; private set; }
 
+    public WalletLandingDto? Landing { get; private set; }
+
     public async Task OnGetAsync(string token, CancellationToken cancellationToken)
     {
+        Landing = await _appService.GetWalletLandingAsync(token, cancellationToken);
         Result = await _appService.SelectGoogleWalletAsync(token, cancellationToken);
     }
 }
-

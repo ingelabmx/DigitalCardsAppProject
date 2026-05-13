@@ -724,6 +724,9 @@ public sealed class DigitalCardsAppServiceTests
         var landing = await app.GetWalletLandingAsync(publicToken);
         Assert.NotNull(landing);
         Assert.Equal("Puntelio Cafe", landing!.BusinessName);
+        Assert.Equal("/img/puntelio.svg", landing.LogoPath);
+        Assert.Equal("#123456", landing.PrimaryColor);
+        Assert.Equal("#abcdef", landing.SecondaryColor);
 
         var dashboard = await app.GetClientDashboardAsync(client.Id);
         var card = Assert.Single(dashboard.Cards);

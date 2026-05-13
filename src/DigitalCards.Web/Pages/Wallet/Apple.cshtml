@@ -13,20 +13,25 @@
 }
 else
 {
+    var primaryColor = Model.Landing?.PrimaryColor ?? "#111827";
+    var secondaryColor = Model.Landing?.SecondaryColor ?? "#5d87ff";
+
     if (Model.Result.Status == DigitalCards.Application.Models.AppleWalletIssueStatus.Ready)
     {
-        <section class="result-panel" data-testid="apple-wallet-ready">
-            <h1>Apple Wallet lista</h1>
+        <section class="result-panel wallet-public-panel" style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;" data-testid="apple-wallet-ready">
+            <p class="eyebrow">Apple Wallet</p>
+            <h1>@(Model.Landing?.BusinessName ?? "Apple Wallet") lista</h1>
             <p data-testid="apple-wallet-message">@Model.Result.Message</p>
             <a class="btn btn-dark" href="@Model.Result.DownloadUrl" data-testid="apple-wallet-download-link">Descargar Apple Wallet</a>
         </section>
     }
     else
     {
-        <section class="result-panel" data-testid="apple-wallet-pending">
+        <section class="result-panel wallet-public-panel" style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;" data-testid="apple-wallet-pending">
+            <p class="eyebrow">Apple Wallet</p>
             <h1>Apple Wallet pendiente</h1>
             <p data-testid="apple-wallet-message">@Model.Result.Message</p>
-            <a asp-page="/Wallet/Select" asp-route-token="@Model.Token">Volver</a>
+            <a class="btn btn-outline-secondary" asp-page="/Wallet/Select" asp-route-token="@Model.Token">Volver</a>
         </section>
     }
 }
