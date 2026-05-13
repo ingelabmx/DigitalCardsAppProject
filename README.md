@@ -768,6 +768,19 @@ de `LegacyWalletSync`: ultimo run, candidatos, sincronizados, saltados, fallos y
 error seguro. Este estado se pierde al reiniciar; para auditoria persistente por
 tarjeta usa `StampLedger`.
 
+## Registro publico por negocio
+
+Antes de usar links publicos de registro, aplica manualmente:
+
+```text
+docs/migration-context/61-public-business-enrollment-v1-hostgator.sql
+```
+
+Luego entra a `/Admin/BusinessProfile/{businessId}` y genera el link publico.
+El cliente abre `/Enroll/{businessToken}`, se registra, queda asociado al
+negocio y recibe el correo Wallet. El token plano no se guarda en base de datos;
+regenerar el link revoca tokens activos anteriores del mismo negocio.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:

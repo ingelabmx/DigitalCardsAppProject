@@ -183,6 +183,65 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task PublicBusinessEnrollment_UsesOpaqueBusinessTokenAndSendsWalletEmail()
+    {
+        using var fake = WithFakeIntegrations();
+        var admin = fake.Factory.CreateClient();
+        var businessId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userName = NewLegacySafeUserName("pbe");
+
+        await LoginAdminAsync(admin);
+        var profileHtml = await admin.GetStringAsync($"/Admin/BusinessProfile/{businessId}");
+        var profileToken = ExtractAntiforgeryToken(profileHtml);
+        var linkResponse = await admin.PostAsync(
+            $"/Admin/BusinessProfile/{businessId}?handler=GenerateEnrollmentLink",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = profileToken
+            }));
+        var linkHtml = await linkResponse.Content.ReadAsStringAsync();
+        var businessToken = ExtractBusinessEnrollmentToken(linkHtml);
+
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            var storedToken = Assert.Single(store.BusinessEnrollmentLinks);
+            Assert.NotEqual(businessToken, storedToken.TokenHash);
+            Assert.Equal(businessToken[^8..], storedToken.TokenSuffix);
+        }
+
+        var publicClient = fake.Factory.CreateClient();
+        var publicHtml = await publicClient.GetStringAsync($"/Enroll/{businessToken}");
+        var publicCsrf = ExtractAntiforgeryToken(publicHtml);
+
+        Assert.Contains("public-business-enrollment-page", publicHtml);
+        Assert.Contains("Demo Coffee", publicHtml);
+
+        var registerResponse = await publicClient.PostAsync(
+            $"/Enroll/{businessToken}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserName"] = userName,
+                ["Input.FirstName"] = "Public",
+                ["Input.LastName"] = "Enroll",
+                ["Input.Email"] = $"{userName}@example.test",
+                ["Input.Password"] = "ClientPass123!",
+                ["__RequestVerificationToken"] = publicCsrf
+            }));
+        var registerHtml = await registerResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        Assert.Contains("public-business-enrollment-success", registerHtml);
+        Assert.Contains("public-business-enrollment-wallet-link", registerHtml);
+        Assert.DoesNotContain("ClientPass123!", registerHtml);
+
+        using var outboxScope = fake.Factory.Services.CreateScope();
+        var outbox = outboxScope.ServiceProvider.GetRequiredService<IWalletEmailOutbox>();
+        var messages = await outbox.ListAsync();
+        Assert.Contains(messages, message => string.Equals(message.To, $"{userName}@example.test", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task HealthEndpoint_ReturnsSuccess()
     {
         using var fake = WithFakeIntegrations();
@@ -2518,6 +2577,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         return index < 0
             ? throw new InvalidOperationException("Wallet link was not found.")
             : enrollmentUrl[(index + marker.Length)..];
+    }
+
+    private static string ExtractBusinessEnrollmentToken(string html)
+    {
+        var match = Regex.Match(html, "/Enroll/(?<token>[A-Za-z0-9_-]+)");
+        return match.Success
+            ? WebUtility.HtmlDecode(match.Groups["token"].Value)
+            : throw new InvalidOperationException("Business enrollment link was not found.");
     }
 
     private static bool HasBusinessCookie(HttpResponseMessage response)
