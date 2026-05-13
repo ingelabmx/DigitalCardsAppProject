@@ -1275,7 +1275,8 @@ public sealed class AdminAppService
 
     private static bool IsModernEnabled(BusinessActivationStatus activationStatus)
     {
-        return activationStatus != BusinessActivationStatus.LegacyOnly;
+        return activationStatus is not BusinessActivationStatus.LegacyOnly
+            and not BusinessActivationStatus.Inactive;
     }
 
     private static BusinessBrandingDto ToBrandingDto(Business business, BusinessBranding? branding)

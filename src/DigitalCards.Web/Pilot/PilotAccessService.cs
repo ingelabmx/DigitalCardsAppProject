@@ -1,4 +1,5 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Domain;
 using DigitalCards.Web.Security;
 using Microsoft.Extensions.Options;
 
@@ -6,6 +7,8 @@ namespace DigitalCards.Web.Pilot;
 
 public sealed class PilotAccessService
 {
+    private const string InactiveBusinessMessage = "Este negocio esta desactivado para el flujo moderno. Contacta al administrador.";
+
     private readonly PilotOptions _options;
     private readonly IPilotBusinessRepository _pilotBusinesses;
 
@@ -32,12 +35,17 @@ public sealed class PilotAccessService
         string businessEmail,
         CancellationToken cancellationToken)
     {
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(businessId, cancellationToken);
+        if (access?.ActivationStatus == BusinessActivationStatus.Inactive)
+        {
+            return PilotAccessResult.Blocked(InactiveBusinessMessage);
+        }
+
         if (!_options.Enabled)
         {
             return PilotAccessResult.Allowed;
         }
 
-        var access = await _pilotBusinesses.FindByBusinessIdAsync(businessId, cancellationToken);
         if (access?.IsEnabled == true ||
             IsAllowedBusinessId(businessId) ||
             IsAllowedEmail(businessEmail, _options.AllowedBusinessEmails))
@@ -46,6 +54,16 @@ public sealed class PilotAccessService
         }
 
         return PilotAccessResult.Blocked(_options.BlockedBusinessMessage);
+    }
+
+    public async Task<PilotAccessResult> CheckBusinessLoginAsync(
+        Guid businessId,
+        CancellationToken cancellationToken)
+    {
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(businessId, cancellationToken);
+        return access?.ActivationStatus == BusinessActivationStatus.Inactive
+            ? PilotAccessResult.Blocked(InactiveBusinessMessage)
+            : PilotAccessResult.Allowed;
     }
 
     public Task<PilotAccessResult> CheckClientAsync(
