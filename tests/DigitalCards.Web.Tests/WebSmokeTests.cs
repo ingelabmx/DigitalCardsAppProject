@@ -841,6 +841,36 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Demo Coffee", html);
         Assert.DoesNotContain(secondUserName, html);
         Assert.DoesNotContain("client-cards-username", html);
+        Assert.Contains("client-card-google-status", html);
+        Assert.Contains("client-card-apple-status", html);
+        Assert.Contains("client-card-wallet-link", html);
+    }
+
+    [Fact]
+    public async Task ClientDashboard_ShowsProfileSummaryAndWalletPreview()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("ds");
+        const string password = "clientpass1";
+        await CreateEnrollmentAsync(fake.Factory, userName, $"{userName}@example.test", password);
+
+        var login = await LoginClientAsync(http, userName, password);
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+
+        var html = await http.GetStringAsync("/Client/Dashboard");
+
+        Assert.Contains("client-dashboard-summary", html);
+        Assert.Contains("client-profile-summary", html);
+        Assert.Contains(userName, html);
+        Assert.Contains($"{userName}@example.test", html);
+        Assert.Contains("client-dashboard-card-count", html);
+        Assert.Contains("client-dashboard-current-stamps", html);
+        Assert.Contains("client-dashboard-wallet-link", html);
+        Assert.DoesNotContain("00000000-0000-0000", html);
     }
 
     [Fact]

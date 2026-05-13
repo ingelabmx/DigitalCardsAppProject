@@ -6,7 +6,7 @@
 
 <section class="form-panel">
     <h1>Tarjetas del cliente</h1>
-    <p class="text-muted">Estas tarjetas pertenecen a tu sesion de cliente.</p>
+    <p class="text-muted">Estas tarjetas pertenecen a tu sesion de cliente. Los links Wallet usan tokens opacos.</p>
 </section>
 
 @if (Model.Cards.Count > 0)
@@ -15,15 +15,49 @@
         <h2>Resultados</h2>
         @foreach (var card in Model.Cards)
         {
-            <article class="border-top py-3" data-testid="client-card">
-                <h3>@card.BusinessName</h3>
-                <p class="text-muted">@card.ClientUserName</p>
-                <p>Sellos actuales: <strong>@card.CurrentStamps</strong></p>
-                <p>Sellos historicos: <strong>@card.LifetimeStamps</strong></p>
-                <p>Google Wallet: <strong>@(card.GoogleIssued ? "Google emitida" : "Pendiente")</strong></p>
-                <p>
+            <article class="client-card-row" data-testid="client-card">
+                <div class="detail-heading">
+                    <div>
+                        <h3>@card.BusinessName</h3>
+                        <p class="text-muted">@card.ClientUserName</p>
+                    </div>
+                    <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                </div>
+
+                <div class="metric-row metric-row-wide">
+                    <div class="metric">
+                        <span>Sellos actuales</span>
+                        <strong data-testid="client-card-current-stamps">@card.CurrentStamps</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Sellos historicos</span>
+                        <strong data-testid="client-card-lifetime-stamps">@card.LifetimeStamps</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Google Wallet</span>
+                        <strong data-testid="client-card-google-status">@(card.GoogleIssued ? "Google emitida" : "Pendiente")</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Apple Wallet</span>
+                        <strong data-testid="client-card-apple-status">@(card.AppleTracked ? "Apple activa" : "Pendiente")</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Dispositivos Apple</span>
+                        <strong data-testid="client-card-apple-devices">@card.AppleRegisteredDeviceCount</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Ultimo update Apple</span>
+                        <strong data-testid="client-card-apple-updated">@(card.AppleUpdatedAt?.ToLocalTime().ToString("g") ?? "Pendiente")</strong>
+                    </div>
+                </div>
+
+                <div class="form-actions">
                     <a class="btn btn-outline-primary btn-sm" asp-page="/Wallet/Select" asp-route-token="@card.WalletSelectToken" data-testid="client-card-wallet-link">Abrir Wallet</a>
-                </p>
+                    @if (card.GoogleIssued && !string.IsNullOrWhiteSpace(card.GoogleSaveUrl))
+                    {
+                        <a class="btn btn-outline-secondary btn-sm" href="@card.GoogleSaveUrl" data-testid="client-card-google-save-link">Abrir Google Wallet</a>
+                    }
+                </div>
             </article>
         }
     </section>

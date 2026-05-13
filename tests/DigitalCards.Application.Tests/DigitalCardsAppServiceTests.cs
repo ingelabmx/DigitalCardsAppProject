@@ -880,6 +880,60 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task GetClientDashboardAsync_ReturnsProfileWalletSummaryAndOpaqueLinks()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var applePasses = provider.GetRequiredService<IAppleWalletPassRepository>();
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "dashclient1",
+            "Dash",
+            "Client",
+            "dashclient1@example.test",
+            "clientpass1"));
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "http://localhost"));
+        var token = ExtractWalletToken(enrollment.EnrollmentUrl);
+        await app.SelectGoogleWalletAsync(token);
+        var now = DateTimeOffset.UtcNow;
+        await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+            "pass.test",
+            "serial-1",
+            enrollment.Card.Id,
+            "auth-hash",
+            "1",
+            now,
+            now));
+        await applePasses.UpsertDeviceAsync(new AppleWalletDeviceRecord(
+            "device-1",
+            "push-token",
+            now,
+            now));
+        await applePasses.AddRegistrationAsync("device-1", "pass.test", "serial-1", now);
+
+        var dashboard = await app.GetClientDashboardAsync(client.Id);
+
+        Assert.Equal(client.Id, dashboard.Client.Id);
+        Assert.Equal("dashclient1@example.test", dashboard.Client.Email);
+        Assert.Equal(1, dashboard.TotalCurrentStamps);
+        Assert.Equal(1, dashboard.TotalLifetimeStamps);
+        Assert.Equal(1, dashboard.GoogleIssuedCount);
+        Assert.Equal(1, dashboard.AppleTrackedCount);
+        var card = Assert.Single(dashboard.Cards);
+        Assert.Equal("Demo Coffee", card.BusinessName);
+        Assert.True(card.GoogleIssued);
+        Assert.True(card.AppleTracked);
+        Assert.Equal(1, card.AppleRegisteredDeviceCount);
+        Assert.NotEqual(enrollment.Card.EnrollmentToken, card.WalletSelectToken);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, card.WalletSelectToken, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void AddInfrastructure_ThrowsWhenAppleWalletProviderIsAppleWithoutConfiguration()
     {
         var configuration = new ConfigurationBuilder()

@@ -315,6 +315,17 @@ El login usa `UserClient.RoleID=2` y crea una cookie separada
 `/Client/Cards` para ver solo sus propias tarjetas. Los links Wallet mostrados
 ahi usan tokens opacos nuevos y no exponen `CardID` directo.
 
+El dashboard cliente muestra:
+
+- perfil basico: usuario y correo;
+- conteo de tarjetas;
+- sellos actuales e historicos;
+- estado Google Wallet y Apple Wallet;
+- vista previa de tarjetas con link Wallet.
+
+`/Client/Cards` muestra el detalle por tarjeta, incluyendo ultimo sello,
+dispositivos Apple registrados y links Wallet seguros.
+
 ## Password hardening cliente
 
 Antes de usar hashes modernos de cliente contra HostGator, ejecuta:

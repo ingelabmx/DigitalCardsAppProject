@@ -42,6 +42,7 @@ Documentos:
 - `27-client-dashboard-v1.md`: login/dashboard moderno de cliente con cookie propia.
 - `28-client-password-hardening-v1.md`: hashes modernos de cliente y cambio de contrasena.
 - `28-client-password-hardening-hostgator.sql`: tabla nueva para credenciales modernas de cliente.
+- `29-client-dashboard-v2.md`: resumen, perfil basico y estados Wallet en dashboard cliente.
 
 Notas:
 
