@@ -781,6 +781,10 @@ El cliente abre `/Enroll/{businessToken}`, se registra, queda asociado al
 negocio y recibe el correo Wallet. El token plano no se guarda en base de datos;
 regenerar el link revoca tokens activos anteriores del mismo negocio.
 
+El negocio tambien puede generar un link y QR desde `/Business/Dashboard`. El QR
+se renderiza como SVG server-side y apunta al mismo flujo
+`/Enroll/{businessToken}`.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:

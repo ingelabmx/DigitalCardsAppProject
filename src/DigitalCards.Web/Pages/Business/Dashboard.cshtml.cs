@@ -1,3 +1,4 @@
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web.Diagnostics;
@@ -13,17 +14,20 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class DashboardModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly PilotAccessService _pilotAccess;
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
 
     public DashboardModel(
         DigitalCardsAppService appService,
+        IBusinessEnrollmentLinkService businessEnrollmentLinks,
         PilotAccessService pilotAccess,
         IWebHostEnvironment environment,
         IConfiguration configuration)
     {
         _appService = appService;
+        _businessEnrollmentLinks = businessEnrollmentLinks;
         _pilotAccess = pilotAccess;
         _environment = environment;
         _configuration = configuration;
@@ -42,7 +46,32 @@ public sealed class DashboardModel : PageModel
         _configuration,
         User);
 
+    public string? GeneratedEnrollmentUrl { get; private set; }
+
+    public string? GeneratedEnrollmentQrSvg { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
+    {
+        return await LoadAsync(cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostGenerateEnrollmentLinkAsync(CancellationToken cancellationToken)
+    {
+        var result = await LoadAsync(cancellationToken);
+        if (result is not PageResult || IsPilotBlocked || Dashboard is null)
+        {
+            return result;
+        }
+
+        var token = await _businessEnrollmentLinks.CreateOrReplaceTokenAsync(
+            Dashboard.Business.Id,
+            cancellationToken);
+        GeneratedEnrollmentUrl = $"{GetBaseUrl()}/Enroll/{token}";
+        GeneratedEnrollmentQrSvg = EnrollmentQrCodeRenderer.RenderSvg(GeneratedEnrollmentUrl);
+        return Page();
+    }
+
+    private async Task<IActionResult> LoadAsync(CancellationToken cancellationToken)
     {
         var businessId = BusinessAuth.GetBusinessId(User);
         Dashboard = await _appService.GetBusinessDashboardAsync(businessId, cancellationToken);
@@ -62,5 +91,13 @@ public sealed class DashboardModel : PageModel
         }
 
         return Page();
+    }
+
+    private string GetBaseUrl()
+    {
+        return EnrollmentBaseUrlResolver.Resolve(
+            _configuration["DigitalCards:PublicBaseUrl"],
+            Request.Scheme,
+            Request.Host);
     }
 }

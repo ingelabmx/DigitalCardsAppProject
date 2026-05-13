@@ -70,6 +70,35 @@
 
 @if (!Model.IsPilotBlocked && Model.Dashboard is not null)
 {
+    <section class="result-panel" data-testid="business-public-enrollment-panel">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Registro publico</p>
+                <h2>QR para clientes</h2>
+                <p class="text-muted">Genera un link y QR para que clientes se registren directamente en este negocio.</p>
+            </div>
+            <form method="post" asp-page-handler="GenerateEnrollmentLink">
+                <button class="btn btn-outline-primary" type="submit" data-testid="business-generate-enrollment-qr">
+                    Generar link y QR
+                </button>
+            </form>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.GeneratedEnrollmentUrl) && !string.IsNullOrWhiteSpace(Model.GeneratedEnrollmentQrSvg))
+        {
+            <div class="business-dashboard-grid" data-testid="business-enrollment-qr-result">
+                <div class="business-dashboard-panel">
+                    <h2>Link publico</h2>
+                    <input class="form-control" value="@Model.GeneratedEnrollmentUrl" readonly data-testid="business-enrollment-public-link" />
+                    <p class="text-muted mt-2">El token plano no se guarda. Si generas otro QR, el anterior queda revocado.</p>
+                </div>
+                <div class="business-dashboard-panel text-center" data-testid="business-enrollment-qr">
+                    @Html.Raw(Model.GeneratedEnrollmentQrSvg)
+                </div>
+            </div>
+        }
+    </section>
+
     <section class="result-panel business-dashboard-summary" data-testid="business-dashboard-summary">
         <div class="page-heading">
             <div>
