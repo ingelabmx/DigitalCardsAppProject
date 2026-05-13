@@ -768,6 +768,16 @@ de `LegacyWalletSync`: ultimo run, candidatos, sincronizados, saltados, fallos y
 error seguro. Este estado se pierde al reiniciar; para auditoria persistente por
 tarjeta usa `StampLedger`.
 
+Antes de mover un negocio a `ModernPrimary`, usa el runbook:
+
+```text
+docs/migration-context/64-production-business-cutover-v1.md
+```
+
+La regla operativa es avanzar un negocio a la vez: smoke real en `PilotModern`,
+cambiar a `ModernPrimary` si pasa, mantener Web Forms como fallback y usar
+rollback por negocio si aparecen fallos.
+
 ## Registro publico por negocio
 
 Antes de usar links publicos de registro, aplica manualmente:
