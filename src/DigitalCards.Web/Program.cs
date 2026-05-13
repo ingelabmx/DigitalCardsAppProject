@@ -39,6 +39,7 @@ builder.Services.Configure<PilotOptions>(builder.Configuration.GetSection(PilotO
 builder.Services.AddScoped<PilotAccessService>();
 builder.Services.AddScoped<BusinessLogoUploadService>();
 builder.Services.AddDigitalCardsOperations(builder.Configuration);
+builder.Services.AddDigitalCardsSecurity(builder.Configuration);
 builder.Services.AddRazorPages();
 builder.Services
     .AddAuthentication(BusinessAuth.Scheme)
@@ -112,6 +113,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseDigitalCardsSecurityHeaders();
 app.UseStaticFiles();
 
 var logoUploadOptions = app.Services.GetRequiredService<IOptions<BusinessLogoUploadOptions>>().Value;
@@ -125,6 +127,8 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
+app.UseDigitalCardsPathRateLimits();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

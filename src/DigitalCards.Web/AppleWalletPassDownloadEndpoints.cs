@@ -1,4 +1,6 @@
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigitalCards.Web;
 
@@ -34,7 +36,8 @@ public static class AppleWalletPassDownloadEndpoints
                 {
                     return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
                 }
-            });
+            })
+            .RequireRateLimiting(SecurityRateLimitPolicyNames.WalletPublic);
 
         return endpoints;
     }

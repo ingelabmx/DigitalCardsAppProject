@@ -33,6 +33,9 @@ public sealed class WebAppFixture : IAsyncLifetime
         startInfo.Environment["DigitalCards__PublicBaseUrl"] = string.Empty;
         startInfo.Environment["DigitalCards__Pilot__Enabled"] = "true";
         startInfo.Environment["DigitalCards__SkipUserLocalConfiguration"] = "true";
+        startInfo.Environment["DigitalCards__Security__RateLimiting__AuthPermitLimit"] = "500";
+        startInfo.Environment["DigitalCards__Security__RateLimiting__PublicWritePermitLimit"] = "500";
+        startInfo.Environment["DigitalCards__Security__RateLimiting__WalletPermitLimit"] = "1000";
 
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start DigitalCards.Web.");
 

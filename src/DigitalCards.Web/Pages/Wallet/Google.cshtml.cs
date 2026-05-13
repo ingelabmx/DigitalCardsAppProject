@@ -1,9 +1,12 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Wallet;
 
+[EnableRateLimiting(SecurityRateLimitPolicyNames.WalletPublic)]
 public sealed class GoogleModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;

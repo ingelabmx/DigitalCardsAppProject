@@ -79,6 +79,46 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task SecurityHeaders_AreAppliedAndAuthPagesAreNoStore()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var home = await client.GetAsync("/");
+        var login = await client.GetAsync("/Business/Login");
+
+        Assert.Equal("DENY", home.Headers.GetValues("X-Frame-Options").Single());
+        Assert.Equal("nosniff", home.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal("strict-origin-when-cross-origin", home.Headers.GetValues("Referrer-Policy").Single());
+        Assert.Contains("no-store", login.Headers.CacheControl?.ToString());
+        Assert.Contains(login.Headers.Pragma, value => value.Name == "no-cache");
+    }
+
+    [Fact]
+    public async Task RateLimits_ProtectAuthPagesWithoutBlockingWalletPublicPolicy()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Security:RateLimiting:AuthPermitLimit"] = "1",
+            ["DigitalCards:Security:RateLimiting:AuthWindowSeconds"] = "60",
+            ["DigitalCards:Security:RateLimiting:WalletPermitLimit"] = "5",
+            ["DigitalCards:Security:RateLimiting:WalletWindowSeconds"] = "60"
+        });
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, NewLegacySafeUserName("rl"));
+
+        var firstLogin = await client.GetAsync("/Business/Login");
+        var secondLogin = await client.GetAsync("/Business/Login");
+        var firstWallet = await client.GetAsync($"/Wallet/Select/{token}");
+        var secondWallet = await client.GetAsync($"/Wallet/Select/{token}");
+
+        Assert.Equal(HttpStatusCode.OK, firstLogin.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondLogin.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, firstWallet.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondWallet.StatusCode);
+    }
+
+    [Fact]
     public async Task AuthenticatedRolePages_UseLegacyWebFormsShell()
     {
         using var fake = WithFakeIntegrations();

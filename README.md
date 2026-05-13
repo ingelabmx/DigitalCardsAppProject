@@ -806,6 +806,31 @@ Los errores se guardan como resumen seguro por tipo de excepcion. No se muestran
 JWTs, tokens Apple, push tokens, passwords, hashes, certificados ni connection
 strings.
 
+## Seguridad publica
+
+La app usa rate limiting nativo de ASP.NET Core para login, reset password,
+registro publico y Wallet endpoints. Los limites se configuran en:
+
+```json
+{
+  "DigitalCards": {
+    "Security": {
+      "RateLimiting": {
+        "AuthPermitLimit": 20,
+        "AuthWindowSeconds": 60,
+        "PublicWritePermitLimit": 30,
+        "PublicWriteWindowSeconds": 60,
+        "WalletPermitLimit": 300,
+        "WalletWindowSeconds": 60
+      }
+    }
+  }
+}
+```
+
+Las superficies admin/negocio/cliente/dev responden con no-cache y la app agrega
+headers basicos contra framing, content sniffing y referrer leakage.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:
