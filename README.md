@@ -333,6 +333,7 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
 - Soporte: `http://localhost:5031/Admin/Support`
 - Reportes: `http://localhost:5031/Admin/Reports`
+- Auditoria: `http://localhost:5031/Admin/Audit`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
 
@@ -392,6 +393,20 @@ alertas Wallet. Los exports `JSON` y `CSV` son para evidencia interna de
 soporte. Es una vista solo lectura. No muestra tokens Wallet, enrollment
 tokens, push tokens, JWTs, passwords, hashes, certificados ni connection
 strings.
+
+## Auditoria operativa
+
+`/Admin/Audit` muestra eventos sensibles del flujo moderno: creacion/reset de
+admins, creacion/edicion de negocios, cambios de branding, cambios piloto o
+cutover, exports de soporte y reintentos Wallet. Requiere cookie admin y no
+muestra passwords, hashes, tokens, JWTs, push tokens, certificados, rutas
+locales ni connection strings.
+
+Para MySQL/HostGator aplica manualmente:
+
+```text
+docs/migration-context/66-operational-audit-log-hostgator.sql
+```
 
 ## Paridad con Web Forms
 

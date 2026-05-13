@@ -73,6 +73,7 @@ public static class DependencyInjection
             services.AddScoped<IClientCredentialRepository, MySqlClientCredentialRepository>();
             services.AddScoped<IAdminUserRepository, MySqlAdminUserRepository>();
             services.AddScoped<IAdminCredentialRepository, MySqlAdminCredentialRepository>();
+            services.AddScoped<IAuditEventRepository, MySqlAuditEventRepository>();
             services.AddScoped<IBusinessRepository, MySqlBusinessRepository>();
             services.AddScoped<IBusinessBrandingRepository, MySqlBusinessBrandingRepository>();
             services.AddScoped<IBusinessCredentialRepository, MySqlBusinessCredentialRepository>();
@@ -93,6 +94,7 @@ public static class DependencyInjection
             services.AddScoped<IClientCredentialRepository, InMemoryClientCredentialRepository>();
             services.AddScoped<IAdminUserRepository, InMemoryAdminUserRepository>();
             services.AddScoped<IAdminCredentialRepository, InMemoryAdminCredentialRepository>();
+            services.AddScoped<IAuditEventRepository, InMemoryAuditEventRepository>();
             services.AddScoped<IBusinessRepository, InMemoryBusinessRepository>();
             services.AddScoped<IBusinessBrandingRepository, InMemoryBusinessBrandingRepository>();
             services.AddScoped<IBusinessCredentialRepository, InMemoryBusinessCredentialRepository>();

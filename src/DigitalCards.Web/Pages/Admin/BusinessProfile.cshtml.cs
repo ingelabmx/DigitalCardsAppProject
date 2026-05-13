@@ -197,6 +197,10 @@ public sealed class BusinessProfileModel : PageModel
             AdminAuth.GetAdminUserId(User),
             businessId);
 
+        await _adminApp.RecordBusinessEnrollmentLinkGeneratedAsync(
+            new RecordBusinessEnrollmentLinkAuditCommand(AdminAuth.GetAdminUserId(User), businessId),
+            cancellationToken);
+
         return Page();
     }
 
