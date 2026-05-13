@@ -652,6 +652,45 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminSupport_RetryWalletUpdate_RecordsAdminRetryWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("sr");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        }
+
+        await LoginAdminAsync(http);
+        var supportHtml = await http.GetStringAsync($"/Admin/Support?Query={userName}");
+        var csrf = ExtractAntiforgeryToken(supportHtml);
+
+        var response = await http.PostAsync(
+            "/Admin/Support?handler=RetryWalletUpdate",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["RetryCardId"] = enrollment.Card.Id.ToString("D"),
+                ["Query"] = userName,
+                ["__RequestVerificationToken"] = csrf
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("admin-support-status-message", html);
+        Assert.Contains("AdminRetry", html);
+        Assert.Contains("Google: OK", html);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("auth-token", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push-token", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AdminSupport_ExportsSafeDiagnosticsJsonWithoutSecrets()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>

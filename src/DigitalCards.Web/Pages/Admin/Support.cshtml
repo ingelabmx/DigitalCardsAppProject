@@ -70,6 +70,20 @@
         }
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-support-status-message">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-warning" role="alert" data-testid="admin-support-error-message">
+            @Model.ErrorMessage
+        </div>
+    }
+
     @if (Model.Result is not null)
     {
         <section class="support-results" data-testid="admin-support-results">
@@ -222,6 +236,24 @@
                                     }
                                     <span>Errores seguros: @card.RecentSafeErrors.Count</span>
                                 </div>
+
+                                <form method="post"
+                                      asp-page-handler="RetryWalletUpdate"
+                                      class="form-actions"
+                                      data-testid="admin-support-retry-wallet-form">
+                                    <input type="hidden" name="RetryCardId" value="@card.CardId" />
+                                    <input type="hidden" name="Query" value="@Model.Query" />
+                                    <input type="hidden" name="BusinessFilter" value="@Model.BusinessFilter" />
+                                    <input type="hidden" name="ClientFilter" value="@Model.ClientFilter" />
+                                    <input type="hidden" name="WalletIssuesOnly" value="@Model.WalletIssuesOnly" />
+                                    <input type="hidden" name="From" value='@Model.From?.ToString("o")' />
+                                    <input type="hidden" name="To" value='@Model.To?.ToString("o")' />
+                                    <button type="submit"
+                                            class="btn btn-outline-primary btn-sm"
+                                            data-testid="admin-support-retry-wallet">
+                                        Reintentar update Wallet
+                                    </button>
+                                </form>
 
                                 @if (card.RecentSafeErrors.Count > 0)
                                 {
