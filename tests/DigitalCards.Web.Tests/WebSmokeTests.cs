@@ -242,6 +242,37 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessDashboard_GeneratesPublicEnrollmentQr()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        await LoginBusinessAsync(client);
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+        var csrf = ExtractAntiforgeryToken(dashboardHtml);
+
+        var response = await client.PostAsync(
+            "/Business/Dashboard?handler=GenerateEnrollmentLink",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = csrf
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+        var businessToken = ExtractBusinessEnrollmentToken(html);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("business-enrollment-qr-result", html);
+        Assert.Contains("business-enrollment-qr", html);
+        Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = fake.Factory.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var storedToken = Assert.Single(store.BusinessEnrollmentLinks);
+        Assert.NotEqual(businessToken, storedToken.TokenHash);
+        Assert.Equal(businessToken[^8..], storedToken.TokenSuffix);
+    }
+
+    [Fact]
     public async Task HealthEndpoint_ReturnsSuccess()
     {
         using var fake = WithFakeIntegrations();
