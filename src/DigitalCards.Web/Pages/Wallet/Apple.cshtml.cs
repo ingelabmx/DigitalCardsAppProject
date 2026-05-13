@@ -1,11 +1,14 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
 
 namespace DigitalCards.Web.Pages.Wallet;
 
+[EnableRateLimiting(SecurityRateLimitPolicyNames.WalletPublic)]
 public sealed class AppleModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;

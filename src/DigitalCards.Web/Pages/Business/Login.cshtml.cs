@@ -4,11 +4,13 @@ using DigitalCards.Application.Services;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Business;
 
+[EnableRateLimiting(SecurityRateLimitPolicyNames.Auth)]
 public sealed class LoginModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;

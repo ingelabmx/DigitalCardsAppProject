@@ -3,12 +3,15 @@ using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web.Pilot;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using BusinessEntity = DigitalCards.Domain.Business;
 
 namespace DigitalCards.Web.Pages;
 
+[EnableRateLimiting(SecurityRateLimitPolicyNames.PublicWrite)]
 public sealed class EnrollModel : PageModel
 {
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;

@@ -1,11 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages;
 
+[EnableRateLimiting(SecurityRateLimitPolicyNames.PublicWrite)]
 public sealed class RegisterModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;

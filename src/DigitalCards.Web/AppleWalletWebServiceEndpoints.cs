@@ -1,5 +1,7 @@
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigitalCards.Web;
 
@@ -7,7 +9,9 @@ public static class AppleWalletWebServiceEndpoints
 {
     public static IEndpointRouteBuilder MapAppleWalletWebService(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/apple-wallet/v1");
+        var group = endpoints
+            .MapGroup("/apple-wallet/v1")
+            .RequireRateLimiting(SecurityRateLimitPolicyNames.WalletPublic);
 
         group.MapPost(
             "/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}",
