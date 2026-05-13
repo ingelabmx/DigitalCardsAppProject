@@ -4,8 +4,15 @@
     ViewData["Title"] = "Asociar cliente";
 }
 
-<section class="form-panel">
-    <h1>Asociar cliente con negocio</h1>
+<section class="form-panel business-operation-panel" data-testid="business-enroll-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Tarjetas</p>
+            <h1>Asociar cliente</h1>
+            <p class="lead">Alta operativa de tarjeta cliente-negocio para enviar link Wallet.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Business/Cards">Tarjetas</a>
+    </div>
 
     @if (Model.IsPilotBlocked)
     {
@@ -24,7 +31,7 @@
 
     @if (!Model.IsPilotBlocked)
     {
-        <form method="post" data-testid="enroll-form">
+        <form method="post" class="business-form-card" data-testid="enroll-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">

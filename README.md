@@ -201,6 +201,12 @@ El dashboard no muestra `businessId`, tokens Wallet, JWTs, push tokens,
 passwords ni connection strings. Para operar una tarjeta, abre
 `/Business/Cards` desde el link de tarjeta reciente.
 
+Las pantallas de negocio usan el shell visual tipo Web Forms con sidebar,
+cards, tablas/listas y acciones de operacion diaria. `/Business/Cards` tambien
+incluye un lector QR progresivo: si el navegador soporta `BarcodeDetector` y
+camara, llena la busqueda existente; si no, el negocio sigue usando username o
+correo.
+
 ## Auditoria de sellos
 
 Antes de probar auditoria contra HostGator, ejecuta:

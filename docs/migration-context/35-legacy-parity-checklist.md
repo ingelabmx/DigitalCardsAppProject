@@ -33,9 +33,9 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Flow | Modern Status | Notes |
 | --- | --- | --- |
 | Business login/logout | Ready | Cookie auth with `DigitalCards.Business`. |
-| Dashboard | Pilot | `/Business/Dashboard` shows operational summary and recent Wallet/ledger state. |
-| Search cards/clients | Pilot | `/Business/Cards` searches cards owned by authenticated business. |
-| Enroll/associate client | Pilot | `/Business/Enroll` creates/reuses `ClientCard` and sends Wallet link. |
+| Dashboard | Pilot | `/Business/Dashboard` shows operational summary and recent Wallet/ledger state with legacy-style business shell. |
+| Search cards/clients | Pilot | `/Business/Cards` searches cards owned by authenticated business and includes progressive QR scan search. |
+| Enroll/associate client | Pilot | `/Business/Enroll` creates/reuses `ClientCard`, sends Wallet link, and uses the business operation panel style. |
 | Resend Wallet email | Pilot | `/Business/Cards` resend uses opaque Wallet link token. |
 | Add stamp | Pilot | Modern stamp updates `ClientCard`, patches Google, pushes Apple, and writes `StampLedger`. |
 | Stamp audit | Pilot | `StampLedger` starts from modern deployment; no historical backfill. |
