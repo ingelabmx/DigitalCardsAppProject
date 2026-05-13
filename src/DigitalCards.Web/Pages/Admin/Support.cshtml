@@ -127,8 +127,14 @@
                                 </div>
                                 <div>
                                     <strong>@business.RecentCardCount</strong>
-                                    <span>@(business.IsPilotEnabled ? "piloto activo" : "piloto apagado")</span>
+                                    <span>@ActivationLabel(business.ActivationStatus) &middot; @(business.IsPilotEnabled ? "piloto activo" : "piloto apagado")</span>
                                 </div>
+                                @if (business.ActivationStatus == DigitalCards.Domain.BusinessActivationStatus.LegacyRetired)
+                                {
+                                    <div class="support-safe-errors" data-testid="admin-support-legacy-retired">
+                                        Legacy retirado: confirmar bloqueo manual de Web Forms para este negocio.
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
@@ -190,6 +196,7 @@
                                 }
 
                                 <div class="support-operational-state" data-testid="admin-support-operational-state">
+                                    <span>Activacion negocio: @ActivationLabel(card.Business.ActivationStatus)</span>
                                     <span>LegacySync: @(card.LegacySyncEventCount > 0 ? $"{card.LegacySyncEventCount} evento(s)" : "sin eventos recientes")</span>
                                     @if (card.LastLegacySyncAt is not null)
                                     {
@@ -252,5 +259,17 @@
         }
 
         return succeeded ? "OK" : "Fallo";
+    }
+
+    private static string ActivationLabel(DigitalCards.Domain.BusinessActivationStatus status)
+    {
+        return status switch
+        {
+            DigitalCards.Domain.BusinessActivationStatus.PilotModern => "Piloto moderno",
+            DigitalCards.Domain.BusinessActivationStatus.ModernPrimary => "Moderno principal",
+            DigitalCards.Domain.BusinessActivationStatus.LegacyRetired => "Legacy retirado",
+            DigitalCards.Domain.BusinessActivationStatus.Inactive => "Inactivo",
+            _ => "Legacy only"
+        };
     }
 }

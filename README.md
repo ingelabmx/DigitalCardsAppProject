@@ -364,6 +364,10 @@ Web Forms, pero bloquea el login moderno de `/Business/Login` y no emite cookie
 de negocio. Para reactivar, cambiar el estado a `PilotModern` o
 `ModernPrimary`.
 
+`LegacyRetired` no bloquea el flujo moderno. Es un guardrail operativo: admin y
+soporte muestran advertencias para recordar que Web Forms debe bloquearse
+manualmente para ese negocio hasta que exista automatizacion legacy.
+
 ## Perfil de cliente
 
 `/Client/Profile` permite que el cliente autenticado actualice nombre, apellido

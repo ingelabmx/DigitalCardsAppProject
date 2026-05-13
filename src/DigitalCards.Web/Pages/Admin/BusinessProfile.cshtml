@@ -28,6 +28,13 @@
 
     @if (Model.Profile is not null)
     {
+        @if (Model.Profile.ActivationStatus == DigitalCards.Domain.BusinessActivationStatus.LegacyRetired)
+        {
+            <div class="alert alert-warning" role="status" data-testid="admin-business-legacy-retired-warning">
+                Legacy retirado: el flujo moderno queda activo, pero Web Forms debe bloquearse manualmente para este negocio hasta que exista automatizacion legacy.
+            </div>
+        }
+
         <div class="business-profile-grid">
             <form method="post"
                   asp-page-handler="Save"

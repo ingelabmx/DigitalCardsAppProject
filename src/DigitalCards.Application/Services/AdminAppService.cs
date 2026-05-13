@@ -1323,7 +1323,8 @@ public sealed class AdminAppService
             business.Name,
             business.Email,
             RecentCardCount,
-            pilot?.IsEnabled ?? false);
+            pilot?.IsEnabled ?? false,
+            pilot?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly);
     }
 
     private static StampLedgerEventDto ToStampLedgerEventDto(StampLedgerRecord record)
