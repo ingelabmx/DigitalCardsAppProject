@@ -251,9 +251,7 @@ asocia/habilita al cliente dentro de su programa:
     "Pilot": {
       "Enabled": true,
       "AllowedBusinessIds": [],
-      "AllowedBusinessEmails": ["NEGOCIO_TEST_EMAIL"],
-      "AllowedClientEmails": ["CLIENTE_TEST_EMAIL"],
-      "AllowedClientEmailDomains": ["example.test"]
+      "AllowedBusinessEmails": ["NEGOCIO_TEST_EMAIL"]
     }
   }
 }
@@ -267,10 +265,7 @@ Con el piloto activo:
 - un negocio habilitado puede asociar clientes desde `/Business/Enroll` y operar
   sus tarjetas desde `/Business/Cards`;
 - Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
-  publicas por token/autorizacion propia;
-- `AllowedClientEmails` y `AllowedClientEmailDomains` quedan solo como fallback
-  temporal; `/Admin/Clients` es un guardrail operativo, no el flujo normal de
-  negocio.
+  publicas por token/autorizacion propia.
 
 Rollback rapido:
 
@@ -309,7 +304,6 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Administradores: `http://localhost:5031/Admin/AdminUsers`
 - Crear admin: `http://localhost:5031/Admin/CreateAdmin`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
-- Clientes piloto: `http://localhost:5031/Admin/Clients`
 - Soporte: `http://localhost:5031/Admin/Support`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
@@ -318,21 +312,9 @@ Con `DigitalCards:Pilot:Enabled=true`, un negocio puede usar el flujo moderno
 si esta habilitado en `ModernPilotBusiness` o si sigue en el allowlist temporal
 de `appsettings.Local.json`. La recomendacion operativa es mover los negocios
 a `/Admin/Businesses` y dejar `AllowedBusinessEmails`/`AllowedBusinessIds` solo
-como fallback.
-
-Antes de administrar clientes piloto desde la app moderna contra HostGator,
-ejecuta:
-
-```text
-docs/migration-context/26-client-pilot-management-hostgator.sql
-```
-
-`/Admin/Clients` es un guardrail temporal para pruebas controladas, soporte y
-rollback. El flujo real corregido es que el negocio habilitado asocia al cliente
-desde `/Business/Enroll` y opera la tarjeta desde `/Business/Cards`.
-
-La recomendacion operativa es dejar el allowlist local de clientes vacio salvo
-rollback, y no depender de admin para cada cliente en el flujo normal.
+como fallback. Ya no hay allowlist operativo de clientes: el admin habilita el
+negocio y el negocio habilitado asocia al cliente desde `/Business/Enroll` u
+opera la tarjeta desde `/Business/Cards`.
 
 ## Soporte admin
 
@@ -666,6 +648,6 @@ Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
 Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
 ```
 
-Despues valida manualmente: login negocio allowlisted, enroll cliente
-allowlisted, correo real, Apple Wallet en iPhone, Google Wallet, agregar sello
-moderno y update en ambas Wallets.
+Despues valida manualmente: login negocio habilitado por admin, asociar cliente
+desde el negocio, correo real, Apple Wallet en iPhone, Google Wallet, agregar
+sello moderno y update en ambas Wallets.

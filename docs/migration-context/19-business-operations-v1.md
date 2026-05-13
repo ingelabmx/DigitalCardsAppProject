@@ -39,7 +39,7 @@ Esta fase empieza a reemplazar la operacion diaria de negocio de Web Forms sin a
 
 - `BusinessId` sale de la cookie de negocio, no de query string ni hidden input.
 - Los handlers de `/Business/Cards` validan que `cardId` pertenezca al negocio autenticado.
-- Las acciones modernas quedan bloqueadas si `DigitalCards:Pilot:Enabled=true` y el negocio/cliente no estan allowlisted.
+- Las acciones modernas quedan bloqueadas si `DigitalCards:Pilot:Enabled=true` y el negocio no esta habilitado.
 - No se muestran passwords, tokens Wallet, JWTs, push tokens, certificados ni connection strings.
 
 ## Compatibilidad

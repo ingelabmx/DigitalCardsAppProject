@@ -1,5 +1,10 @@
 # 26 Client Pilot Management v1
 
+> Reemplazado por `44 Business Only Pilot Access v1`: la allowlist de clientes
+> ya no bloquea flujos modernos. El control operativo del piloto queda en
+> negocios habilitados desde admin; el negocio habilitado asocia clientes desde
+> `/Business/Enroll` y opera tarjetas desde `/Business/Cards`.
+
 Esta fase mueve el control operativo temporal de clientes piloto desde
 `appsettings.Local.json` hacia la UI admin moderna. El admin puede buscar
 clientes legacy de `UserClient` y habilitar/deshabilitar clientes para pruebas

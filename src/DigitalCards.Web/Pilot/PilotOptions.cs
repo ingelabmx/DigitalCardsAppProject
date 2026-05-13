@@ -10,13 +10,6 @@ public sealed class PilotOptions
 
     public string[] AllowedBusinessEmails { get; set; } = [];
 
-    public string[] AllowedClientEmails { get; set; } = [];
-
-    public string[] AllowedClientEmailDomains { get; set; } = [];
-
     public string BlockedBusinessMessage { get; set; } =
         "Este negocio no esta habilitado para el piloto moderno.";
-
-    public string BlockedClientMessage { get; set; } =
-        "Este cliente no esta habilitado para el piloto moderno.";
 }

@@ -20,7 +20,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Admin login | Ready | `/Admin/Login` uses `UserClient.RoleID=1`, modern credential migration, and admin cookie. |
 | Admin creation/reset | Ready | `/Admin/AdminUsers` and `/Admin/CreateAdmin`; no public bootstrap endpoint. |
 | Business pilot management | Ready | `/Admin/Businesses` backed by `ModernPilotBusiness`. |
-| Client pilot guardrail | Pilot | `/Admin/Clients` exists as operational guardrail; normal client enablement remains business-driven. |
+| Client pilot guardrail | Retired | Client allowlist no longer gates modern flows; enabled businesses associate clients directly. |
 | Business creation | Ready | `/Admin/CreateBusiness` inserts into legacy `Business` and creates modern credential. |
 | Business profile/password reset | Ready | `/Admin/BusinessProfile/{businessId}` edits legacy-safe fields and resets credentials. |
 | Business branding | Pilot | Branding table exists and feeds email/Wallet/client UI; logo upload is not implemented. |
@@ -78,7 +78,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Cloudflare domain | Ready | `app.puntelio.com` is canonical for Wallet links. |
 | Health checks | Ready | `/health` and `/health/ready`. |
 | Data Protection keys | Ready | External path supported for stable cookies. |
-| Pilot guardrails | Ready | Business allowlist is admin-managed; client guardrail exists. |
+| Pilot guardrails | Ready | Business allowlist is admin-managed; client allowlist is retired. |
 | Production service hosting | Partial | Needs a dedicated runbook/service setup PR. |
 | Monitoring/alerts | Partial | Logs exist; no external monitoring integration yet. |
 | Rollback | Pilot | Primary rollback remains Web Forms plus disabling pilot/sync. |

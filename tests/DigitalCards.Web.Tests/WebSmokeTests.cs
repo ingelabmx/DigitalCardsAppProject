@@ -367,7 +367,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task AdminClients_EnableAndDisablePilotClientRecordsState()
+    public async Task AdminClients_IsReadOnlyAfterClientAllowlistRetirement()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
@@ -381,47 +381,18 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var userName = NewLegacySafeUserName("pc");
         var email = $"{userName}@blocked.test";
         await RegisterClientAsync(fake.Factory, userName, email);
-        Guid clientId;
-        using (var scope = fake.Factory.Services.CreateScope())
-        {
-            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
-            clientId = store.Clients.Single(existing => existing.UserName == userName).Id;
-        }
 
         await LoginAdminAsync(client);
         var searchHtml = await client.GetStringAsync($"/Admin/Clients?Query={userName}");
         Assert.Contains("admin-client-row", searchHtml);
+        Assert.Contains("admin-client-allowlist-retired", searchHtml);
+        Assert.Contains("Operable por negocio habilitado", searchHtml);
         Assert.Contains(userName, searchHtml);
         Assert.Contains(email, searchHtml);
         Assert.DoesNotContain("password", searchHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("hash", searchHtml, StringComparison.OrdinalIgnoreCase);
-
-        var enableToken = ExtractAntiforgeryToken(searchHtml);
-        var enableResponse = await client.PostAsync(
-            $"/Admin/Clients?handler=Enable&Query={userName}",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["clientId"] = clientId.ToString(),
-                ["notes"] = "cliente piloto web test",
-                ["__RequestVerificationToken"] = enableToken
-            }));
-        var enableHtml = await enableResponse.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
-        Assert.Contains("Piloto habilitado", enableHtml);
-
-        var disableToken = ExtractAntiforgeryToken(enableHtml);
-        var disableResponse = await client.PostAsync(
-            $"/Admin/Clients?handler=Disable&Query={userName}",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["clientId"] = clientId.ToString(),
-                ["__RequestVerificationToken"] = disableToken
-            }));
-        var disableHtml = await disableResponse.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
-        Assert.Contains("Piloto deshabilitado", disableHtml);
+        Assert.DoesNotContain("admin-enable-client-pilot", searchHtml);
+        Assert.DoesNotContain("admin-disable-client-pilot", searchHtml);
     }
 
     [Fact]
@@ -1323,8 +1294,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
             ["DigitalCards:Pilot:Enabled"] = "true",
-            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test",
-            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test"
         });
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -1348,8 +1318,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
             ["DigitalCards:Pilot:Enabled"] = "true",
-            ["DigitalCards:Pilot:AllowedBusinessIds:0"] = "11111111-1111-1111-1111-111111111111",
-            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+            ["DigitalCards:Pilot:AllowedBusinessIds:0"] = "11111111-1111-1111-1111-111111111111"
         });
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -1405,8 +1374,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
             ["DigitalCards:Pilot:Enabled"] = "true",
-            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "other@digitalcards.test",
-            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "example.test"
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "other@digitalcards.test"
         });
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -1600,13 +1568,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task Pilot_AllowsAllowedBusinessToEnrollClientOutsideClientAllowlist()
+    public async Task Pilot_AllowsAllowedBusinessToEnrollAnyClient()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
             ["DigitalCards:Pilot:Enabled"] = "true",
-            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test",
-            ["DigitalCards:Pilot:AllowedClientEmailDomains:0"] = "allowed.test"
+            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test"
         });
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {

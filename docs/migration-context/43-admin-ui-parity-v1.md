@@ -9,7 +9,7 @@ instalar el shell legacy compartido.
 
 - `/Admin/Dashboard` usa una grilla de acciones admin mas cercana al dashboard
   legacy.
-- `/Admin/Businesses`, `/Admin/AdminUsers` y `/Admin/Clients` usan clases de
+- `/Admin/Businesses` y `/Admin/AdminUsers` usan clases de
   lista admin tipo tabla/card para acciones claras.
 - Se mantiene el shell con sidebar/header/footer de `42 Modern Legacy Shell`.
 - No cambia autorizacion, cookies, rutas ni reglas de negocio.
