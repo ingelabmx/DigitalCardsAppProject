@@ -747,3 +747,24 @@ Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
 Despues valida manualmente: login negocio habilitado por admin, asociar cliente
 desde el negocio, correo real, Apple Wallet en iPhone, Google Wallet, agregar
 sello moderno y update en ambas Wallets.
+
+## Smoke de cutover por negocio
+
+Smoke fake:
+
+```powershell
+$env:RUN_PILOT_BUSINESS_CUTOVER_SMOKE='1'
+dotnet test tests\DigitalCards.Application.Tests\DigitalCards.Application.Tests.csproj --filter PilotBusinessCutoverSmoke
+Remove-Item Env:\RUN_PILOT_BUSINESS_CUTOVER_SMOKE -ErrorAction SilentlyContinue
+```
+
+Smoke real controlado:
+
+```powershell
+$env:RUN_PILOT_BUSINESS_CUTOVER_REAL_SMOKE='1'
+dotnet test tests\DigitalCards.Application.Tests\DigitalCards.Application.Tests.csproj --filter PilotBusinessCutoverRealSmoke
+Remove-Item Env:\RUN_PILOT_BUSINESS_CUTOVER_REAL_SMOKE -ErrorAction SilentlyContinue
+```
+
+El real usa MySQL, SMTP, Google Wallet y Apple Wallet segun
+`%USERPROFILE%\.digitalcards\appsettings.Local.json`.
