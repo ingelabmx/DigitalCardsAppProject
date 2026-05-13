@@ -25,13 +25,16 @@ public sealed class GoogleWalletService : IGoogleWalletService
     };
 
     private readonly ILogger<GoogleWalletService> _logger;
+    private readonly DigitalCardsInfrastructureOptions _infrastructureOptions;
     private readonly GoogleWalletOptions _options;
 
     public GoogleWalletService(
         IOptions<GoogleWalletOptions> options,
+        IOptions<DigitalCardsInfrastructureOptions> infrastructureOptions,
         ILogger<GoogleWalletService> logger)
     {
         _options = options.Value;
+        _infrastructureOptions = infrastructureOptions.Value;
         _logger = logger;
     }
 
@@ -73,7 +76,12 @@ public sealed class GoogleWalletService : IGoogleWalletService
 
         var patchBody = new GenericObject
         {
-            TextModulesData = BuildTextModules(card)
+            TextModulesData = BuildTextModules(card),
+            CardTitle = Localized(GetCardTitle(business)),
+            Header = Localized(client.FullName),
+            Subheader = Localized("Titular"),
+            HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor,
+            Logo = BuildLogoImage(business)
         };
 
         try
@@ -267,9 +275,10 @@ public sealed class GoogleWalletService : IGoogleWalletService
             genericObject.HeroImage = Image(_options.HeroImageUri, "Hero image");
         }
 
-        if (!string.IsNullOrWhiteSpace(_options.LogoImageUri))
+        var logoImage = BuildLogoImage(business);
+        if (logoImage is not null)
         {
-            genericObject.Logo = Image(_options.LogoImageUri, "Card logo");
+            genericObject.Logo = logoImage;
         }
 
         return genericObject;
@@ -377,6 +386,34 @@ public sealed class GoogleWalletService : IGoogleWalletService
             },
             ContentDescription = Localized(description)
         };
+    }
+
+    private Image? BuildLogoImage(Business business)
+    {
+        var uri = BuildPublicLogoUri(business.LogoPath) ?? _options.LogoImageUri;
+        return string.IsNullOrWhiteSpace(uri) ? null : Image(uri, $"{business.DisplayName} logo");
+    }
+
+    private string? BuildPublicLogoUri(string? logoPath)
+    {
+        if (string.IsNullOrWhiteSpace(logoPath))
+        {
+            return null;
+        }
+
+        if (System.Uri.TryCreate(logoPath, UriKind.Absolute, out var absolute) &&
+            (absolute.Scheme == System.Uri.UriSchemeHttp || absolute.Scheme == System.Uri.UriSchemeHttps))
+        {
+            return absolute.ToString();
+        }
+
+        if (!logoPath.StartsWith("/", StringComparison.Ordinal) ||
+            string.IsNullOrWhiteSpace(_infrastructureOptions.PublicBaseUrl))
+        {
+            return null;
+        }
+
+        return $"{_infrastructureOptions.PublicBaseUrl.TrimEnd('/')}{logoPath}";
     }
 
     private LocalizedString Localized(string value)

@@ -100,6 +100,7 @@
             <form method="post"
                   asp-page-handler="Branding"
                   asp-route-businessId="@Model.Profile.BusinessId"
+                  enctype="multipart/form-data"
                   class="business-profile-panel business-branding-panel"
                   data-testid="admin-business-branding-form">
                 <h2>Branding Wallet</h2>
@@ -123,6 +124,13 @@
                 <div class="mb-3">
                     <label asp-for="BrandingInput.LogoPath" class="form-label">Logo publico</label>
                     <input asp-for="BrandingInput.LogoPath" class="form-control" maxlength="200" data-testid="admin-business-branding-logo" />
+                    <small class="form-text text-muted">Debe ser URL publica o ruta relativa. El upload seguro llena este campo automaticamente.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.LogoUpload" class="form-label">Subir logo</label>
+                    <input asp-for="BrandingInput.LogoUpload" class="form-control" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-testid="admin-business-branding-logo-upload" />
+                    <small class="form-text text-muted">PNG recomendado para Apple Wallet. Maximo 2 MB.</small>
                 </div>
 
                 <div class="branding-color-row">
