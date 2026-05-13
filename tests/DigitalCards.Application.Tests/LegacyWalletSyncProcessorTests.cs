@@ -9,6 +9,31 @@ namespace DigitalCards.Application.Tests;
 public sealed class LegacyWalletSyncProcessorTests
 {
     [Fact]
+    public void LegacyWalletSyncState_RecordsSafeRunState()
+    {
+        var state = new LegacyWalletSyncState();
+        var startedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var completedAt = DateTimeOffset.UtcNow;
+
+        state.RecordStarted(startedAt);
+        state.RecordCompleted(completedAt, new LegacyWalletSyncRunResult(3, 2, 1, 0));
+
+        var snapshot = state.Snapshot(enabled: true);
+
+        Assert.True(snapshot.Enabled);
+        Assert.Equal(startedAt, snapshot.LastStartedAt);
+        Assert.Equal(completedAt, snapshot.LastCompletedAt);
+        Assert.Equal(new LegacyWalletSyncRunResult(3, 2, 1, 0), snapshot.LastResult);
+        Assert.Null(snapshot.LastErrorSummary);
+
+        state.RecordFailed(completedAt.AddSeconds(1), new InvalidOperationException("secret detail"));
+        var failed = state.Snapshot(enabled: true);
+
+        Assert.Equal("InvalidOperationException", failed.LastErrorSummary);
+        Assert.DoesNotContain("secret detail", failed.LastErrorSummary);
+    }
+
+    [Fact]
     public async Task SyncAsync_PatchesWalletsOncePerChangedFingerprint()
     {
         var card = CreateCard(googleObjectId: "google-object");

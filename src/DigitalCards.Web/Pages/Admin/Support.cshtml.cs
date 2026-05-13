@@ -17,15 +17,18 @@ public sealed class SupportModel : PageModel
 {
     private readonly AdminAppService _adminApp;
     private readonly LegacyWalletSyncOptions _legacyWalletSyncOptions;
+    private readonly LegacyWalletSyncState _legacyWalletSyncState;
     private readonly ILogger<SupportModel> _logger;
 
     public SupportModel(
         AdminAppService adminApp,
         IOptions<LegacyWalletSyncOptions> legacyWalletSyncOptions,
+        LegacyWalletSyncState legacyWalletSyncState,
         ILogger<SupportModel> logger)
     {
         _adminApp = adminApp;
         _legacyWalletSyncOptions = legacyWalletSyncOptions.Value;
+        _legacyWalletSyncState = legacyWalletSyncState;
         _logger = logger;
     }
 
@@ -50,6 +53,9 @@ public sealed class SupportModel : PageModel
     public AdminSupportResult? Result { get; private set; }
 
     public LegacyWalletSyncOptions LegacyWalletSync => _legacyWalletSyncOptions;
+
+    public LegacyWalletSyncStateSnapshot LegacyWalletSyncState =>
+        _legacyWalletSyncState.Snapshot(_legacyWalletSyncOptions.Enabled);
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -92,7 +98,8 @@ public sealed class SupportModel : PageModel
                 _legacyWalletSyncOptions.Enabled,
                 _legacyWalletSyncOptions.PollIntervalSeconds,
                 _legacyWalletSyncOptions.LookbackMinutes,
-                _legacyWalletSyncOptions.BatchSize
+                _legacyWalletSyncOptions.BatchSize,
+                State = LegacyWalletSyncState
             },
             counts = new
             {

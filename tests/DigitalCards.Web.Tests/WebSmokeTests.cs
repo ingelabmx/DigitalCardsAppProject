@@ -161,6 +161,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-cutover-page", html);
         Assert.Contains("Demo Coffee", html);
         Assert.Contains("admin-cutover-readiness", html);
+        Assert.Contains("admin-cutover-sync-status", html);
 
         var response = await client.PostAsync(
             "/Admin/Cutover?handler=Status",
@@ -543,6 +544,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-support-filters", html);
         Assert.Contains("LegacyWalletSync:", html);
         Assert.Contains("Activo", html);
+        Assert.Contains("admin-support-sync-last-run", html);
         Assert.Contains(userName, html);
         Assert.Contains("Demo Coffee", html);
         Assert.Contains("Emitida", html);
