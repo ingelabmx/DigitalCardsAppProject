@@ -63,16 +63,6 @@ public sealed class EnrollModel : PageModel
 
         try
         {
-            var clientAccess = await _pilotAccess.CheckClientAsync(Input.UserNameOrEmail, cancellationToken);
-            if (!clientAccess.IsAllowed)
-            {
-                _logger.LogWarning(
-                    "Modern enroll blocked by client pilot allowlist for business {BusinessId}.",
-                    BusinessAuth.GetBusinessId(User));
-                ModelState.AddModelError(string.Empty, clientAccess.Message!);
-                return Page();
-            }
-
             var businessId = BusinessAuth.GetBusinessId(User);
             Result = await _appService.EnrollClientAsync(
                 new EnrollClientCommand(businessId, Input.UserNameOrEmail, GetBaseUrl()),

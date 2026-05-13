@@ -211,7 +211,8 @@ puede cambiar `AllowLegacyCardIdTokens` a `false`.
 ## Piloto controlado
 
 Cuando `app.puntelio.com` use datos reales, activa el piloto para que solo los
-negocios y clientes habilitados usen las pantallas modernas:
+negocios habilitados usen las pantallas modernas. El negocio habilitado es quien
+asocia/habilita al cliente dentro de su programa:
 
 ```json
 {
@@ -232,12 +233,13 @@ Con el piloto activo:
 - negocios fuera del allowlist pueden iniciar sesion, pero ven bloqueo en
   `/Business/Dashboard`, `/Business/Enroll`, `/Business/Cards` y
   `/Business/Stamp`;
-- clientes no habilitados quedan bloqueados para enroll, reenvio de link Wallet
-  y sellos modernos;
+- un negocio habilitado puede asociar clientes desde `/Business/Enroll` y operar
+  sus tarjetas desde `/Business/Cards`;
 - Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
   publicas por token/autorizacion propia;
 - `AllowedClientEmails` y `AllowedClientEmailDomains` quedan solo como fallback
-  temporal; la fuente operativa principal es `/Admin/Clients`.
+  temporal; `/Admin/Clients` es un guardrail operativo, no el flujo normal de
+  negocio.
 
 Rollback rapido:
 
@@ -293,12 +295,25 @@ ejecuta:
 docs/migration-context/26-client-pilot-management-hostgator.sql
 ```
 
-Con `DigitalCards:Pilot:Enabled=true`, un cliente puede usar enroll, reenvio de
-link Wallet y sellos modernos si esta habilitado en `ModernPilotClient` o si
-sigue permitido por `AllowedClientEmails` / `AllowedClientEmailDomains`.
+`/Admin/Clients` es un guardrail temporal para pruebas controladas, soporte y
+rollback. El flujo real corregido es que el negocio habilitado asocia al cliente
+desde `/Business/Enroll` y opera la tarjeta desde `/Business/Cards`.
 
-La recomendacion operativa es buscar clientes en `/Admin/Clients`, habilitarlos
-desde la UI y dejar el allowlist local de clientes vacio salvo rollback.
+La recomendacion operativa es dejar el allowlist local de clientes vacio salvo
+rollback, y no depender de admin para cada cliente en el flujo normal.
+
+## Dashboard cliente
+
+El cliente moderno entra desde:
+
+```text
+http://localhost:5031/Client/Login
+```
+
+El login usa `UserClient.RoleID=2` y crea una cookie separada
+`.DigitalCards.Client`. Desde `/Client/Dashboard`, el cliente abre
+`/Client/Cards` para ver solo sus propias tarjetas. Los links Wallet mostrados
+ahi usan tokens opacos nuevos y no exponen `CardID` directo.
 
 ## Administracion de acceso admin
 

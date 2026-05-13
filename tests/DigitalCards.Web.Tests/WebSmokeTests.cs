@@ -314,7 +314,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task AdminClients_EnableAndDisablePilotClientControlsModernAccess()
+    public async Task AdminClients_EnableAndDisablePilotClientRecordsState()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
@@ -334,20 +334,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
             clientId = store.Clients.Single(existing => existing.UserName == userName).Id;
         }
-
-        await LoginBusinessAsync(client);
-        var blockedToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
-        var blockedResponse = await client.PostAsync(
-            "/Business/Enroll",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Input.UserNameOrEmail"] = userName,
-                ["__RequestVerificationToken"] = blockedToken
-            }));
-        var blockedHtml = await blockedResponse.Content.ReadAsStringAsync();
-
-        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", blockedHtml);
-        Assert.DoesNotContain("Correo generado", blockedHtml);
 
         await LoginAdminAsync(client);
         var searchHtml = await client.GetStringAsync($"/Admin/Clients?Query={userName}");
@@ -371,19 +357,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
         Assert.Contains("Piloto habilitado", enableHtml);
 
-        var allowedToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
-        var allowedResponse = await client.PostAsync(
-            "/Business/Enroll",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Input.UserNameOrEmail"] = userName,
-                ["__RequestVerificationToken"] = allowedToken
-            }));
-        var allowedHtml = await allowedResponse.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, allowedResponse.StatusCode);
-        Assert.Contains("Correo generado", allowedHtml);
-
         var disableToken = ExtractAntiforgeryToken(enableHtml);
         var disableResponse = await client.PostAsync(
             $"/Admin/Clients?handler=Disable&Query={userName}",
@@ -396,20 +369,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
         Assert.Contains("Piloto deshabilitado", disableHtml);
-
-        var blockedAgainToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
-        var blockedAgainResponse = await client.PostAsync(
-            "/Business/Enroll",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Input.UserNameOrEmail"] = userName,
-                ["__RequestVerificationToken"] = blockedAgainToken
-            }));
-        var blockedAgainHtml = await blockedAgainResponse.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, blockedAgainResponse.StatusCode);
-        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", blockedAgainHtml);
-        Assert.DoesNotContain("Correo generado", blockedAgainHtml);
     }
 
     [Fact]
@@ -803,6 +762,108 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task ClientPages_WithoutCookie_RedirectToLogin()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        foreach (var path in new[] { "/Client/Dashboard", "/Client/Cards" })
+        {
+            var response = await client.GetAsync(path);
+
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Contains("/Client/Login", response.Headers.Location?.OriginalString);
+        }
+    }
+
+    [Fact]
+    public async Task ClientLogin_WithValidCredentials_EmitsClientCookieAndRedirects()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("cl");
+        const string password = "clientpass1";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", password);
+
+        var response = await LoginClientAsync(client, userName, password);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Client/Dashboard", response.Headers.Location?.OriginalString);
+        Assert.True(HasClientCookie(response));
+        Assert.False(HasBusinessCookie(response));
+        Assert.False(HasAdminCookie(response));
+    }
+
+    [Fact]
+    public async Task ClientLogin_WithInvalidOrBusinessCredentials_DoesNotEmitClientCookie()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var businessLogin = await LoginClientAsync(client, "demo@digitalcards.test", "business123");
+        var businessHtml = await businessLogin.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, businessLogin.StatusCode);
+        Assert.Contains("Credenciales de cliente invalidas", businessHtml);
+        Assert.False(HasClientCookie(businessLogin));
+    }
+
+    [Fact]
+    public async Task ClientCards_WithCookieShowsOnlyAuthenticatedClientCards()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var firstUserName = NewLegacySafeUserName("c1");
+        var secondUserName = NewLegacySafeUserName("c2");
+        const string password = "clientpass1";
+        await CreateEnrollmentAsync(fake.Factory, firstUserName, $"{firstUserName}@example.test", password);
+        await CreateEnrollmentAsync(fake.Factory, secondUserName, $"{secondUserName}@example.test", password);
+
+        var login = await LoginClientAsync(http, firstUserName, password);
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+
+        var html = await http.GetStringAsync($"/Client/Cards?UserName={secondUserName}");
+
+        Assert.Contains("client-card-results", html);
+        Assert.Contains(firstUserName, html);
+        Assert.Contains("Demo Coffee", html);
+        Assert.DoesNotContain(secondUserName, html);
+        Assert.DoesNotContain("client-cards-username", html);
+    }
+
+    [Fact]
+    public async Task ClientLogout_ClearsCookieAndRedirectsToLogin()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("co");
+        const string password = "clientpass1";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", password);
+        await LoginClientAsync(client, userName, password);
+
+        var response = await client.GetAsync("/Client/Logout");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Client/Login", response.Headers.Location?.OriginalString);
+        Assert.True(HasExpiredClientCookie(response));
+    }
+
+    [Fact]
     public async Task Pilot_WithAllowedBusinessEmail_AllowsBusinessPages()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
@@ -1049,7 +1110,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task Pilot_BlocksEnrollForClientOutsideAllowlist()
+    public async Task Pilot_AllowsAllowedBusinessToEnrollClientOutsideClientAllowlist()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
         {
@@ -1076,8 +1137,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Este cliente no esta habilitado para el piloto moderno.", html);
-        Assert.DoesNotContain("Correo generado", html);
+        Assert.Contains("Correo generado", html);
+        Assert.DoesNotContain("Este cliente no esta habilitado para el piloto moderno.", html);
     }
 
     [Fact]
@@ -1314,7 +1375,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
     private static async Task<EnrollClientResult> CreateEnrollmentAsync(
         WebApplicationFactory<Program> factory,
-        string userName)
+        string userName,
+        string? email = null,
+        string password = "")
     {
         using var scope = factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
@@ -1323,7 +1386,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             userName,
             "Web",
             "Apple",
-            $"{userName}@example.test"));
+            email ?? $"{userName}@example.test",
+            password));
 
         var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
             "demo@digitalcards.test",
@@ -1386,7 +1450,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     private static async Task RegisterClientAsync(
         WebApplicationFactory<Program> factory,
         string userName,
-        string? email = null)
+        string? email = null,
+        string password = "")
     {
         using var scope = factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
@@ -1395,7 +1460,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             userName,
             "Web",
             "Auth",
-            email ?? $"{userName}@example.test"));
+            email ?? $"{userName}@example.test",
+            password));
     }
 
     private static async Task<HttpResponseMessage> LoginBusinessAsync(
@@ -1422,6 +1488,22 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var token = await GetAntiforgeryTokenAsync(client, "/Admin/Login");
         return await client.PostAsync(
             "/Admin/Login",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userNameOrEmail,
+                ["Input.Password"] = password,
+                ["__RequestVerificationToken"] = token
+            }));
+    }
+
+    private static async Task<HttpResponseMessage> LoginClientAsync(
+        HttpClient client,
+        string userNameOrEmail,
+        string password)
+    {
+        var token = await GetAntiforgeryTokenAsync(client, "/Client/Login");
+        return await client.PostAsync(
+            "/Client/Login",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["Input.UserNameOrEmail"] = userNameOrEmail,
@@ -1477,11 +1559,25 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             values.Any(value => value.Contains(".DigitalCards.Admin=", StringComparison.Ordinal));
     }
 
+    private static bool HasClientCookie(HttpResponseMessage response)
+    {
+        return response.Headers.TryGetValues("Set-Cookie", out var values) &&
+            values.Any(value => value.Contains(".DigitalCards.Client=", StringComparison.Ordinal));
+    }
+
     private static bool HasExpiredBusinessCookie(HttpResponseMessage response)
     {
         return response.Headers.TryGetValues("Set-Cookie", out var values) &&
             values.Any(value =>
                 value.Contains(".DigitalCards.Business=", StringComparison.Ordinal) &&
+                value.Contains("expires=", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasExpiredClientCookie(HttpResponseMessage response)
+    {
+        return response.Headers.TryGetValues("Set-Cookie", out var values) &&
+            values.Any(value =>
+                value.Contains(".DigitalCards.Client=", StringComparison.Ordinal) &&
                 value.Contains("expires=", StringComparison.OrdinalIgnoreCase));
     }
 

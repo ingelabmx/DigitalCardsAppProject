@@ -6,14 +6,7 @@
 
 <section class="form-panel">
     <h1>Tarjetas del cliente</h1>
-
-    <form method="get" data-testid="client-cards-form">
-        <div class="mb-3">
-            <label asp-for="UserName" class="form-label">Usuario o correo</label>
-            <input asp-for="UserName" class="form-control" data-testid="client-cards-username" />
-        </div>
-        <button class="btn btn-primary" type="submit" data-testid="client-cards-submit">Buscar</button>
-    </form>
+    <p class="text-muted">Estas tarjetas pertenecen a tu sesion de cliente.</p>
 </section>
 
 @if (Model.Cards.Count > 0)
@@ -24,11 +17,20 @@
         {
             <article class="border-top py-3" data-testid="client-card">
                 <h3>@card.BusinessName</h3>
+                <p class="text-muted">@card.ClientUserName</p>
                 <p>Sellos actuales: <strong>@card.CurrentStamps</strong></p>
                 <p>Sellos historicos: <strong>@card.LifetimeStamps</strong></p>
-                <p>Google Wallet: <strong>@(card.GoogleObjectId is null ? "Pendiente" : "Google emitida")</strong></p>
+                <p>Google Wallet: <strong>@(card.GoogleIssued ? "Google emitida" : "Pendiente")</strong></p>
+                <p>
+                    <a class="btn btn-outline-primary btn-sm" asp-page="/Wallet/Select" asp-route-token="@card.WalletSelectToken" data-testid="client-card-wallet-link">Abrir Wallet</a>
+                </p>
             </article>
         }
     </section>
 }
-
+else
+{
+    <section class="result-panel mt-3" data-testid="client-card-results">
+        <p class="text-muted">Todavia no tienes tarjetas asociadas.</p>
+    </section>
+}

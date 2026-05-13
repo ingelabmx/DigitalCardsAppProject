@@ -40,15 +40,11 @@ public sealed class CardsModel : PageModel
 
     public string? PilotBlockMessage { get; private set; }
 
-    public string? ClientPilotBlockMessage { get; private set; }
-
     public string? StatusMessage { get; private set; }
 
     public string? ResentEnrollmentUrl { get; private set; }
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
-
-    public bool IsClientPilotBlocked => ClientPilotBlockMessage is not null;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -134,7 +130,6 @@ public sealed class CardsModel : PageModel
             return;
         }
 
-        await SetClientPilotBlockAsync(Detail.Client.Email, cancellationToken);
     }
 
     private async Task LoadSearchResultsAsync(CancellationToken cancellationToken)
@@ -168,13 +163,6 @@ public sealed class CardsModel : PageModel
             return false;
         }
 
-        if (!await SetClientPilotBlockAsync(Detail.Client.Email, cancellationToken))
-        {
-            ModelState.AddModelError(string.Empty, ClientPilotBlockMessage!);
-            await LoadSearchResultsAsync(cancellationToken);
-            return false;
-        }
-
         return true;
     }
 
@@ -188,19 +176,6 @@ public sealed class CardsModel : PageModel
         }
 
         PilotBlockMessage = null;
-        return true;
-    }
-
-    private async Task<bool> SetClientPilotBlockAsync(string clientEmail, CancellationToken cancellationToken)
-    {
-        var access = await _pilotAccess.CheckClientAsync(clientEmail, cancellationToken);
-        if (!access.IsAllowed)
-        {
-            ClientPilotBlockMessage = access.Message;
-            return false;
-        }
-
-        ClientPilotBlockMessage = null;
         return true;
     }
 

@@ -1,0 +1,24 @@
+@page
+@model DigitalCards.Web.Pages.Client.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard cliente";
+}
+
+<section class="app-surface">
+    <div>
+        <p class="eyebrow">Cliente</p>
+        <h1 data-testid="client-dashboard-title">@Model.ClientName</h1>
+        <p class="lead">Consulta tus tarjetas de lealtad y vuelve a abrir tus links Wallet.</p>
+    </div>
+
+    <div class="action-grid">
+        <a class="action-card" asp-page="/Client/Cards" data-testid="client-dashboard-cards-link">
+            <span>Mis tarjetas</span>
+            <small>Sellos actuales, historicos y estado Wallet.</small>
+        </a>
+        <a class="action-card" asp-page="/Client/Logout" data-testid="client-logout-link">
+            <span>Salir cliente</span>
+            <small>Cierra la sesion de cliente.</small>
+        </a>
+    </div>
+</section>

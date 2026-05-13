@@ -40,6 +40,12 @@
             <span asp-validation-for="Input.Email" class="text-danger"></span>
         </div>
 
+        <div class="mb-3">
+            <label asp-for="Input.Password" class="form-label"></label>
+            <input asp-for="Input.Password" class="form-control" data-testid="register-password" />
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+
         <button class="btn btn-primary" type="submit" data-testid="register-submit">Registrar</button>
     </form>
 </section>
@@ -47,4 +53,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

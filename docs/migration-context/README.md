@@ -39,6 +39,7 @@ Documentos:
 - `25-admin-access-management-hostgator.sql`: tabla nueva para hashes modernos de admin.
 - `26-client-pilot-management-v1.md`: administracion de clientes piloto desde UI admin.
 - `26-client-pilot-management-hostgator.sql`: tabla nueva para clientes piloto.
+- `27-client-dashboard-v1.md`: login/dashboard moderno de cliente con cookie propia.
 
 Notas:
 

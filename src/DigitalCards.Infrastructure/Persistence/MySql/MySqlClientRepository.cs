@@ -17,13 +17,14 @@ public sealed class MySqlClientRepository : IClientRepository
     {
         const string sql = """
             insert into UserClient (UserName, UserPassword, FirstName, Lastname, UserEmail, RoleID)
-            values (@UserName, '', @FirstName, @LastName, @Email, 2);
+            values (@UserName, @UserPassword, @FirstName, @LastName, @Email, 2);
             """;
 
         await using var connection = _connectionFactory.Create();
         await connection.ExecuteAsync(new CommandDefinition(sql, new
         {
             client.UserName,
+            UserPassword = client.PasswordHashPlaceholder,
             client.FirstName,
             client.LastName,
             client.Email
@@ -35,11 +36,13 @@ public sealed class MySqlClientRepository : IClientRepository
         const string sql = """
             select UserID,
                    UserName,
+                   UserPassword,
                    FirstName,
                    Lastname,
                    UserEmail
             from UserClient
-            where UserID = @Id;
+            where UserID = @Id
+              and RoleID = 2;
             """;
 
         await using var connection = _connectionFactory.Create();
@@ -54,12 +57,16 @@ public sealed class MySqlClientRepository : IClientRepository
         const string sql = """
             select UserID,
                    UserName,
+                   UserPassword,
                    FirstName,
                    Lastname,
                    UserEmail
             from UserClient
-            where lower(UserName) = lower(@Value)
-               or lower(UserEmail) = lower(@Value)
+            where RoleID = 2
+              and (
+                    lower(UserName) = lower(@Value)
+                 or lower(UserEmail) = lower(@Value)
+              )
             limit 1;
             """;
 
@@ -68,6 +75,25 @@ public sealed class MySqlClientRepository : IClientRepository
             new CommandDefinition(sql, new { Value = value.Trim() }, cancellationToken: cancellationToken));
 
         return row?.ToDomain();
+    }
+
+    public async Task<bool> UserNameOrEmailExistsAsync(
+        string value,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select 1
+            from UserClient
+            where lower(UserName) = lower(@Value)
+               or lower(UserEmail) = lower(@Value)
+            limit 1;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var exists = await connection.ExecuteScalarAsync<int?>(
+            new CommandDefinition(sql, new { Value = value.Trim() }, cancellationToken: cancellationToken));
+
+        return exists is not null;
     }
 
     public async Task<IReadOnlyList<Client>> SearchAsync(
@@ -100,16 +126,29 @@ public sealed class MySqlClientRepository : IClientRepository
         return rows.Select(row => row.ToDomain()).ToArray();
     }
 
-    private sealed record ClientRow(
-        int UserID,
-        string UserName,
-        string FirstName,
-        string Lastname,
-        string UserEmail)
+    private sealed class ClientRow
     {
+        public int UserID { get; set; }
+
+        public string UserName { get; set; } = string.Empty;
+
+        public string UserPassword { get; set; } = string.Empty;
+
+        public string FirstName { get; set; } = string.Empty;
+
+        public string Lastname { get; set; } = string.Empty;
+
+        public string UserEmail { get; set; } = string.Empty;
+
         public Client ToDomain()
         {
-            return new Client(LegacyIdMapper.ToGuid(UserID), UserName, FirstName, Lastname, UserEmail);
+            return new Client(
+                LegacyIdMapper.ToGuid(UserID),
+                UserName,
+                FirstName,
+                Lastname,
+                UserEmail,
+                UserPassword);
         }
     }
 }

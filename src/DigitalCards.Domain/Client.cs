@@ -2,7 +2,13 @@ namespace DigitalCards.Domain;
 
 public sealed class Client
 {
-    public Client(Guid id, string userName, string firstName, string lastName, string email)
+    public Client(
+        Guid id,
+        string userName,
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHashPlaceholder = "")
     {
         if (string.IsNullOrWhiteSpace(userName))
         {
@@ -29,6 +35,7 @@ public sealed class Client
         FirstName = firstName.Trim();
         LastName = lastName.Trim();
         Email = email.Trim().ToLowerInvariant();
+        PasswordHashPlaceholder = passwordHashPlaceholder;
     }
 
     public Guid Id { get; }
@@ -41,6 +48,7 @@ public sealed class Client
 
     public string Email { get; }
 
+    public string PasswordHashPlaceholder { get; }
+
     public string FullName => $"{FirstName} {LastName}";
 }
-

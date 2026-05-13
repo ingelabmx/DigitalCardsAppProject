@@ -77,6 +77,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         const string businessPassword = "StartPass123!";
         const string updatedBusinessPassword = "ChangedPass123!";
         var userName = NewLegacySafeUserName("u");
+        const string clientPassword = "ClientPass123!";
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
         await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
@@ -115,9 +116,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-first-name").FillAsync("Nuevo");
         await page.GetByTestId("register-last-name").FillAsync("Cliente");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
+        await page.GetByTestId("register-password").FillAsync(clientPassword);
         await page.GetByTestId("register-submit").ClickAsync();
-
-        await EnablePilotClientAsync(page, userName);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(updatedBusinessEmail);
@@ -145,6 +145,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var businessEmail = GetBusinessEmail();
         var businessPassword = GetBusinessPassword();
         var businessName = GetBusinessName();
+        const string clientPassword = "ClientPass123!";
 
         await EnableDemoBusinessPilotAsync(page);
 
@@ -153,10 +154,9 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-first-name").FillAsync("Maria");
         await page.GetByTestId("register-last-name").FillAsync("Lopez");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
+        await page.GetByTestId("register-password").FillAsync(clientPassword);
         await page.GetByTestId("register-submit").ClickAsync();
         Assert.Contains("registrado", await page.GetByTestId("register-success").InnerTextAsync());
-
-        await EnablePilotClientAsync(page, userName);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(businessEmail);
@@ -199,7 +199,12 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("ModernBusiness", ledgerText);
         Assert.Contains("Sellos: 1 -> 2", ledgerText);
 
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, $"/Client/Cards?UserName={userName}").ToString());
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Login").ToString());
+        await page.GetByTestId("client-login-username").FillAsync(userName);
+        await page.GetByTestId("client-login-password").FillAsync(clientPassword);
+        await page.GetByTestId("client-login-submit").ClickAsync();
+        Assert.Contains("Maria Lopez", await page.GetByTestId("client-dashboard-title").InnerTextAsync());
+        await page.GetByTestId("client-dashboard-cards-link").ClickAsync();
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();
         Assert.Contains("Sellos actuales: 2", cardText);
         Assert.Contains("Google emitida", cardText);
@@ -243,9 +248,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-first-name").FillAsync("Phone");
         await page.GetByTestId("register-last-name").FillAsync("User");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
+        await page.GetByTestId("register-password").FillAsync("ClientPass123!");
         await page.GetByTestId("register-submit").ClickAsync();
-
-        await EnablePilotClientAsync(page, userName);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
         await page.GetByTestId("business-email").FillAsync(GetBusinessEmail());
@@ -269,24 +273,6 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
         Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
-    }
-
-    private async Task EnablePilotClientAsync(IPage page, string userName)
-    {
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Clients").ToString());
-
-        if (await page.GetByTestId("admin-login-form").IsVisibleAsync())
-        {
-            await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
-            await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
-            await page.GetByTestId("admin-login-submit").ClickAsync();
-            await page.GetByTestId("admin-clients-link").ClickAsync();
-        }
-
-        await page.GetByTestId("admin-client-search-input").FillAsync(userName);
-        await page.GetByTestId("admin-client-search-submit").ClickAsync();
-        await page.GetByTestId("admin-enable-client-pilot").First.ClickAsync();
-        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-client-status").InnerTextAsync());
     }
 
     private async Task DisableDemoBusinessPilotAsync(IPage page)

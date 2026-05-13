@@ -41,6 +41,21 @@ public sealed class InMemoryClientRepository : IClientRepository
         }
     }
 
+    public Task<bool> UserNameOrEmailExistsAsync(string value, CancellationToken cancellationToken = default)
+    {
+        var normalized = value.Trim();
+        lock (_store.Sync)
+        {
+            return Task.FromResult(
+                _store.Clients.Any(client =>
+                    string.Equals(client.UserName, normalized, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(client.Email, normalized, StringComparison.OrdinalIgnoreCase)) ||
+                _store.AdminUsers.Any(admin =>
+                    string.Equals(admin.UserName, normalized, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(admin.Email, normalized, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
     public Task<IReadOnlyList<Client>> SearchAsync(
         string query,
         CancellationToken cancellationToken = default)

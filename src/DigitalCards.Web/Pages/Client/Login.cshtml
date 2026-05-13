@@ -1,0 +1,31 @@
+@page
+@model DigitalCards.Web.Pages.Client.LoginModel
+@{
+    ViewData["Title"] = "Login cliente";
+}
+
+<section class="form-panel">
+    <h1>Login cliente</h1>
+
+    <form method="post" data-testid="client-login-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
+            <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="client-login-username" />
+            <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Password" class="form-label"></label>
+            <input asp-for="Input.Password" class="form-control" data-testid="client-login-password" />
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+
+        <button class="btn btn-primary" type="submit" data-testid="client-login-submit">Entrar</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
