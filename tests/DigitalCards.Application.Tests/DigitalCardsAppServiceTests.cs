@@ -94,6 +94,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
+        Assert.IsType<EmailTemplateRenderer>(provider.GetRequiredService<IEmailTemplateRenderer>());
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
@@ -118,6 +119,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeAppleWalletService>(provider.GetRequiredService<IAppleWalletService>());
         Assert.IsType<FakeAppleWalletPushSender>(provider.GetRequiredService<IAppleWalletPushSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
+        Assert.IsType<EmailTemplateRenderer>(provider.GetRequiredService<IEmailTemplateRenderer>());
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
@@ -1115,6 +1117,81 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.IsType<SmtpEmailSender>(provider.GetRequiredService<IEmailSender>());
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IWalletEmailOutbox>());
+    }
+
+    [Fact]
+    public void EmailTemplateRenderer_WalletTemplateUsesBrandingAndEscapesHtml()
+    {
+        var renderer = new EmailTemplateRenderer();
+
+        var rendered = renderer.RenderWalletEnrollment(new WalletEnrollmentEmail(
+            "maria@example.test",
+            "Maria <script>",
+            "Puntelio <Cafe>",
+            "https://app.puntelio.com/Wallet/Select/token-123",
+            DateTimeOffset.UtcNow,
+            "https://app.puntelio.com/img/logo.png",
+            "#123456",
+            "Puntelio Rewards"));
+
+        Assert.Equal(EmailTemplateKind.WalletEnrollment, rendered.Kind);
+        Assert.Equal("Tu tarjeta digital de Puntelio <Cafe> esta lista", rendered.Subject);
+        Assert.Contains("Puntelio Rewards", rendered.HtmlBody);
+        Assert.Contains("#123456", rendered.HtmlBody);
+        Assert.Contains("https://app.puntelio.com/img/logo.png", rendered.HtmlBody);
+        Assert.Contains("Maria &lt;script&gt;", rendered.HtmlBody);
+        Assert.Contains("Puntelio &lt;Cafe&gt;", rendered.HtmlBody);
+        Assert.DoesNotContain("<script>", rendered.HtmlBody, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("https://app.puntelio.com/Wallet/Select/token-123", rendered.TextBody);
+    }
+
+    [Fact]
+    public void EmailTemplateRenderer_RendersWelcomeResetAndInternalAlertTemplates()
+    {
+        var renderer = new EmailTemplateRenderer();
+        var brand = new EmailBranding(
+            "Puntelio",
+            "javascript:alert(1)",
+            "not-a-color",
+            "Puntelio Rewards");
+
+        var welcome = renderer.RenderWelcome(new WelcomeEmail(
+            "client@example.test",
+            "Cliente Uno",
+            "https://app.puntelio.com/Client/Login",
+            DateTimeOffset.UtcNow,
+            brand));
+        var reset = renderer.RenderPasswordReset(new PasswordResetEmail(
+            "client@example.test",
+            "Cliente Uno",
+            "cliente",
+            "https://app.puntelio.com/Client/ResetPassword/token",
+            DateTimeOffset.UtcNow.AddHours(1),
+            DateTimeOffset.UtcNow,
+            brand));
+        var alert = renderer.RenderInternalAlert(new InternalAlertEmail(
+            "ops@example.test",
+            "Wallet update failed",
+            "Google patch returned a retryable status.",
+            "Warning",
+            "https://app.puntelio.com/internal/wallet-diagnostics/1",
+            DateTimeOffset.UtcNow));
+
+        Assert.Equal(EmailTemplateKind.Welcome, welcome.Kind);
+        Assert.Contains("Bienvenido a Puntelio", welcome.Subject);
+        Assert.Contains("https://app.puntelio.com/Client/Login", welcome.HtmlBody);
+        Assert.DoesNotContain("javascript:", welcome.HtmlBody, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("#111827", welcome.HtmlBody);
+
+        Assert.Equal(EmailTemplateKind.PasswordReset, reset.Kind);
+        Assert.Contains("Restablece tu contrasena", reset.Subject);
+        Assert.Contains("https://app.puntelio.com/Client/ResetPassword/token", reset.HtmlBody);
+        Assert.DoesNotContain("hash", reset.HtmlBody, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Equal(EmailTemplateKind.InternalAlert, alert.Kind);
+        Assert.Contains("[Warning] Wallet update failed", alert.Subject);
+        Assert.Contains("Google patch returned a retryable status.", alert.TextBody);
+        Assert.Contains("https://app.puntelio.com/internal/wallet-diagnostics/1", alert.HtmlBody);
     }
 
     [Fact]

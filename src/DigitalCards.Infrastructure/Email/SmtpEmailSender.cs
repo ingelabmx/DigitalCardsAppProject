@@ -1,4 +1,3 @@
-using System.Net;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using MailKit.Net.Smtp;
@@ -13,12 +12,15 @@ public sealed class SmtpEmailSender : IEmailSender
 {
     private readonly ILogger<SmtpEmailSender> _logger;
     private readonly SmtpEmailOptions _options;
+    private readonly IEmailTemplateRenderer _templates;
 
     public SmtpEmailSender(
         IOptions<SmtpEmailOptions> options,
+        IEmailTemplateRenderer templates,
         ILogger<SmtpEmailSender> logger)
     {
         _options = options.Value;
+        _templates = templates;
         _logger = logger;
     }
 
@@ -35,12 +37,13 @@ public sealed class SmtpEmailSender : IEmailSender
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_options.FromName, fromAddress));
         message.To.Add(MailboxAddress.Parse(email.To));
-        message.Subject = $"Tu tarjeta digital de {email.BusinessName} esta lista";
+        var rendered = _templates.RenderWalletEnrollment(email);
+        message.Subject = rendered.Subject;
 
         var bodyBuilder = new BodyBuilder
         {
-            TextBody = BuildTextBody(email),
-            HtmlBody = BuildHtmlBody(email)
+            TextBody = rendered.TextBody,
+            HtmlBody = rendered.HtmlBody
         };
         message.Body = bodyBuilder.ToMessageBody();
 
@@ -91,67 +94,10 @@ public sealed class SmtpEmailSender : IEmailSender
         }
     }
 
-    private static string BuildTextBody(WalletEnrollmentEmail email)
-    {
-        return $"""
-            Hola {email.ClientName},
-
-            Tu tarjeta digital de {email.BusinessName} esta lista.
-
-            Abre este link para elegir Apple Wallet o Google Wallet:
-            {email.EnrollmentUrl}
-
-            Gracias por usar DigitalCards.
-            """;
-    }
-
     private static string MaskEmail(string email)
     {
         var normalized = email.Trim().ToLowerInvariant();
         var atIndex = normalized.IndexOf('@');
         return atIndex <= 1 ? "***" : string.Concat(normalized[0], "***", normalized[atIndex..]);
-    }
-
-    private static string BuildHtmlBody(WalletEnrollmentEmail email)
-    {
-        var clientName = WebUtility.HtmlEncode(email.ClientName);
-        var businessName = WebUtility.HtmlEncode(email.BusinessName);
-        var enrollmentUrl = WebUtility.HtmlEncode(email.EnrollmentUrl);
-        var programName = WebUtility.HtmlEncode(email.ProgramName ?? "Tarjeta digital");
-        var primaryColor = WebUtility.HtmlEncode(email.PrimaryColor ?? "#111827");
-        var logoUrl = string.IsNullOrWhiteSpace(email.BusinessLogoUrl)
-            ? string.Empty
-            : $"""<img src="{WebUtility.HtmlEncode(email.BusinessLogoUrl)}" alt="{businessName}" width="72" style="display:block;margin:0 0 16px;max-width:72px;height:auto;" />""";
-
-        return $"""
-            <!doctype html>
-            <html lang="es">
-            <body style="margin:0;padding:24px;background:#f4f4f4;font-family:Arial,sans-serif;color:#222;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td align="center">
-                    <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:8px;padding:24px;">
-                      <tr>
-                        <td>
-                          {logoUrl}
-                          <p style="margin:0 0 8px;color:{primaryColor};font-weight:bold;text-transform:uppercase;font-size:13px;">{programName}</p>
-                          <h1 style="margin:0 0 16px;font-size:24px;">Tu tarjeta digital esta lista</h1>
-                          <p>Hola {clientName},</p>
-                          <p>Tu tarjeta digital de <strong>{businessName}</strong> esta lista para agregarse a tu billetera digital.</p>
-                          <p>Elige Apple Wallet o Google Wallet desde el siguiente link:</p>
-                          <p style="margin:28px 0;">
-                            <a href="{enrollmentUrl}" style="background:{primaryColor};color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;">Abrir tarjeta digital</a>
-                          </p>
-                          <p style="color:#666;font-size:14px;">Si el boton no funciona, copia y pega este link en tu navegador:</p>
-                          <p style="word-break:break-all;color:#444;font-size:14px;">{enrollmentUrl}</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </body>
-            </html>
-            """;
     }
 }

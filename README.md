@@ -453,6 +453,22 @@ La app moderna usa ese branding en:
 Si no existe branding, la app usa `Business.BusinessName` y `BusinessLogo`. Web
 Forms no depende de esta tabla. El upload de logos queda para un PR posterior.
 
+## Plantillas de correo
+
+La app moderna renderiza correos desde `IEmailTemplateRenderer`. El correo
+Wallet que envia SMTP ya usa esa capa y conserva branding seguro del negocio.
+
+Plantillas disponibles:
+
+- Wallet enrollment;
+- bienvenida;
+- reset de contrasena;
+- alerta interna.
+
+En esta fase solo Wallet enrollment se envia desde flujos activos. Las demas
+plantillas quedan listas para los proximos PRs de bienvenida, reset y soporte.
+Fake email sigue siendo default para CI y Playwright.
+
 ## Password hardening negocio
 
 La app moderna migra passwords de negocio gradualmente a una tabla nueva,

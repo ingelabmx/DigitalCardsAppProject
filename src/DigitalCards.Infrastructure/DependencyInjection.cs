@@ -31,6 +31,7 @@ public static class DependencyInjection
             configuration.GetSection(WalletLinkOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddSingleton<AppleWalletPassPackageBuilder>();
         services.AddScoped<IWalletLinkTokenService, WalletLinkTokenService>();
 
