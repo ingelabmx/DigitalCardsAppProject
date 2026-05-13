@@ -132,4 +132,7 @@ public sealed record WalletEnrollmentEmail(
     string ClientName,
     string BusinessName,
     string EnrollmentUrl,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? BusinessLogoUrl = null,
+    string? PrimaryColor = null,
+    string? ProgramName = null);

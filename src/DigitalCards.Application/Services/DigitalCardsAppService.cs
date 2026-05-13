@@ -8,6 +8,7 @@ namespace DigitalCards.Application.Services;
 public sealed class DigitalCardsAppService
 {
     private readonly IBusinessCredentialRepository _businessCredentials;
+    private readonly IBusinessBrandingRepository _businessBranding;
     private readonly IBusinessRepository _businesses;
     private readonly IClientCredentialRepository _clientCredentials;
     private readonly IClientRepository _clients;
@@ -26,6 +27,7 @@ public sealed class DigitalCardsAppService
         IClientRepository clients,
         IClientCredentialRepository clientCredentials,
         IBusinessRepository businesses,
+        IBusinessBrandingRepository businessBranding,
         IBusinessCredentialRepository businessCredentials,
         ILoyaltyCardRepository loyaltyCards,
         IGoogleWalletService googleWallet,
@@ -41,6 +43,7 @@ public sealed class DigitalCardsAppService
         _clients = clients;
         _clientCredentials = clientCredentials;
         _businesses = businesses;
+        _businessBranding = businessBranding;
         _businessCredentials = businessCredentials;
         _loyaltyCards = loyaltyCards;
         _googleWallet = googleWallet;
@@ -260,12 +263,13 @@ public sealed class DigitalCardsAppService
             card.Id,
             WalletLinkPurposes.WalletSelect,
             cancellationToken);
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         var enrollmentUrl = $"{command.BaseUrl.TrimEnd('/')}/Wallet/Select/{publicToken}";
         await _emailSender.SendWalletEnrollmentAsync(
-            new WalletEnrollmentEmail(client.Email, client.FullName, business.Name, enrollmentUrl, _clock.UtcNow),
+            CreateWalletEnrollmentEmail(client, displayBusiness, enrollmentUrl, command.BaseUrl),
             cancellationToken);
 
-        return new EnrollClientResult(ToDto(card, client, business), enrollmentUrl);
+        return new EnrollClientResult(ToDto(card, client, displayBusiness), enrollmentUrl);
     }
 
     public async Task<WalletLandingDto?> GetWalletLandingAsync(string token, CancellationToken cancellationToken = default)
@@ -279,7 +283,7 @@ public sealed class DigitalCardsAppService
         var (card, client, business) = context.Value;
         return new WalletLandingDto(
             token,
-            business.Name,
+            business.DisplayName,
             client.FullName,
             card.CurrentStamps,
             card.LifetimeStamps,
@@ -370,7 +374,7 @@ public sealed class DigitalCardsAppService
             actorBusinessId: business.Id,
             cancellationToken);
 
-        return ToDto(card, client, business);
+        return ToDto(card, client, await ApplyBrandingAsync(business, cancellationToken));
     }
 
     public async Task<IReadOnlyList<BusinessCardDto>> SearchBusinessCardsAsync(
@@ -509,13 +513,14 @@ public sealed class DigitalCardsAppService
             card.Id,
             WalletLinkPurposes.WalletSelect,
             cancellationToken);
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         var enrollmentUrl = $"{baseUrl.TrimEnd('/')}/Wallet/Select/{publicToken}";
         await _emailSender.SendWalletEnrollmentAsync(
-            new WalletEnrollmentEmail(client.Email, client.FullName, business.Name, enrollmentUrl, _clock.UtcNow),
+            CreateWalletEnrollmentEmail(client, displayBusiness, enrollmentUrl, baseUrl),
             cancellationToken);
 
         return new ResendWalletEmailResult(
-            await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
+            await ToBusinessCardDtoAsync(card, client, displayBusiness, cancellationToken),
             enrollmentUrl);
     }
 
@@ -559,10 +564,11 @@ public sealed class DigitalCardsAppService
                 WalletLinkPurposes.WalletSelect,
                 cancellationToken);
             var business = businesses.Single(existing => existing.Id == card.BusinessId);
+            business = await ApplyBrandingAsync(business, cancellationToken);
             results.Add(new ClientLoyaltyCardDto(
                 card.Id,
                 token,
-                business.Name,
+                business.DisplayName,
                 client.UserName,
                 card.CurrentStamps,
                 card.LifetimeStamps,
@@ -612,9 +618,14 @@ public sealed class DigitalCardsAppService
         var cards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
         var businesses = await _businesses.ListAsync(cancellationToken);
 
-        return cards
-            .Select(card => ToDto(card, client, businesses.Single(business => business.Id == card.BusinessId)))
-            .ToArray();
+        var results = new List<LoyaltyCardDto>(cards.Count);
+        foreach (var card in cards)
+        {
+            var business = businesses.Single(existing => existing.Id == card.BusinessId);
+            results.Add(ToDto(card, client, await ApplyBrandingAsync(business, cancellationToken)));
+        }
+
+        return results.ToArray();
     }
 
     private async Task<Business> RequireBusinessAsync(Guid businessId, CancellationToken cancellationToken)
@@ -656,7 +667,9 @@ public sealed class DigitalCardsAppService
         var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
         var business = await _businesses.FindByIdAsync(card.BusinessId, cancellationToken);
 
-        return client is null || business is null ? null : (card, client, business);
+        return client is null || business is null
+            ? null
+            : (card, client, await ApplyBrandingAsync(business, cancellationToken));
     }
 
     private async Task<bool> VerifyClientPasswordAsync(
@@ -725,6 +738,65 @@ public sealed class DigitalCardsAppService
         return client is null ? null : (card, client, business);
     }
 
+    private async Task<Business> ApplyBrandingAsync(Business business, CancellationToken cancellationToken)
+    {
+        var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
+        if (branding is null)
+        {
+            return business;
+        }
+
+        return new Business(
+            business.Id,
+            business.Name,
+            business.Email,
+            business.PasswordHashPlaceholder,
+            string.IsNullOrWhiteSpace(branding.LogoPath) ? business.LogoPath : branding.LogoPath,
+            branding.PublicName,
+            branding.PrimaryColor,
+            branding.SecondaryColor,
+            branding.ProgramName,
+            branding.ProgramDescription);
+    }
+
+    private WalletEnrollmentEmail CreateWalletEnrollmentEmail(
+        Client client,
+        Business business,
+        string enrollmentUrl,
+        string baseUrl)
+    {
+        return new WalletEnrollmentEmail(
+            client.Email,
+            client.FullName,
+            business.DisplayName,
+            enrollmentUrl,
+            _clock.UtcNow,
+            BuildPublicAssetUrl(business.LogoPath, baseUrl),
+            business.PrimaryColor,
+            business.ProgramName);
+    }
+
+    private static string? BuildPublicAssetUrl(string logoPath, string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoPath))
+        {
+            return null;
+        }
+
+        if (Uri.TryCreate(logoPath, UriKind.Absolute, out var absolute) &&
+            (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
+        {
+            return absolute.ToString();
+        }
+
+        if (!logoPath.StartsWith("/", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return $"{baseUrl.TrimEnd('/')}{logoPath}";
+    }
+
     private static ClientDto ToDto(Client client)
     {
         return new ClientDto(client.Id, client.UserName, client.FirstName, client.LastName, client.Email);
@@ -732,7 +804,7 @@ public sealed class DigitalCardsAppService
 
     private static BusinessDto ToDto(Business business)
     {
-        return new BusinessDto(business.Id, business.Name, business.Email, business.LogoPath);
+        return new BusinessDto(business.Id, business.DisplayName, business.Email, business.LogoPath);
     }
 
     private static LoyaltyCardDto ToDto(LoyaltyCard card, Client client, Business business)
@@ -740,7 +812,7 @@ public sealed class DigitalCardsAppService
         return new LoyaltyCardDto(
             card.Id,
             card.EnrollmentToken,
-            business.Name,
+            business.DisplayName,
             client.UserName,
             card.CurrentStamps,
             card.LifetimeStamps,
@@ -771,7 +843,7 @@ public sealed class DigitalCardsAppService
             card.Id,
             card.EnrollmentToken,
             ToDto(client),
-            business.Name,
+            business.DisplayName,
             card.CurrentStamps,
             card.LifetimeStamps,
             card.LastStampedAt,
@@ -794,6 +866,7 @@ public sealed class DigitalCardsAppService
         var previousHistoricCheckQty = card.LifetimeStamps;
         card.AddStamp(_clock.UtcNow);
         await _loyaltyCards.UpdateAsync(card, cancellationToken);
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
 
         var googleAttempted = false;
         var googleSucceeded = false;
@@ -805,12 +878,12 @@ public sealed class DigitalCardsAppService
             if (card.GoogleObjectId is not null)
             {
                 googleAttempted = true;
-                await _googleWallet.PatchStampStateAsync(card, client, business, cancellationToken);
+                await _googleWallet.PatchStampStateAsync(card, client, displayBusiness, cancellationToken);
                 googleSucceeded = true;
             }
 
             appleAttempted = true;
-            await _appleWallet.NotifyPassUpdatedAsync(card, client, business, cancellationToken);
+            await _appleWallet.NotifyPassUpdatedAsync(card, client, displayBusiness, cancellationToken);
             appleSucceeded = true;
 
             await RecordStampLedgerAsync(

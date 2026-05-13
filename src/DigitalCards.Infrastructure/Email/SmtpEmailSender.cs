@@ -117,6 +117,11 @@ public sealed class SmtpEmailSender : IEmailSender
         var clientName = WebUtility.HtmlEncode(email.ClientName);
         var businessName = WebUtility.HtmlEncode(email.BusinessName);
         var enrollmentUrl = WebUtility.HtmlEncode(email.EnrollmentUrl);
+        var programName = WebUtility.HtmlEncode(email.ProgramName ?? "Tarjeta digital");
+        var primaryColor = WebUtility.HtmlEncode(email.PrimaryColor ?? "#111827");
+        var logoUrl = string.IsNullOrWhiteSpace(email.BusinessLogoUrl)
+            ? string.Empty
+            : $"""<img src="{WebUtility.HtmlEncode(email.BusinessLogoUrl)}" alt="{businessName}" width="72" style="display:block;margin:0 0 16px;max-width:72px;height:auto;" />""";
 
         return $"""
             <!doctype html>
@@ -128,12 +133,14 @@ public sealed class SmtpEmailSender : IEmailSender
                     <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:8px;padding:24px;">
                       <tr>
                         <td>
+                          {logoUrl}
+                          <p style="margin:0 0 8px;color:{primaryColor};font-weight:bold;text-transform:uppercase;font-size:13px;">{programName}</p>
                           <h1 style="margin:0 0 16px;font-size:24px;">Tu tarjeta digital esta lista</h1>
                           <p>Hola {clientName},</p>
                           <p>Tu tarjeta digital de <strong>{businessName}</strong> esta lista para agregarse a tu billetera digital.</p>
                           <p>Elige Apple Wallet o Google Wallet desde el siguiente link:</p>
                           <p style="margin:28px 0;">
-                            <a href="{enrollmentUrl}" style="background:#111827;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;">Abrir tarjeta digital</a>
+                            <a href="{enrollmentUrl}" style="background:{primaryColor};color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;">Abrir tarjeta digital</a>
                           </p>
                           <p style="color:#666;font-size:14px;">Si el boton no funciona, copia y pega este link en tu navegador:</p>
                           <p style="word-break:break-all;color:#444;font-size:14px;">{enrollmentUrl}</p>

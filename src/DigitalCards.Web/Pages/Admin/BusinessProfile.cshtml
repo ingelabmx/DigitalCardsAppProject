@@ -85,6 +85,55 @@
 
                 <button class="btn btn-outline-danger" type="submit" data-testid="admin-business-password-submit">Actualizar contrasena</button>
             </form>
+
+            <form method="post"
+                  asp-page-handler="Branding"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel business-branding-panel"
+                  data-testid="admin-business-branding-form">
+                <h2>Branding Wallet</h2>
+                <p class="text-muted">Nombre publico, logo y colores usados en correos, Wallet y dashboard cliente.</p>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.PublicName" class="form-label">Nombre publico</label>
+                    <input asp-for="BrandingInput.PublicName" class="form-control" maxlength="80" data-testid="admin-business-branding-public-name" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.ProgramName" class="form-label">Programa</label>
+                    <input asp-for="BrandingInput.ProgramName" class="form-control" maxlength="80" data-testid="admin-business-branding-program-name" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.ProgramDescription" class="form-label">Descripcion</label>
+                    <textarea asp-for="BrandingInput.ProgramDescription" class="form-control" rows="3" maxlength="280" data-testid="admin-business-branding-description"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.LogoPath" class="form-label">Logo publico</label>
+                    <input asp-for="BrandingInput.LogoPath" class="form-control" maxlength="200" data-testid="admin-business-branding-logo" />
+                </div>
+
+                <div class="branding-color-row">
+                    <div class="mb-3">
+                        <label asp-for="BrandingInput.PrimaryColor" class="form-label">Color primario</label>
+                        <input asp-for="BrandingInput.PrimaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-primary" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="BrandingInput.SecondaryColor" class="form-label">Color secundario</label>
+                        <input asp-for="BrandingInput.SecondaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-secondary" />
+                    </div>
+                </div>
+
+                <div class="branding-preview"
+                     style="--brand-primary:@Model.BrandingInput.PrimaryColor;--brand-secondary:@Model.BrandingInput.SecondaryColor;"
+                     data-testid="admin-business-branding-preview">
+                    <span>@Model.BrandingInput.ProgramName</span>
+                    <strong>@Model.BrandingInput.PublicName</strong>
+                </div>
+
+                <button class="btn btn-primary" type="submit" data-testid="admin-business-branding-submit">Guardar branding</button>
+            </form>
         </div>
     }
 </section>

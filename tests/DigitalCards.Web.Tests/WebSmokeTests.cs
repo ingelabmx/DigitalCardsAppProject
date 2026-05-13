@@ -534,7 +534,27 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains(updatedName, saveHtml);
         Assert.Contains("~/Logos/updated.png", saveHtml);
 
-        var resetToken = ExtractAntiforgeryToken(saveHtml);
+        var brandingToken = ExtractAntiforgeryToken(saveHtml);
+        var brandingResponse = await client.PostAsync(
+            $"{profilePath}?handler=Branding",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["BrandingInput.PublicName"] = "Perfil Publico",
+                ["BrandingInput.ProgramName"] = "Perfil Rewards",
+                ["BrandingInput.ProgramDescription"] = "Sellos con branding desde web test.",
+                ["BrandingInput.LogoPath"] = "/img/profile-brand.svg",
+                ["BrandingInput.PrimaryColor"] = "#123456",
+                ["BrandingInput.SecondaryColor"] = "#abcdef",
+                ["__RequestVerificationToken"] = brandingToken
+            }));
+        var brandingHtml = await brandingResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, brandingResponse.StatusCode);
+        Assert.Contains("Branding del negocio actualizado", brandingHtml);
+        Assert.Contains("Perfil Publico", brandingHtml);
+        Assert.Contains("#123456", brandingHtml);
+
+        var resetToken = ExtractAntiforgeryToken(brandingHtml);
         var resetResponse = await client.PostAsync(
             $"{profilePath}?handler=ResetPassword",
             new FormUrlEncodedContent(new Dictionary<string, string>

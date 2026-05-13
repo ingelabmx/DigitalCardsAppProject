@@ -425,6 +425,34 @@ con el hash legacy de 25 caracteres y `ModernBusinessCredential` con hash
 moderno. No hay SQL nuevo para este flujo; requiere las mismas tablas de
 password hardening y pilot management ya documentadas.
 
+## Branding de negocio
+
+Antes de editar branding contra HostGator, ejecuta:
+
+```text
+docs/migration-context/31-business-branding-v1-hostgator.sql
+```
+
+Desde `/Admin/BusinessProfile/{businessId}`, la seccion `Branding Wallet`
+permite configurar:
+
+- nombre publico;
+- logo publico como ruta o URL;
+- color primario;
+- color secundario;
+- nombre y descripcion del programa.
+
+La app moderna usa ese branding en:
+
+- correos Wallet;
+- `/Wallet/Select/{token}`;
+- Apple Wallet `.pkpass` y passes actualizados por Apple Web Service;
+- Google Wallet;
+- dashboard y tarjetas del cliente.
+
+Si no existe branding, la app usa `Business.BusinessName` y `BusinessLogo`. Web
+Forms no depende de esta tabla. El upload de logos queda para un PR posterior.
+
 ## Password hardening negocio
 
 La app moderna migra passwords de negocio gradualmente a una tabla nueva,

@@ -13,13 +13,21 @@ public sealed class AdminAppService
     private const int BusinessNameMaxLength = 30;
     private const int BusinessEmailMaxLength = 30;
     private const int BusinessLogoMaxLength = 100;
+    private const int BrandingNameMaxLength = 80;
+    private const int BrandingLogoMaxLength = 200;
+    private const int BrandingDescriptionMaxLength = 280;
     private const int NotesMaxLength = 500;
     private const string DefaultBusinessLogoPath = "/img/demo-coffee.svg";
+    private const string DefaultPrimaryColor = "#111827";
+    private const string DefaultSecondaryColor = "#2563eb";
+    private const string DefaultProgramName = "Tarjeta de lealtad";
+    private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
     private const string DuplicateAdminMessage = "An admin user with the same username or email already exists.";
     private const string DuplicateBusinessMessage = "A business with the same name or email already exists.";
 
     private readonly IAdminCredentialRepository _adminCredentials;
     private readonly IAdminUserRepository _adminUsers;
+    private readonly IBusinessBrandingRepository _businessBranding;
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessRepository _businesses;
     private readonly IClientRepository _clients;
@@ -33,6 +41,7 @@ public sealed class AdminAppService
         IAdminUserRepository adminUsers,
         IAdminCredentialRepository adminCredentials,
         IBusinessRepository businesses,
+        IBusinessBrandingRepository businessBranding,
         IBusinessCredentialRepository businessCredentials,
         IClientRepository clients,
         IPilotBusinessRepository pilotBusinesses,
@@ -44,6 +53,7 @@ public sealed class AdminAppService
         _adminUsers = adminUsers;
         _adminCredentials = adminCredentials;
         _businesses = businesses;
+        _businessBranding = businessBranding;
         _businessCredentials = businessCredentials;
         _clients = clients;
         _pilotBusinesses = pilotBusinesses;
@@ -316,7 +326,7 @@ public sealed class AdminAppService
         }
 
         var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
-        return ToBusinessProfileDto(business, access);
+        return await ToBusinessProfileDtoAsync(business, access, cancellationToken);
     }
 
     public async Task<BusinessProfileResult> UpdateBusinessProfileAsync(
@@ -380,7 +390,9 @@ public sealed class AdminAppService
             command.AdminUserId,
             cancellationToken);
 
-        return new BusinessProfileResult(ToBusinessProfileDto(business, access), ErrorMessage: null);
+        return new BusinessProfileResult(
+            await ToBusinessProfileDtoAsync(business, access, cancellationToken),
+            ErrorMessage: null);
     }
 
     public async Task<BusinessProfileResult> ResetBusinessPasswordAsync(
@@ -434,7 +446,58 @@ public sealed class AdminAppService
             cancellationToken);
 
         var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
-        return new BusinessProfileResult(ToBusinessProfileDto(business, access), ErrorMessage: null);
+        return new BusinessProfileResult(
+            await ToBusinessProfileDtoAsync(business, access, cancellationToken),
+            ErrorMessage: null);
+    }
+
+    public async Task<BusinessBrandingResult> UpdateBusinessBrandingAsync(
+        UpdateBusinessBrandingCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return FailedBranding("El negocio no existe.");
+        }
+
+        var publicName = NormalizeBrandingValue(command.PublicName, business.Name);
+        var logoPath = NormalizeBrandingValue(command.LogoPath, business.LogoPath);
+        var primaryColor = NormalizeBrandingValue(command.PrimaryColor, DefaultPrimaryColor);
+        var secondaryColor = NormalizeBrandingValue(command.SecondaryColor, DefaultSecondaryColor);
+        var programName = NormalizeBrandingValue(command.ProgramName, DefaultProgramName);
+        var programDescription = NormalizeBrandingValue(command.ProgramDescription, DefaultProgramDescription);
+
+        var validationError = ValidateBusinessBranding(
+            command.AdminUserId,
+            publicName,
+            logoPath,
+            primaryColor,
+            secondaryColor,
+            programName,
+            programDescription);
+        if (validationError is not null)
+        {
+            return FailedBranding(validationError);
+        }
+
+        await _businessBranding.UpsertAsync(
+            new BusinessBranding(
+                business.Id,
+                publicName,
+                logoPath,
+                primaryColor,
+                secondaryColor,
+                programName,
+                programDescription,
+                _clock.UtcNow,
+                command.AdminUserId),
+            cancellationToken);
+
+        var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
+        return new BusinessBrandingResult(
+            await ToBusinessProfileDtoAsync(business, access, cancellationToken),
+            ErrorMessage: null);
     }
 
     public async Task<PilotBusinessDto?> SetPilotBusinessAsync(
@@ -737,6 +800,63 @@ public sealed class AdminAppService
         return null;
     }
 
+    private static string? ValidateBusinessBranding(
+        Guid adminUserId,
+        string publicName,
+        string logoPath,
+        string primaryColor,
+        string secondaryColor,
+        string programName,
+        string programDescription)
+    {
+        if (adminUserId == Guid.Empty)
+        {
+            return "La sesion de admin no es valida.";
+        }
+
+        if (string.IsNullOrWhiteSpace(publicName))
+        {
+            return "El nombre publico es requerido.";
+        }
+
+        if (publicName.Length > BrandingNameMaxLength)
+        {
+            return $"El nombre publico no puede exceder {BrandingNameMaxLength} caracteres.";
+        }
+
+        if (logoPath.Length > BrandingLogoMaxLength)
+        {
+            return $"El logo de marca no puede exceder {BrandingLogoMaxLength} caracteres.";
+        }
+
+        if (!IsHexColor(primaryColor))
+        {
+            return "El color primario debe usar formato #RRGGBB.";
+        }
+
+        if (!IsHexColor(secondaryColor))
+        {
+            return "El color secundario debe usar formato #RRGGBB.";
+        }
+
+        if (string.IsNullOrWhiteSpace(programName))
+        {
+            return "El nombre del programa es requerido.";
+        }
+
+        if (programName.Length > BrandingNameMaxLength)
+        {
+            return $"El nombre del programa no puede exceder {BrandingNameMaxLength} caracteres.";
+        }
+
+        if (programDescription.Length > BrandingDescriptionMaxLength)
+        {
+            return $"La descripcion del programa no puede exceder {BrandingDescriptionMaxLength} caracteres.";
+        }
+
+        return null;
+    }
+
     private static CreateBusinessResult FailedCreate(string errorMessage)
     {
         return new CreateBusinessResult(null, errorMessage);
@@ -752,11 +872,31 @@ public sealed class AdminAppService
         return new BusinessProfileResult(null, errorMessage);
     }
 
+    private static BusinessBrandingResult FailedBranding(string errorMessage)
+    {
+        return new BusinessBrandingResult(null, errorMessage);
+    }
+
     private static string NormalizeBusinessLogo(string businessLogo)
     {
         return string.IsNullOrWhiteSpace(businessLogo)
             ? DefaultBusinessLogoPath
             : businessLogo.Trim();
+    }
+
+    private static string NormalizeBrandingValue(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static bool IsHexColor(string value)
+    {
+        return value.Length == 7 &&
+            value[0] == '#' &&
+            value.Skip(1).All(character =>
+                (character >= '0' && character <= '9') ||
+                (character >= 'a' && character <= 'f') ||
+                (character >= 'A' && character <= 'F'));
     }
 
     private static AdminUserDto ToDto(AdminUser admin)
@@ -788,8 +928,13 @@ public sealed class AdminAppService
             access?.UpdatedAt);
     }
 
-    private static BusinessProfileDto ToBusinessProfileDto(Business business, PilotBusinessAccess? access)
+    private async Task<BusinessProfileDto> ToBusinessProfileDtoAsync(
+        Business business,
+        PilotBusinessAccess? access,
+        CancellationToken cancellationToken)
     {
+        var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
+
         return new BusinessProfileDto(
             business.Id,
             business.Name,
@@ -797,7 +942,20 @@ public sealed class AdminAppService
             business.LogoPath,
             access?.IsEnabled ?? false,
             access?.Notes,
-            access?.UpdatedAt);
+            access?.UpdatedAt,
+            ToBrandingDto(business, branding));
+    }
+
+    private static BusinessBrandingDto ToBrandingDto(Business business, BusinessBranding? branding)
+    {
+        return new BusinessBrandingDto(
+            branding?.PublicName ?? business.Name,
+            branding?.LogoPath ?? business.LogoPath,
+            branding?.PrimaryColor ?? DefaultPrimaryColor,
+            branding?.SecondaryColor ?? DefaultSecondaryColor,
+            branding?.ProgramName ?? DefaultProgramName,
+            branding?.ProgramDescription ?? DefaultProgramDescription,
+            branding?.UpdatedAt);
     }
 
     private static PilotClientDto ToPilotClientDto(Client client, PilotClientAccess? access)

@@ -74,6 +74,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var businessEmail = $"{suffix}@biz.test";
         var updatedBusinessName = $"Upd {suffix[..8]}";
         var updatedBusinessEmail = $"{suffix}@up.test";
+        var publicBrandName = $"Brand {suffix[..8]}";
         const string businessPassword = "StartPass123!";
         const string updatedBusinessPassword = "ChangedPass123!";
         var userName = NewLegacySafeUserName("u");
@@ -105,6 +106,15 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-profile-save").ClickAsync();
         Assert.Contains("Negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
 
+        await page.GetByTestId("admin-business-branding-public-name").FillAsync(publicBrandName);
+        await page.GetByTestId("admin-business-branding-program-name").FillAsync("Playwright Rewards");
+        await page.GetByTestId("admin-business-branding-description").FillAsync("Programa de sellos para Playwright.");
+        await page.GetByTestId("admin-business-branding-logo").FillAsync("/img/playwright-brand.svg");
+        await page.GetByTestId("admin-business-branding-primary").FillAsync("#123456");
+        await page.GetByTestId("admin-business-branding-secondary").FillAsync("#abcdef");
+        await page.GetByTestId("admin-business-branding-submit").ClickAsync();
+        Assert.Contains("Branding del negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
+
         await page.GetByTestId("admin-business-password-new").FillAsync(updatedBusinessPassword);
         await page.GetByTestId("admin-business-password-confirm").FillAsync(updatedBusinessPassword);
         await page.GetByTestId("admin-business-password-submit").ClickAsync();
@@ -132,7 +142,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
         await page.GetByTestId("email-link").First.ClickAsync();
-        Assert.Contains(updatedBusinessName, await page.GetByTestId("wallet-select").InnerTextAsync());
+        Assert.Contains(publicBrandName, await page.GetByTestId("wallet-select").InnerTextAsync());
     }
 
     [PlaywrightFact]

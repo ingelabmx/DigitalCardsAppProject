@@ -294,6 +294,38 @@ h1 {
   margin-bottom: 0.85rem;
 }
 
+.business-branding-panel {
+  grid-column: 1 / -1;
+}
+
+.branding-color-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.branding-preview {
+  background: var(--brand-primary, #111827);
+  border-radius: 8px;
+  color: #ffffff;
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  min-height: 76px;
+  padding: 1rem;
+}
+
+.branding-preview span {
+  color: var(--brand-secondary, #93c5fd);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.branding-preview strong {
+  font-size: 1.15rem;
+}
+
 .business-dashboard-summary {
   display: grid;
   gap: 1rem;
@@ -402,6 +434,7 @@ h1 {
   .business-card-grid,
   .business-dashboard-grid,
   .business-profile-grid,
+  .branding-color-row,
   .client-card-preview-grid,
   .client-profile-panel dl,
   .wallet-actions,

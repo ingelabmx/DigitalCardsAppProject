@@ -25,6 +25,9 @@ public sealed class BusinessProfileModel : PageModel
     [BindProperty]
     public PasswordInputModel PasswordInput { get; set; } = new();
 
+    [BindProperty]
+    public BrandingInputModel BrandingInput { get; set; } = new();
+
     public BusinessProfileDto? Profile { get; private set; }
 
     public string? StatusMessage { get; private set; }
@@ -109,6 +112,41 @@ public sealed class BusinessProfileModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostBrandingAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        var result = await _adminApp.UpdateBusinessBrandingAsync(
+            new UpdateBusinessBrandingCommand(
+                businessId,
+                AdminAuth.GetAdminUserId(User),
+                BrandingInput.PublicName,
+                BrandingInput.LogoPath,
+                BrandingInput.PrimaryColor,
+                BrandingInput.SecondaryColor,
+                BrandingInput.ProgramName,
+                BrandingInput.ProgramDescription),
+            cancellationToken);
+
+        ClearPasswordFields();
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo actualizar el branding.");
+            await LoadAsync(businessId, cancellationToken);
+            return Page();
+        }
+
+        Profile = result.Business!;
+        SetInputFromProfile(Profile);
+        StatusMessage = "Branding del negocio actualizado.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} updated branding for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            Profile.BusinessId);
+
+        return Page();
+    }
+
     private async Task<bool> LoadAsync(Guid businessId, CancellationToken cancellationToken)
     {
         Profile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
@@ -131,6 +169,16 @@ public sealed class BusinessProfileModel : PageModel
             BusinessLogo = profile.BusinessLogo,
             IsPilotEnabled = profile.IsPilotEnabled,
             Notes = profile.Notes
+        };
+
+        BrandingInput = new BrandingInputModel
+        {
+            PublicName = profile.Branding.PublicName,
+            LogoPath = profile.Branding.LogoPath,
+            PrimaryColor = profile.Branding.PrimaryColor,
+            SecondaryColor = profile.Branding.SecondaryColor,
+            ProgramName = profile.Branding.ProgramName,
+            ProgramDescription = profile.Branding.ProgramDescription
         };
     }
 
@@ -158,5 +206,20 @@ public sealed class BusinessProfileModel : PageModel
         public string NewPassword { get; set; } = string.Empty;
 
         public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public sealed class BrandingInputModel
+    {
+        public string PublicName { get; set; } = string.Empty;
+
+        public string LogoPath { get; set; } = string.Empty;
+
+        public string PrimaryColor { get; set; } = string.Empty;
+
+        public string SecondaryColor { get; set; } = string.Empty;
+
+        public string ProgramName { get; set; } = string.Empty;
+
+        public string ProgramDescription { get; set; } = string.Empty;
     }
 }
