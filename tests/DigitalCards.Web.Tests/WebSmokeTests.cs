@@ -32,6 +32,40 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("DigitalCards migration shell", html);
         Assert.Contains("Registro cliente", html);
+        Assert.DoesNotContain("data-testid=\"legacy-shell\"", html);
+    }
+
+    [Fact]
+    public async Task AuthenticatedRolePages_UseLegacyWebFormsShell()
+    {
+        using var fake = WithFakeIntegrations();
+        var adminClient = fake.Factory.CreateClient();
+        var businessClient = fake.Factory.CreateClient();
+        var clientClient = fake.Factory.CreateClient();
+        var userName = NewLegacySafeUserName("ls");
+        const string clientPassword = "ClientPass123!";
+
+        await LoginAdminAsync(adminClient);
+        var adminHtml = await adminClient.GetStringAsync("/Admin/Dashboard");
+
+        Assert.Contains("data-testid=\"legacy-shell\"", adminHtml);
+        Assert.Contains("Administradores", adminHtml);
+        Assert.Contains("Propiedad de IngeLabs", adminHtml);
+
+        await LoginBusinessAsync(businessClient);
+        var businessHtml = await businessClient.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("data-testid=\"legacy-shell\"", businessHtml);
+        Assert.Contains("Duenos de negocios", businessHtml);
+        Assert.Contains("Tarjetas", businessHtml);
+
+        await RegisterClientAsync(fake.Factory, userName, password: clientPassword);
+        await LoginClientAsync(clientClient, userName, clientPassword);
+        var clientHtml = await clientClient.GetStringAsync("/Client/Dashboard");
+
+        Assert.Contains("data-testid=\"legacy-shell\"", clientHtml);
+        Assert.Contains("Cliente", clientHtml);
+        Assert.Contains("Mis tarjetas", clientHtml);
     }
 
     [Fact]

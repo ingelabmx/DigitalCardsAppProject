@@ -8,75 +8,156 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DigitalCards.Web.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">DigitalCards</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Register">Registro cliente</a>
-                        </li>
-                        @if (User.HasClaim(claim => claim.Type == ClientAuth.ClientIdClaim))
+@{
+    var requestPath = Context.Request.Path;
+    var isAdmin = User.HasClaim(claim => claim.Type == AdminAuth.AdminUserIdClaim);
+    var isBusiness = User.HasClaim(claim => claim.Type == BusinessAuth.BusinessIdClaim);
+    var isClient = User.HasClaim(claim => claim.Type == ClientAuth.ClientIdClaim);
+    var isAuthenticatedArea =
+        requestPath.StartsWithSegments("/Admin") ||
+        requestPath.StartsWithSegments("/Business") ||
+        requestPath.StartsWithSegments("/Client");
+    var isAuthPage =
+        requestPath.Value?.EndsWith("/Login", StringComparison.OrdinalIgnoreCase) == true ||
+        requestPath.Value?.EndsWith("/ForgotPassword", StringComparison.OrdinalIgnoreCase) == true ||
+        requestPath.Value?.EndsWith("/ResetPassword", StringComparison.OrdinalIgnoreCase) == true;
+    var useLegacyShell = isAuthenticatedArea && !isAuthPage && (isAdmin || isBusiness || isClient);
+    var shellRole = isAdmin ? "Administradores" : isBusiness ? "Duenos de negocios" : "Cliente";
+    var shellName = isAdmin
+        ? User.FindFirst(AdminAuth.AdminNameClaim)?.Value ?? "Admin"
+        : isBusiness
+            ? User.FindFirst(BusinessAuth.BusinessNameClaim)?.Value ?? "Negocio"
+            : User.FindFirst(ClientAuth.ClientNameClaim)?.Value ?? "Cliente";
+    string SidebarClass(string path) => requestPath.StartsWithSegments(path)
+        ? "legacy-sidebar-link active"
+        : "legacy-sidebar-link";
+}
+<body class="@(useLegacyShell ? "legacy-shell" : "public-shell")">
+    @if (useLegacyShell)
+    {
+        <div class="legacy-page-wrapper" data-testid="legacy-shell">
+            <aside class="legacy-left-sidebar" data-testid="legacy-sidebar">
+                <div class="legacy-brand">
+                    <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link">
+                        <span class="legacy-brand-mark">DC</span>
+                        <span>
+                            <strong>DigitalCards</strong>
+                            <small>@shellRole</small>
+                        </span>
+                    </a>
+                </div>
+
+                <nav class="legacy-sidebar-nav" aria-label="Navegacion principal">
+                    <p class="legacy-nav-caption">@shellRole</p>
+                    <ul>
+                        @if (isAdmin)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Client/Dashboard">Cliente</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Client/ChangePassword">Contrasena cliente</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Client/Logout" data-testid="client-layout-logout-link">Salir cliente</a>
-                            </li>
+                            <li><a class="@SidebarClass("/Admin/Dashboard")" asp-page="/Admin/Dashboard"><span>DA</span>Dashboard</a></li>
+                            <li><a class="@SidebarClass("/Admin/CreateBusiness")" asp-page="/Admin/CreateBusiness"><span>CN</span>Crear negocio</a></li>
+                            <li><a class="@SidebarClass("/Admin/Businesses")" asp-page="/Admin/Businesses"><span>NE</span>Negocios</a></li>
+                            <li><a class="@SidebarClass("/Admin/Clients")" asp-page="/Admin/Clients"><span>CL</span>Clientes</a></li>
+                            <li><a class="@SidebarClass("/Admin/AdminUsers")" asp-page="/Admin/AdminUsers"><span>AD</span>Administradores</a></li>
+                            <li><a class="@SidebarClass("/Admin/Support")" asp-page="/Admin/Support"><span>SO</span>Soporte</a></li>
                         }
-                        else
+                        else if (isBusiness)
                         {
+                            <li><a class="@SidebarClass("/Business/Dashboard")" asp-page="/Business/Dashboard"><span>DA</span>Dashboard</a></li>
+                            <li><a class="@SidebarClass("/Business/Cards")" asp-page="/Business/Cards"><span>TA</span>Tarjetas</a></li>
+                            <li><a class="@SidebarClass("/Business/Enroll")" asp-page="/Business/Enroll"><span>AS</span>Asociar cliente</a></li>
+                            <li><a class="@SidebarClass("/Business/Stamp")" asp-page="/Business/Stamp"><span>CH</span>Checadas</a></li>
+                        }
+                        else if (isClient)
+                        {
+                            <li><a class="@SidebarClass("/Client/Dashboard")" asp-page="/Client/Dashboard"><span>DA</span>Dashboard</a></li>
+                            <li><a class="@SidebarClass("/Client/Cards")" asp-page="/Client/Cards"><span>MT</span>Mis tarjetas</a></li>
+                            <li><a class="@SidebarClass("/Client/ChangePassword")" asp-page="/Client/ChangePassword"><span>CO</span>Contrasena</a></li>
+                        }
+                    </ul>
+
+                    <p class="legacy-nav-caption">Autenticacion</p>
+                    <ul>
+                        @if (isAdmin)
+                        {
+                            <li><a class="legacy-sidebar-link" asp-page="/Admin/Logout" data-testid="admin-layout-logout-link"><span>SA</span>Salir admin</a></li>
+                        }
+                        else if (isBusiness)
+                        {
+                            <li><a class="legacy-sidebar-link" asp-page="/Business/Logout" data-testid="business-logout-link"><span>SA</span>Cerrar sesion</a></li>
+                        }
+                        else if (isClient)
+                        {
+                            <li><a class="legacy-sidebar-link" asp-page="/Client/Logout" data-testid="client-layout-logout-link"><span>SA</span>Salir cliente</a></li>
+                        }
+                    </ul>
+                </nav>
+            </aside>
+
+            <div class="legacy-body-wrapper">
+                <header class="legacy-app-header" data-testid="legacy-header">
+                    <div>
+                        <button class="legacy-menu-button" type="button" aria-label="Abrir navegacion" disabled>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+                    </div>
+                    <h5>Bienvenido, @shellName</h5>
+                </header>
+
+                <main role="main" class="legacy-container-fluid">
+                    @RenderBody()
+                </main>
+
+                <footer class="legacy-footer">
+                    Propiedad de IngeLabs
+                </footer>
+            </div>
+        </div>
+    }
+    else
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container">
+                    <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">DigitalCards</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Register">Registro cliente</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Client/Login">Login cliente</a>
                             </li>
-                        }
-                        @if (User.HasClaim(claim => claim.Type == BusinessAuth.BusinessIdClaim))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Business/Dashboard">Negocio</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Business/Logout" data-testid="business-logout-link">Salir</a>
-                            </li>
-                        }
-                        else
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Business/Login">Login negocio</a>
                             </li>
-                        }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Admin/Login">Admin</a>
-                        </li>
-                    </ul>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Admin/Login">Admin</a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
+            </nav>
+        </header>
         <div class="container">
-            &copy; 2026 - DigitalCards migration shell
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
         </div>
-    </footer>
+
+        <footer class="border-top footer text-muted">
+            <div class="container">
+                &copy; 2026 - DigitalCards migration shell
+            </div>
+        </footer>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
