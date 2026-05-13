@@ -465,9 +465,33 @@ Plantillas disponibles:
 - reset de contrasena;
 - alerta interna.
 
-En esta fase solo Wallet enrollment se envia desde flujos activos. Las demas
-plantillas quedan listas para los proximos PRs de bienvenida, reset y soporte.
+Wallet enrollment y reset de contrasena ya se envian desde flujos activos. Las
+plantillas de bienvenida y alerta interna quedan listas para proximos PRs.
 Fake email sigue siendo default para CI y Playwright.
+
+## Reset de contrasena por email
+
+Antes de usar reset de contrasena contra HostGator, ejecuta:
+
+```text
+docs/migration-context/33-password-reset-flows-v1-hostgator.sql
+```
+
+Flujos modernos:
+
+- Cliente: `/Client/ForgotPassword` y `/Client/ResetPassword/{token}`.
+- Negocio: `/Business/ForgotPassword` y `/Business/ResetPassword/{token}`.
+
+El reset envia correo por SMTP real o queda visible en `/Dev/Outbox` cuando el
+provider de email es fake. El token publico del link se guarda solo como
+`SHA-256` en `ModernPasswordResetToken`, vence en una hora y se marca como
+usado despues del cambio exitoso. La tabla legacy `PasswordResetToken` de Web
+Forms no se modifica.
+
+El cambio actualiza tanto el password legacy (`UserClient.UserPassword` o
+`Business.BusinessPassword`) como la credencial moderna
+(`ModernClientCredential` o `ModernBusinessCredential`) para mantener
+compatibilidad con Web Forms.
 
 ## Password hardening negocio
 
