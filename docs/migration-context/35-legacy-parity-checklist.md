@@ -26,7 +26,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Business branding | Pilot | Branding table exists and feeds email/Wallet/client UI; logo upload is not implemented. |
 | Admin support center | Ready | `/Admin/Support` gives safe read-only diagnostics. |
 | Delete/deactivate business | Legacy Only | Not implemented in modern app. |
-| Admin reporting/export | Legacy Only | No modern reports/export center yet. |
+| Admin reporting/export | Pilot | `/Admin/Reports` gives a read-only operational summary; `/Admin/Support` exports diagnostics. |
 
 ## Business Flows
 

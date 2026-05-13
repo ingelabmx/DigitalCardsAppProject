@@ -663,6 +663,71 @@ public sealed class AdminAppService
             cardDtos);
     }
 
+    public async Task<AdminReportsDto> GetReportsAsync(CancellationToken cancellationToken = default)
+    {
+        var businesses = await _businesses.ListAsync(cancellationToken);
+        var pilotBusinesses = await _pilotBusinesses.ListAsync(cancellationToken);
+        var pilotByBusinessId = pilotBusinesses.ToDictionary(record => record.BusinessId);
+
+        var businessReports = new List<AdminReportBusinessDto>(businesses.Count);
+        var reportCards = new List<AdminReportCardDto>();
+        var clientIds = new HashSet<Guid>();
+
+        foreach (var business in businesses.OrderBy(business => business.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            var cards = await _loyaltyCards.SearchByBusinessAsync(
+                business.Id,
+                query: string.Empty,
+                limit: 100,
+                cancellationToken);
+            var supportCards = new List<AdminSupportCardDto>(cards.Count);
+
+            foreach (var card in cards)
+            {
+                clientIds.Add(card.ClientId);
+                var supportCard = await ToSupportCardDtoAsync(card, cancellationToken);
+                if (supportCard is not null)
+                {
+                    supportCards.Add(supportCard);
+                    reportCards.Add(ToReportCardDto(supportCard));
+                }
+            }
+
+            pilotByBusinessId.TryGetValue(business.Id, out var pilot);
+            businessReports.Add(new AdminReportBusinessDto(
+                business.Id,
+                business.DisplayName,
+                business.Email,
+                cards.Count,
+                cards.Select(card => card.ClientId).Distinct().Count(),
+                cards.Sum(card => card.CurrentStamps),
+                cards.Sum(card => card.LifetimeStamps),
+                supportCards.Count(card => card.GoogleIssued),
+                supportCards.Count(card => card.AppleTracked),
+                supportCards.Sum(card => card.WalletIssueCount),
+                cards.Count == 0 ? null : cards.Max(card => card.LastStampedAt),
+                pilot?.IsEnabled == true));
+        }
+
+        var recentCards = reportCards
+            .OrderByDescending(card => card.LastStampedAt)
+            .ThenBy(card => card.BusinessName, StringComparer.OrdinalIgnoreCase)
+            .Take(25)
+            .ToArray();
+
+        return new AdminReportsDto(
+            businessReports.Count,
+            reportCards.Count,
+            clientIds.Count,
+            businessReports.Sum(item => item.CurrentStampTotal),
+            businessReports.Sum(item => item.LifetimeStampTotal),
+            businessReports.Sum(item => item.GoogleIssuedCount),
+            businessReports.Sum(item => item.AppleTrackedCount),
+            businessReports.Sum(item => item.WalletIssueCount),
+            businessReports,
+            recentCards);
+    }
+
     private static bool MatchesQuery(Business business, string query)
     {
         return string.IsNullOrWhiteSpace(query) ||
@@ -732,6 +797,20 @@ public sealed class AdminAppService
         return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
             (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
             (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
+    }
+
+    private static AdminReportCardDto ToReportCardDto(AdminSupportCardDto card)
+    {
+        return new AdminReportCardDto(
+            card.CardId,
+            card.Business.BusinessName,
+            card.Client.UserName,
+            card.CurrentStamps,
+            card.LifetimeStamps,
+            card.LastStampedAt,
+            card.GoogleIssued,
+            card.AppleTracked,
+            card.WalletIssueCount);
     }
 
     private async Task<PilotClientAccess> UpsertPilotClientAsync(

@@ -707,6 +707,14 @@ h1 {
   display: block;
 }
 
+.admin-report-metrics {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.admin-report-business-row {
+  grid-template-columns: minmax(0, 1.2fr) minmax(150px, auto) minmax(150px, auto) minmax(150px, auto);
+}
+
 .support-sync-status {
   align-items: center;
   background: #f6f7f9;
@@ -1019,7 +1027,9 @@ h1 {
   .legacy-shell .admin-dashboard-hero,
   .legacy-shell .client-legacy-hero,
   .legacy-shell .admin-action-grid,
-  .legacy-admin-row {
+  .legacy-admin-row,
+  .admin-report-metrics,
+  .admin-report-business-row {
     grid-template-columns: 1fr;
   }
 

@@ -180,3 +180,40 @@ public sealed record AdminSupportCardDto(
     string? AppleSerialSuffix,
     int WalletIssueCount,
     IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
+
+public sealed record AdminReportsDto(
+    int BusinessCount,
+    int CardCount,
+    int ClientCount,
+    int CurrentStampTotal,
+    int LifetimeStampTotal,
+    int GoogleIssuedCount,
+    int AppleTrackedCount,
+    int WalletIssueCount,
+    IReadOnlyList<AdminReportBusinessDto> Businesses,
+    IReadOnlyList<AdminReportCardDto> RecentCards);
+
+public sealed record AdminReportBusinessDto(
+    Guid BusinessId,
+    string BusinessName,
+    string BusinessEmail,
+    int CardCount,
+    int ClientCount,
+    int CurrentStampTotal,
+    int LifetimeStampTotal,
+    int GoogleIssuedCount,
+    int AppleTrackedCount,
+    int WalletIssueCount,
+    DateTimeOffset? LastStampedAt,
+    bool IsPilotEnabled);
+
+public sealed record AdminReportCardDto(
+    Guid CardId,
+    string BusinessName,
+    string ClientUserName,
+    int CurrentStamps,
+    int LifetimeStamps,
+    DateTimeOffset LastStampedAt,
+    bool GoogleIssued,
+    bool AppleTracked,
+    int WalletIssueCount);

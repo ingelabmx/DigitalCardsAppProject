@@ -308,6 +308,7 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Crear admin: `http://localhost:5031/Admin/CreateAdmin`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
 - Soporte: `http://localhost:5031/Admin/Support`
+- Reportes: `http://localhost:5031/Admin/Reports`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
 
