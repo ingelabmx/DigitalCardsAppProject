@@ -1,10 +1,12 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
-using Microsoft.AspNetCore.Mvc;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Client;
 
+[Authorize(Policy = ClientAuth.Policy)]
 public sealed class CardsModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
@@ -14,21 +16,15 @@ public sealed class CardsModel : PageModel
         _appService = appService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string UserName { get; set; } = string.Empty;
-
-    public IReadOnlyList<LoyaltyCardDto> Cards { get; private set; } = [];
+    public IReadOnlyList<ClientLoyaltyCardDto> Cards { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(UserName))
-        {
-            return;
-        }
-
         try
         {
-            Cards = await _appService.GetClientCardsAsync(UserName, cancellationToken);
+            Cards = await _appService.GetClientDashboardCardsAsync(
+                ClientAuth.GetClientId(User),
+                cancellationToken);
         }
         catch (InvalidOperationException)
         {
@@ -36,4 +32,3 @@ public sealed class CardsModel : PageModel
         }
     }
 }
-

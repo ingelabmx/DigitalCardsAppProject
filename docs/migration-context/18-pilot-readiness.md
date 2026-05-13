@@ -3,8 +3,8 @@
 ## Objetivo
 
 Permitir pruebas reales en `https://app.puntelio.com` sin abrir las pantallas
-modernas de negocio a todos los negocios/clientes. Web Forms sigue siendo el
-fallback operativo.
+modernas de negocio a todos los negocios. Web Forms sigue siendo el fallback
+operativo.
 
 ## Configuracion
 
@@ -33,15 +33,16 @@ Activar piloto:
 Comportamiento:
 
 - `Enabled=false`: no se bloquea ningun negocio por piloto.
-- `Enabled=true`: `/Business/Dashboard`, `/Business/Enroll` y
-  `/Business/Stamp` requieren que el negocio este allowlisted por ID o email.
-- Enroll/stamp tambien validan cliente por email exacto o dominio.
+- `Enabled=true`: `/Business/Dashboard`, `/Business/Enroll`,
+  `/Business/Cards` y `/Business/Stamp` requieren que el negocio este
+  habilitado por admin o por fallback temporal de ID/email.
+- El negocio habilitado puede asociar clientes desde `/Business/Enroll`; esa es
+  la habilitacion operativa normal del cliente en su programa.
+- `/Admin/Clients`, `AllowedClientEmails` y `AllowedClientEmailDomains` quedan
+  como guardrails temporales para pruebas/rollback, no como paso normal de
+  negocio.
 - Wallet landing, Google Wallet, Apple `.pkpass` y Apple Wallet Web Service no
   dependen de cookie de negocio ni del piloto.
-
-Si el piloto esta activo y no hay allowlist de clientes, los clientes existentes
-quedan bloqueados para acciones modernas. Esto evita enrolar usuarios reales por
-accidente.
 
 ## Diagnostico seguro
 

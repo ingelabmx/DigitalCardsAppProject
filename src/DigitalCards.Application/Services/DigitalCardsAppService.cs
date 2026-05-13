@@ -50,16 +50,36 @@ public sealed class DigitalCardsAppService
 
     public async Task<ClientDto> RegisterClientAsync(RegisterClientCommand command, CancellationToken cancellationToken = default)
     {
-        var existing = await _clients.FindByUserNameOrEmailAsync(command.UserName, cancellationToken)
-            ?? await _clients.FindByUserNameOrEmailAsync(command.Email, cancellationToken);
-
-        if (existing is not null)
+        if (await _clients.UserNameOrEmailExistsAsync(command.UserName, cancellationToken) ||
+            await _clients.UserNameOrEmailExistsAsync(command.Email, cancellationToken))
         {
             throw new InvalidOperationException("Client username or email already exists.");
         }
 
-        var client = new Client(Guid.NewGuid(), command.UserName, command.FirstName, command.LastName, command.Email);
+        var legacyPasswordHash = string.IsNullOrWhiteSpace(command.Password)
+            ? string.Empty
+            : LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.Password);
+        var client = new Client(
+            Guid.NewGuid(),
+            command.UserName,
+            command.FirstName,
+            command.LastName,
+            command.Email,
+            legacyPasswordHash);
         await _clients.AddAsync(client, cancellationToken);
+        return ToDto(client);
+    }
+
+    public async Task<ClientDto?> LoginClientAsync(ClientLoginCommand command, CancellationToken cancellationToken = default)
+    {
+        var client = await _clients.FindByUserNameOrEmailAsync(command.UserNameOrEmail, cancellationToken);
+        if (client is null ||
+            string.IsNullOrWhiteSpace(client.PasswordHashPlaceholder) ||
+            !LegacyPasswordVerifier.Matches(client.PasswordHashPlaceholder, command.Password))
+        {
+            return null;
+        }
+
         return ToDto(client);
     }
 
@@ -332,6 +352,53 @@ public sealed class DigitalCardsAppService
     public async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsAsync(string userNameOrEmail, CancellationToken cancellationToken = default)
     {
         var client = await RequireClientAsync(userNameOrEmail, cancellationToken);
+        return await GetClientCardsByClientAsync(client, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsByClientIdAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await _clients.FindByIdAsync(clientId, cancellationToken)
+            ?? throw new InvalidOperationException("Client was not found.");
+        return await GetClientCardsByClientAsync(client, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ClientLoyaltyCardDto>> GetClientDashboardCardsAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await _clients.FindByIdAsync(clientId, cancellationToken)
+            ?? throw new InvalidOperationException("Client was not found.");
+        var cards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
+        var businesses = await _businesses.ListAsync(cancellationToken);
+        var results = new List<ClientLoyaltyCardDto>(cards.Count);
+
+        foreach (var card in cards)
+        {
+            var token = await _walletLinkTokens.CreateTokenAsync(
+                card.Id,
+                WalletLinkPurposes.WalletSelect,
+                cancellationToken);
+            var business = businesses.Single(existing => existing.Id == card.BusinessId);
+            results.Add(new ClientLoyaltyCardDto(
+                card.Id,
+                token,
+                business.Name,
+                client.UserName,
+                card.CurrentStamps,
+                card.LifetimeStamps,
+                card.GoogleObjectId is not null,
+                card.GoogleSaveUrl));
+        }
+
+        return results;
+    }
+
+    private async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsByClientAsync(
+        Client client,
+        CancellationToken cancellationToken)
+    {
         var cards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
         var businesses = await _businesses.ListAsync(cancellationToken);
 

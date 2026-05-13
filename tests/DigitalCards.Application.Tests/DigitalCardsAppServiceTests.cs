@@ -704,6 +704,51 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task LoginClient_WithLegacyClientCredentials_ReturnsClient()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "clientlogin1",
+            "Client",
+            "Login",
+            "clientlogin1@example.test",
+            "clientpass1"));
+
+        var login = await app.LoginClientAsync(new ClientLoginCommand(
+            "clientlogin1",
+            "clientpass1"));
+
+        Assert.NotNull(login);
+        Assert.Equal(registered.Id, login!.Id);
+        Assert.Equal("clientlogin1@example.test", login.Email);
+    }
+
+    [Fact]
+    public async Task LoginClient_WithInvalidOrBusinessCredentials_ReturnsNull()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        await app.RegisterClientAsync(new RegisterClientCommand(
+            "clientlogin2",
+            "Client",
+            "Login",
+            "clientlogin2@example.test",
+            "clientpass1"));
+
+        var invalidPassword = await app.LoginClientAsync(new ClientLoginCommand(
+            "clientlogin2",
+            "wrong-password"));
+        var businessCredentials = await app.LoginClientAsync(new ClientLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        Assert.Null(invalidPassword);
+        Assert.Null(businessCredentials);
+    }
+
+    [Fact]
     public void AddInfrastructure_ThrowsWhenAppleWalletProviderIsAppleWithoutConfiguration()
     {
         var configuration = new ConfigurationBuilder()

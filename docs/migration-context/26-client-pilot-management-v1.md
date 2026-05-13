@@ -1,9 +1,9 @@
 # 26 Client Pilot Management v1
 
-Esta fase mueve el control operativo de clientes piloto desde
+Esta fase mueve el control operativo temporal de clientes piloto desde
 `appsettings.Local.json` hacia la UI admin moderna. El admin puede buscar
-clientes legacy de `UserClient` y habilitar/deshabilitar cuales pueden usar
-enroll, reenvio de link Wallet y sellos dentro del flujo moderno.
+clientes legacy de `UserClient` y habilitar/deshabilitar clientes para pruebas
+controladas, soporte y rollback.
 
 ## Cambios
 
@@ -12,7 +12,8 @@ enroll, reenvio de link Wallet y sellos dentro del flujo moderno.
   MySQL.
 - `AdminAppService` puede buscar clientes legacy y actualizar su estado piloto.
 - Nueva pagina protegida `/Admin/Clients`.
-- `PilotAccessService` permite cliente cuando:
+- `PilotAccessService` permite cliente cuando se llama en flujos que aun usan
+  guardrail de cliente:
   - `DigitalCards:Pilot:Enabled=false`;
   - el cliente esta habilitado en `ModernPilotClient`;
   - el email/dominio sigue permitido por `AllowedClientEmails` o
@@ -44,10 +45,12 @@ datos de Web Forms.
    - reenvio de link Wallet;
    - agregar sello.
 
-Con `DigitalCards:Pilot:Enabled=true`, un cliente deshabilitado queda bloqueado
-para acciones modernas aunque el negocio este habilitado. Wallet landing,
-Google Wallet, Apple Wallet y Apple Wallet Web Service siguen publicos por sus
-tokens/autorizacion propia.
+Con `DigitalCards:Pilot:Enabled=true`, el admin sigue pudiendo usar esta tabla
+como guardrail temporal. El flujo normal corregido es que el negocio habilitado
+asocia al cliente mediante `/Business/Enroll` y opera la tarjeta desde
+`/Business/Cards`; no requiere que admin habilite manualmente cada cliente.
+Wallet landing, Google Wallet, Apple Wallet y Apple Wallet Web Service siguen
+publicos por sus tokens/autorizacion propia.
 
 ## Rollback
 
@@ -77,7 +80,7 @@ o dominio del cliente en `AllowedClientEmails` / `AllowedClientEmailDomains`.
 ## Pruebas
 
 - Unit/Application: upsert de `ModernPilotClient`, busqueda legacy y DI.
-- Web: `/Admin/Clients` protegido, habilitar/deshabilitar cliente y bloqueo de
-  enroll cuando el cliente no esta habilitado.
-- Playwright: login admin, habilitar negocio, habilitar cliente, login negocio,
-  enroll, Wallet fake y sello desde `/Business/Cards`.
+- Web: `/Admin/Clients` protegido, habilitar/deshabilitar cliente y negocio
+  habilitado asociando cliente sin intervencion admin por cliente.
+- Playwright: login admin, habilitar negocio, login negocio, enroll, Wallet fake
+  y sello desde `/Business/Cards`.

@@ -41,13 +41,6 @@
             </div>
         }
 
-        @if (Model.IsClientPilotBlocked)
-        {
-            <div class="alert alert-warning" role="status" data-testid="pilot-client-blocked">
-                @Model.ClientPilotBlockMessage
-            </div>
-        }
-
         <div class="business-card-grid">
             <div class="business-card-list">
                 <h2>Resultados</h2>
@@ -126,12 +119,12 @@
 
                     <div class="form-actions">
                         <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                            <button class="btn btn-outline-primary" type="submit" disabled="@Model.IsClientPilotBlocked" data-testid="business-card-resend-submit">
+                            <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit">
                                 Reenviar link Wallet
                             </button>
                         </form>
                         <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                            <button class="btn btn-primary" type="submit" disabled="@Model.IsClientPilotBlocked" data-testid="business-card-stamp-submit">
+                            <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit">
                                 Agregar sello
                             </button>
                         </form>

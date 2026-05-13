@@ -34,7 +34,7 @@ public sealed class RegisterModel : PageModel
         try
         {
             var client = await _appService.RegisterClientAsync(
-                new RegisterClientCommand(Input.UserName, Input.FirstName, Input.LastName, Input.Email),
+                new RegisterClientCommand(Input.UserName, Input.FirstName, Input.LastName, Input.Email, Input.Password),
                 cancellationToken);
 
             StatusMessage = $"Cliente {client.UserName} registrado.";
@@ -67,6 +67,11 @@ public sealed class RegisterModel : PageModel
         [EmailAddress]
         [Required]
         public string Email { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Contrasena")]
+        [Required]
+        [MinLength(8)]
+        public string Password { get; set; } = string.Empty;
     }
 }
-

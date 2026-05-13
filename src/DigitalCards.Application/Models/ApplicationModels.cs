@@ -1,6 +1,13 @@
 namespace DigitalCards.Application.Models;
 
-public sealed record RegisterClientCommand(string UserName, string FirstName, string LastName, string Email);
+public sealed record RegisterClientCommand(
+    string UserName,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password = "");
+
+public sealed record ClientLoginCommand(string UserNameOrEmail, string Password);
 
 public sealed record BusinessLoginCommand(string Email, string Password);
 
@@ -20,6 +27,16 @@ public sealed record LoyaltyCardDto(
     int CurrentStamps,
     int LifetimeStamps,
     string? GoogleObjectId,
+    string? GoogleSaveUrl);
+
+public sealed record ClientLoyaltyCardDto(
+    Guid Id,
+    string WalletSelectToken,
+    string BusinessName,
+    string ClientUserName,
+    int CurrentStamps,
+    int LifetimeStamps,
+    bool GoogleIssued,
     string? GoogleSaveUrl);
 
 public sealed record EnrollClientResult(LoyaltyCardDto Card, string EnrollmentUrl);
