@@ -13,6 +13,17 @@ public sealed record ChangeClientPasswordCommand(Guid ClientId, string CurrentPa
 
 public sealed record ChangeClientPasswordResult(bool Succeeded, string? ErrorMessage);
 
+public sealed record UpdateClientProfileCommand(
+    Guid ClientId,
+    string FirstName,
+    string LastName,
+    string Email);
+
+public sealed record UpdateClientProfileResult(ClientDto? Client, string? ErrorMessage)
+{
+    public bool Succeeded => Client is not null;
+}
+
 public sealed record BusinessLoginCommand(string Email, string Password);
 
 public sealed record RequestClientPasswordResetCommand(string UserNameOrEmail, string BaseUrl);

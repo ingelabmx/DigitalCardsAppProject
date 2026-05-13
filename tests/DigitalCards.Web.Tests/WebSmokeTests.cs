@@ -1158,7 +1158,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Client/Dashboard", "/Client/Cards", "/Client/ChangePassword" })
+        foreach (var path in new[] { "/Client/Dashboard", "/Client/Cards", "/Client/Profile", "/Client/ChangePassword" })
         {
             var response = await client.GetAsync(path);
 
@@ -1258,7 +1258,51 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-dashboard-card-count", html);
         Assert.Contains("client-dashboard-current-stamps", html);
         Assert.Contains("client-dashboard-wallet-link", html);
+        Assert.Contains("client-dashboard-profile-link", html);
         Assert.DoesNotContain("00000000-0000-0000", html);
+    }
+
+    [Fact]
+    public async Task ClientProfile_UpdatesLegacyProfileWithoutChangingUserNameOrRenderingSecrets()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("pf");
+        const string password = "clientpass1";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", password);
+        await LoginClientAsync(http, userName, password);
+        var getHtml = await http.GetStringAsync("/Client/Profile");
+
+        Assert.Contains("client-profile-form", getHtml);
+        Assert.Contains(userName, getHtml);
+
+        var token = ExtractAntiforgeryToken(getHtml);
+        var response = await http.PostAsync(
+            "/Client/Profile",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.FirstName"] = "Nuevo",
+                ["Input.LastName"] = "Cliente",
+                ["Input.Email"] = $"{userName}@new.test",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Perfil actualizado", html);
+        Assert.Contains("Nuevo", html);
+        Assert.Contains($"{userName}@new.test", html);
+        Assert.Contains(userName, html);
+        Assert.DoesNotContain(password, html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", html, StringComparison.OrdinalIgnoreCase);
+
+        var dashboard = await http.GetStringAsync("/Client/Dashboard");
+        Assert.Contains("Nuevo Cliente", dashboard);
+        Assert.Contains($"{userName}@new.test", dashboard);
+        Assert.Contains(userName, dashboard);
     }
 
     [Fact]
