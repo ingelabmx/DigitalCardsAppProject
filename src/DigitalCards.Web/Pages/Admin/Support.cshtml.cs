@@ -132,6 +132,14 @@ public sealed class SupportModel : PageModel
             AdminAuth.GetAdminUserId(User),
             Query?.Trim().Length ?? 0);
 
+        await _adminApp.RecordSupportExportAsync(
+            new RecordSupportExportAuditCommand(
+                AdminAuth.GetAdminUserId(User),
+                "json",
+                Query ?? string.Empty,
+                result.Cards.Count),
+            cancellationToken);
+
         return File(
             Encoding.UTF8.GetBytes(json),
             "application/json",
@@ -169,6 +177,14 @@ public sealed class SupportModel : PageModel
             "Admin {AdminUserId} exported support diagnostics CSV with query length {QueryLength}.",
             AdminAuth.GetAdminUserId(User),
             Query?.Trim().Length ?? 0);
+
+        await _adminApp.RecordSupportExportAsync(
+            new RecordSupportExportAuditCommand(
+                AdminAuth.GetAdminUserId(User),
+                "csv",
+                Query ?? string.Empty,
+                result.Cards.Count),
+            cancellationToken);
 
         return File(
             Encoding.UTF8.GetBytes(csv.ToString()),

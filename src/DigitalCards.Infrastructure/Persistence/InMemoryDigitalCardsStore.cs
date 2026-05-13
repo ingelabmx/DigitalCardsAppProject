@@ -58,4 +58,6 @@ public sealed class InMemoryDigitalCardsStore
     public List<PasswordResetTokenRecord> PasswordResetTokens { get; } = [];
 
     public List<StampLedgerRecord> StampLedger { get; } = [];
+
+    public List<OperationalAuditEvent> AuditEvents { get; } = [];
 }

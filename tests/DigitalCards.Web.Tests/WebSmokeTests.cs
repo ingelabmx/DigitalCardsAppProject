@@ -497,7 +497,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin", "/Admin/Clients", "/Admin/Reports", "/Admin/Support" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin", "/Admin/Clients", "/Admin/Reports", "/Admin/Support", "/Admin/Audit" })
         {
             var response = await client.GetAsync(path);
 
@@ -834,6 +834,38 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("auth-token", csv, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PasswordHash", csv, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionStrings", csv, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AdminAudit_RequiresAdminAndShowsSupportExportEventWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations();
+        var anonymous = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("au");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+
+        var anonymousResponse = await anonymous.GetAsync("/Admin/Audit");
+
+        await LoginAdminAsync(http);
+        var exportResponse = await http.GetAsync($"/Admin/Support?handler=Export&Query={userName}");
+        var auditHtml = await http.GetStringAsync($"/Admin/Audit?EventType={OperationalAuditEventType.SupportExported}");
+
+        Assert.Equal(HttpStatusCode.Redirect, anonymousResponse.StatusCode);
+        Assert.Contains("/Admin/Login", anonymousResponse.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        Assert.Contains("admin-audit-table", auditHtml);
+        Assert.Contains("SupportExported", auditHtml);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, auditHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", auditHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", auditHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionStrings", auditHtml, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

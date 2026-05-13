@@ -38,6 +38,7 @@ public sealed class AdminAppService
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
+    private readonly IAuditEventRepository _auditEvents;
     private readonly IPilotBusinessRepository _pilotBusinesses;
     private readonly IPilotClientRepository _pilotClients;
     private readonly IStampLedgerRepository _stampLedger;
@@ -54,6 +55,7 @@ public sealed class AdminAppService
         IAppleWalletService appleWallet,
         IGoogleWalletService googleWallet,
         IStampLedgerRepository stampLedger,
+        IAuditEventRepository auditEvents,
         IPilotBusinessRepository pilotBusinesses,
         IPilotClientRepository pilotClients,
         IClock clock,
@@ -71,6 +73,7 @@ public sealed class AdminAppService
         _appleWallet = appleWallet;
         _googleWallet = googleWallet;
         _stampLedger = stampLedger;
+        _auditEvents = auditEvents;
         _pilotBusinesses = pilotBusinesses;
         _pilotClients = pilotClients;
         _clock = clock;
@@ -196,6 +199,13 @@ public sealed class AdminAppService
                 now),
             cancellationToken);
 
+        await AddAuditAsync(
+            OperationalAuditEventType.AdminCreated,
+            command.ActingAdminUserId,
+            targetAdminUserId: admin.Id,
+            summary: $"Admin {admin.UserName} created.",
+            cancellationToken: cancellationToken);
+
         return new AdminAccessResult(ToDto(admin), ErrorMessage: null);
     }
 
@@ -230,6 +240,13 @@ public sealed class AdminAppService
                 now,
                 now),
             cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.AdminPasswordReset,
+            command.ActingAdminUserId,
+            targetAdminUserId: admin.Id,
+            summary: $"Admin password reset for {admin.UserName}.",
+            cancellationToken: cancellationToken);
 
         return new AdminAccessResult(ToDto(admin), ErrorMessage: null);
     }
@@ -327,6 +344,13 @@ public sealed class AdminAppService
             await _pilotBusinesses.UpsertAsync(access, cancellationToken);
         }
 
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessCreated,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business {business.Name} created. Pilot enabled: {command.EnablePilot}.",
+            cancellationToken: cancellationToken);
+
         return new CreateBusinessResult(ToPilotBusinessDto(business, access), ErrorMessage: null);
     }
 
@@ -358,6 +382,7 @@ public sealed class AdminAppService
             return FailedProfile("El negocio no existe.");
         }
 
+        var previousAccess = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
         var validationError = ValidateBusinessProfile(
             businessName,
             businessEmail,
@@ -408,6 +433,23 @@ public sealed class AdminAppService
             command.AdminUserId,
             activationStatus,
             cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessUpdated,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business {business.Name} profile updated.",
+            cancellationToken: cancellationToken);
+
+        if (previousAccess?.ActivationStatus != access.ActivationStatus)
+        {
+            await AddAuditAsync(
+                OperationalAuditEventType.CutoverStatusChanged,
+                command.AdminUserId,
+                businessId: business.Id,
+                summary: $"Business {business.Name} activation changed from {previousAccess?.ActivationStatus.ToString() ?? "None"} to {access.ActivationStatus}.",
+                cancellationToken: cancellationToken);
+        }
 
         return new BusinessProfileResult(
             await ToBusinessProfileDtoAsync(business, access, cancellationToken),
@@ -464,6 +506,13 @@ public sealed class AdminAppService
                 now),
             cancellationToken);
 
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessPasswordReset,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business password reset for {business.Name}.",
+            cancellationToken: cancellationToken);
+
         var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
         return new BusinessProfileResult(
             await ToBusinessProfileDtoAsync(business, access, cancellationToken),
@@ -513,6 +562,13 @@ public sealed class AdminAppService
                 command.AdminUserId),
             cancellationToken);
 
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessBrandingUpdated,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business branding updated for {business.Name}.",
+            cancellationToken: cancellationToken);
+
         var access = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
         return new BusinessBrandingResult(
             await ToBusinessProfileDtoAsync(business, access, cancellationToken),
@@ -529,6 +585,7 @@ public sealed class AdminAppService
             return null;
         }
 
+        var previousAccess = await _pilotBusinesses.FindByBusinessIdAsync(command.BusinessId, cancellationToken);
         var access = await UpsertPilotBusinessAsync(
             command.BusinessId,
             command.ActivationStatus is null
@@ -538,6 +595,24 @@ public sealed class AdminAppService
             command.AdminUserId,
             command.ActivationStatus,
             cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.PilotBusinessChanged,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business {business.Name} pilot state changed to {access.ActivationStatus}.",
+            cancellationToken: cancellationToken);
+
+        if (previousAccess?.ActivationStatus != access.ActivationStatus)
+        {
+            await AddAuditAsync(
+                OperationalAuditEventType.CutoverStatusChanged,
+                command.AdminUserId,
+                businessId: business.Id,
+                summary: $"Business {business.Name} activation changed from {previousAccess?.ActivationStatus.ToString() ?? "None"} to {access.ActivationStatus}.",
+                cancellationToken: cancellationToken);
+        }
+
         return ToPilotBusinessDto(business, access);
     }
 
@@ -575,7 +650,70 @@ public sealed class AdminAppService
             command.Notes,
             command.AdminUserId,
             cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.PilotClientChanged,
+            command.AdminUserId,
+            clientId: client.Id,
+            summary: $"Client {client.UserName} pilot state changed to {access.IsEnabled}.",
+            cancellationToken: cancellationToken);
+
         return ToPilotClientDto(client, access);
+    }
+
+    public async Task<IReadOnlyList<AdminAuditEventDto>> SearchAuditAsync(
+        AdminAuditQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var records = await _auditEvents.ListRecentAsync(
+            query.EventType,
+            query.Search,
+            query.From,
+            query.To,
+            query.Limit,
+            cancellationToken);
+
+        var result = new List<AdminAuditEventDto>(records.Count);
+        foreach (var record in records)
+        {
+            result.Add(await ToAuditEventDtoAsync(record, cancellationToken));
+        }
+
+        return result;
+    }
+
+    public async Task RecordSupportExportAsync(
+        RecordSupportExportAuditCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return;
+        }
+
+        await AddAuditAsync(
+            OperationalAuditEventType.SupportExported,
+            command.AdminUserId,
+            summary: $"Support {command.ExportType} export generated. Cards: {Math.Max(0, command.CardCount)}. Query length: {command.Query.Trim().Length}.",
+            cancellationToken: cancellationToken);
+    }
+
+    public async Task RecordBusinessEnrollmentLinkGeneratedAsync(
+        RecordBusinessEnrollmentLinkAuditCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return;
+        }
+
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessEnrollmentLinkGenerated,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business enrollment link generated for {business.Name}.",
+            cancellationToken: cancellationToken);
     }
 
     public async Task<AdminSupportResult> SearchSupportAsync(
@@ -769,6 +907,15 @@ public sealed class AdminAppService
                 safeErrors.Count == 0 ? null : string.Join(", ", safeErrors.Distinct(StringComparer.OrdinalIgnoreCase)),
                 _clock.UtcNow),
             cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.WalletRetryRequested,
+            command.AdminUserId,
+            businessId: card.BusinessId,
+            clientId: card.ClientId,
+            cardId: card.Id,
+            summary: $"Wallet retry requested for card {Suffix(card.Id)}.",
+            cancellationToken: cancellationToken);
 
         var updatedCard = await _loyaltyCards.FindByIdAsync(card.Id, cancellationToken) ?? card;
         var dto = await ToSupportCardDtoAsync(updatedCard, cancellationToken);
@@ -1005,6 +1152,76 @@ public sealed class AdminAppService
             card.GoogleIssued,
             card.AppleTracked,
             card.WalletIssueCount);
+    }
+
+    private async Task AddAuditAsync(
+        OperationalAuditEventType eventType,
+        Guid actorAdminUserId,
+        Guid? businessId = null,
+        Guid? clientId = null,
+        Guid? cardId = null,
+        Guid? targetAdminUserId = null,
+        string? summary = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (actorAdminUserId == Guid.Empty)
+        {
+            return;
+        }
+
+        await _auditEvents.AddAsync(
+            new OperationalAuditEvent(
+                0,
+                eventType,
+                actorAdminUserId,
+                businessId,
+                clientId,
+                cardId,
+                targetAdminUserId,
+                SafeAuditSummary(summary ?? eventType.ToString()),
+                _clock.UtcNow),
+            cancellationToken);
+    }
+
+    private async Task<AdminAuditEventDto> ToAuditEventDtoAsync(
+        OperationalAuditEvent auditEvent,
+        CancellationToken cancellationToken)
+    {
+        var actor = await _adminUsers.FindByIdAsync(auditEvent.ActorAdminUserId, cancellationToken);
+        var targetAdmin = auditEvent.TargetAdminUserId is null
+            ? null
+            : await _adminUsers.FindByIdAsync(auditEvent.TargetAdminUserId.Value, cancellationToken);
+        var business = auditEvent.BusinessId is null
+            ? null
+            : await _businesses.FindByIdAsync(auditEvent.BusinessId.Value, cancellationToken);
+        var client = auditEvent.ClientId is null
+            ? null
+            : await _clients.FindByIdAsync(auditEvent.ClientId.Value, cancellationToken);
+
+        return new AdminAuditEventDto(
+            auditEvent.Id,
+            auditEvent.EventType,
+            auditEvent.ActorAdminUserId,
+            actor?.UserName ?? Suffix(auditEvent.ActorAdminUserId),
+            auditEvent.BusinessId,
+            business?.DisplayName ?? Suffix(auditEvent.BusinessId),
+            auditEvent.ClientId,
+            client?.UserName ?? Suffix(auditEvent.ClientId),
+            auditEvent.CardId,
+            auditEvent.TargetAdminUserId,
+            targetAdmin?.UserName ?? Suffix(auditEvent.TargetAdminUserId),
+            auditEvent.Summary,
+            auditEvent.CreatedAt);
+    }
+
+    private static string SafeAuditSummary(string value)
+    {
+        var normalized = value
+            .Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal)
+            .Trim();
+
+        return normalized.Length <= 500 ? normalized : normalized[..500];
     }
 
     private async Task<PilotClientAccess> UpsertPilotClientAsync(
@@ -1496,5 +1713,16 @@ public sealed class AdminAppService
 
         var normalized = value.Trim();
         return normalized.Length <= length ? normalized : normalized[^length..];
+    }
+
+    private static string? Suffix(Guid? value)
+    {
+        return value is null ? null : Suffix(value.Value);
+    }
+
+    private static string Suffix(Guid value)
+    {
+        var normalized = value.ToString("N");
+        return normalized[^8..];
     }
 }

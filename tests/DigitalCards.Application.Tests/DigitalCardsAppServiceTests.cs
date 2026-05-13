@@ -97,6 +97,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<EmailTemplateRenderer>(provider.GetRequiredService<IEmailTemplateRenderer>());
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
+        Assert.IsType<MySqlAuditEventRepository>(provider.GetRequiredService<IAuditEventRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
@@ -123,6 +124,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<EmailTemplateRenderer>(provider.GetRequiredService<IEmailTemplateRenderer>());
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
+        Assert.IsType<InMemoryAuditEventRepository>(provider.GetRequiredService<IAuditEventRepository>());
         Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<InMemoryBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
@@ -217,6 +219,7 @@ public sealed class DigitalCardsAppServiceTests
         var adminApp = provider.GetRequiredService<AdminAppService>();
         var admins = provider.GetRequiredService<IAdminUserRepository>();
         var credentials = provider.GetRequiredService<IAdminCredentialRepository>();
+        var audit = provider.GetRequiredService<IAuditEventRepository>();
         var actingAdmin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
             "DCAdmin",
             "admin123"));
@@ -246,6 +249,16 @@ public sealed class DigitalCardsAppServiceTests
 
         var login = await adminApp.LoginAdminAsync(new AdminLoginCommand("OpsAdmin", password));
         Assert.NotNull(login);
+
+        var auditEvents = await audit.ListRecentAsync(
+            OperationalAuditEventType.AdminCreated,
+            search: null,
+            from: null,
+            to: null,
+            limit: 10);
+        var auditEvent = Assert.Single(auditEvents, item => item.TargetAdminUserId == admin.Id);
+        Assert.Equal(actingAdmin.Id, auditEvent.ActorAdminUserId);
+        Assert.DoesNotContain(password, auditEvent.Summary, StringComparison.Ordinal);
     }
 
     [Fact]
