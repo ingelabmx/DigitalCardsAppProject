@@ -343,10 +343,13 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.NotNull(enabled);
         Assert.True(enabled!.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.PilotModern, enabled.ActivationStatus);
         Assert.NotNull(disabled);
         Assert.False(disabled!.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.LegacyOnly, disabled.ActivationStatus);
         var listed = Assert.Single(businesses);
         Assert.False(listed.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.LegacyOnly, listed.ActivationStatus);
         Assert.Equal("pausado", listed.Notes);
     }
 
@@ -603,13 +606,15 @@ public sealed class DigitalCardsAppServiceTests
             "edited@example.test",
             "~/Logos/edited.png",
             IsPilotEnabled: true,
-            Notes: "habilitado desde profile"));
+            Notes: "habilitado desde profile",
+            ActivationStatus: BusinessActivationStatus.ModernPrimary));
 
         Assert.True(result.Succeeded);
         Assert.Equal("Edited Cafe", result.Business!.BusinessName);
         Assert.Equal("edited@example.test", result.Business.BusinessEmail);
         Assert.Equal("~/Logos/edited.png", result.Business.BusinessLogo);
         Assert.True(result.Business.IsPilotEnabled);
+        Assert.Equal(BusinessActivationStatus.ModernPrimary, result.Business.ActivationStatus);
         Assert.Equal("habilitado desde profile", result.Business.Notes);
 
         var business = await businesses.FindByIdAsync(created.Business.BusinessId);
@@ -620,6 +625,7 @@ public sealed class DigitalCardsAppServiceTests
         var pilot = await pilotBusinesses.FindByBusinessIdAsync(business.Id);
         Assert.NotNull(pilot);
         Assert.True(pilot!.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.ModernPrimary, pilot.ActivationStatus);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,7 +50,8 @@ public sealed class BusinessProfileModel : PageModel
                 Input.BusinessEmail,
                 Input.BusinessLogo,
                 Input.IsPilotEnabled,
-                Input.Notes),
+                Input.Notes,
+                Input.ActivationStatus),
             cancellationToken);
 
         ClearPasswordFields();
@@ -168,6 +170,7 @@ public sealed class BusinessProfileModel : PageModel
             BusinessEmail = profile.BusinessEmail,
             BusinessLogo = profile.BusinessLogo,
             IsPilotEnabled = profile.IsPilotEnabled,
+            ActivationStatus = profile.ActivationStatus,
             Notes = profile.Notes
         };
 
@@ -197,6 +200,8 @@ public sealed class BusinessProfileModel : PageModel
         public string BusinessLogo { get; set; } = string.Empty;
 
         public bool IsPilotEnabled { get; set; }
+
+        public BusinessActivationStatus? ActivationStatus { get; set; }
 
         public string? Notes { get; set; }
     }

@@ -392,11 +392,15 @@ public sealed class AdminAppService
             return FailedProfile("Ya existe un negocio con ese nombre o correo.");
         }
 
+        var activationStatus = ResolveActivationStatus(
+            command.IsPilotEnabled,
+            command.ActivationStatus);
         var access = await UpsertPilotBusinessAsync(
             business.Id,
-            command.IsPilotEnabled,
+            IsModernEnabled(activationStatus),
             command.Notes,
             command.AdminUserId,
+            activationStatus,
             cancellationToken);
 
         return new BusinessProfileResult(
@@ -521,9 +525,12 @@ public sealed class AdminAppService
 
         var access = await UpsertPilotBusinessAsync(
             command.BusinessId,
-            command.IsEnabled,
+            command.ActivationStatus is null
+                ? command.IsEnabled
+                : IsModernEnabled(command.ActivationStatus.Value),
             command.Notes,
             command.AdminUserId,
+            command.ActivationStatus,
             cancellationToken);
         return ToPilotBusinessDto(business, access);
     }
@@ -755,6 +762,7 @@ public sealed class AdminAppService
         bool isEnabled,
         string? notes,
         Guid adminUserId,
+        BusinessActivationStatus? activationStatus,
         CancellationToken cancellationToken)
     {
         var now = _clock.UtcNow;
@@ -766,8 +774,9 @@ public sealed class AdminAppService
                 notes,
                 now,
                 now,
-                adminUserId)
-            : existing.WithState(isEnabled, notes, now, adminUserId);
+                adminUserId,
+                activationStatus)
+            : existing.WithState(isEnabled, notes, now, adminUserId, activationStatus);
 
         await _pilotBusinesses.UpsertAsync(access, cancellationToken);
         return access;
@@ -1088,6 +1097,7 @@ public sealed class AdminAppService
             business.Name,
             business.Email,
             access?.IsEnabled ?? false,
+            access?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly,
             access?.Notes,
             access?.UpdatedAt);
     }
@@ -1105,9 +1115,24 @@ public sealed class AdminAppService
             business.Email,
             business.LogoPath,
             access?.IsEnabled ?? false,
+            access?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly,
             access?.Notes,
             access?.UpdatedAt,
             ToBrandingDto(business, branding));
+    }
+
+    private static BusinessActivationStatus ResolveActivationStatus(
+        bool isPilotEnabled,
+        BusinessActivationStatus? requestedStatus)
+    {
+        return requestedStatus ?? (isPilotEnabled
+            ? BusinessActivationStatus.PilotModern
+            : BusinessActivationStatus.LegacyOnly);
+    }
+
+    private static bool IsModernEnabled(BusinessActivationStatus activationStatus)
+    {
+        return activationStatus != BusinessActivationStatus.LegacyOnly;
     }
 
     private static BusinessBrandingDto ToBrandingDto(Business business, BusinessBranding? branding)

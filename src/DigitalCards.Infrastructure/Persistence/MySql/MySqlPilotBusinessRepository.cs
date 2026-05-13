@@ -21,6 +21,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         const string sql = """
             select BusinessID,
                    IsEnabled,
+                   ActivationStatus,
                    Notes,
                    CreatedAt,
                    UpdatedAt,
@@ -45,6 +46,10 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         {
             throw MissingTableException(exception);
         }
+        catch (MySqlException exception) when (exception.Number == 1054)
+        {
+            throw MissingSchemaException(exception);
+        }
     }
 
     public async Task<IReadOnlyList<PilotBusinessAccess>> ListAsync(CancellationToken cancellationToken = default)
@@ -52,6 +57,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         const string sql = """
             select BusinessID,
                    IsEnabled,
+                   ActivationStatus,
                    Notes,
                    CreatedAt,
                    UpdatedAt,
@@ -71,6 +77,10 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         {
             throw MissingTableException(exception);
         }
+        catch (MySqlException exception) when (exception.Number == 1054)
+        {
+            throw MissingSchemaException(exception);
+        }
     }
 
     public async Task UpsertAsync(PilotBusinessAccess access, CancellationToken cancellationToken = default)
@@ -79,6 +89,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
             insert into ModernPilotBusiness (
                 BusinessID,
                 IsEnabled,
+                ActivationStatus,
                 Notes,
                 CreatedAt,
                 UpdatedAt,
@@ -86,12 +97,14 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
             values (
                 @BusinessID,
                 @IsEnabled,
+                @ActivationStatus,
                 @Notes,
                 @CreatedAt,
                 @UpdatedAt,
                 @UpdatedByAdminUserID)
             on duplicate key update
                 IsEnabled = values(IsEnabled),
+                ActivationStatus = values(ActivationStatus),
                 Notes = values(Notes),
                 UpdatedAt = values(UpdatedAt),
                 UpdatedByAdminUserID = values(UpdatedByAdminUserID);
@@ -106,6 +119,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
                 {
                     BusinessID = LegacyIdMapper.ToInt32(access.BusinessId),
                     access.IsEnabled,
+                    ActivationStatus = access.ActivationStatus.ToString(),
                     access.Notes,
                     CreatedAt = access.CreatedAt.UtcDateTime,
                     UpdatedAt = access.UpdatedAt.UtcDateTime,
@@ -117,12 +131,23 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         {
             throw MissingTableException(exception);
         }
+        catch (MySqlException exception) when (exception.Number == 1054)
+        {
+            throw MissingSchemaException(exception);
+        }
     }
 
     private static InvalidOperationException MissingTableException(MySqlException exception)
     {
         return new InvalidOperationException(
             "ModernPilotBusiness table is missing. Run docs/migration-context/22-admin-pilot-management-hostgator.sql before using admin pilot management with MySQL.",
+            exception);
+    }
+
+    private static InvalidOperationException MissingSchemaException(MySqlException exception)
+    {
+        return new InvalidOperationException(
+            "ModernPilotBusiness activation status schema is missing. Run docs/migration-context/38-admin-business-activation-status-hostgator.sql before using business activation status with MySQL.",
             exception);
     }
 
@@ -136,6 +161,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
     private sealed record PilotBusinessRow(
         int BusinessID,
         bool IsEnabled,
+        string? ActivationStatus,
         string? Notes,
         DateTime CreatedAt,
         DateTime UpdatedAt,
@@ -149,7 +175,17 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
                 Notes,
                 AsUtc(CreatedAt),
                 AsUtc(UpdatedAt),
-                LegacyIdMapper.ToGuid(UpdatedByAdminUserID));
+                LegacyIdMapper.ToGuid(UpdatedByAdminUserID),
+                ParseActivationStatus(ActivationStatus, IsEnabled));
+        }
+
+        private static BusinessActivationStatus ParseActivationStatus(string? value, bool isEnabled)
+        {
+            return Enum.TryParse<BusinessActivationStatus>(value, ignoreCase: true, out var status)
+                ? status
+                : isEnabled
+                    ? BusinessActivationStatus.PilotModern
+                    : BusinessActivationStatus.LegacyOnly;
         }
     }
 }

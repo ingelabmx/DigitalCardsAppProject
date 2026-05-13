@@ -1,3 +1,5 @@
+using DigitalCards.Domain;
+
 namespace DigitalCards.Application.Models;
 
 public sealed record AdminLoginCommand(string UserNameOrEmail, string Password);
@@ -55,6 +57,7 @@ public sealed record BusinessProfileDto(
     string BusinessEmail,
     string BusinessLogo,
     bool IsPilotEnabled,
+    BusinessActivationStatus ActivationStatus,
     string? Notes,
     DateTimeOffset? PilotUpdatedAt,
     BusinessBrandingDto Branding);
@@ -73,7 +76,8 @@ public sealed record UpdateBusinessProfileCommand(
     string BusinessEmail,
     string BusinessLogo,
     bool IsPilotEnabled,
-    string? Notes);
+    string? Notes,
+    BusinessActivationStatus? ActivationStatus = null);
 
 public sealed record ResetBusinessPasswordCommand(
     Guid BusinessId,
@@ -111,6 +115,7 @@ public sealed record PilotBusinessDto(
     string BusinessName,
     string BusinessEmail,
     bool IsEnabled,
+    BusinessActivationStatus ActivationStatus,
     string? Notes,
     DateTimeOffset? UpdatedAt);
 
@@ -118,7 +123,8 @@ public sealed record SetPilotBusinessCommand(
     Guid BusinessId,
     Guid AdminUserId,
     bool IsEnabled,
-    string? Notes);
+    string? Notes,
+    BusinessActivationStatus? ActivationStatus = null);
 
 public sealed record PilotClientDto(
     Guid ClientId,

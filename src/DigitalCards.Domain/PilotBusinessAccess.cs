@@ -8,7 +8,8 @@ public sealed class PilotBusinessAccess
         string? notes,
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
-        Guid updatedByAdminUserId)
+        Guid updatedByAdminUserId,
+        BusinessActivationStatus? activationStatus = null)
     {
         if (businessId == Guid.Empty)
         {
@@ -21,6 +22,9 @@ public sealed class PilotBusinessAccess
         }
 
         BusinessId = businessId;
+        ActivationStatus = activationStatus ?? (isEnabled
+            ? BusinessActivationStatus.PilotModern
+            : BusinessActivationStatus.LegacyOnly);
         IsEnabled = isEnabled;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         CreatedAt = createdAt;
@@ -31,6 +35,8 @@ public sealed class PilotBusinessAccess
     public Guid BusinessId { get; }
 
     public bool IsEnabled { get; }
+
+    public BusinessActivationStatus ActivationStatus { get; }
 
     public string? Notes { get; }
 
@@ -44,7 +50,8 @@ public sealed class PilotBusinessAccess
         bool isEnabled,
         string? notes,
         DateTimeOffset updatedAt,
-        Guid updatedByAdminUserId)
+        Guid updatedByAdminUserId,
+        BusinessActivationStatus? activationStatus = null)
     {
         return new PilotBusinessAccess(
             BusinessId,
@@ -52,6 +59,7 @@ public sealed class PilotBusinessAccess
             notes,
             CreatedAt,
             updatedAt,
-            updatedByAdminUserId);
+            updatedByAdminUserId,
+            activationStatus);
     }
 }
