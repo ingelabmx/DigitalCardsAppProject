@@ -46,6 +46,13 @@
                 </div>
             </div>
 
+            <div class="form-actions">
+                <a class="btn btn-outline-primary"
+                   asp-page-handler="Export"
+                   asp-route-Query="@Model.Query"
+                   data-testid="admin-support-export-json">Exportar diagnostico JSON</a>
+            </div>
+
             @if (Model.Result.Clients.Count > 0)
             {
                 <section class="business-dashboard-panel">

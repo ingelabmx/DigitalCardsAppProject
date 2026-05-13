@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DigitalCards.Web.Pages.Admin;
 
@@ -48,6 +51,57 @@ public sealed class SupportModel : PageModel
             "Admin {AdminUserId} searched support center with query length {QueryLength}.",
             AdminAuth.GetAdminUserId(User),
             Query.Trim().Length);
+    }
+
+    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(Query))
+        {
+            return BadRequest("Query is required.");
+        }
+
+        var result = await _adminApp.SearchSupportAsync(
+            new AdminSupportQuery(Query),
+            cancellationToken);
+        var export = new
+        {
+            generatedAt = DateTimeOffset.UtcNow,
+            result.Query,
+            legacyWalletSync = new
+            {
+                _legacyWalletSyncOptions.Enabled,
+                _legacyWalletSyncOptions.PollIntervalSeconds,
+                _legacyWalletSyncOptions.LookbackMinutes,
+                _legacyWalletSyncOptions.BatchSize
+            },
+            counts = new
+            {
+                clients = result.Clients.Count,
+                businesses = result.Businesses.Count,
+                cards = result.Cards.Count
+            },
+            result.Clients,
+            result.Businesses,
+            result.Cards
+        };
+        var json = JsonSerializer.Serialize(
+            export,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter() }
+            });
+        var fileName = $"support-diagnostic-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.json";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} exported support diagnostics with query length {QueryLength}.",
+            AdminAuth.GetAdminUserId(User),
+            Query.Trim().Length);
+
+        return File(
+            Encoding.UTF8.GetBytes(json),
+            "application/json",
+            fileName);
     }
 
     public static string Suffix(Guid id)
