@@ -206,6 +206,119 @@ public sealed class ManualIntegrationSmokeTests
         Assert.Contains(signedAttributes.Cast<CryptographicAttributeObject>(), attribute => attribute.Oid?.Value == "1.2.840.113549.1.9.5");
     }
 
+    [ManualSmokeFact("RUN_PILOT_BUSINESS_CUTOVER_SMOKE")]
+    public async Task PilotBusinessCutoverSmoke_UsesInMemoryFakes()
+    {
+        var configuration = BuildLocalConfiguration(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PersistenceProvider"] = "InMemory",
+            ["DigitalCards:GoogleWallet:Provider"] = "Fake",
+            ["DigitalCards:Email:Provider"] = "Fake",
+            ["DigitalCards:AppleWallet:Provider"] = "Fake",
+            ["DigitalCards:PublicBaseUrl"] = "https://app.puntelio.com"
+        });
+        using var provider = BuildProvider(configuration);
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        var userName = NewUserName("cutfake");
+        await app.RegisterClientAsync(new RegisterClientCommand(
+            userName,
+            "Cutover",
+            "Smoke",
+            $"{userName}@example.test",
+            "clientpass1"));
+
+        await RunPilotBusinessCutoverSmokeAsync(
+            provider,
+            app,
+            business!,
+            userName,
+            GetRequired(configuration, "DigitalCards:PublicBaseUrl"),
+            expectAppleDownload: false);
+    }
+
+    [ManualSmokeFact("RUN_PILOT_BUSINESS_CUTOVER_REAL_SMOKE")]
+    public async Task PilotBusinessCutoverRealSmoke_UsesConfiguredRealProviders()
+    {
+        var configuration = BuildLocalConfiguration(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PersistenceProvider"] = "MySql",
+            ["DigitalCards:GoogleWallet:Provider"] = "Google",
+            ["DigitalCards:Email:Provider"] = "Smtp",
+            ["DigitalCards:AppleWallet:Provider"] = "Apple"
+        });
+        using var provider = BuildProvider(configuration);
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await LoginSmokeBusinessAsync(app, configuration);
+        var userName = NewUserName("cutreal");
+        var clientEmail = BuildUniqueRecipient(GetRequired(configuration, "DigitalCards:Email:SmokeRecipient"), userName);
+        userName = await EnsureSmokeClientAsync(app, provider, userName, clientEmail);
+
+        await RunPilotBusinessCutoverSmokeAsync(
+            provider,
+            app,
+            business,
+            userName,
+            GetRequired(configuration, "DigitalCards:PublicBaseUrl"),
+            expectAppleDownload: true);
+    }
+
+    private static async Task RunPilotBusinessCutoverSmokeAsync(
+        IServiceProvider provider,
+        DigitalCardsAppService app,
+        BusinessDto business,
+        string userName,
+        string publicBaseUrl,
+        bool expectAppleDownload)
+    {
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            userName,
+            publicBaseUrl));
+
+        var searchResults = await app.SearchBusinessCardsAsync(business.Id, userName);
+        var searchedCard = Assert.Single(searchResults.Where(card => card.Id == enrollment.Card.Id));
+        Assert.Equal(userName, searchedCard.Client.UserName);
+
+        var resend = await app.ResendWalletEmailAsync(business.Id, enrollment.Card.Id, publicBaseUrl);
+        Assert.NotNull(resend);
+        Assert.StartsWith($"{publicBaseUrl.TrimEnd('/')}/Wallet/Select/", resend!.EnrollmentUrl, StringComparison.Ordinal);
+
+        var walletToken = ExtractWalletToken(resend.EnrollmentUrl);
+        var google = await app.SelectGoogleWalletAsync(walletToken);
+        var apple = await app.SelectAppleWalletAsync(walletToken);
+        Assert.NotNull(google);
+        Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl, StringComparison.Ordinal);
+        Assert.NotNull(apple);
+
+        if (expectAppleDownload)
+        {
+            var pass = await app.DownloadAppleWalletPassAsync(walletToken);
+            Assert.NotNull(pass);
+            Assert.Equal(AppleWalletPassPackageBuilder.ContentType, pass!.ContentType);
+        }
+        else
+        {
+            Assert.Equal(AppleWalletIssueStatus.Pending, apple!.Status);
+        }
+
+        var stamped = await app.AddStampToCardAsync(business.Id, enrollment.Card.Id);
+        Assert.NotNull(stamped);
+        Assert.Equal(enrollment.Card.CurrentStamps >= 9 ? 0 : enrollment.Card.CurrentStamps + 1, stamped!.CurrentStamps);
+        Assert.Equal(enrollment.Card.LifetimeStamps + 1, stamped.LifetimeStamps);
+        Assert.True(stamped.GoogleIssued);
+
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var events = await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5);
+        var stampEvent = Assert.Single(events.Where(item => item.Source == StampLedgerSource.ModernBusiness));
+        Assert.Equal(enrollment.Card.CurrentStamps, stampEvent.PreviousCheckQTY);
+        Assert.Equal(stamped.CurrentStamps, stampEvent.NewCheckQTY);
+    }
+
     private static ServiceProvider BuildProvider(IConfiguration configuration)
     {
         var services = new ServiceCollection();
