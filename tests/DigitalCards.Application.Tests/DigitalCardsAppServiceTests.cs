@@ -93,6 +93,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
+        Assert.IsType<MySqlBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
@@ -120,6 +121,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
+        Assert.IsType<InMemoryBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
@@ -593,6 +595,67 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal("Ya existe un negocio con ese correo.", duplicateEmail.ErrorMessage);
         Assert.DoesNotContain("password", duplicateName.ErrorMessage, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("password", duplicateEmail.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task UpdateBusinessBrandingAsync_StoresBrandingAndUsesItForEmailWalletAndClientDashboard()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var brandingRepository = provider.GetRequiredService<IBusinessBrandingRepository>();
+        var outbox = provider.GetRequiredService<IWalletEmailOutbox>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        var result = await adminApp.UpdateBusinessBrandingAsync(new UpdateBusinessBrandingCommand(
+            business!.Id,
+            admin!.Id,
+            "Puntelio Cafe",
+            "/img/puntelio.svg",
+            "#123456",
+            "#abcdef",
+            "Puntelio Rewards",
+            "Sellos digitales de Puntelio."));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Puntelio Cafe", result.Business!.Branding.PublicName);
+        Assert.Equal("#123456", result.Business.Branding.PrimaryColor);
+
+        var stored = await brandingRepository.FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(stored);
+        Assert.Equal("Puntelio Rewards", stored!.ProgramName);
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "branduser",
+            "Brand",
+            "User",
+            "branduser@example.test",
+            "ClientPass123!"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+
+        Assert.Equal("Puntelio Cafe", enrollment.Card.BusinessName);
+        var message = Assert.Single(await outbox.ListAsync());
+        Assert.Equal("Puntelio Cafe", message.BusinessName);
+        Assert.Equal("https://app.puntelio.com/img/puntelio.svg", message.BusinessLogoUrl);
+        Assert.Equal("#123456", message.PrimaryColor);
+        Assert.Equal("Puntelio Rewards", message.ProgramName);
+
+        var landing = await app.GetWalletLandingAsync(publicToken);
+        Assert.NotNull(landing);
+        Assert.Equal("Puntelio Cafe", landing!.BusinessName);
+
+        var dashboard = await app.GetClientDashboardAsync(client.Id);
+        var card = Assert.Single(dashboard.Cards);
+        Assert.Equal("Puntelio Cafe", card.BusinessName);
     }
 
     [Fact]

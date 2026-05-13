@@ -75,13 +75,13 @@ public sealed class AppleWalletPassPackageBuilder
             serialNumber = serialNumber ?? CreateSerialNumber(card),
             teamIdentifier = options.TeamIdentifier,
             organizationName = options.OrganizationName,
-            description = options.Description,
+            description = business.ProgramDescription ?? options.Description,
             webServiceURL = settings?.WebServiceUrl,
             authenticationToken = settings?.AuthenticationToken,
-            logoText = business.Name,
+            logoText = business.ProgramName ?? business.DisplayName,
             foregroundColor = options.ForegroundColor,
-            backgroundColor = options.BackgroundColor,
-            labelColor = options.LabelColor,
+            backgroundColor = business.PrimaryColor ?? options.BackgroundColor,
+            labelColor = business.SecondaryColor ?? options.LabelColor,
             barcodes = new[]
             {
                 new
@@ -103,7 +103,7 @@ public sealed class AppleWalletPassPackageBuilder
             {
                 primaryFields = new[]
                 {
-                    Field("business", "Negocio", business.Name)
+                    Field("business", "Negocio", business.DisplayName)
                 },
                 secondaryFields = new[]
                 {

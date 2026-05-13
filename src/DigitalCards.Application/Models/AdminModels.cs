@@ -56,7 +56,8 @@ public sealed record BusinessProfileDto(
     string BusinessLogo,
     bool IsPilotEnabled,
     string? Notes,
-    DateTimeOffset? PilotUpdatedAt);
+    DateTimeOffset? PilotUpdatedAt,
+    BusinessBrandingDto Branding);
 
 public sealed record BusinessProfileResult(
     BusinessProfileDto? Business,
@@ -78,6 +79,32 @@ public sealed record ResetBusinessPasswordCommand(
     Guid BusinessId,
     Guid AdminUserId,
     string NewPassword);
+
+public sealed record BusinessBrandingDto(
+    string PublicName,
+    string LogoPath,
+    string PrimaryColor,
+    string SecondaryColor,
+    string ProgramName,
+    string ProgramDescription,
+    DateTimeOffset? UpdatedAt);
+
+public sealed record BusinessBrandingResult(
+    BusinessProfileDto? Business,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Business is not null;
+}
+
+public sealed record UpdateBusinessBrandingCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    string PublicName,
+    string LogoPath,
+    string PrimaryColor,
+    string SecondaryColor,
+    string ProgramName,
+    string ProgramDescription);
 
 public sealed record PilotBusinessDto(
     Guid BusinessId,

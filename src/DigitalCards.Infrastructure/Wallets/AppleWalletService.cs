@@ -14,6 +14,7 @@ public sealed class AppleWalletService : IAppleWalletService
 
     private readonly IAppleWalletPassRepository _applePasses;
     private readonly AppleWalletPassPackageBuilder _builder;
+    private readonly IBusinessBrandingRepository _businessBranding;
     private readonly IBusinessRepository _businesses;
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
@@ -29,6 +30,7 @@ public sealed class AppleWalletService : IAppleWalletService
         AppleWalletPassPackageBuilder builder,
         IAppleWalletPassRepository applePasses,
         IAppleWalletPushSender pushSender,
+        IBusinessBrandingRepository businessBranding,
         IClientRepository clients,
         IBusinessRepository businesses,
         ILoyaltyCardRepository loyaltyCards,
@@ -38,6 +40,7 @@ public sealed class AppleWalletService : IAppleWalletService
         _options = options.Value;
         _infrastructureOptions = infrastructureOptions.Value;
         _builder = builder;
+        _businessBranding = businessBranding;
         _applePasses = applePasses;
         _pushSender = pushSender;
         _clients = clients;
@@ -277,7 +280,7 @@ public sealed class AppleWalletService : IAppleWalletService
         var passFile = _builder.Build(
             card,
             client,
-            business,
+            await ApplyBrandingAsync(business, cancellationToken),
             _options,
             new AppleWalletPassPackageBuilder.AppleWalletPassBuildSettings(
                 BuildWebServiceUrl(),
@@ -303,6 +306,27 @@ public sealed class AppleWalletService : IAppleWalletService
         var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
         var business = await _businesses.FindByIdAsync(card.BusinessId, cancellationToken);
         return client is null || business is null ? null : (card, client, business);
+    }
+
+    private async Task<Business> ApplyBrandingAsync(Business business, CancellationToken cancellationToken)
+    {
+        var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
+        if (branding is null)
+        {
+            return business;
+        }
+
+        return new Business(
+            business.Id,
+            business.Name,
+            business.Email,
+            business.PasswordHashPlaceholder,
+            string.IsNullOrWhiteSpace(branding.LogoPath) ? business.LogoPath : branding.LogoPath,
+            branding.PublicName,
+            branding.PrimaryColor,
+            branding.SecondaryColor,
+            branding.ProgramName,
+            branding.ProgramDescription);
     }
 
     private string BuildWebServiceUrl()

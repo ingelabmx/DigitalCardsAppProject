@@ -256,10 +256,10 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 Type = "QR_CODE",
                 Value = client.UserName
             },
-            CardTitle = Localized(business.Name),
+            CardTitle = Localized(GetCardTitle(business)),
             Header = Localized(client.FullName),
             Subheader = Localized("Titular"),
-            HexBackgroundColor = _options.HexBackgroundColor
+            HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
 
         if (!string.IsNullOrWhiteSpace(_options.HeroImageUri))
@@ -389,6 +389,11 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 Value = value
             }
         };
+    }
+
+    private static string GetCardTitle(Business business)
+    {
+        return business.ProgramName ?? business.DisplayName;
     }
 
     private sealed record WalletClient(

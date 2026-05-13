@@ -33,6 +33,8 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<Business> Businesses { get; } = [];
 
+    public List<BusinessBranding> BusinessBranding { get; } = [];
+
     public List<PilotBusinessAccess> PilotBusinesses { get; } = [];
 
     public List<PilotClientAccess> PilotClients { get; } = [];

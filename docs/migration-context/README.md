@@ -44,6 +44,8 @@ Documentos:
 - `28-client-password-hardening-hostgator.sql`: tabla nueva para credenciales modernas de cliente.
 - `29-client-dashboard-v2.md`: resumen, perfil basico y estados Wallet en dashboard cliente.
 - `30-business-dashboard-v2.md`: resumen operativo de negocio con tarjetas recientes y StampLedger.
+- `31-business-branding-v1.md`: branding basico para correos, Wallet y dashboard cliente.
+- `31-business-branding-v1-hostgator.sql`: tabla nueva para branding moderno de negocio.
 
 Notas:
 
