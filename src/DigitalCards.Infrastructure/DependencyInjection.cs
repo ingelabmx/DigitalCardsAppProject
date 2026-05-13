@@ -74,6 +74,7 @@ public static class DependencyInjection
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, MySqlWalletLinkTokenRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, MySqlPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, MySqlStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, MySqlPilotClientRepository>();
@@ -92,6 +93,7 @@ public static class DependencyInjection
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, InMemoryWalletLinkTokenRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, InMemoryStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, InMemoryPilotClientRepository>();
@@ -105,6 +107,7 @@ public static class DependencyInjection
 
         services.AddSingleton<FakeWalletEmailOutbox>();
         services.AddSingleton<IWalletEmailOutbox>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
+        services.AddSingleton<IPasswordResetEmailOutbox>(provider => provider.GetRequiredService<FakeWalletEmailOutbox>());
 
         if (string.Equals(providers.EmailProvider, "Fake", StringComparison.OrdinalIgnoreCase))
         {

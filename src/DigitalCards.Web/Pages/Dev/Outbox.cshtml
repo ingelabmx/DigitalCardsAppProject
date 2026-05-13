@@ -7,25 +7,46 @@
 <section class="result-panel">
     <h1>Outbox fake</h1>
 
-    @if (Model.Messages.Count == 0)
+    @if (Model.Messages.Count == 0 && Model.PasswordResetMessages.Count == 0)
     {
         <p data-testid="outbox-empty">No hay correos generados.</p>
     }
     else
     {
-        <div class="list-group" data-testid="outbox-list">
-            @foreach (var message in Model.Messages)
-            {
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between gap-3">
-                        <strong>@message.To</strong>
-                        <small>@message.CreatedAt.ToLocalTime().ToString("g")</small>
+        @if (Model.Messages.Count > 0)
+        {
+            <h2>Wallet</h2>
+            <div class="list-group" data-testid="outbox-list">
+                @foreach (var message in Model.Messages)
+                {
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between gap-3">
+                            <strong>@message.To</strong>
+                            <small>@message.CreatedAt.ToLocalTime().ToString("g")</small>
+                        </div>
+                        <p class="mb-1">Tarjeta de @message.BusinessName para @message.ClientName.</p>
+                        <a href="@message.EnrollmentUrl" data-testid="email-link">Abrir link de Wallet</a>
                     </div>
-                    <p class="mb-1">Tarjeta de @message.BusinessName para @message.ClientName.</p>
-                    <a href="@message.EnrollmentUrl" data-testid="email-link">Abrir link de Wallet</a>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        }
+
+        @if (Model.PasswordResetMessages.Count > 0)
+        {
+            <h2>Reset de contrasena</h2>
+            <div class="list-group" data-testid="password-reset-outbox-list">
+                @foreach (var message in Model.PasswordResetMessages)
+                {
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between gap-3">
+                            <strong>@message.To</strong>
+                            <small>@message.CreatedAt.ToLocalTime().ToString("g")</small>
+                        </div>
+                        <p class="mb-1">Reset de cuenta @message.AccountType para @message.RecipientName.</p>
+                        <a href="@message.ResetUrl" data-testid="password-reset-email-link">Abrir reset</a>
+                    </div>
+                }
+            </div>
+        }
     }
 </section>
-

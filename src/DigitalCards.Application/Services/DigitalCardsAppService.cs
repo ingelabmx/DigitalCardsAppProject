@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Domain;
@@ -18,6 +20,7 @@ public sealed class DigitalCardsAppService
     private readonly IAppleWalletService _appleWallet;
     private readonly IAppleWalletPassRepository _appleWalletPasses;
     private readonly ILoyaltyCardRepository _loyaltyCards;
+    private readonly IPasswordResetTokenRepository _passwordResetTokens;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
     private readonly IPasswordHasher<ClientPasswordHashSubject> _clientPasswordHasher;
     private readonly IStampLedgerRepository _stampLedger;
@@ -38,7 +41,8 @@ public sealed class DigitalCardsAppService
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
         IPasswordHasher<ClientPasswordHashSubject> clientPasswordHasher,
         IStampLedgerRepository stampLedger,
-        IWalletLinkTokenService walletLinkTokens)
+        IWalletLinkTokenService walletLinkTokens,
+        IPasswordResetTokenRepository passwordResetTokens)
     {
         _clients = clients;
         _clientCredentials = clientCredentials;
@@ -46,6 +50,7 @@ public sealed class DigitalCardsAppService
         _businessBranding = businessBranding;
         _businessCredentials = businessCredentials;
         _loyaltyCards = loyaltyCards;
+        _passwordResetTokens = passwordResetTokens;
         _googleWallet = googleWallet;
         _appleWallet = appleWallet;
         _appleWalletPasses = appleWalletPasses;
@@ -196,6 +201,172 @@ public sealed class DigitalCardsAppService
             cancellationToken);
 
         return new ChangeClientPasswordResult(true, ErrorMessage: null);
+    }
+
+    public async Task<PasswordResetRequestResult> RequestClientPasswordResetAsync(
+        RequestClientPasswordResetCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.UserNameOrEmail))
+        {
+            return new PasswordResetRequestResult(Accepted: true);
+        }
+
+        var client = await _clients.FindByUserNameOrEmailAsync(command.UserNameOrEmail, cancellationToken);
+        if (client is null)
+        {
+            return new PasswordResetRequestResult(Accepted: true);
+        }
+
+        var token = await CreatePasswordResetTokenAsync(
+            PasswordResetAccountType.Client,
+            client.Id,
+            cancellationToken);
+        await _emailSender.SendPasswordResetAsync(
+            new PasswordResetEmail(
+                client.Email,
+                client.FullName,
+                "cliente",
+                $"{command.BaseUrl.TrimEnd('/')}/Client/ResetPassword/{token.Token}",
+                token.ExpiresAt,
+                _clock.UtcNow),
+            cancellationToken);
+
+        return new PasswordResetRequestResult(Accepted: true);
+    }
+
+    public async Task<PasswordResetRequestResult> RequestBusinessPasswordResetAsync(
+        RequestBusinessPasswordResetCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.Email))
+        {
+            return new PasswordResetRequestResult(Accepted: true);
+        }
+
+        var business = await _businesses.FindByEmailAsync(command.Email, cancellationToken);
+        if (business is null)
+        {
+            return new PasswordResetRequestResult(Accepted: true);
+        }
+
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+        var token = await CreatePasswordResetTokenAsync(
+            PasswordResetAccountType.Business,
+            business.Id,
+            cancellationToken);
+        await _emailSender.SendPasswordResetAsync(
+            new PasswordResetEmail(
+                business.Email,
+                displayBusiness.DisplayName,
+                "negocio",
+                $"{command.BaseUrl.TrimEnd('/')}/Business/ResetPassword/{token.Token}",
+                token.ExpiresAt,
+                _clock.UtcNow,
+                new EmailBranding(
+                    displayBusiness.DisplayName,
+                    BuildPublicAssetUrl(displayBusiness.LogoPath, command.BaseUrl),
+                    displayBusiness.PrimaryColor,
+                    displayBusiness.ProgramName)),
+            cancellationToken);
+
+        return new PasswordResetRequestResult(Accepted: true);
+    }
+
+    public async Task<ResetPasswordResult> ResetClientPasswordAsync(
+        ResetPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var validationError = ValidateResetPasswordCommand(command);
+        if (validationError is not null)
+        {
+            return new ResetPasswordResult(false, validationError);
+        }
+
+        var token = await FindPasswordResetTokenAsync(
+            command.Token,
+            PasswordResetAccountType.Client,
+            cancellationToken);
+        if (token is null)
+        {
+            return new ResetPasswordResult(false, "El link no es valido o ya expiro.");
+        }
+
+        var client = await _clients.FindByIdAsync(token.AccountId, cancellationToken);
+        if (client is null)
+        {
+            return new ResetPasswordResult(false, "El link no es valido o ya expiro.");
+        }
+
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        client = await _clients.UpdatePasswordAsync(client.Id, legacyPasswordHash, cancellationToken);
+
+        var now = _clock.UtcNow;
+        var subject = new ClientPasswordHashSubject(client.Id);
+        await _clientCredentials.UpsertAsync(
+            new ClientCredential(
+                client.Id,
+                _clientPasswordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+        await _passwordResetTokens.MarkUsedAsync(token.Id, now, cancellationToken);
+
+        return new ResetPasswordResult(true, ErrorMessage: null);
+    }
+
+    public async Task<ResetPasswordResult> ResetBusinessPasswordAsync(
+        ResetPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var validationError = ValidateResetPasswordCommand(command);
+        if (validationError is not null)
+        {
+            return new ResetPasswordResult(false, validationError);
+        }
+
+        var token = await FindPasswordResetTokenAsync(
+            command.Token,
+            PasswordResetAccountType.Business,
+            cancellationToken);
+        if (token is null)
+        {
+            return new ResetPasswordResult(false, "El link no es valido o ya expiro.");
+        }
+
+        var business = await _businesses.FindByIdAsync(token.AccountId, cancellationToken);
+        if (business is null)
+        {
+            return new ResetPasswordResult(false, "El link no es valido o ya expiro.");
+        }
+
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        business = await _businesses.UpdateAsync(
+            new Business(
+                business.Id,
+                business.Name,
+                business.Email,
+                legacyPasswordHash,
+                business.LogoPath,
+                business.PublicName,
+                business.PrimaryColor,
+                business.SecondaryColor,
+                business.ProgramName,
+                business.ProgramDescription),
+            cancellationToken);
+
+        var now = _clock.UtcNow;
+        var subject = new BusinessPasswordHashSubject(business.Id);
+        await _businessCredentials.UpsertAsync(
+            new BusinessCredential(
+                business.Id,
+                _passwordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+        await _passwordResetTokens.MarkUsedAsync(token.Id, now, cancellationToken);
+
+        return new ResetPasswordResult(true, ErrorMessage: null);
     }
 
     public async Task<BusinessDto?> LoginBusinessAsync(BusinessLoginCommand command, CancellationToken cancellationToken = default)
@@ -628,6 +799,96 @@ public sealed class DigitalCardsAppService
         return results.ToArray();
     }
 
+    private async Task<(string Token, DateTimeOffset ExpiresAt)> CreatePasswordResetTokenAsync(
+        PasswordResetAccountType accountType,
+        Guid accountId,
+        CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 3;
+
+        var now = _clock.UtcNow;
+        var expiresAt = now.AddHours(1);
+        await _passwordResetTokens.RevokeActiveByAccountAsync(
+            accountType,
+            accountId,
+            now,
+            cancellationToken);
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var plainToken = CreateOpaqueToken();
+            var hash = HashToken(plainToken);
+            var existing = await _passwordResetTokens.FindActiveByTokenHashAsync(
+                hash,
+                accountType,
+                now,
+                cancellationToken);
+            if (existing is not null)
+            {
+                continue;
+            }
+
+            await _passwordResetTokens.AddAsync(
+                new PasswordResetTokenRecord(
+                    0,
+                    accountType,
+                    accountId,
+                    hash,
+                    Suffix(plainToken),
+                    now,
+                    expiresAt,
+                    UsedAt: null,
+                    RevokedAt: null),
+                cancellationToken);
+
+            return (plainToken, expiresAt);
+        }
+
+        throw new InvalidOperationException("Could not create a unique password reset token.");
+    }
+
+    private async Task<PasswordResetTokenRecord?> FindPasswordResetTokenAsync(
+        string token,
+        PasswordResetAccountType accountType,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        return await _passwordResetTokens.FindActiveByTokenHashAsync(
+            HashToken(token.Trim()),
+            accountType,
+            _clock.UtcNow,
+            cancellationToken);
+    }
+
+    private static string? ValidateResetPasswordCommand(ResetPasswordCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.Token))
+        {
+            return "El link no es valido o ya expiro.";
+        }
+
+        if (string.IsNullOrWhiteSpace(command.NewPassword))
+        {
+            return "La contrasena nueva es requerida.";
+        }
+
+        if (command.NewPassword.Length < 8)
+        {
+            return "La contrasena nueva debe tener al menos 8 caracteres.";
+        }
+
+        if (command.NewPassword.Length > 128)
+        {
+            return "La contrasena nueva no puede exceder 128 caracteres.";
+        }
+
+        return null;
+    }
+
     private async Task<Business> RequireBusinessAsync(Guid businessId, CancellationToken cancellationToken)
     {
         return await _businesses.FindByIdAsync(businessId, cancellationToken)
@@ -979,5 +1240,26 @@ public sealed class DigitalCardsAppService
         return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
             (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
             (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
+    }
+
+    private static string CreateOpaqueToken()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static string HashToken(string token)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static string Suffix(string token)
+    {
+        return token.Length <= 8 ? token : token[^8..];
     }
 }

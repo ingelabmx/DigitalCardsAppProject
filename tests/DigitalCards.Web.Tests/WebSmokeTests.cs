@@ -927,6 +927,124 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task ClientPasswordReset_UsesFakeOutboxAndDoesNotRenderSecret()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("cr");
+        const string oldPassword = "clientpass1";
+        const string newPassword = "resetpass1";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", oldPassword);
+
+        var forgotToken = await GetAntiforgeryTokenAsync(http, "/Client/ForgotPassword");
+        var forgot = await http.PostAsync(
+            "/Client/ForgotPassword",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = forgotToken
+            }));
+        var forgotHtml = await forgot.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
+        Assert.Contains("Si existe una cuenta", forgotHtml);
+
+        string resetPath;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<IPasswordResetEmailOutbox>();
+            var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+            Assert.StartsWith("http://localhost/Client/ResetPassword/", message.ResetUrl);
+            resetPath = new Uri(message.ResetUrl).PathAndQuery;
+        }
+
+        var resetToken = await GetAntiforgeryTokenAsync(http, resetPath);
+        var reset = await http.PostAsync(
+            resetPath,
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.NewPassword"] = newPassword,
+                ["Input.ConfirmPassword"] = newPassword,
+                ["Token"] = resetPath.Split('/').Last(),
+                ["__RequestVerificationToken"] = resetToken
+            }));
+        var resetHtml = await reset.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        Assert.Contains("Contrasena de cliente actualizada", resetHtml);
+        Assert.DoesNotContain(newPassword, resetHtml, StringComparison.Ordinal);
+
+        var oldLogin = await LoginClientAsync(http, userName, oldPassword);
+        Assert.Equal(HttpStatusCode.OK, oldLogin.StatusCode);
+        Assert.False(HasClientCookie(oldLogin));
+
+        var newLogin = await LoginClientAsync(http, userName, newPassword);
+        Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
+        Assert.True(HasClientCookie(newLogin));
+    }
+
+    [Fact]
+    public async Task BusinessPasswordReset_UsesFakeOutboxAndUpdatesLogin()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        const string oldPassword = "business123";
+        const string newPassword = "resetbiz123";
+
+        var forgotToken = await GetAntiforgeryTokenAsync(http, "/Business/ForgotPassword");
+        var forgot = await http.PostAsync(
+            "/Business/ForgotPassword",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.Email"] = "demo@digitalcards.test",
+                ["__RequestVerificationToken"] = forgotToken
+            }));
+        var forgotHtml = await forgot.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
+        Assert.Contains("Si existe una cuenta", forgotHtml);
+
+        string resetPath;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<IPasswordResetEmailOutbox>();
+            var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+            Assert.StartsWith("http://localhost/Business/ResetPassword/", message.ResetUrl);
+            resetPath = new Uri(message.ResetUrl).PathAndQuery;
+        }
+
+        var resetToken = await GetAntiforgeryTokenAsync(http, resetPath);
+        var reset = await http.PostAsync(
+            resetPath,
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.NewPassword"] = newPassword,
+                ["Input.ConfirmPassword"] = newPassword,
+                ["Token"] = resetPath.Split('/').Last(),
+                ["__RequestVerificationToken"] = resetToken
+            }));
+        var resetHtml = await reset.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        Assert.Contains("Contrasena de negocio actualizada", resetHtml);
+        Assert.DoesNotContain(newPassword, resetHtml, StringComparison.Ordinal);
+
+        var oldLogin = await LoginBusinessAsync(http, "demo@digitalcards.test", oldPassword);
+        Assert.Equal(HttpStatusCode.OK, oldLogin.StatusCode);
+        Assert.False(HasBusinessCookie(oldLogin));
+
+        var newLogin = await LoginBusinessAsync(http, "demo@digitalcards.test", newPassword);
+        Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
+        Assert.True(HasBusinessCookie(newLogin));
+    }
+
+    [Fact]
     public async Task ClientLogout_ClearsCookieAndRedirectsToLogin()
     {
         using var fake = WithFakeIntegrations();

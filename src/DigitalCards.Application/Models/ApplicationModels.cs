@@ -15,6 +15,16 @@ public sealed record ChangeClientPasswordResult(bool Succeeded, string? ErrorMes
 
 public sealed record BusinessLoginCommand(string Email, string Password);
 
+public sealed record RequestClientPasswordResetCommand(string UserNameOrEmail, string BaseUrl);
+
+public sealed record RequestBusinessPasswordResetCommand(string Email, string BaseUrl);
+
+public sealed record PasswordResetRequestResult(bool Accepted);
+
+public sealed record ResetPasswordCommand(string Token, string NewPassword);
+
+public sealed record ResetPasswordResult(bool Succeeded, string? ErrorMessage);
+
 public sealed record EnrollClientCommand(Guid BusinessId, string UserNameOrEmail, string BaseUrl);
 
 public sealed record AddStampCommand(Guid BusinessId, string UserNameOrEmail);

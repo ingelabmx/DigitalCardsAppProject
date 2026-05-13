@@ -28,6 +28,26 @@ public sealed class SmtpEmailSender : IEmailSender
         WalletEnrollmentEmail email,
         CancellationToken cancellationToken = default)
     {
+        var rendered = _templates.RenderWalletEnrollment(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent wallet enrollment email to {Recipient}.", MaskEmail(email.To));
+    }
+
+    public async Task SendPasswordResetAsync(
+        PasswordResetEmail email,
+        CancellationToken cancellationToken = default)
+    {
+        var rendered = _templates.RenderPasswordReset(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent password reset email to {Recipient}.", MaskEmail(email.To));
+    }
+
+    private async Task SendRenderedAsync(
+        RenderedEmailTemplate rendered,
+        CancellationToken cancellationToken)
+    {
         ValidateOptions();
         var fromAddress = _options.FromAddress!;
         var host = _options.Host!;
@@ -36,8 +56,7 @@ public sealed class SmtpEmailSender : IEmailSender
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_options.FromName, fromAddress));
-        message.To.Add(MailboxAddress.Parse(email.To));
-        var rendered = _templates.RenderWalletEnrollment(email);
+        message.To.Add(MailboxAddress.Parse(rendered.To));
         message.Subject = rendered.Subject;
 
         var bodyBuilder = new BodyBuilder
@@ -57,8 +76,6 @@ public sealed class SmtpEmailSender : IEmailSender
         await client.AuthenticateAsync(userName, password, cancellationToken);
         await client.SendAsync(message, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
-
-        _logger.LogInformation("Sent wallet enrollment email to {Recipient}.", MaskEmail(email.To));
     }
 
     private void ValidateOptions()

@@ -53,5 +53,7 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<WalletLinkTokenRecord> WalletLinkTokens { get; } = [];
 
+    public List<PasswordResetTokenRecord> PasswordResetTokens { get; } = [];
+
     public List<StampLedgerRecord> StampLedger { get; } = [];
 }

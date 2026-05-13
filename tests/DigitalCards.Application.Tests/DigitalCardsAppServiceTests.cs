@@ -101,6 +101,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
         Assert.IsType<MySqlWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
+        Assert.IsType<MySqlPasswordResetTokenRepository>(provider.GetRequiredService<IPasswordResetTokenRepository>());
         Assert.IsType<MySqlStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
         Assert.IsType<MySqlPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
         Assert.IsType<MySqlPilotClientRepository>(provider.GetRequiredService<IPilotClientRepository>());
@@ -126,9 +127,11 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<InMemoryBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
+        Assert.IsType<InMemoryPasswordResetTokenRepository>(provider.GetRequiredService<IPasswordResetTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
         Assert.IsType<InMemoryPilotBusinessRepository>(provider.GetRequiredService<IPilotBusinessRepository>());
         Assert.IsType<InMemoryPilotClientRepository>(provider.GetRequiredService<IPilotClientRepository>());
+        Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IPasswordResetEmailOutbox>());
     }
 
     [Fact]
@@ -1346,6 +1349,135 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task ClientPasswordReset_UsesHashedOneTimeTokenAndUpdatesCredentials()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var outbox = provider.GetRequiredService<IPasswordResetEmailOutbox>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        const string oldPassword = "OldClient123!";
+        const string newPassword = "NewClient123!";
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "resetclient1",
+            "Reset",
+            "Client",
+            "resetclient1@example.test",
+            oldPassword));
+
+        var request = await app.RequestClientPasswordResetAsync(
+            new RequestClientPasswordResetCommand("resetclient1", "https://app.puntelio.com"));
+
+        Assert.True(request.Accepted);
+        var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+        Assert.Equal("resetclient1@example.test", message.To);
+        Assert.Contains("/Client/ResetPassword/", message.ResetUrl);
+        var plainToken = ExtractResetToken(message.ResetUrl, "/Client/ResetPassword/");
+        var tokenRecord = Assert.Single(store.PasswordResetTokens);
+        Assert.Equal(PasswordResetAccountType.Client, tokenRecord.AccountType);
+        Assert.Equal(client.Id, tokenRecord.AccountId);
+        Assert.Equal(64, tokenRecord.TokenHash.Length);
+        Assert.DoesNotContain(plainToken, tokenRecord.TokenHash, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(plainToken[^8..], tokenRecord.TokenSuffix);
+
+        var reset = await app.ResetClientPasswordAsync(new ResetPasswordCommand(plainToken, newPassword));
+        var replay = await app.ResetClientPasswordAsync(new ResetPasswordCommand(plainToken, "AnotherClient123!"));
+
+        Assert.True(reset.Succeeded);
+        Assert.False(replay.Succeeded);
+        Assert.Null(await app.LoginClientAsync(new ClientLoginCommand("resetclient1", oldPassword)));
+        Assert.NotNull(await app.LoginClientAsync(new ClientLoginCommand("resetclient1", newPassword)));
+        var credential = await provider.GetRequiredService<IClientCredentialRepository>()
+            .FindByClientIdAsync(client.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(newPassword, credential!.PasswordHash, StringComparison.Ordinal);
+        Assert.NotNull(store.PasswordResetTokens.Single().UsedAt);
+    }
+
+    [Fact]
+    public async Task ClientPasswordReset_RequestForMissingAccountDoesNotSendEmail()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var outbox = provider.GetRequiredService<IPasswordResetEmailOutbox>();
+
+        var request = await app.RequestClientPasswordResetAsync(
+            new RequestClientPasswordResetCommand("missing@example.test", "https://app.puntelio.com"));
+
+        Assert.True(request.Accepted);
+        Assert.Empty(await outbox.ListPasswordResetsAsync());
+    }
+
+    [Fact]
+    public async Task BusinessPasswordReset_UpdatesLegacyAndModernCredentials()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var outbox = provider.GetRequiredService<IPasswordResetEmailOutbox>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        const string oldPassword = "business123";
+        const string newPassword = "NewBusiness123!";
+
+        var request = await app.RequestBusinessPasswordResetAsync(
+            new RequestBusinessPasswordResetCommand("demo@digitalcards.test", "https://app.puntelio.com"));
+
+        Assert.True(request.Accepted);
+        var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+        Assert.Equal("demo@digitalcards.test", message.To);
+        Assert.Contains("/Business/ResetPassword/", message.ResetUrl);
+        var plainToken = ExtractResetToken(message.ResetUrl, "/Business/ResetPassword/");
+        var tokenRecord = Assert.Single(store.PasswordResetTokens);
+        Assert.Equal(PasswordResetAccountType.Business, tokenRecord.AccountType);
+        Assert.DoesNotContain(plainToken, tokenRecord.TokenHash, StringComparison.OrdinalIgnoreCase);
+
+        var reset = await app.ResetBusinessPasswordAsync(new ResetPasswordCommand(plainToken, newPassword));
+
+        Assert.True(reset.Succeeded);
+        Assert.Null(await app.LoginBusinessAsync(new BusinessLoginCommand("demo@digitalcards.test", oldPassword)));
+        Assert.NotNull(await app.LoginBusinessAsync(new BusinessLoginCommand("demo@digitalcards.test", newPassword)));
+        var business = await provider.GetRequiredService<IBusinessRepository>()
+            .FindByEmailAsync("demo@digitalcards.test");
+        Assert.NotNull(business);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(newPassword), business!.PasswordHashPlaceholder);
+        var credential = await provider.GetRequiredService<IBusinessCredentialRepository>()
+            .FindByBusinessIdAsync(business.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(newPassword, credential!.PasswordHash, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PasswordReset_WithInvalidOrExpiredTokenFailsSafely()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "expiredreset",
+            "Expired",
+            "Reset",
+            "expiredreset@example.test",
+            "OldClient123!"));
+        const string plainToken = "expired-token";
+        store.PasswordResetTokens.Add(new PasswordResetTokenRecord(
+            99,
+            PasswordResetAccountType.Client,
+            client.Id,
+            Sha256Hex(plainToken),
+            "ed-token",
+            DateTimeOffset.UtcNow.AddHours(-2),
+            DateTimeOffset.UtcNow.AddHours(-1),
+            UsedAt: null,
+            RevokedAt: null));
+
+        var expired = await app.ResetClientPasswordAsync(new ResetPasswordCommand(plainToken, "NewClient123!"));
+        var missing = await app.ResetClientPasswordAsync(new ResetPasswordCommand("missing-token", "NewClient123!"));
+
+        Assert.False(expired.Succeeded);
+        Assert.Equal("El link no es valido o ya expiro.", expired.ErrorMessage);
+        Assert.False(missing.Succeeded);
+        Assert.Equal("El link no es valido o ya expiro.", missing.ErrorMessage);
+    }
+
+    [Fact]
     public async Task SelectAppleWallet_ReturnsPendingForValidToken()
     {
         var services = new ServiceCollection();
@@ -1542,10 +1674,23 @@ public sealed class DigitalCardsAppServiceTests
             : enrollmentUrl[(index + marker.Length)..];
     }
 
+    private static string ExtractResetToken(string resetUrl, string marker)
+    {
+        var index = resetUrl.IndexOf(marker, StringComparison.Ordinal);
+        return index < 0
+            ? throw new InvalidOperationException("Password reset link was not found.")
+            : resetUrl[(index + marker.Length)..];
+    }
+
     private static string ExpectedLegacyBusinessPasswordHash(string password)
     {
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password))).ToLowerInvariant();
         return hash[..25];
+    }
+
+    private static string Sha256Hex(string value)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
     }
 
     private static ServiceCollection CreateDefaultServices(IReadOnlyDictionary<string, string?>? configurationValues = null)
