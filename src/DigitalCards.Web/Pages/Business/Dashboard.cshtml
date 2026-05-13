@@ -46,3 +46,119 @@
         </div>
     }
 </section>
+
+@if (!Model.IsPilotBlocked && Model.Dashboard is not null)
+{
+    <section class="result-panel business-dashboard-summary" data-testid="business-dashboard-summary">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Resumen operativo</p>
+                <h2>Actividad reciente</h2>
+                <p class="text-muted">Datos recientes del negocio autenticado. No se muestran tokens ni credenciales.</p>
+            </div>
+            <a class="btn btn-outline-primary" asp-page="/Business/Cards" data-testid="business-dashboard-open-cards">Abrir tarjetas</a>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric">
+                <span>Tarjetas recientes</span>
+                <strong data-testid="business-dashboard-card-count">@Model.Dashboard.RecentCardCount</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos actuales</span>
+                <strong data-testid="business-dashboard-current-stamps">@Model.Dashboard.CurrentStampTotal</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos historicos</span>
+                <strong data-testid="business-dashboard-lifetime-stamps">@Model.Dashboard.LifetimeStampTotal</strong>
+            </div>
+            <div class="metric">
+                <span>Google Wallet</span>
+                <strong data-testid="business-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Apple Wallet</span>
+                <strong data-testid="business-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Alertas Wallet</span>
+                <strong data-testid="business-dashboard-wallet-issues">@Model.Dashboard.WalletIssueCount</strong>
+            </div>
+        </div>
+
+        <div class="business-dashboard-grid">
+            <section class="business-dashboard-panel">
+                <h2>Tarjetas recientes</h2>
+                @if (Model.Dashboard.RecentCards.Count == 0)
+                {
+                    <p class="text-muted" data-testid="business-dashboard-no-cards">Aun no hay tarjetas asociadas.</p>
+                }
+                else
+                {
+                    <div class="dashboard-card-list" data-testid="business-dashboard-recent-cards">
+                        @foreach (var card in Model.Dashboard.RecentCards)
+                        {
+                            <a class="dashboard-card-row"
+                               asp-page="/Business/Cards"
+                               asp-route-query="@card.Client.UserName"
+                               asp-route-cardId="@card.Id"
+                               data-testid="business-dashboard-recent-card">
+                                <div>
+                                    <strong>@card.Client.UserName</strong>
+                                    <span>@card.Client.Email</span>
+                                </div>
+                                <div>
+                                    <strong>@card.CurrentStamps</strong>
+                                    <span>sellos</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="business-dashboard-panel">
+                <h2>Ultimos sellos</h2>
+                @if (Model.Dashboard.RecentStampEvents.Count == 0)
+                {
+                    <p class="text-muted" data-testid="business-dashboard-no-ledger">Aun no hay eventos de sellos.</p>
+                }
+                else
+                {
+                    <div class="stamp-ledger-items" data-testid="business-dashboard-ledger">
+                        @foreach (var item in Model.Dashboard.RecentStampEvents)
+                        {
+                            <div class="stamp-ledger-item" data-testid="business-dashboard-ledger-event">
+                                <div>
+                                    <strong>@item.ClientUserName</strong>
+                                    <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                </div>
+                                <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
+                                <p>
+                                    Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
+                                    &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
+                                </p>
+                                @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                                {
+                                    <p class="text-danger">Error: @item.ErrorSummary</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+    </section>
+}
+
+@functions {
+    private static string WalletStatus(bool attempted, bool succeeded)
+    {
+        if (!attempted)
+        {
+            return "No aplica";
+        }
+
+        return succeeded ? "OK" : "Fallo";
+    }
+}

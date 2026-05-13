@@ -43,6 +43,7 @@ Documentos:
 - `28-client-password-hardening-v1.md`: hashes modernos de cliente y cambio de contrasena.
 - `28-client-password-hardening-hostgator.sql`: tabla nueva para credenciales modernas de cliente.
 - `29-client-dashboard-v2.md`: resumen, perfil basico y estados Wallet en dashboard cliente.
+- `30-business-dashboard-v2.md`: resumen operativo de negocio con tarjetas recientes y StampLedger.
 
 Notas:
 

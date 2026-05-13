@@ -973,6 +973,42 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessDashboard_ShowsOperationalMetricsRecentCardsAndLedger()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("bd");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+        }
+
+        await LoginBusinessAsync(client);
+        var html = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("business-dashboard-summary", html);
+        Assert.Contains("business-dashboard-card-count", html);
+        Assert.Contains("business-dashboard-current-stamps", html);
+        Assert.Contains("business-dashboard-google-count", html);
+        Assert.Contains("business-dashboard-recent-card", html);
+        Assert.Contains("business-dashboard-ledger-event", html);
+        Assert.Contains(userName, html);
+        Assert.Contains("ModernBusiness", html);
+        Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("jwt", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Pilot_WithBlockedBusiness_ShowsMessageAndHidesModernActions()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>

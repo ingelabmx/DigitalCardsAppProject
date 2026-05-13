@@ -396,6 +396,64 @@ public sealed class DigitalCardsAppService
         return results;
     }
 
+    public async Task<BusinessDashboardDto?> GetBusinessDashboardAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        if (business is null)
+        {
+            return null;
+        }
+
+        var cards = await _loyaltyCards.SearchByBusinessAsync(
+            business.Id,
+            query: string.Empty,
+            limit: 25,
+            cancellationToken);
+        var recentCards = new List<BusinessCardDto>(cards.Count);
+
+        foreach (var card in cards)
+        {
+            var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+            if (client is null)
+            {
+                continue;
+            }
+
+            recentCards.Add(await ToBusinessCardDtoAsync(card, client, business, cancellationToken));
+        }
+
+        var events = recentCards
+            .SelectMany(card => card.RecentStampEvents.Select(item => new BusinessDashboardStampEventDto(
+                card.Id,
+                card.Client.UserName,
+                item.CreatedAt,
+                item.Source,
+                item.PreviousCheckQTY,
+                item.NewCheckQTY,
+                item.GoogleWalletAttempted,
+                item.GoogleWalletSucceeded,
+                item.AppleWalletAttempted,
+                item.AppleWalletSucceeded,
+                item.ErrorSummary)))
+            .OrderByDescending(item => item.CreatedAt)
+            .Take(8)
+            .ToArray();
+
+        return new BusinessDashboardDto(
+            ToDto(business),
+            recentCards.Count,
+            recentCards.Sum(card => card.CurrentStamps),
+            recentCards.Sum(card => card.LifetimeStamps),
+            recentCards.Count(card => card.GoogleIssued),
+            recentCards.Count(card => card.AppleTracked),
+            recentCards.Sum(card => card.AppleRegisteredDeviceCount),
+            events.Count(HasWalletIssue),
+            recentCards.Take(8).ToArray(),
+            events);
+    }
+
     public async Task<BusinessCardDto?> GetBusinessCardDetailAsync(
         Guid businessId,
         Guid cardId,
@@ -841,5 +899,12 @@ public sealed class DigitalCardsAppService
     private static string SafeErrorSummary(Exception exception)
     {
         return exception.GetType().Name;
+    }
+
+    private static bool HasWalletIssue(BusinessDashboardStampEventDto item)
+    {
+        return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
+            (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
+            (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
     }
 }
