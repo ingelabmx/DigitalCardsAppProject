@@ -69,6 +69,24 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminPages_UseLegacyAdminListPresentation()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        await LoginAdminAsync(client);
+        var dashboardHtml = await client.GetStringAsync("/Admin/Dashboard");
+        var businessesHtml = await client.GetStringAsync("/Admin/Businesses?Query=demo");
+        var adminsHtml = await client.GetStringAsync("/Admin/AdminUsers");
+
+        Assert.Contains("admin-action-grid", dashboardHtml);
+        Assert.Contains("legacy-admin-list", businessesHtml);
+        Assert.Contains("legacy-admin-row", businessesHtml);
+        Assert.Contains("legacy-admin-list", adminsHtml);
+        Assert.Contains("legacy-admin-row", adminsHtml);
+    }
+
+    [Fact]
     public async Task HealthEndpoint_ReturnsSuccess()
     {
         using var fake = WithFakeIntegrations();
