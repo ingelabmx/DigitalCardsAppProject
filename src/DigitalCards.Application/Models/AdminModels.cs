@@ -141,7 +141,13 @@ public sealed record SetPilotClientCommand(
     bool IsEnabled,
     string? Notes);
 
-public sealed record AdminSupportQuery(string Query);
+public sealed record AdminSupportQuery(
+    string Query,
+    string? BusinessFilter = null,
+    string? ClientFilter = null,
+    bool WalletIssuesOnly = false,
+    DateTimeOffset? From = null,
+    DateTimeOffset? To = null);
 
 public sealed record AdminSupportResult(
     string Query,
@@ -179,6 +185,9 @@ public sealed record AdminSupportCardDto(
     string? AppleUpdateTag,
     string? AppleSerialSuffix,
     int WalletIssueCount,
+    int LegacySyncEventCount,
+    DateTimeOffset? LastLegacySyncAt,
+    IReadOnlyList<string> RecentSafeErrors,
     IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
 
 public sealed record AdminReportsDto(
