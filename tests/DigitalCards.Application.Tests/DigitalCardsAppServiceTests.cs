@@ -453,6 +453,42 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task GetReportsAsync_ReturnsSafeOperationalSummary()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "reportclient1",
+            "Report",
+            "Client",
+            "reportclient1@example.test",
+            "ClientPass123!"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        await app.AddStampToCardAsync(business.Id, enrollment.Card.Id);
+
+        var reports = await adminApp.GetReportsAsync();
+
+        Assert.True(reports.BusinessCount >= 1);
+        Assert.True(reports.CardCount >= 1);
+        Assert.True(reports.ClientCount >= 1);
+        Assert.True(reports.CurrentStampTotal >= 2);
+        Assert.True(reports.GoogleIssuedCount >= 1);
+        var reportBusiness = Assert.Single(reports.Businesses.Where(item => item.BusinessName == "Demo Coffee"));
+        Assert.True(reportBusiness.CardCount >= 1);
+        Assert.True(reportBusiness.ClientCount >= 1);
+        Assert.Contains(reports.RecentCards, card => card.ClientUserName == "reportclient1");
+        Assert.DoesNotContain("password", string.Join(' ', reports.Businesses.Select(item => item.BusinessEmail)), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task ListPilotClientsAsync_SearchesLegacyClientsWithoutPasswordData()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

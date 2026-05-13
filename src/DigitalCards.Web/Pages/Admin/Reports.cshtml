@@ -1,0 +1,111 @@
+@page
+@model DigitalCards.Web.Pages.Admin.ReportsModel
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<section class="result-panel" data-testid="admin-reports">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Reportes</h1>
+            <p class="lead">Resumen operativo de negocios, tarjetas, sellos y Wallets. No muestra tokens ni credenciales.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-reports-back-link">Dashboard</a>
+    </div>
+
+    @if (Model.Reports is null)
+    {
+        <p class="text-muted">No hay datos de reportes disponibles.</p>
+    }
+    else
+    {
+        <div class="metric-row admin-report-metrics">
+            <div class="metric">
+                <span>Negocios</span>
+                <strong data-testid="admin-report-business-count">@Model.Reports.BusinessCount</strong>
+            </div>
+            <div class="metric">
+                <span>Clientes</span>
+                <strong data-testid="admin-report-client-count">@Model.Reports.ClientCount</strong>
+            </div>
+            <div class="metric">
+                <span>Tarjetas</span>
+                <strong data-testid="admin-report-card-count">@Model.Reports.CardCount</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos actuales</span>
+                <strong data-testid="admin-report-current-stamps">@Model.Reports.CurrentStampTotal</strong>
+            </div>
+            <div class="metric">
+                <span>Google Wallet</span>
+                <strong data-testid="admin-report-google-count">@Model.Reports.GoogleIssuedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Alertas Wallet</span>
+                <strong data-testid="admin-report-wallet-issue-count">@Model.Reports.WalletIssueCount</strong>
+            </div>
+        </div>
+
+        <section class="business-dashboard-panel">
+            <h2>Negocios</h2>
+            <div class="dashboard-card-list" data-testid="admin-report-businesses">
+                @foreach (var business in Model.Reports.Businesses)
+                {
+                    <div class="dashboard-card-row admin-report-business-row" data-testid="admin-report-business-row">
+                        <div>
+                            <strong>@business.BusinessName</strong>
+                            <span>@business.BusinessEmail</span>
+                        </div>
+                        <div>
+                            <strong>@business.CardCount tarjetas</strong>
+                            <span>@business.ClientCount clientes &middot; @(business.IsPilotEnabled ? "piloto activo" : "piloto apagado")</span>
+                        </div>
+                        <div>
+                            <strong>@business.CurrentStampTotal / @business.LifetimeStampTotal</strong>
+                            <span>sellos actuales / historicos</span>
+                        </div>
+                        <div>
+                            <strong>@business.GoogleIssuedCount Google &middot; @business.AppleTrackedCount Apple</strong>
+                            <span>@business.WalletIssueCount alerta(s)</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="business-dashboard-panel">
+            <h2>Tarjetas recientes</h2>
+            @if (Model.Reports.RecentCards.Count == 0)
+            {
+                <p class="text-muted" data-testid="admin-report-no-cards">No hay tarjetas recientes.</p>
+            }
+            else
+            {
+                <div class="dashboard-card-list" data-testid="admin-report-recent-cards">
+                    @foreach (var card in Model.Reports.RecentCards)
+                    {
+                        <div class="dashboard-card-row" data-testid="admin-report-recent-card">
+                            <div>
+                                <strong>@card.ClientUserName</strong>
+                                <span>@card.BusinessName</span>
+                            </div>
+                            <div>
+                                <strong>@card.CurrentStamps actuales</strong>
+                                <span>@card.LifetimeStamps historicos</span>
+                            </div>
+                            <div>
+                                <strong>@(card.GoogleIssued ? "Google OK" : "Google pendiente")</strong>
+                                <span>@(card.AppleTracked ? "Apple activa" : "Apple pendiente")</span>
+                            </div>
+                            <div>
+                                <strong>@card.LastStampedAt.ToLocalTime().ToString("g")</strong>
+                                <span>@card.WalletIssueCount alerta(s)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+</section>
