@@ -4,14 +4,14 @@
     ViewData["Title"] = "Dashboard admin";
 }
 
-<section class="app-surface">
+<section class="app-surface admin-dashboard-hero">
     <div>
         <p class="eyebrow">Admin</p>
         <h1 data-testid="admin-dashboard-title">@Model.AdminName</h1>
         <p class="lead">Administra que negocios y clientes pueden usar el flujo moderno en app.puntelio.com.</p>
     </div>
 
-    <div class="action-grid">
+    <div class="action-grid admin-action-grid" data-testid="admin-action-grid">
         <a class="action-card" asp-page="/Admin/CreateBusiness" data-testid="admin-create-business-link">
             <span>Crear negocio</span>
             <small>Registra un negocio con acceso legacy-compatible.</small>

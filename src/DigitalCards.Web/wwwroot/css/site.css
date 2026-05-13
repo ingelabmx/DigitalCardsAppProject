@@ -241,6 +241,46 @@ body.legacy-shell {
   color: #5d87ff;
 }
 
+.legacy-shell .admin-dashboard-hero {
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
+}
+
+.legacy-shell .admin-action-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.legacy-shell .admin-action-grid .action-card {
+  border-color: #e5eaef;
+  border-left: 4px solid #5d87ff;
+  min-height: 92px;
+}
+
+.legacy-admin-list {
+  gap: 0.75rem;
+}
+
+.legacy-admin-row {
+  align-items: start;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 4%);
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto);
+}
+
+.legacy-admin-row h2 {
+  color: #2a3547;
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.legacy-admin-row .badge {
+  margin-bottom: 0.35rem;
+}
+
+.legacy-admin-row .pilot-business-actions {
+  align-items: center;
+  display: flex;
+}
+
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
@@ -745,5 +785,11 @@ h1 {
 
   .legacy-container-fluid {
     padding: 1.25rem;
+  }
+
+  .legacy-shell .admin-dashboard-hero,
+  .legacy-shell .admin-action-grid,
+  .legacy-admin-row {
+    grid-template-columns: 1fr;
   }
 }

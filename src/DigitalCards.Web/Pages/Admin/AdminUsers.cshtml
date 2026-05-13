@@ -32,10 +32,10 @@
     }
     else
     {
-        <div class="pilot-business-list" data-testid="admin-users-list">
+        <div class="pilot-business-list legacy-admin-list" data-testid="admin-users-list">
             @foreach (var admin in Model.AdminUsers)
             {
-                <article class="pilot-business-item" data-testid="admin-user-row">
+                <article class="pilot-business-item legacy-admin-row" data-testid="admin-user-row">
                     <div>
                         <h2 data-testid="admin-user-name">@admin.UserName</h2>
                         <p data-testid="admin-user-email">@admin.Email</p>

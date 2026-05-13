@@ -35,10 +35,10 @@
     }
     else
     {
-        <div class="pilot-business-list" data-testid="admin-client-list">
+        <div class="pilot-business-list legacy-admin-list" data-testid="admin-client-list">
             @foreach (var client in Model.Clients)
             {
-                <article class="pilot-business-item" data-testid="admin-client-row">
+                <article class="pilot-business-item legacy-admin-row" data-testid="admin-client-row">
                     <div>
                         <h2>@client.UserName</h2>
                         <p>@client.ClientEmail</p>

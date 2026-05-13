@@ -380,6 +380,12 @@ inspirado en Web Forms. Detalle:
 docs/migration-context/42-modern-legacy-shell-v1.md
 ```
 
+Las pantallas admin tienen ajustes iniciales de paridad visual en:
+
+```text
+docs/migration-context/43-admin-ui-parity-v1.md
+```
+
 La regla de trabajo es reemplazar Web Forms por negocio, no globalmente. Web
 Forms sigue vivo como fallback hasta que cada negocio complete los gates de
 paridad, smoke real, soporte y rollback.
