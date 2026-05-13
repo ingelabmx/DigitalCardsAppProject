@@ -4,8 +4,10 @@
     ViewData["Title"] = "Login cliente";
 }
 
-<section class="form-panel">
+<section class="form-panel client-auth-panel">
+    <p class="eyebrow">Cliente</p>
     <h1>Login cliente</h1>
+    <p class="lead">Entra para consultar tus tarjetas, sellos y links Wallet.</p>
 
     <form method="post" data-testid="client-login-form">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -22,8 +24,10 @@
             <span asp-validation-for="Input.Password" class="text-danger"></span>
         </div>
 
-        <button class="btn btn-primary" type="submit" data-testid="client-login-submit">Entrar</button>
-        <a class="btn btn-link" asp-page="/Client/ForgotPassword" data-testid="client-forgot-password-link">Olvide mi contrasena</a>
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit" data-testid="client-login-submit">Entrar</button>
+            <a class="btn btn-link" asp-page="/Client/ForgotPassword" data-testid="client-forgot-password-link">Olvide mi contrasena</a>
+        </div>
     </form>
 </section>
 
