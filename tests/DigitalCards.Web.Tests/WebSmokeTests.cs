@@ -7,6 +7,7 @@ using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
 using DigitalCards.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,48 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("DigitalCards migration shell", html);
         Assert.Contains("Registro cliente", html);
         Assert.DoesNotContain("data-testid=\"legacy-shell\"", html);
+    }
+
+    [Fact]
+    public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
+    {
+        using var fake = WithFakeIntegrations(environmentName: "Production");
+        var client = fake.Factory.CreateClient();
+
+        var response = await client.GetAsync("/Dev/Outbox");
+        var homeHtml = await client.GetStringAsync("/");
+
+        await LoginBusinessAsync(client);
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.DoesNotContain("home-outbox-link", homeHtml);
+        Assert.DoesNotContain("dashboard-outbox-link", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task DevOutbox_InProductionWithFlag_RequiresAdminCookie()
+    {
+        using var fake = WithFakeIntegrations(
+            new Dictionary<string, string?>
+            {
+                ["DigitalCards:Diagnostics:EnableDevOutbox"] = "true"
+            },
+            environmentName: "Production");
+        var anonymous = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var admin = fake.Factory.CreateClient();
+
+        var anonymousResponse = await anonymous.GetAsync("/Dev/Outbox");
+
+        await LoginAdminAsync(admin);
+        var adminResponse = await admin.GetAsync("/Dev/Outbox");
+
+        Assert.Equal(HttpStatusCode.Redirect, anonymousResponse.StatusCode);
+        Assert.Contains("/Admin/Login", anonymousResponse.Headers.Location?.OriginalString);
+        adminResponse.EnsureSuccessStatusCode();
     }
 
     [Fact]
@@ -2095,6 +2138,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var userName = NewLegacySafeUserName("wd");
         var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
 
+        await LoginAdminAsync(client);
         var json = await client.GetStringAsync($"/internal/wallet-diagnostics/{enrollment.Card.EnrollmentToken}");
 
         Assert.Contains("\"clientUserName\"", json);
@@ -2108,9 +2152,31 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("ConnectionString", json, StringComparison.OrdinalIgnoreCase);
     }
 
-    private FakeIntegrationFactory WithFakeIntegrations(IReadOnlyDictionary<string, string?>? configurationOverrides = null)
+    [Fact]
+    public async Task WalletDiagnostics_WhenEnabledWithoutAdmin_ReturnsAdminChallenge()
     {
-        return new FakeIntegrationFactory(_factory, configurationOverrides);
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Diagnostics:EnableWalletDiagnostics"] = "true"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("wda");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+
+        var response = await client.GetAsync($"/internal/wallet-diagnostics/{enrollment.Card.EnrollmentToken}");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Admin/Login", response.Headers.Location?.OriginalString);
+    }
+
+    private FakeIntegrationFactory WithFakeIntegrations(
+        IReadOnlyDictionary<string, string?>? configurationOverrides = null,
+        string? environmentName = null)
+    {
+        return new FakeIntegrationFactory(_factory, configurationOverrides, environmentName);
     }
 
     private static IReadOnlyDictionary<string, string?> MySqlUnavailableOverrides()
@@ -2140,7 +2206,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         public FakeIntegrationFactory(
             WebApplicationFactory<Program> baseFactory,
-            IReadOnlyDictionary<string, string?>? configurationOverrides)
+            IReadOnlyDictionary<string, string?>? configurationOverrides,
+            string? environmentName)
         {
             _previousValues = Overrides.ToDictionary(
                 pair => pair.Key,
@@ -2153,6 +2220,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
             Factory = baseFactory.WithWebHostBuilder(builder =>
             {
+                if (!string.IsNullOrWhiteSpace(environmentName))
+                {
+                    builder.UseEnvironment(environmentName);
+                }
+
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
                     var values = new Dictionary<string, string?>

@@ -1,7 +1,14 @@
 @page
+@using DigitalCards.Web.Diagnostics
+@inject IWebHostEnvironment HostEnvironment
+@inject IConfiguration Configuration
 @model IndexModel
 @{
     ViewData["Title"] = "Migracion ASP.NET Core";
+    var showDevOutboxLink = DevToolAccess.ShouldRenderDevOutboxLink(
+        HostEnvironment,
+        Configuration,
+        User);
 }
 
 <section class="app-surface">
@@ -22,10 +29,13 @@
             <span>Login negocio</span>
             <small>Usa demo local o negocio legacy segun configuracion.</small>
         </a>
-        <a class="action-card" asp-page="/Dev/Outbox" data-testid="home-outbox-link">
-            <span>Outbox fake</span>
-            <small>Simula correo de enrolamiento Wallet.</small>
-        </a>
+        @if (showDevOutboxLink)
+        {
+            <a class="action-card" asp-page="/Dev/Outbox" data-testid="home-outbox-link">
+                <span>Outbox fake</span>
+                <small>Simula correo de enrolamiento Wallet.</small>
+            </a>
+        }
     </div>
 </section>
 

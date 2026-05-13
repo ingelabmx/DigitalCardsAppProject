@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+@inject IWebHostEnvironment HostEnvironment
+@inject IConfiguration Configuration
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -22,6 +24,10 @@
         requestPath.Value?.EndsWith("/ForgotPassword", StringComparison.OrdinalIgnoreCase) == true ||
         requestPath.Value?.EndsWith("/ResetPassword", StringComparison.OrdinalIgnoreCase) == true;
     var useLegacyShell = isAuthenticatedArea && !isAuthPage && (isAdmin || isBusiness || isClient);
+    var showDevOutboxLink = DigitalCards.Web.Diagnostics.DevToolAccess.ShouldRenderDevOutboxLink(
+        HostEnvironment,
+        Configuration,
+        User);
     var shellRole = isAdmin ? "Administradores" : isBusiness ? "Duenos de negocios" : "Cliente";
     var shellName = isAdmin
         ? User.FindFirst(AdminAuth.AdminNameClaim)?.Value ?? "Admin"
@@ -138,9 +144,12 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Business/Login">Login negocio</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
-                            </li>
+                            @if (showDevOutboxLink)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Admin/Login">Admin</a>
                             </li>
