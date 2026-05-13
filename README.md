@@ -141,6 +141,24 @@ Runbook:
 docs/migration-context/19-production-readiness.md
 ```
 
+## Hosting operativo de `app.puntelio.com`
+
+Para operar app y tunnel con pasos repetibles, usa:
+
+```powershell
+.\ops\windows\start-puntelio-app.ps1
+.\ops\windows\start-puntelio-tunnel.ps1
+.\ops\windows\check-puntelio-health.ps1
+```
+
+Estos scripts no instalan servicios ni imprimen secretos. El runbook para
+convertirlos en operacion estable, con logs, reinicio, Data Protection y
+rollback, esta en:
+
+```text
+docs/migration-context/36-production-service-hosting-v1.md
+```
+
 ## Login negocio moderno
 
 El flujo ASP.NET Core moderno usa cookie auth para negocio:
