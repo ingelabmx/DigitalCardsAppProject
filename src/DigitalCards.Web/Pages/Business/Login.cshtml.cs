@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +12,16 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class LoginModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly PilotAccessService _pilotAccess;
     private readonly ILogger<LoginModel> _logger;
 
     public LoginModel(
         DigitalCardsAppService appService,
+        PilotAccessService pilotAccess,
         ILogger<LoginModel> logger)
     {
         _appService = appService;
+        _pilotAccess = pilotAccess;
         _logger = logger;
     }
 
@@ -46,6 +50,14 @@ public sealed class LoginModel : PageModel
         {
             _logger.LogWarning("Business login failed for {BusinessEmail}.", MaskEmail(Input.Email));
             ModelState.AddModelError(string.Empty, "Credenciales de negocio invalidas.");
+            return Page();
+        }
+
+        var pilotAccess = await _pilotAccess.CheckBusinessLoginAsync(business.Id, cancellationToken);
+        if (!pilotAccess.IsAllowed)
+        {
+            _logger.LogWarning("Business login blocked for business {BusinessId}.", business.Id);
+            ModelState.AddModelError(string.Empty, pilotAccess.Message ?? "El negocio no puede usar el flujo moderno.");
             return Page();
         }
 

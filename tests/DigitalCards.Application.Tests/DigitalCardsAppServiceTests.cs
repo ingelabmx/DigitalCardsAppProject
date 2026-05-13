@@ -665,6 +665,42 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task UpdateBusinessProfileAsync_InactiveStatusDisablesModernAccess()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var pilotBusinesses = provider.GetRequiredService<IPilotBusinessRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var created = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+            "Inactive Cafe",
+            "inactive@example.test",
+            "startpass1",
+            admin!.Id,
+            EnablePilot: true,
+            Notes: null));
+
+        var result = await adminApp.UpdateBusinessProfileAsync(new UpdateBusinessProfileCommand(
+            created.Business!.BusinessId,
+            admin.Id,
+            "Inactive Cafe",
+            "inactive@example.test",
+            "/img/demo-coffee.svg",
+            IsPilotEnabled: true,
+            Notes: "pausado por admin",
+            ActivationStatus: BusinessActivationStatus.Inactive));
+
+        Assert.True(result.Succeeded);
+        Assert.False(result.Business!.IsPilotEnabled);
+        Assert.Equal(BusinessActivationStatus.Inactive, result.Business.ActivationStatus);
+        var access = await pilotBusinesses.FindByBusinessIdAsync(created.Business.BusinessId);
+        Assert.NotNull(access);
+        Assert.False(access!.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.Inactive, access.ActivationStatus);
+    }
+
+    [Fact]
     public async Task UpdateBusinessProfileAsync_WhenDuplicateNameOrEmail_ReturnsSafeError()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

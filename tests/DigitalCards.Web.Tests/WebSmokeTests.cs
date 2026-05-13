@@ -818,6 +818,43 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminBusinessProfile_InactiveBusinessCannotLoginModern()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginAdminAsync(client);
+        var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+        var token = await GetAntiforgeryTokenAsync(client, profilePath);
+        var saveResponse = await client.PostAsync(
+            $"{profilePath}?handler=Save",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = "Demo Coffee",
+                ["Input.BusinessEmail"] = "demo@digitalcards.test",
+                ["Input.BusinessLogo"] = "/img/demo-coffee.svg",
+                ["Input.IsPilotEnabled"] = "true",
+                ["Input.ActivationStatus"] = "Inactive",
+                ["Input.Notes"] = "desactivado por admin",
+                ["__RequestVerificationToken"] = token
+            }));
+        var saveHtml = await saveResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, saveResponse.StatusCode);
+        Assert.Contains("Negocio actualizado", saveHtml);
+        Assert.Contains("Inactivo", saveHtml);
+
+        var login = await LoginBusinessAsync(client);
+        var loginHtml = await login.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.Contains("desactivado para el flujo moderno", loginHtml);
+        Assert.False(HasBusinessCookie(login));
+    }
+
+    [Fact]
     public async Task AdminBusinessProfile_UploadsBrandingLogoToPublicPath()
     {
         var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-web-logo-{Guid.NewGuid():N}");

@@ -356,6 +356,14 @@ El `BusinessID` se toma de la cookie del negocio. La pantalla no acepta
 `businessId` por query string y no muestra tokens, push tokens, passwords,
 hashes ni connection strings.
 
+## Desactivacion de negocio
+
+El admin puede marcar un negocio como `Inactivo` desde
+`/Admin/BusinessProfile/{businessId}`. Ese estado no borra el negocio ni toca
+Web Forms, pero bloquea el login moderno de `/Business/Login` y no emite cookie
+de negocio. Para reactivar, cambiar el estado a `PilotModern` o
+`ModernPrimary`.
+
 ## Perfil de cliente
 
 `/Client/Profile` permite que el cliente autenticado actualice nombre, apellido
