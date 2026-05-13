@@ -1,4 +1,5 @@
 using DigitalCards.Application.Models;
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
 using DigitalCards.Web.Branding;
@@ -13,16 +14,22 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class BusinessProfileModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly BusinessLogoUploadService _logoUploads;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<BusinessProfileModel> _logger;
 
     public BusinessProfileModel(
         AdminAppService adminApp,
+        IBusinessEnrollmentLinkService businessEnrollmentLinks,
         BusinessLogoUploadService logoUploads,
+        IConfiguration configuration,
         ILogger<BusinessProfileModel> logger)
     {
         _adminApp = adminApp;
+        _businessEnrollmentLinks = businessEnrollmentLinks;
         _logoUploads = logoUploads;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -38,6 +45,8 @@ public sealed class BusinessProfileModel : PageModel
     public BusinessProfileDto? Profile { get; private set; }
 
     public string? StatusMessage { get; private set; }
+
+    public string? GeneratedEnrollmentUrl { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(Guid businessId, CancellationToken cancellationToken)
     {
@@ -170,6 +179,27 @@ public sealed class BusinessProfileModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostGenerateEnrollmentLinkAsync(
+        Guid businessId,
+        CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var token = await _businessEnrollmentLinks.CreateOrReplaceTokenAsync(businessId, cancellationToken);
+        GeneratedEnrollmentUrl = $"{GetBaseUrl()}/Enroll/{token}";
+        StatusMessage = "Link publico de registro generado. Solo se muestra en esta respuesta.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} generated public enrollment link for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        return Page();
+    }
+
     private async Task<bool> LoadAsync(Guid businessId, CancellationToken cancellationToken)
     {
         Profile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
@@ -210,6 +240,14 @@ public sealed class BusinessProfileModel : PageModel
     {
         PasswordInput.NewPassword = string.Empty;
         PasswordInput.ConfirmPassword = string.Empty;
+    }
+
+    private string GetBaseUrl()
+    {
+        return EnrollmentBaseUrlResolver.Resolve(
+            _configuration["DigitalCards:PublicBaseUrl"],
+            Request.Scheme,
+            Request.Host);
     }
 
     public sealed class ProfileInputModel

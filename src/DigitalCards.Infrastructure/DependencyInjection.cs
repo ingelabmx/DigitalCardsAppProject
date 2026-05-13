@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddSingleton<AppleWalletPassPackageBuilder>();
         services.AddSingleton<LegacyWalletSyncState>();
+        services.AddScoped<IBusinessEnrollmentLinkService, BusinessEnrollmentLinkService>();
         services.AddScoped<IWalletLinkTokenService, WalletLinkTokenService>();
 
         var options = configuration
@@ -78,6 +79,7 @@ public static class DependencyInjection
             services.AddScoped<ILoyaltyCardRepository, MySqlLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, MySqlAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, MySqlWalletLinkTokenRepository>();
+            services.AddScoped<IBusinessEnrollmentLinkRepository, MySqlBusinessEnrollmentLinkRepository>();
             services.AddScoped<IPasswordResetTokenRepository, MySqlPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, MySqlStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
@@ -97,6 +99,7 @@ public static class DependencyInjection
             services.AddScoped<ILoyaltyCardRepository, InMemoryLoyaltyCardRepository>();
             services.AddScoped<IAppleWalletPassRepository, InMemoryAppleWalletPassRepository>();
             services.AddScoped<IWalletLinkTokenRepository, InMemoryWalletLinkTokenRepository>();
+            services.AddScoped<IBusinessEnrollmentLinkRepository, InMemoryBusinessEnrollmentLinkRepository>();
             services.AddScoped<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, InMemoryStampLedgerRepository>();
             services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();

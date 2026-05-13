@@ -1,0 +1,75 @@
+@page "/Enroll/{businessToken}"
+@model DigitalCards.Web.Pages.EnrollModel
+@{
+    ViewData["Title"] = "Registro de lealtad";
+}
+
+<section class="form-panel" data-testid="public-business-enrollment-page">
+    @if (Model.IsUnavailable)
+    {
+        <h1>Registro no disponible</h1>
+        <p class="text-muted" data-testid="public-business-enrollment-unavailable">
+            El link no es valido o el negocio no esta habilitado para registro moderno.
+        </p>
+    }
+    else
+    {
+        <p class="eyebrow">Tarjeta de lealtad</p>
+        <h1 data-testid="public-business-enrollment-business">@Model.BusinessName</h1>
+        <p class="lead">Registra tus datos para recibir el link de Wallet de este negocio.</p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="alert alert-success" role="status" data-testid="public-business-enrollment-success">
+                @Model.StatusMessage
+                @if (!string.IsNullOrWhiteSpace(Model.WalletLink))
+                {
+                    <div>
+                        <a href="@Model.WalletLink" data-testid="public-business-enrollment-wallet-link">Abrir Wallet</a>
+                    </div>
+                }
+            </div>
+        }
+
+        <form method="post" data-testid="public-business-enrollment-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.UserName" class="form-label"></label>
+                <input asp-for="Input.UserName" class="form-control" data-testid="public-enroll-username" />
+                <span asp-validation-for="Input.UserName" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.FirstName" class="form-label"></label>
+                    <input asp-for="Input.FirstName" class="form-control" data-testid="public-enroll-first-name" />
+                    <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.LastName" class="form-label"></label>
+                    <input asp-for="Input.LastName" class="form-control" data-testid="public-enroll-last-name" />
+                    <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" data-testid="public-enroll-email" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control" data-testid="public-enroll-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary" type="submit" data-testid="public-enroll-submit">Registrarme</button>
+        </form>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
