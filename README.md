@@ -545,6 +545,28 @@ Antes de habilitarlo contra HostGator, aplica:
 ```text
 docs/migration-context/48-business-self-service-v1-hostgator.sql
 ```
+
+## Cutover por negocio
+
+La migracion productiva se hace por negocio usando el estado de activacion en
+`/Admin/BusinessProfile/{businessId}`:
+
+- `LegacyOnly`: opera Web Forms.
+- `PilotModern`: prueba controlada en moderno.
+- `ModernPrimary`: moderno es el flujo diario, Web Forms queda como fallback.
+- `LegacyRetired`: estado futuro para negocio sin pantallas legacy.
+
+Checklist operativo:
+
+```text
+ops/pilot-cutover-checklist.md
+```
+
+Runbook completo:
+
+```text
+docs/migration-context/49-production-pilot-cutover-v1.md
+```
 Configuracion real recomendada:
 
 ```json
