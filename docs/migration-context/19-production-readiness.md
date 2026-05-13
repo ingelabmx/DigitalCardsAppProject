@@ -88,8 +88,8 @@ Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
 
 Smoke real:
 
-1. Login negocio allowlisted.
-2. Enroll cliente allowlisted.
+1. Login negocio habilitado por admin.
+2. Enroll/asociacion de cliente desde negocio habilitado.
 3. Confirmar correo real con link `https://app.puntelio.com/Wallet/Select/...`.
 4. Instalar Apple Wallet en iPhone.
 5. Guardar Google Wallet.

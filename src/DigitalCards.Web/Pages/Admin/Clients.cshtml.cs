@@ -36,7 +36,7 @@ public sealed class ClientsModel : PageModel
         string? notes,
         CancellationToken cancellationToken)
     {
-        return await SetPilotAsync(clientId, notes, isEnabled: true, cancellationToken);
+        return await ShowRetiredAllowlistMessageAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDisableAsync(
@@ -44,54 +44,15 @@ public sealed class ClientsModel : PageModel
         string? notes,
         CancellationToken cancellationToken)
     {
-        return await SetPilotAsync(clientId, notes, isEnabled: false, cancellationToken);
+        return await ShowRetiredAllowlistMessageAsync(cancellationToken);
     }
 
-    private async Task<IActionResult> SetPilotAsync(
-        Guid clientId,
-        string? notes,
-        bool isEnabled,
-        CancellationToken cancellationToken)
+    private async Task<IActionResult> ShowRetiredAllowlistMessageAsync(CancellationToken cancellationToken)
     {
-        if (clientId == Guid.Empty)
-        {
-            ModelState.AddModelError(string.Empty, "El cliente no existe.");
-        }
-
-        if (notes?.Length > 500)
-        {
-            ModelState.AddModelError(string.Empty, "Las notas no pueden exceder 500 caracteres.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            await LoadAsync(cancellationToken);
-            return Page();
-        }
-
-        var result = await _adminApp.SetPilotClientAsync(
-            new SetPilotClientCommand(
-                clientId,
-                AdminAuth.GetAdminUserId(User),
-                isEnabled,
-                notes),
-            cancellationToken);
-
-        if (result is null)
-        {
-            ModelState.AddModelError(string.Empty, "El cliente no existe.");
-            await LoadAsync(cancellationToken);
-            return Page();
-        }
-
         _logger.LogInformation(
-            "Admin {AdminUserId} changed pilot client {ClientId} enabled {IsEnabled}.",
-            AdminAuth.GetAdminUserId(User),
-            result.ClientId,
-            result.IsEnabled);
-        StatusMessage = result.IsEnabled
-            ? $"Piloto habilitado para {result.UserName}."
-            : $"Piloto deshabilitado para {result.UserName}.";
+            "Admin {AdminUserId} attempted to change retired client pilot allowlist.",
+            AdminAuth.GetAdminUserId(User));
+        StatusMessage = "La allowlist de clientes ya no se usa. Habilita el negocio desde Admin > Negocios.";
         await LoadAsync(cancellationToken);
         return Page();
     }

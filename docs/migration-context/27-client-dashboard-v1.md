@@ -32,8 +32,8 @@ clientes en este PR.
 - Cliente entra a `/Client/Login` y consulta sus tarjetas desde
   `/Client/Dashboard`.
 
-`/Admin/Clients` queda como control operativo/piloto temporal. El flujo normal
-de negocio no requiere que admin habilite cada cliente.
+La allowlist de clientes queda retirada del flujo operativo. El flujo normal de
+negocio no requiere que admin habilite cada cliente.
 
 ## Seguridad
 

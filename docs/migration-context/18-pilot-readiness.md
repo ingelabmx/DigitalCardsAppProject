@@ -22,9 +22,7 @@ Activar piloto:
     "Pilot": {
       "Enabled": true,
       "AllowedBusinessIds": [],
-      "AllowedBusinessEmails": ["NEGOCIO_TEST_EMAIL"],
-      "AllowedClientEmails": ["CLIENTE_TEST_EMAIL"],
-      "AllowedClientEmailDomains": ["example.test"]
+      "AllowedBusinessEmails": ["NEGOCIO_TEST_EMAIL"]
     }
   }
 }
@@ -38,9 +36,6 @@ Comportamiento:
   habilitado por admin o por fallback temporal de ID/email.
 - El negocio habilitado puede asociar clientes desde `/Business/Enroll`; esa es
   la habilitacion operativa normal del cliente en su programa.
-- `/Admin/Clients`, `AllowedClientEmails` y `AllowedClientEmailDomains` quedan
-  como guardrails temporales para pruebas/rollback, no como paso normal de
-  negocio.
 - Wallet landing, Google Wallet, Apple `.pkpass` y Apple Wallet Web Service no
   dependen de cookie de negocio ni del piloto.
 

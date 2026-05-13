@@ -1,17 +1,21 @@
 @page
 @model DigitalCards.Web.Pages.Admin.ClientsModel
 @{
-    ViewData["Title"] = "Clientes piloto";
+    ViewData["Title"] = "Clientes";
 }
 
 <section class="result-panel">
     <div class="page-heading">
         <div>
             <p class="eyebrow">Admin</p>
-            <h1>Clientes piloto</h1>
-            <p class="lead">Habilita o deshabilita clientes existentes para operar el flujo moderno.</p>
+            <h1>Clientes</h1>
+            <p class="lead">El acceso moderno ya no se controla por allowlist de cliente. Habilita el negocio piloto y deja que el negocio asocie clientes desde su flujo.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-clients-back-link">Dashboard</a>
+    </div>
+
+    <div class="alert alert-info" role="status" data-testid="admin-client-allowlist-retired">
+        La allowlist de clientes quedo retirada del flujo operativo. Esta vista queda solo como consulta segura de clientes legacy.
     </div>
 
     <form method="get" class="search-row" data-testid="admin-client-search-form">
@@ -45,25 +49,15 @@
                         <small>@client.ClientName</small>
                     </div>
                     <div>
-                        <span class="badge @(client.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-client-pilot-status">
-                            @(client.IsEnabled ? "Piloto habilitado" : "Piloto deshabilitado")
+                        <span class="badge text-bg-info" data-testid="admin-client-pilot-status">
+                            Operable por negocio habilitado
                         </span>
                         @if (client.UpdatedAt is not null)
                         {
-                            <small>Actualizado @client.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
+                            <small>Registro piloto historico actualizado @client.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
                         }
                     </div>
-                    <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-form">
-                        <input type="hidden" name="clientId" value="@client.ClientId" />
-                        <label class="form-label" for="enable-client-notes-@client.ClientId">Notas</label>
-                        <textarea id="enable-client-notes-@client.ClientId" name="notes" class="form-control" rows="2" data-testid="admin-client-notes">@client.Notes</textarea>
-                        <button class="btn btn-primary" type="submit" data-testid="admin-enable-client-pilot">Habilitar piloto</button>
-                    </form>
-                    <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form">
-                        <input type="hidden" name="clientId" value="@client.ClientId" />
-                        <input type="hidden" name="notes" value="@client.Notes" />
-                        <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-client-pilot">Deshabilitar piloto</button>
-                    </form>
+                    <p class="text-muted mb-0">Para permitir operacion moderna, habilita el negocio desde <a asp-page="/Admin/Businesses">Negocios</a>.</p>
                 </article>
             }
         </div>
