@@ -81,7 +81,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Pilot guardrails | Ready | Business allowlist is admin-managed; client allowlist is retired. |
 | Production service hosting | Partial | Needs a dedicated runbook/service setup PR. |
 | Monitoring/alerts | Partial | Logs exist; no external monitoring integration yet. |
-| Rollback | Pilot | Primary rollback remains Web Forms plus disabling pilot/sync. |
+| Rollback | Pilot | Primary rollback remains Web Forms plus disabling pilot/sync; cutover checklist is documented. |
 
 ## Replacement Gates
 
@@ -99,5 +99,5 @@ Do not retire a Web Forms flow until all items are true:
    - make the runtime stable as a service, including app/cloudflared startup and restart.
 2. `feature/gradual-webforms-replacement`
    - define the operational activation plan by business.
-3. `feature/production-pilot-cutover-v1`
-   - prepare named businesses for broader modern operation.
+3. `feature/admin-support-center-v2`
+   - add deeper production support filters once real pilot volume grows.

@@ -181,11 +181,14 @@ Medir manualmente al inicio:
 
 ## Siguiente PR Recomendado
 
-El siguiente PR deberia mover una pieza concreta de paridad faltante, no otro
-documento general. Opciones recomendadas:
+Este documento queda como base historica. El cutover operativo detallado vive
+en:
 
-- `feature/business-logo-upload-v1`: upload seguro de logo/branding.
-- `feature/admin-business-activation-status`: estado formal por negocio
-  (`LegacyOnly`, `PilotModern`, `ModernPrimary`, `LegacyRetired`).
-- `feature/support-export-v1`: export seguro de diagnostico para soporte.
+```text
+docs/migration-context/49-production-pilot-cutover-v1.md
+ops/pilot-cutover-checklist.md
+```
+
+Los siguientes PRs deben responder a hallazgos reales de piloto: soporte v2,
+reportes faltantes, o retiro controlado de pantallas legacy por negocio.
 
