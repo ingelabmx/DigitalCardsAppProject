@@ -1,0 +1,151 @@
+@page
+@model DigitalCards.Web.Pages.Admin.CutoverModel
+@using DigitalCards.Domain
+@{
+    ViewData["Title"] = "Cutover por negocio";
+}
+
+<section class="result-panel" data-testid="admin-cutover-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Cutover por negocio</h1>
+            <p class="lead">Revisa readiness y cambia el estado operativo antes de mover un negocio al flujo moderno.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary" asp-page="/Admin/Support" data-testid="admin-cutover-support-link">Soporte</a>
+            <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-cutover-back-link">Dashboard</a>
+        </div>
+    </div>
+
+    <form method="get" class="search-row" data-testid="admin-cutover-search-form">
+        <label asp-for="Query" class="form-label visually-hidden">Buscar negocio</label>
+        <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-cutover-query" />
+        <select asp-for="ActivationStatusFilter" class="form-select" data-testid="admin-cutover-status-filter">
+            <option value="">Todos los estados</option>
+            <option value="LegacyOnly">Legacy only</option>
+            <option value="PilotModern">Piloto moderno</option>
+            <option value="ModernPrimary">Moderno principal</option>
+            <option value="LegacyRetired">Legacy retirado</option>
+            <option value="Inactive">Inactivo</option>
+        </select>
+        <button class="btn btn-primary" type="submit" data-testid="admin-cutover-search-submit">Filtrar</button>
+    </form>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (Model.StatusMessage is not null)
+    {
+        <div class="alert alert-success" role="status" data-testid="admin-cutover-status-message">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.Businesses.Count == 0)
+    {
+        <p class="text-muted" data-testid="admin-cutover-no-results">No se encontraron negocios para cutover.</p>
+    }
+    else
+    {
+        <div class="legacy-admin-list" data-testid="admin-cutover-list">
+            @foreach (var item in Model.Businesses)
+            {
+                var business = item.Business;
+                var report = item.Report;
+                <article class="legacy-admin-row cutover-business-row" data-testid="admin-cutover-row">
+                    <div>
+                        <h2>@business.BusinessName</h2>
+                        <p>@business.BusinessEmail</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge text-bg-light" data-testid="admin-cutover-activation">
+                                @CutoverModel.ActivationLabel(business.ActivationStatus)
+                            </span>
+                            <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")">
+                                @(business.IsEnabled ? "moderno habilitado" : "moderno apagado")
+                            </span>
+                            <span class="badge @(item.ReadinessScore >= 5 ? "text-bg-success" : "text-bg-warning")" data-testid="admin-cutover-readiness">
+                                @item.ReadinessScore/6 readiness
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="metric-row">
+                        <div class="metric">
+                            <span>Tarjetas</span>
+                            <strong>@(report?.CardCount ?? 0)</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Clientes</span>
+                            <strong>@(report?.ClientCount ?? 0)</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Google</span>
+                            <strong>@(report?.GoogleIssuedCount ?? 0)</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Apple</span>
+                            <strong>@(report?.AppleTrackedCount ?? 0)</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Errores</span>
+                            <strong>@(report?.WalletIssueCount ?? 0)</strong>
+                        </div>
+                    </div>
+
+                    <div class="cutover-signal-grid" data-testid="admin-cutover-signals">
+                        <div>
+                            <h3>Listo</h3>
+                            @foreach (var signal in item.ReadySignals)
+                            {
+                                <span class="badge text-bg-success">@signal</span>
+                            }
+                        </div>
+                        <div>
+                            <h3>Pendiente</h3>
+                            @foreach (var signal in item.MissingSignals)
+                            {
+                                <span class="badge text-bg-warning">@signal</span>
+                            }
+                        </div>
+                    </div>
+
+                    <form method="post" asp-page-handler="Status" class="cutover-status-form" data-testid="admin-cutover-status-form">
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="ActivationStatusFilter" />
+                        <input type="hidden" asp-for="Input.BusinessId" value="@business.BusinessId" />
+                        <label class="form-label" for="cutover-status-@business.BusinessId">Nuevo estado</label>
+                        <select id="cutover-status-@business.BusinessId" name="Input.ActivationStatus" class="form-select" data-testid="admin-cutover-new-status">
+                            <option value="LegacyOnly" selected="@(business.ActivationStatus == BusinessActivationStatus.LegacyOnly)">Legacy only</option>
+                            <option value="PilotModern" selected="@(business.ActivationStatus == BusinessActivationStatus.PilotModern)">Piloto moderno</option>
+                            <option value="ModernPrimary" selected="@(business.ActivationStatus == BusinessActivationStatus.ModernPrimary)">Moderno principal</option>
+                            <option value="LegacyRetired" selected="@(business.ActivationStatus == BusinessActivationStatus.LegacyRetired)">Legacy retirado</option>
+                            <option value="Inactive" selected="@(business.ActivationStatus == BusinessActivationStatus.Inactive)">Inactivo</option>
+                        </select>
+                        <label class="form-label" for="cutover-notes-@business.BusinessId">Notas</label>
+                        <textarea id="cutover-notes-@business.BusinessId" name="Input.Notes" class="form-control" rows="2" data-testid="admin-cutover-notes">@business.Notes</textarea>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-primary"
+                                    type="submit"
+                                    data-testid="admin-cutover-save"
+                                    onclick="return confirm('Confirma el cambio de estado de cutover para este negocio.');">
+                                Guardar estado
+                            </button>
+                            <a class="btn btn-outline-primary"
+                               asp-page="/Admin/BusinessProfile"
+                               asp-route-businessId="@business.BusinessId"
+                               data-testid="admin-cutover-profile-link">
+                                Perfil
+                            </a>
+                            <a class="btn btn-outline-secondary"
+                               asp-page="/Admin/Support"
+                               asp-route-BusinessFilter="@business.BusinessName"
+                               data-testid="admin-cutover-support-business-link">
+                                Diagnostico
+                            </a>
+                        </div>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>
