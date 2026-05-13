@@ -13,12 +13,19 @@
 }
 else
 {
-    <section class="result-panel" data-testid="google-wallet-result">
-        <h1>Google Wallet emitida</h1>
+    var primaryColor = Model.Landing?.PrimaryColor ?? "#111827";
+    var secondaryColor = Model.Landing?.SecondaryColor ?? "#5d87ff";
+
+    <section class="result-panel wallet-public-panel" style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;" data-testid="google-wallet-result">
+        <p class="eyebrow">Google Wallet</p>
+        <h1>@(Model.Landing?.BusinessName ?? "Google Wallet") emitida</h1>
         <p>Object ID: <strong data-testid="google-object-id">@Model.Result.ObjectId</strong></p>
-        <p>
-            Save URL:
-            <a href="@Model.Result.SaveUrl" data-testid="google-save-url">@Model.Result.SaveUrl</a>
-        </p>
+        <div class="form-actions">
+            <a class="btn btn-primary" href="@Model.Result.SaveUrl" data-testid="google-save-url">Abrir Google Wallet</a>
+            @if (Model.Landing is not null)
+            {
+                <a class="btn btn-outline-secondary" asp-page="/Wallet/Select" asp-route-token="@Model.Landing.Token">Volver</a>
+            }
+        </div>
     </section>
 }

@@ -114,7 +114,10 @@ public sealed record WalletLandingDto(
     string ClientName,
     int CurrentStamps,
     int LifetimeStamps,
-    bool HasGooglePass);
+    bool HasGooglePass,
+    string LogoPath,
+    string? PrimaryColor,
+    string? SecondaryColor);
 
 public sealed record GoogleWalletIssueResult(string ObjectId, string SaveUrl);
 

@@ -267,6 +267,9 @@ Con el piloto activo:
 - Wallet landing, Apple Wallet Web Service y descargas `.pkpass` siguen
   publicas por token/autorizacion propia.
 
+La landing Wallet publica usa branding de negocio cuando existe: logo, nombre
+publico, colores, sellos visuales y botones Apple/Google responsive.
+
 Rollback rapido:
 
 ```json

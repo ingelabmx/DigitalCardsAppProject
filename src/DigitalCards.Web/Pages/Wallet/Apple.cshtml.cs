@@ -23,9 +23,12 @@ public sealed class AppleModel : PageModel
 
     public AppleWalletIssueResult? Result { get; private set; }
 
+    public WalletLandingDto? Landing { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(string token, CancellationToken cancellationToken)
     {
         Token = token;
+        Landing = await _appService.GetWalletLandingAsync(token, cancellationToken);
         Result = await _appService.SelectAppleWalletAsync(token, GetBaseUrl(), cancellationToken);
 
         if (Result?.Status == AppleWalletIssueStatus.Ready &&

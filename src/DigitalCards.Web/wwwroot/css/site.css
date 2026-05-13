@@ -383,6 +383,73 @@ h1 {
   min-height: 3.5rem;
 }
 
+.wallet-public-panel {
+  border-top: 5px solid var(--wallet-secondary, #5d87ff);
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+.wallet-public-panel .eyebrow {
+  color: var(--wallet-secondary, #5d87ff);
+}
+
+.wallet-public-panel h1 {
+  color: var(--wallet-primary, #111827);
+  margin-bottom: 0.35rem;
+}
+
+.wallet-public-brand {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.wallet-public-brand img,
+.wallet-public-brand > span {
+  align-items: center;
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  height: 76px;
+  justify-content: center;
+  object-fit: contain;
+  padding: 0.5rem;
+  width: 92px;
+}
+
+.wallet-public-brand > span {
+  color: var(--wallet-secondary, #5d87ff);
+  font-size: 1.3rem;
+}
+
+.wallet-public-stamps {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.wallet-public-stamps span {
+  aspect-ratio: 1;
+  background: #eef2f6;
+  border: 1px solid #d9e2ec;
+  border-radius: 999px;
+}
+
+.wallet-public-stamps span.filled {
+  background: var(--wallet-secondary, #5d87ff);
+  border-color: var(--wallet-secondary, #5d87ff);
+}
+
+.wallet-public-panel .btn-primary {
+  background: var(--wallet-secondary, #5d87ff);
+  border-color: var(--wallet-secondary, #5d87ff);
+}
+
 .metric-row {
   display: grid;
   gap: 0.75rem;
@@ -899,6 +966,7 @@ h1 {
 
   .page-heading,
   .search-row,
+  .wallet-public-brand,
   .pilot-business-item {
     display: grid;
     grid-template-columns: 1fr;

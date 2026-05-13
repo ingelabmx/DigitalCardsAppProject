@@ -452,13 +452,17 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         return new WalletLandingDto(
             token,
-            business.DisplayName,
+            displayBusiness.DisplayName,
             client.FullName,
             card.CurrentStamps,
             card.LifetimeStamps,
-            card.GoogleObjectId is not null);
+            card.GoogleObjectId is not null,
+            displayBusiness.LogoPath,
+            displayBusiness.PrimaryColor,
+            displayBusiness.SecondaryColor);
     }
 
     public async Task<GoogleWalletIssueResult?> SelectGoogleWalletAsync(string token, CancellationToken cancellationToken = default)
