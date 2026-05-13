@@ -33,6 +33,8 @@ public sealed class AdminAppService
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
     private readonly IAppleWalletPassRepository _appleWalletPasses;
+    private readonly IAppleWalletService _appleWallet;
+    private readonly IGoogleWalletService _googleWallet;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
@@ -49,6 +51,8 @@ public sealed class AdminAppService
         IClientRepository clients,
         ILoyaltyCardRepository loyaltyCards,
         IAppleWalletPassRepository appleWalletPasses,
+        IAppleWalletService appleWallet,
+        IGoogleWalletService googleWallet,
         IStampLedgerRepository stampLedger,
         IPilotBusinessRepository pilotBusinesses,
         IPilotClientRepository pilotClients,
@@ -64,6 +68,8 @@ public sealed class AdminAppService
         _clients = clients;
         _loyaltyCards = loyaltyCards;
         _appleWalletPasses = appleWalletPasses;
+        _appleWallet = appleWallet;
+        _googleWallet = googleWallet;
         _stampLedger = stampLedger;
         _pilotBusinesses = pilotBusinesses;
         _pilotClients = pilotClients;
@@ -680,6 +686,99 @@ public sealed class AdminAppService
             cardDtos.Take(25).ToArray());
     }
 
+    public async Task<AdminWalletRetryResult> RetryWalletUpdateAsync(
+        AdminWalletRetryCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return FailedWalletRetry("Sesion admin no valida.");
+        }
+
+        var card = await _loyaltyCards.FindByIdAsync(command.CardId, cancellationToken);
+        if (card is null)
+        {
+            return FailedWalletRetry("La tarjeta no existe.");
+        }
+
+        var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+        var business = await _businesses.FindByIdAsync(card.BusinessId, cancellationToken);
+        if (client is null || business is null)
+        {
+            return FailedWalletRetry("La tarjeta no tiene cliente o negocio valido.");
+        }
+
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+        var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
+        var googleAttempted = false;
+        var googleSucceeded = false;
+        var appleAttempted = false;
+        var appleSucceeded = false;
+        var safeErrors = new List<string>(capacity: 2);
+
+        if (!string.IsNullOrWhiteSpace(card.GoogleObjectId))
+        {
+            googleAttempted = true;
+            try
+            {
+                await _googleWallet.PatchStampStateAsync(card, client, displayBusiness, cancellationToken);
+                googleSucceeded = true;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                safeErrors.Add(SafeExceptionSummary(exception));
+            }
+        }
+
+        if (applePass is not null)
+        {
+            appleAttempted = true;
+            try
+            {
+                await _appleWallet.NotifyPassUpdatedAsync(card, client, displayBusiness, cancellationToken);
+                appleSucceeded = true;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                safeErrors.Add(SafeExceptionSummary(exception));
+            }
+        }
+
+        if (!googleAttempted && !appleAttempted)
+        {
+            safeErrors.Add("NoWalletsTracked");
+        }
+
+        await _stampLedger.AddAsync(
+            new StampLedgerRecord(
+                0,
+                card.Id,
+                card.BusinessId,
+                card.ClientId,
+                StampLedgerSource.AdminRetry,
+                ActorBusinessId: null,
+                card.CurrentStamps,
+                card.CurrentStamps,
+                card.LifetimeStamps,
+                card.LifetimeStamps,
+                card.LastStampedAt,
+                googleAttempted,
+                googleSucceeded,
+                appleAttempted,
+                appleSucceeded,
+                safeErrors.Count == 0 ? null : string.Join(", ", safeErrors.Distinct(StringComparer.OrdinalIgnoreCase)),
+                _clock.UtcNow),
+            cancellationToken);
+
+        var updatedCard = await _loyaltyCards.FindByIdAsync(card.Id, cancellationToken) ?? card;
+        var dto = await ToSupportCardDtoAsync(updatedCard, cancellationToken);
+        var errorMessage = safeErrors.Count == 0
+            ? null
+            : "El reintento termino con alertas seguras. Revisa StampLedger.";
+
+        return new AdminWalletRetryResult(dto, errorMessage);
+    }
+
     public async Task<AdminReportsDto> GetReportsAsync(CancellationToken cancellationToken = default)
     {
         var businesses = await _businesses.ListAsync(cancellationToken);
@@ -824,6 +923,27 @@ public sealed class AdminAppService
             recentEvents.Select(ToStampLedgerEventDto).ToArray());
     }
 
+    private async Task<Business> ApplyBrandingAsync(Business business, CancellationToken cancellationToken)
+    {
+        var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
+        if (branding is null)
+        {
+            return business;
+        }
+
+        return new Business(
+            business.Id,
+            business.Name,
+            business.Email,
+            business.PasswordHashPlaceholder,
+            string.IsNullOrWhiteSpace(branding.LogoPath) ? business.LogoPath : branding.LogoPath,
+            branding.PublicName,
+            branding.PrimaryColor,
+            branding.SecondaryColor,
+            branding.ProgramName,
+            branding.ProgramDescription);
+    }
+
     private static bool IsWithinSupportRange(
         LoyaltyCard card,
         DateTimeOffset? from,
@@ -861,6 +981,16 @@ public sealed class AdminAppService
         return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
             (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
             (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
+    }
+
+    private static AdminWalletRetryResult FailedWalletRetry(string errorMessage)
+    {
+        return new AdminWalletRetryResult(null, errorMessage);
+    }
+
+    private static string SafeExceptionSummary(Exception exception)
+    {
+        return exception.GetType().Name;
     }
 
     private static AdminReportCardDto ToReportCardDto(AdminSupportCardDto card)

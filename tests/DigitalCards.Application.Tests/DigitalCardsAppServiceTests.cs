@@ -453,6 +453,83 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RetryWalletUpdateAsync_RecordsAdminRetryForTrackedWallets()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var applePasses = provider.GetRequiredService<IAppleWalletPassRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var enrollment = await CreateEnrollmentAsync(app, "retry-ok");
+        await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+            "pass.com.puntelio.loyalty",
+            $"serial-{enrollment.Card.Id:N}",
+            enrollment.Card.Id,
+            "auth-token-secret-hash",
+            "42",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow));
+
+        var result = await adminApp.RetryWalletUpdateAsync(new AdminWalletRetryCommand(
+            enrollment.Card.Id,
+            admin!.Id));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Card);
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single((await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5))
+            .Where(item => item.Source == StampLedgerSource.AdminRetry));
+        Assert.Equal(1, record.PreviousCheckQTY);
+        Assert.Equal(1, record.NewCheckQTY);
+        Assert.True(record.GoogleWalletAttempted);
+        Assert.True(record.GoogleWalletSucceeded);
+        Assert.True(record.AppleWalletAttempted);
+        Assert.True(record.AppleWalletSucceeded);
+        Assert.Null(record.ErrorSummary);
+    }
+
+    [Fact]
+    public async Task RetryWalletUpdateAsync_WhenWalletFails_RecordsSafeError()
+    {
+        var services = CreateDefaultServices();
+        services.AddScoped<IAppleWalletService, ThrowingAppleWalletService>();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var applePasses = provider.GetRequiredService<IAppleWalletPassRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var enrollment = await CreateEnrollmentAsync(app, "retry-fail");
+        await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+            "pass.com.puntelio.loyalty",
+            $"serial-{enrollment.Card.Id:N}",
+            enrollment.Card.Id,
+            "auth-token-secret-hash",
+            "42",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow));
+
+        var result = await adminApp.RetryWalletUpdateAsync(new AdminWalletRetryCommand(
+            enrollment.Card.Id,
+            admin!.Id));
+
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Card);
+        Assert.Equal("El reintento termino con alertas seguras. Revisa StampLedger.", result.ErrorMessage);
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single((await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5))
+            .Where(item => item.Source == StampLedgerSource.AdminRetry));
+        Assert.True(record.AppleWalletAttempted);
+        Assert.False(record.AppleWalletSucceeded);
+        Assert.Equal("InvalidOperationException", record.ErrorSummary);
+        Assert.DoesNotContain("secret-token", record.ErrorSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetReportsAsync_ReturnsSafeOperationalSummary()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

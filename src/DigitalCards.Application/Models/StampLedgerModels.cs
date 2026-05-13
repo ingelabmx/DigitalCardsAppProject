@@ -3,7 +3,8 @@ namespace DigitalCards.Application.Models;
 public enum StampLedgerSource
 {
     ModernBusiness,
-    LegacySync
+    LegacySync,
+    AdminRetry
 }
 
 public sealed record StampLedgerRecord(

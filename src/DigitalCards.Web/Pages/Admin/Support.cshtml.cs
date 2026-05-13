@@ -50,7 +50,14 @@ public sealed class SupportModel : PageModel
     [BindProperty(SupportsGet = true)]
     public DateTimeOffset? To { get; set; }
 
+    [BindProperty]
+    public Guid RetryCardId { get; set; }
+
     public AdminSupportResult? Result { get; private set; }
+
+    public string? StatusMessage { get; private set; }
+
+    public string? ErrorMessage { get; private set; }
 
     public LegacyWalletSyncOptions LegacyWalletSync => _legacyWalletSyncOptions;
 
@@ -167,6 +174,31 @@ public sealed class SupportModel : PageModel
             Encoding.UTF8.GetBytes(csv.ToString()),
             "text/csv",
             fileName);
+    }
+
+    public async Task OnPostRetryWalletUpdateAsync(CancellationToken cancellationToken)
+    {
+        var result = await _adminApp.RetryWalletUpdateAsync(
+            new AdminWalletRetryCommand(RetryCardId, AdminAuth.GetAdminUserId(User)),
+            cancellationToken);
+
+        if (result.Succeeded)
+        {
+            StatusMessage = "Reintento Wallet ejecutado. Revisa el evento AdminRetry.";
+        }
+        else
+        {
+            ErrorMessage = result.ErrorMessage ?? "No se pudo ejecutar el reintento Wallet.";
+        }
+
+        if (HasSupportCriteria())
+        {
+            Result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
+        }
+        else if (result.Card is not null)
+        {
+            Result = new AdminSupportResult(string.Empty, [], [], [result.Card]);
+        }
     }
 
     public static string Suffix(Guid id)

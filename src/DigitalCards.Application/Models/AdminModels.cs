@@ -191,6 +191,17 @@ public sealed record AdminSupportCardDto(
     IReadOnlyList<string> RecentSafeErrors,
     IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
 
+public sealed record AdminWalletRetryCommand(
+    Guid CardId,
+    Guid AdminUserId);
+
+public sealed record AdminWalletRetryResult(
+    AdminSupportCardDto? Card,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Card is not null && ErrorMessage is null;
+}
+
 public sealed record AdminReportsDto(
     int BusinessCount,
     int CardCount,

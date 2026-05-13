@@ -785,6 +785,17 @@ El negocio tambien puede generar un link y QR desde `/Business/Dashboard`. El QR
 se renderiza como SVG server-side y apunta al mismo flujo
 `/Enroll/{businessToken}`.
 
+## Reintento manual Wallet desde soporte
+
+`/Admin/Support` permite reintentar updates Wallet para una tarjeta encontrada.
+El boton no cambia sellos; usa el estado actual de `ClientCard`, intenta patch de
+Google si existe objeto emitido, intenta update Apple si hay pass tracked y
+registra el resultado en `StampLedger` con `Source=AdminRetry`.
+
+Los errores se guardan como resumen seguro por tipo de excepcion. No se muestran
+JWTs, tokens Apple, push tokens, passwords, hashes, certificados ni connection
+strings.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:
