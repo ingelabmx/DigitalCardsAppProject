@@ -8,7 +8,7 @@
     <div>
         <p class="eyebrow">Cliente</p>
         <h1 data-testid="client-dashboard-title">@Model.ClientName</h1>
-        <p class="lead">Consulta tus tarjetas de lealtad y vuelve a abrir tus links Wallet.</p>
+        <p class="lead">Consulta tus tarjetas de lealtad, revisa tus sellos y vuelve a abrir tus links Wallet.</p>
     </div>
 
     <div class="action-grid">
@@ -26,3 +26,66 @@
         </a>
     </div>
 </section>
+
+@if (Model.Dashboard is not null)
+{
+    <section class="result-panel client-dashboard-summary" data-testid="client-dashboard-summary">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Resumen</p>
+                <h2>Mis tarjetas</h2>
+            </div>
+            <span class="badge text-bg-light" data-testid="client-dashboard-card-count">@Model.Dashboard.Cards.Count tarjeta(s)</span>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric">
+                <span>Sellos actuales</span>
+                <strong data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</strong>
+            </div>
+            <div class="metric">
+                <span>Sellos historicos</span>
+                <strong data-testid="client-dashboard-lifetime-stamps">@Model.Dashboard.TotalLifetimeStamps</strong>
+            </div>
+            <div class="metric">
+                <span>Google Wallet</span>
+                <strong data-testid="client-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
+            </div>
+            <div class="metric">
+                <span>Apple Wallet</span>
+                <strong data-testid="client-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
+            </div>
+        </div>
+
+        <div class="client-profile-panel" data-testid="client-profile-summary">
+            <h2>Perfil</h2>
+            <dl>
+                <div>
+                    <dt>Usuario</dt>
+                    <dd data-testid="client-profile-username">@Model.Dashboard.Client.UserName</dd>
+                </div>
+                <div>
+                    <dt>Correo</dt>
+                    <dd data-testid="client-profile-email">@Model.Dashboard.Client.Email</dd>
+                </div>
+            </dl>
+        </div>
+
+        @if (Model.Dashboard.Cards.Count > 0)
+        {
+            <div class="client-card-preview-grid" data-testid="client-dashboard-card-preview">
+                @foreach (var card in Model.Dashboard.Cards.Take(3))
+                {
+                    <article class="client-card-preview">
+                        <h3>@card.BusinessName</h3>
+                        <p>@card.CurrentStamps sellos actuales &middot; @card.LifetimeStamps historicos</p>
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-page="/Wallet/Select"
+                           asp-route-token="@card.WalletSelectToken"
+                           data-testid="client-dashboard-wallet-link">Abrir Wallet</a>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+}

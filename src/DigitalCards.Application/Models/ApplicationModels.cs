@@ -40,8 +40,20 @@ public sealed record ClientLoyaltyCardDto(
     string ClientUserName,
     int CurrentStamps,
     int LifetimeStamps,
+    DateTimeOffset LastStampedAt,
     bool GoogleIssued,
-    string? GoogleSaveUrl);
+    string? GoogleSaveUrl,
+    bool AppleTracked,
+    int AppleRegisteredDeviceCount,
+    DateTimeOffset? AppleUpdatedAt);
+
+public sealed record ClientDashboardDto(
+    ClientDto Client,
+    IReadOnlyList<ClientLoyaltyCardDto> Cards,
+    int TotalCurrentStamps,
+    int TotalLifetimeStamps,
+    int GoogleIssuedCount,
+    int AppleTrackedCount);
 
 public sealed record EnrollClientResult(LoyaltyCardDto Card, string EnrollmentUrl);
 

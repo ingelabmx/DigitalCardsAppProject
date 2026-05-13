@@ -1,3 +1,5 @@
+using DigitalCards.Application.Models;
+using DigitalCards.Application.Services;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,10 +9,23 @@ namespace DigitalCards.Web.Pages.Client;
 [Authorize(Policy = ClientAuth.Policy)]
 public sealed class DashboardModel : PageModel
 {
-    public string ClientName { get; private set; } = string.Empty;
+    private readonly DigitalCardsAppService _appService;
 
-    public void OnGet()
+    public DashboardModel(DigitalCardsAppService appService)
     {
-        ClientName = ClientAuth.GetClientName(User);
+        _appService = appService;
+    }
+
+    public ClientDashboardDto? Dashboard { get; private set; }
+
+    public string ClientName => Dashboard?.Client is { } client
+        ? $"{client.FirstName} {client.LastName}"
+        : ClientAuth.GetClientName(User);
+
+    public async Task OnGetAsync(CancellationToken cancellationToken)
+    {
+        Dashboard = await _appService.GetClientDashboardAsync(
+            ClientAuth.GetClientId(User),
+            cancellationToken);
     }
 }

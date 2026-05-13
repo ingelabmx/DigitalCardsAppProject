@@ -480,6 +480,14 @@ public sealed class DigitalCardsAppService
         Guid clientId,
         CancellationToken cancellationToken = default)
     {
+        var dashboard = await GetClientDashboardAsync(clientId, cancellationToken);
+        return dashboard.Cards;
+    }
+
+    public async Task<ClientDashboardDto> GetClientDashboardAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
         var client = await _clients.FindByIdAsync(clientId, cancellationToken)
             ?? throw new InvalidOperationException("Client was not found.");
         var cards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
@@ -500,11 +508,43 @@ public sealed class DigitalCardsAppService
                 client.UserName,
                 card.CurrentStamps,
                 card.LifetimeStamps,
+                card.LastStampedAt,
                 card.GoogleObjectId is not null,
-                card.GoogleSaveUrl));
+                card.GoogleSaveUrl,
+                AppleTracked: false,
+                AppleRegisteredDeviceCount: 0,
+                AppleUpdatedAt: null));
         }
 
-        return results;
+        for (var index = 0; index < results.Count; index++)
+        {
+            var card = cards[index];
+            var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
+            if (applePass is null)
+            {
+                continue;
+            }
+
+            var devices = await _appleWalletPasses.ListDevicesForPassAsync(
+                applePass.PassTypeIdentifier,
+                applePass.SerialNumber,
+                cancellationToken);
+
+            results[index] = results[index] with
+            {
+                AppleTracked = true,
+                AppleRegisteredDeviceCount = devices.Count,
+                AppleUpdatedAt = applePass.UpdatedAt
+            };
+        }
+
+        return new ClientDashboardDto(
+            ToDto(client),
+            results,
+            results.Sum(card => card.CurrentStamps),
+            results.Sum(card => card.LifetimeStamps),
+            results.Count(card => card.GoogleIssued),
+            results.Count(card => card.AppleTracked));
     }
 
     private async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsByClientAsync(

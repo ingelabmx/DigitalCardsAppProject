@@ -294,10 +294,66 @@ h1 {
   margin-bottom: 0.85rem;
 }
 
+.client-dashboard-summary {
+  display: grid;
+  gap: 1rem;
+}
+
+.client-profile-panel {
+  background: #f6f7f9;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.client-profile-panel h2,
+.client-card-preview h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.client-profile-panel dl {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+
+.client-profile-panel dt {
+  color: #697586;
+  font-weight: 600;
+}
+
+.client-profile-panel dd {
+  margin-bottom: 0;
+}
+
+.client-card-preview-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.client-card-preview,
+.client-card-row {
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.client-card-preview p {
+  color: #697586;
+}
+
+.client-card-row + .client-card-row {
+  margin-top: 1rem;
+}
+
 @media (max-width: 760px) {
   .app-surface,
   .business-card-grid,
   .business-profile-grid,
+  .client-card-preview-grid,
+  .client-profile-panel dl,
   .wallet-actions,
   .metric-row {
     grid-template-columns: 1fr;
