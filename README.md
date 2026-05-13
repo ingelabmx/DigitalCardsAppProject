@@ -367,6 +367,12 @@ en:
 docs/migration-context/37-gradual-webforms-replacement.md
 ```
 
+El inventario visual Web Forms que guia la paridad de UI moderna esta en:
+
+```text
+docs/migration-context/41-legacy-ui-inventory-v1.md
+```
+
 La regla de trabajo es reemplazar Web Forms por negocio, no globalmente. Web
 Forms sigue vivo como fallback hasta que cada negocio complete los gates de
 paridad, smoke real, soporte y rollback.
