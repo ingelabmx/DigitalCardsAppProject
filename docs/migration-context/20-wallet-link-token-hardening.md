@@ -15,7 +15,10 @@ Esta fase deja de usar `CardID` directo como token publico en correos y rutas Wa
 
 ## Compatibilidad
 
-`DigitalCards:WalletLinks:AllowLegacyCardIdTokens` queda en `true` por default en este PR. Si un token opaco no existe, la app intenta resolver el token legacy por `CardID`.
+Nota posterior: desde `58-wallet-link-legacy-compat-off-v1`,
+`DigitalCards:WalletLinks:AllowLegacyCardIdTokens` queda en `false` por
+default. El valor `true` solo debe usarse como override temporal para soporte de
+links antiguos.
 
 Para endurecer despues:
 
