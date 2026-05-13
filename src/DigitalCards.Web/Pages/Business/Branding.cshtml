@@ -1,0 +1,94 @@
+@page
+@model DigitalCards.Web.Pages.Business.BrandingModel
+@{
+    ViewData["Title"] = "Branding negocio";
+}
+
+<section class="result-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Negocio</p>
+            <h1>Branding Wallet</h1>
+            @if (Model.Settings is not null)
+            {
+                <p class="lead" data-testid="business-branding-heading">@Model.Settings.BusinessName</p>
+            }
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="business-branding-back-link">Dashboard</a>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="business-branding-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.IsPilotBlocked)
+    {
+        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+            @Model.PilotBlockMessage
+        </div>
+    }
+    else if (Model.Settings is not null)
+    {
+        <div class="business-profile-grid">
+            <form method="post"
+                  enctype="multipart/form-data"
+                  class="business-profile-panel business-branding-panel"
+                  data-testid="business-branding-form">
+                <h2>Perfil publico</h2>
+                <p class="text-muted">Estos datos aparecen en correos, landing Wallet, Apple Wallet, Google Wallet y dashboard cliente.</p>
+
+                <div class="mb-3">
+                    <label asp-for="Input.PublicName" class="form-label">Nombre publico</label>
+                    <input asp-for="Input.PublicName" class="form-control" maxlength="80" data-testid="business-branding-public-name" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.ProgramName" class="form-label">Programa</label>
+                    <input asp-for="Input.ProgramName" class="form-control" maxlength="80" data-testid="business-branding-program-name" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.ProgramDescription" class="form-label">Descripcion</label>
+                    <textarea asp-for="Input.ProgramDescription" class="form-control" rows="3" maxlength="280" data-testid="business-branding-description"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.LogoPath" class="form-label">Logo publico</label>
+                    <input asp-for="Input.LogoPath" class="form-control" maxlength="200" data-testid="business-branding-logo" />
+                    <small class="form-text text-muted">Debe ser URL publica o ruta relativa. El upload seguro llena este campo automaticamente.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.LogoUpload" class="form-label">Subir logo</label>
+                    <input asp-for="Input.LogoUpload" class="form-control" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-testid="business-branding-logo-upload" />
+                    <small class="form-text text-muted">PNG recomendado para Apple Wallet. Maximo 2 MB.</small>
+                </div>
+
+                <div class="branding-color-row">
+                    <div class="mb-3">
+                        <label asp-for="Input.PrimaryColor" class="form-label">Color primario</label>
+                        <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.SecondaryColor" class="form-label">Color secundario</label>
+                        <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" />
+                    </div>
+                </div>
+
+                <div class="branding-preview"
+                     style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;"
+                     data-testid="business-branding-preview">
+                    <span>@Model.Input.ProgramName</span>
+                    <strong>@Model.Input.PublicName</strong>
+                </div>
+
+                <button class="btn btn-primary" type="submit" data-testid="business-branding-submit">Guardar branding</button>
+            </form>
+        </div>
+    }
+</section>

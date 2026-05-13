@@ -33,6 +33,28 @@ public sealed record ClientDto(Guid Id, string UserName, string FirstName, strin
 
 public sealed record BusinessDto(Guid Id, string Name, string Email, string LogoPath);
 
+public sealed record BusinessBrandingSettingsDto(
+    Guid BusinessId,
+    string BusinessName,
+    string BusinessEmail,
+    BusinessBrandingDto Branding);
+
+public sealed record BusinessSelfServiceBrandingResult(
+    BusinessBrandingSettingsDto? Settings,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Settings is not null;
+}
+
+public sealed record UpdateBusinessSelfServiceBrandingCommand(
+    Guid BusinessId,
+    string PublicName,
+    string LogoPath,
+    string PrimaryColor,
+    string SecondaryColor,
+    string ProgramName,
+    string ProgramDescription);
+
 public sealed record LoyaltyCardDto(
     Guid Id,
     string EnrollmentToken,

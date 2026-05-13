@@ -101,7 +101,9 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                         branding.ProgramName,
                         branding.ProgramDescription,
                         UpdatedAt = branding.UpdatedAt.UtcDateTime,
-                        UpdatedByAdminUserId = LegacyIdMapper.ToInt32(branding.UpdatedByAdminUserId)
+                        UpdatedByAdminUserId = branding.UpdatedByAdminUserId.HasValue
+                            ? LegacyIdMapper.ToInt32(branding.UpdatedByAdminUserId.Value)
+                            : (int?)null
                     },
                     cancellationToken: cancellationToken));
         }
@@ -122,7 +124,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
         string ProgramName,
         string ProgramDescription,
         DateTime UpdatedAt,
-        int UpdatedByAdminUserID)
+        int? UpdatedByAdminUserID)
     {
         public BusinessBranding ToDomain()
         {
@@ -135,7 +137,9 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 ProgramName,
                 ProgramDescription,
                 new DateTimeOffset(DateTime.SpecifyKind(UpdatedAt, DateTimeKind.Utc)),
-                LegacyIdMapper.ToGuid(UpdatedByAdminUserID));
+                UpdatedByAdminUserID.HasValue
+                    ? LegacyIdMapper.ToGuid(UpdatedByAdminUserID.Value)
+                    : null);
         }
     }
 }

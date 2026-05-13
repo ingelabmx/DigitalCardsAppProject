@@ -23,7 +23,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Client pilot guardrail | Retired | Client allowlist no longer gates modern flows; enabled businesses associate clients directly. |
 | Business creation | Ready | `/Admin/CreateBusiness` inserts into legacy `Business` and creates modern credential. |
 | Business profile/password reset | Ready | `/Admin/BusinessProfile/{businessId}` edits legacy-safe fields and resets credentials. |
-| Business branding | Pilot | Branding table exists and feeds email/Wallet/client UI; logo upload is not implemented. |
+| Business branding | Ready | Admin and business self-service can manage Wallet-facing branding and logo upload. |
 | Admin support center | Ready | `/Admin/Support` gives safe read-only diagnostics. |
 | Delete/deactivate business | Legacy Only | Not implemented in modern app. |
 | Admin reporting/export | Pilot | `/Admin/Reports` gives a read-only operational summary; `/Admin/Support` exports diagnostics. |
@@ -41,7 +41,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | Stamp audit | Pilot | `StampLedger` starts from modern deployment; no historical backfill. |
 | Legacy stamp sync | Pilot | `LegacyWalletSync` detects Web Forms changes and updates Wallets. |
 | Rich business reporting | Legacy Only | Dashboard v2 is a summary, not full reporting parity. |
-| Business self-service profile/branding | Legacy Only | Admin controls branding/profile today. |
+| Business self-service profile/branding | Pilot | `/Business/Branding` lets the business edit public Wallet branding; admin still controls credentials, activation and dangerous fields. |
 
 ## Client Flows
 
@@ -99,5 +99,5 @@ Do not retire a Web Forms flow until all items are true:
    - make the runtime stable as a service, including app/cloudflared startup and restart.
 2. `feature/gradual-webforms-replacement`
    - define the operational activation plan by business.
-3. `feature/business-self-service-v1`
-   - eventually move selected profile/branding controls from admin to business.
+3. `feature/production-pilot-cutover-v1`
+   - prepare named businesses for broader modern operation.
