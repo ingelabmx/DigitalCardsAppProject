@@ -130,6 +130,58 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminCutover_RequiresAdminCookie()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await client.GetAsync("/Admin/Cutover");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Admin/Login", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task AdminCutover_ShowsReadinessAndCanChangeActivationStatus()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        await LoginAdminAsync(client);
+        var html = await client.GetStringAsync("/Admin/Cutover?Query=demo");
+        var token = ExtractAntiforgeryToken(html);
+        using var scope = fake.Factory.Services.CreateScope();
+        var businesses = scope.ServiceProvider.GetRequiredService<IBusinessRepository>();
+        var business = await businesses.FindByEmailAsync("demo@digitalcards.test");
+
+        Assert.NotNull(business);
+        Assert.Contains("admin-cutover-page", html);
+        Assert.Contains("Demo Coffee", html);
+        Assert.Contains("admin-cutover-readiness", html);
+
+        var response = await client.PostAsync(
+            "/Admin/Cutover?handler=Status",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Query"] = "demo",
+                ["Input.BusinessId"] = business!.Id.ToString(),
+                ["Input.ActivationStatus"] = "ModernPrimary",
+                ["Input.Notes"] = "cutover test",
+                ["__RequestVerificationToken"] = token
+            }));
+        var updatedHtml = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("admin-cutover-status-message", updatedHtml);
+        Assert.Contains("Moderno principal", updatedHtml);
+        Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task HealthEndpoint_ReturnsSuccess()
     {
         using var fake = WithFakeIntegrations();

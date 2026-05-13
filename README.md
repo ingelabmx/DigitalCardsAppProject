@@ -755,6 +755,14 @@ Despues valida manualmente: login negocio habilitado por admin, asociar cliente
 desde el negocio, correo real, Apple Wallet en iPhone, Google Wallet, agregar
 sello moderno y update en ambas Wallets.
 
+## Cutover por negocio
+
+Usa `/Admin/Cutover` para revisar readiness antes de cambiar un negocio a
+`ModernPrimary` o `LegacyRetired`. La consola muestra estado de activacion,
+branding, tarjetas, sellos recientes, Wallets emitidas y errores seguros. Si un
+negocio falla el smoke real, cambia su estado a `PilotModern` o `LegacyOnly`
+desde la misma pantalla para rollback operativo.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:
