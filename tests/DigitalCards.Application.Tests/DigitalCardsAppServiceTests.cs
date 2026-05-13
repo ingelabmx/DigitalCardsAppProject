@@ -91,6 +91,7 @@ public sealed class DigitalCardsAppServiceTests
         var provider = services.BuildServiceProvider();
 
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
+        Assert.IsType<MySqlClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
@@ -118,6 +119,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<FakeWalletEmailOutbox>(provider.GetRequiredService<IEmailSender>());
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
+        Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<InMemoryWalletLinkTokenRepository>(provider.GetRequiredService<IWalletLinkTokenRepository>());
         Assert.IsType<InMemoryStampLedgerRepository>(provider.GetRequiredService<IStampLedgerRepository>());
@@ -704,21 +706,34 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
-    public async Task LoginClient_WithLegacyClientCredentials_ReturnsClient()
+    public async Task RegisterClientAsync_CreatesLegacyAndModernClientCredential()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();
         var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var credentials = provider.GetRequiredService<IClientCredentialRepository>();
+        const string password = "clientpass1";
 
         var registered = await app.RegisterClientAsync(new RegisterClientCommand(
             "clientlogin1",
             "Client",
             "Login",
             "clientlogin1@example.test",
-            "clientpass1"));
+            password));
+
+        var client = await clients.FindByIdAsync(registered.Id);
+        Assert.NotNull(client);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(password), client!.PasswordHashPlaceholder);
+        Assert.DoesNotContain(password, client.PasswordHashPlaceholder, StringComparison.Ordinal);
+
+        var credential = await credentials.FindByClientIdAsync(registered.Id);
+        Assert.NotNull(credential);
+        Assert.True(credential!.PasswordHash.Length > 25);
+        Assert.DoesNotContain(password, credential.PasswordHash, StringComparison.Ordinal);
 
         var login = await app.LoginClientAsync(new ClientLoginCommand(
             "clientlogin1",
-            "clientpass1"));
+            password));
 
         Assert.NotNull(login);
         Assert.Equal(registered.Id, login!.Id);
@@ -726,16 +741,71 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task LoginClient_WithLegacyPassword_CreatesModernCredential()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var credentials = provider.GetRequiredService<IClientCredentialRepository>();
+        const string password = "clientpass1";
+        var client = new Client(
+            Guid.NewGuid(),
+            "legacyclient1",
+            "Legacy",
+            "Client",
+            "legacyclient1@example.test",
+            ExpectedLegacyBusinessPasswordHash(password));
+        await clients.AddAsync(client);
+
+        var login = await app.LoginClientAsync(new ClientLoginCommand(
+            "legacyclient1",
+            password));
+
+        Assert.NotNull(login);
+        var credential = await credentials.FindByClientIdAsync(client.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(password, credential!.PasswordHash, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LoginClient_UsesModernCredentialAfterLegacyPasswordChanges()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        const string password = "clientpass1";
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "modernclient1",
+            "Modern",
+            "Client",
+            "modernclient1@example.test",
+            password));
+
+        await clients.UpdatePasswordAsync(registered.Id, "legacy-password-changed");
+
+        var login = await app.LoginClientAsync(new ClientLoginCommand(
+            "modernclient1",
+            password));
+
+        Assert.NotNull(login);
+        Assert.Equal(registered.Id, login!.Id);
+    }
+
+    [Fact]
     public async Task LoginClient_WithInvalidOrBusinessCredentials_ReturnsNull()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();
         var app = provider.GetRequiredService<DigitalCardsAppService>();
-        await app.RegisterClientAsync(new RegisterClientCommand(
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var credentials = provider.GetRequiredService<IClientCredentialRepository>();
+        var client = new Client(
+            Guid.NewGuid(),
             "clientlogin2",
             "Client",
             "Login",
             "clientlogin2@example.test",
-            "clientpass1"));
+            ExpectedLegacyBusinessPasswordHash("clientpass1"));
+        await clients.AddAsync(client);
 
         var invalidPassword = await app.LoginClientAsync(new ClientLoginCommand(
             "clientlogin2",
@@ -746,6 +816,67 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.Null(invalidPassword);
         Assert.Null(businessCredentials);
+        Assert.Null(await credentials.FindByClientIdAsync(client.Id));
+    }
+
+    [Fact]
+    public async Task ChangeClientPasswordAsync_UpdatesLegacyAndModernCredentials()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var credentials = provider.GetRequiredService<IClientCredentialRepository>();
+        const string oldPassword = "clientpass1";
+        const string newPassword = "changedpass1";
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "changepass1",
+            "Change",
+            "Client",
+            "changepass1@example.test",
+            oldPassword));
+
+        var result = await app.ChangeClientPasswordAsync(new ChangeClientPasswordCommand(
+            registered.Id,
+            oldPassword,
+            newPassword));
+
+        Assert.True(result.Succeeded);
+        var client = await clients.FindByIdAsync(registered.Id);
+        Assert.NotNull(client);
+        Assert.Equal(ExpectedLegacyBusinessPasswordHash(newPassword), client!.PasswordHashPlaceholder);
+        Assert.DoesNotContain(newPassword, client.PasswordHashPlaceholder, StringComparison.Ordinal);
+        var credential = await credentials.FindByClientIdAsync(registered.Id);
+        Assert.NotNull(credential);
+        Assert.DoesNotContain(newPassword, credential!.PasswordHash, StringComparison.Ordinal);
+
+        Assert.Null(await app.LoginClientAsync(new ClientLoginCommand("changepass1", oldPassword)));
+        Assert.NotNull(await app.LoginClientAsync(new ClientLoginCommand("changepass1", newPassword)));
+    }
+
+    [Fact]
+    public async Task ChangeClientPasswordAsync_WithWrongCurrentPassword_DoesNotUpdateCredential()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var credentials = provider.GetRequiredService<IClientCredentialRepository>();
+        const string oldPassword = "clientpass1";
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "changepass2",
+            "Change",
+            "Client",
+            "changepass2@example.test",
+            oldPassword));
+        var before = await credentials.FindByClientIdAsync(registered.Id);
+
+        var result = await app.ChangeClientPasswordAsync(new ChangeClientPasswordCommand(
+            registered.Id,
+            "wrong-password",
+            "changedpass1"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("La contrasena actual no es valida.", result.ErrorMessage);
+        var after = await credentials.FindByClientIdAsync(registered.Id);
+        Assert.Equal(before!.PasswordHash, after!.PasswordHash);
     }
 
     [Fact]

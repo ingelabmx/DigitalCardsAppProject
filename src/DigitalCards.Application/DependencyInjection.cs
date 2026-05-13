@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IPasswordHasher<AdminPasswordHashSubject>, PasswordHasher<AdminPasswordHashSubject>>();
         services.AddSingleton<IPasswordHasher<BusinessPasswordHashSubject>, PasswordHasher<BusinessPasswordHashSubject>>();
+        services.AddSingleton<IPasswordHasher<ClientPasswordHashSubject>, PasswordHasher<ClientPasswordHashSubject>>();
         services.AddScoped<AdminAppService>();
         services.AddScoped<DigitalCardsAppService>();
         return services;

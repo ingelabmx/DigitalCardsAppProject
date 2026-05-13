@@ -22,6 +22,32 @@ public sealed class InMemoryClientRepository : IClientRepository
         return Task.CompletedTask;
     }
 
+    public Task<Client> UpdatePasswordAsync(
+        Guid clientId,
+        string legacyPasswordHash,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var index = _store.Clients.FindIndex(client => client.Id == clientId);
+            if (index < 0)
+            {
+                throw new InvalidOperationException("Client was not found.");
+            }
+
+            var existing = _store.Clients[index];
+            var updated = new Client(
+                existing.Id,
+                existing.UserName,
+                existing.FirstName,
+                existing.LastName,
+                existing.Email,
+                legacyPasswordHash);
+            _store.Clients[index] = updated;
+            return Task.FromResult(updated);
+        }
+    }
+
     public Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         lock (_store.Sync)

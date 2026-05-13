@@ -9,6 +9,10 @@ public sealed record RegisterClientCommand(
 
 public sealed record ClientLoginCommand(string UserNameOrEmail, string Password);
 
+public sealed record ChangeClientPasswordCommand(Guid ClientId, string CurrentPassword, string NewPassword);
+
+public sealed record ChangeClientPasswordResult(bool Succeeded, string? ErrorMessage);
+
 public sealed record BusinessLoginCommand(string Email, string Password);
 
 public sealed record EnrollClientCommand(Guid BusinessId, string UserNameOrEmail, string BaseUrl);

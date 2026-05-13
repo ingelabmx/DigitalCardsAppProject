@@ -31,6 +31,37 @@ public sealed class MySqlClientRepository : IClientRepository
         }, cancellationToken: cancellationToken));
     }
 
+    public async Task<Client> UpdatePasswordAsync(
+        Guid clientId,
+        string legacyPasswordHash,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            update UserClient
+            set UserPassword = @UserPassword
+            where UserID = @UserId
+              and RoleID = 2;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.ExecuteAsync(new CommandDefinition(
+            sql,
+            new
+            {
+                UserId = LegacyIdMapper.ToInt32(clientId),
+                UserPassword = legacyPasswordHash
+            },
+            cancellationToken: cancellationToken));
+
+        if (rows == 0)
+        {
+            throw new InvalidOperationException("Client was not found.");
+        }
+
+        return await FindByIdAsync(clientId, cancellationToken)
+            ?? throw new InvalidOperationException("Client was not found.");
+    }
+
     public async Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         const string sql = """

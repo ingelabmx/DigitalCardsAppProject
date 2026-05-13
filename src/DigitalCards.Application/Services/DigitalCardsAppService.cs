@@ -9,6 +9,7 @@ public sealed class DigitalCardsAppService
 {
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessRepository _businesses;
+    private readonly IClientCredentialRepository _clientCredentials;
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
     private readonly IEmailSender _emailSender;
@@ -17,11 +18,13 @@ public sealed class DigitalCardsAppService
     private readonly IAppleWalletPassRepository _appleWalletPasses;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
+    private readonly IPasswordHasher<ClientPasswordHashSubject> _clientPasswordHasher;
     private readonly IStampLedgerRepository _stampLedger;
     private readonly IWalletLinkTokenService _walletLinkTokens;
 
     public DigitalCardsAppService(
         IClientRepository clients,
+        IClientCredentialRepository clientCredentials,
         IBusinessRepository businesses,
         IBusinessCredentialRepository businessCredentials,
         ILoyaltyCardRepository loyaltyCards,
@@ -31,10 +34,12 @@ public sealed class DigitalCardsAppService
         IEmailSender emailSender,
         IClock clock,
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
+        IPasswordHasher<ClientPasswordHashSubject> clientPasswordHasher,
         IStampLedgerRepository stampLedger,
         IWalletLinkTokenService walletLinkTokens)
     {
         _clients = clients;
+        _clientCredentials = clientCredentials;
         _businesses = businesses;
         _businessCredentials = businessCredentials;
         _loyaltyCards = loyaltyCards;
@@ -44,6 +49,7 @@ public sealed class DigitalCardsAppService
         _emailSender = emailSender;
         _clock = clock;
         _passwordHasher = passwordHasher;
+        _clientPasswordHasher = clientPasswordHasher;
         _stampLedger = stampLedger;
         _walletLinkTokens = walletLinkTokens;
     }
@@ -67,20 +73,126 @@ public sealed class DigitalCardsAppService
             command.Email,
             legacyPasswordHash);
         await _clients.AddAsync(client, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(command.Password))
+        {
+            var now = _clock.UtcNow;
+            var subject = new ClientPasswordHashSubject(client.Id);
+            await _clientCredentials.UpsertAsync(
+                new ClientCredential(
+                    client.Id,
+                    _clientPasswordHasher.HashPassword(subject, command.Password),
+                    now,
+                    now),
+                cancellationToken);
+        }
+
         return ToDto(client);
     }
 
     public async Task<ClientDto?> LoginClientAsync(ClientLoginCommand command, CancellationToken cancellationToken = default)
     {
         var client = await _clients.FindByUserNameOrEmailAsync(command.UserNameOrEmail, cancellationToken);
-        if (client is null ||
-            string.IsNullOrWhiteSpace(client.PasswordHashPlaceholder) ||
+        if (client is null)
+        {
+            return null;
+        }
+
+        var subject = new ClientPasswordHashSubject(client.Id);
+        var credential = await _clientCredentials.FindByClientIdAsync(client.Id, cancellationToken);
+        if (credential is not null)
+        {
+            var verification = _clientPasswordHasher.VerifyHashedPassword(
+                subject,
+                credential.PasswordHash,
+                command.Password);
+
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                return null;
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                await _clientCredentials.UpsertAsync(
+                    credential.Rehash(_clientPasswordHasher.HashPassword(subject, command.Password), _clock.UtcNow),
+                    cancellationToken);
+            }
+
+            return ToDto(client);
+        }
+
+        if (string.IsNullOrWhiteSpace(client.PasswordHashPlaceholder) ||
             !LegacyPasswordVerifier.Matches(client.PasswordHashPlaceholder, command.Password))
         {
             return null;
         }
 
+        var now = _clock.UtcNow;
+        await _clientCredentials.UpsertAsync(
+            new ClientCredential(
+                client.Id,
+                _clientPasswordHasher.HashPassword(subject, command.Password),
+                now,
+                now),
+            cancellationToken);
+
         return ToDto(client);
+    }
+
+    public async Task<ChangeClientPasswordResult> ChangeClientPasswordAsync(
+        ChangeClientPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.ClientId == Guid.Empty)
+        {
+            return new ChangeClientPasswordResult(false, "La sesion de cliente no es valida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.CurrentPassword))
+        {
+            return new ChangeClientPasswordResult(false, "La contrasena actual es requerida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.NewPassword))
+        {
+            return new ChangeClientPasswordResult(false, "La contrasena nueva es requerida.");
+        }
+
+        if (command.NewPassword.Length < 8)
+        {
+            return new ChangeClientPasswordResult(false, "La contrasena nueva debe tener al menos 8 caracteres.");
+        }
+
+        if (command.NewPassword.Length > 128)
+        {
+            return new ChangeClientPasswordResult(false, "La contrasena nueva no puede exceder 128 caracteres.");
+        }
+
+        var client = await _clients.FindByIdAsync(command.ClientId, cancellationToken);
+        if (client is null)
+        {
+            return new ChangeClientPasswordResult(false, "El cliente no existe.");
+        }
+
+        if (!await VerifyClientPasswordAsync(client, command.CurrentPassword, migrateLegacy: false, cancellationToken))
+        {
+            return new ChangeClientPasswordResult(false, "La contrasena actual no es valida.");
+        }
+
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        client = await _clients.UpdatePasswordAsync(client.Id, legacyPasswordHash, cancellationToken);
+
+        var now = _clock.UtcNow;
+        var subject = new ClientPasswordHashSubject(client.Id);
+        await _clientCredentials.UpsertAsync(
+            new ClientCredential(
+                client.Id,
+                _clientPasswordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+
+        return new ChangeClientPasswordResult(true, ErrorMessage: null);
     }
 
     public async Task<BusinessDto?> LoginBusinessAsync(BusinessLoginCommand command, CancellationToken cancellationToken = default)
@@ -447,6 +559,56 @@ public sealed class DigitalCardsAppService
         var business = await _businesses.FindByIdAsync(card.BusinessId, cancellationToken);
 
         return client is null || business is null ? null : (card, client, business);
+    }
+
+    private async Task<bool> VerifyClientPasswordAsync(
+        Client client,
+        string password,
+        bool migrateLegacy,
+        CancellationToken cancellationToken)
+    {
+        var subject = new ClientPasswordHashSubject(client.Id);
+        var credential = await _clientCredentials.FindByClientIdAsync(client.Id, cancellationToken);
+        if (credential is not null)
+        {
+            var verification = _clientPasswordHasher.VerifyHashedPassword(
+                subject,
+                credential.PasswordHash,
+                password);
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                return false;
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                await _clientCredentials.UpsertAsync(
+                    credential.Rehash(_clientPasswordHasher.HashPassword(subject, password), _clock.UtcNow),
+                    cancellationToken);
+            }
+
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(client.PasswordHashPlaceholder) ||
+            !LegacyPasswordVerifier.Matches(client.PasswordHashPlaceholder, password))
+        {
+            return false;
+        }
+
+        if (migrateLegacy)
+        {
+            var now = _clock.UtcNow;
+            await _clientCredentials.UpsertAsync(
+                new ClientCredential(
+                    client.Id,
+                    _clientPasswordHasher.HashPassword(subject, password),
+                    now,
+                    now),
+                cancellationToken);
+        }
+
+        return true;
     }
 
     private async Task<(LoyaltyCard Card, Client Client, Business Business)?> FindBusinessCardContextAsync(
