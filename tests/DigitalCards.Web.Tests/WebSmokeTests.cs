@@ -855,6 +855,42 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminBusinessProfile_LegacyRetiredShowsGuardrailsInAdminAndSupport()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginAdminAsync(client);
+        var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+        var token = await GetAntiforgeryTokenAsync(client, profilePath);
+        var saveResponse = await client.PostAsync(
+            $"{profilePath}?handler=Save",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = "Demo Coffee",
+                ["Input.BusinessEmail"] = "demo@digitalcards.test",
+                ["Input.BusinessLogo"] = "/img/demo-coffee.svg",
+                ["Input.IsPilotEnabled"] = "true",
+                ["Input.ActivationStatus"] = "LegacyRetired",
+                ["Input.Notes"] = "legacy retirado por test",
+                ["__RequestVerificationToken"] = token
+            }));
+        var saveHtml = await saveResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, saveResponse.StatusCode);
+        Assert.Contains("admin-business-legacy-retired-warning", saveHtml);
+        Assert.Contains("Legacy retirado", saveHtml);
+
+        var supportHtml = await client.GetStringAsync("/Admin/Support?BusinessFilter=Demo");
+
+        Assert.Contains("admin-support-businesses", supportHtml);
+        Assert.Contains("admin-support-legacy-retired", supportHtml);
+        Assert.Contains("confirmar bloqueo manual", supportHtml);
+    }
+
+    [Fact]
     public async Task AdminBusinessProfile_UploadsBrandingLogoToPublicPath()
     {
         var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-web-logo-{Guid.NewGuid():N}");

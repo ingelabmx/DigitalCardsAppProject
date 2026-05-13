@@ -167,7 +167,8 @@ public sealed record AdminSupportBusinessDto(
     string BusinessName,
     string BusinessEmail,
     int RecentCardCount,
-    bool IsPilotEnabled);
+    bool IsPilotEnabled,
+    BusinessActivationStatus ActivationStatus);
 
 public sealed record AdminSupportCardDto(
     Guid CardId,
