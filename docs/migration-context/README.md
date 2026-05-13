@@ -46,6 +46,7 @@ Documentos:
 - `30-business-dashboard-v2.md`: resumen operativo de negocio con tarjetas recientes y StampLedger.
 - `31-business-branding-v1.md`: branding basico para correos, Wallet y dashboard cliente.
 - `31-business-branding-v1-hostgator.sql`: tabla nueva para branding moderno de negocio.
+- `32-email-templates-v1.md`: plantillas centralizadas de correo para Wallet, bienvenida, reset y alertas.
 
 Notas:
 
