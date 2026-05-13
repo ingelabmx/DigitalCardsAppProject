@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddSingleton<AppleWalletPassPackageBuilder>();
+        services.AddSingleton<LegacyWalletSyncState>();
         services.AddScoped<IWalletLinkTokenService, WalletLinkTokenService>();
 
         var options = configuration

@@ -1,10 +1,12 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Domain;
+using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace DigitalCards.Web.Pages.Admin;
 
@@ -12,11 +14,19 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class CutoverModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly LegacyWalletSyncOptions _legacyWalletSyncOptions;
+    private readonly LegacyWalletSyncState _legacyWalletSyncState;
     private readonly ILogger<CutoverModel> _logger;
 
-    public CutoverModel(AdminAppService adminApp, ILogger<CutoverModel> logger)
+    public CutoverModel(
+        AdminAppService adminApp,
+        IOptions<LegacyWalletSyncOptions> legacyWalletSyncOptions,
+        LegacyWalletSyncState legacyWalletSyncState,
+        ILogger<CutoverModel> logger)
     {
         _adminApp = adminApp;
+        _legacyWalletSyncOptions = legacyWalletSyncOptions.Value;
+        _legacyWalletSyncState = legacyWalletSyncState;
         _logger = logger;
     }
 
@@ -32,6 +42,9 @@ public sealed class CutoverModel : PageModel
     public IReadOnlyList<CutoverBusinessViewModel> Businesses { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
+
+    public LegacyWalletSyncStateSnapshot LegacyWalletSyncState =>
+        _legacyWalletSyncState.Snapshot(_legacyWalletSyncOptions.Enabled);
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {

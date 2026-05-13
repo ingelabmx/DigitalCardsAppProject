@@ -32,6 +32,23 @@
         <button class="btn btn-primary" type="submit" data-testid="admin-cutover-search-submit">Filtrar</button>
     </form>
 
+    <div class="support-sync-status" data-testid="admin-cutover-sync-status">
+        <strong>LegacyWalletSync:</strong>
+        @(Model.LegacyWalletSyncState.Enabled ? "Activo" : "Apagado")
+        <span>
+            Ultimo run:
+            @(Model.LegacyWalletSyncState.LastCompletedAt?.ToLocalTime().ToString("g") ?? "no ejecutado")
+        </span>
+        @if (Model.LegacyWalletSyncState.LastResult is not null)
+        {
+            <span>
+                Sync @Model.LegacyWalletSyncState.LastResult.Synced /
+                Skip @Model.LegacyWalletSyncState.LastResult.Skipped /
+                Fallos @Model.LegacyWalletSyncState.LastResult.Failed
+            </span>
+        }
+    </div>
+
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     @if (Model.StatusMessage is not null)

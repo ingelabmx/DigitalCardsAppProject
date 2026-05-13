@@ -50,6 +50,24 @@
         <span>Intervalo @Model.LegacyWalletSync.PollIntervalSeconds s</span>
         <span>Lookback @Model.LegacyWalletSync.LookbackMinutes min</span>
         <span>Batch @Model.LegacyWalletSync.BatchSize</span>
+        <span data-testid="admin-support-sync-last-run">
+            Ultimo run:
+            @(Model.LegacyWalletSyncState.LastCompletedAt?.ToLocalTime().ToString("g") ?? "no ejecutado")
+        </span>
+        @if (Model.LegacyWalletSyncState.LastResult is not null)
+        {
+            <span data-testid="admin-support-sync-last-result">
+                Procesados @Model.LegacyWalletSyncState.LastResult.Synced /
+                candidatos @Model.LegacyWalletSyncState.LastResult.Candidates /
+                fallos @Model.LegacyWalletSyncState.LastResult.Failed
+            </span>
+        }
+        @if (Model.LegacyWalletSyncState.LastErrorSummary is not null)
+        {
+            <span class="text-danger" data-testid="admin-support-sync-last-error">
+                Ultimo error seguro: @Model.LegacyWalletSyncState.LastErrorSummary
+            </span>
+        }
     </div>
 
     @if (Model.Result is not null)

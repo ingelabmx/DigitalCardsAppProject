@@ -763,6 +763,11 @@ branding, tarjetas, sellos recientes, Wallets emitidas y errores seguros. Si un
 negocio falla el smoke real, cambia su estado a `PilotModern` o `LegacyOnly`
 desde la misma pantalla para rollback operativo.
 
+`/Admin/Support` y `/Admin/Cutover` tambien muestran el ultimo estado in-memory
+de `LegacyWalletSync`: ultimo run, candidatos, sincronizados, saltados, fallos y
+error seguro. Este estado se pierde al reiniciar; para auditoria persistente por
+tarjeta usa `StampLedger`.
+
 ## Smoke de cutover por negocio
 
 Smoke fake:
