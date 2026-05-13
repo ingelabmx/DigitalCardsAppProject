@@ -358,6 +358,17 @@ docs/migration-context/35-legacy-parity-checklist.md
 Antes de retirar una ruta Web Forms, el flujo moderno debe tener pruebas,
 smoke real, diagnostico en `/Admin/Support` y rollback documentado.
 
+El plan operativo para mover negocios de `Legacy Only` a `Modern Primary` esta
+en:
+
+```text
+docs/migration-context/37-gradual-webforms-replacement.md
+```
+
+La regla de trabajo es reemplazar Web Forms por negocio, no globalmente. Web
+Forms sigue vivo como fallback hasta que cada negocio complete los gates de
+paridad, smoke real, soporte y rollback.
+
 ## Dashboard cliente
 
 El cliente moderno entra desde:
