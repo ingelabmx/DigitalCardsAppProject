@@ -4,14 +4,14 @@
     ViewData["Title"] = "Dashboard cliente";
 }
 
-<section class="app-surface">
+<section class="app-surface client-legacy-hero">
     <div>
         <p class="eyebrow">Cliente</p>
-        <h1 data-testid="client-dashboard-title">@Model.ClientName</h1>
-        <p class="lead">Consulta tus tarjetas de lealtad, revisa tus sellos y vuelve a abrir tus links Wallet.</p>
+        <h1 data-testid="client-dashboard-title">Mis tarjetas de @Model.ClientName</h1>
+        <p class="lead">@Model.ClientName, consulta tus tarjetas de lealtad, revisa tus sellos y vuelve a abrir tus links Wallet.</p>
     </div>
 
-    <div class="action-grid">
+    <div class="action-grid client-action-grid">
         <a class="action-card" asp-page="/Client/Cards" data-testid="client-dashboard-cards-link">
             <span>Mis tarjetas</span>
             <small>Sellos actuales, historicos y estado Wallet.</small>
@@ -33,42 +33,50 @@
         <div class="page-heading">
             <div>
                 <p class="eyebrow">Resumen</p>
-                <h2>Mis tarjetas</h2>
+                <h2>@Model.ClientName</h2>
             </div>
             <span class="badge text-bg-light" data-testid="client-dashboard-card-count">@Model.Dashboard.Cards.Count tarjeta(s)</span>
         </div>
 
-        <div class="metric-row">
-            <div class="metric">
-                <span>Sellos actuales</span>
-                <strong data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</strong>
+        <div class="client-dashboard-grid">
+            <div class="client-identity-panel" data-testid="client-identity-panel">
+                <div class="client-qr-card" data-testid="client-qr-card" aria-label="Identificador visual de cliente">
+                    @for (var index = 0; index < 25; index++)
+                    {
+                        var isDark = index is 0 or 1 or 2 or 5 or 7 or 10 or 12 or 14 or 17 or 19 or 20 or 22 or 24;
+                        <span class="@(isDark ? "filled" : string.Empty)"></span>
+                    }
+                </div>
+                <dl class="client-profile-list" data-testid="client-profile-summary">
+                    <div>
+                        <dt>Usuario</dt>
+                        <dd data-testid="client-profile-username">@Model.Dashboard.Client.UserName</dd>
+                    </div>
+                    <div>
+                        <dt>Correo</dt>
+                        <dd data-testid="client-profile-email">@Model.Dashboard.Client.Email</dd>
+                    </div>
+                </dl>
             </div>
-            <div class="metric">
-                <span>Sellos historicos</span>
-                <strong data-testid="client-dashboard-lifetime-stamps">@Model.Dashboard.TotalLifetimeStamps</strong>
-            </div>
-            <div class="metric">
-                <span>Google Wallet</span>
-                <strong data-testid="client-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
-            </div>
-            <div class="metric">
-                <span>Apple Wallet</span>
-                <strong data-testid="client-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
-            </div>
-        </div>
 
-        <div class="client-profile-panel" data-testid="client-profile-summary">
-            <h2>Perfil</h2>
-            <dl>
-                <div>
-                    <dt>Usuario</dt>
-                    <dd data-testid="client-profile-username">@Model.Dashboard.Client.UserName</dd>
+            <div class="client-dashboard-metrics">
+                <div class="metric">
+                    <span>Sellos actuales</span>
+                    <strong data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</strong>
                 </div>
-                <div>
-                    <dt>Correo</dt>
-                    <dd data-testid="client-profile-email">@Model.Dashboard.Client.Email</dd>
+                <div class="metric">
+                    <span>Sellos historicos</span>
+                    <strong data-testid="client-dashboard-lifetime-stamps">@Model.Dashboard.TotalLifetimeStamps</strong>
                 </div>
-            </dl>
+                <div class="metric">
+                    <span>Google Wallet</span>
+                    <strong data-testid="client-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
+                </div>
+                <div class="metric">
+                    <span>Apple Wallet</span>
+                    <strong data-testid="client-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
+                </div>
+            </div>
         </div>
 
         @if (Model.Dashboard.Cards.Count > 0)
@@ -77,7 +85,16 @@
                 @foreach (var card in Model.Dashboard.Cards.Take(3))
                 {
                     <article class="client-card-preview">
-                        <h3>@card.BusinessName</h3>
+                        <div>
+                            <span class="client-card-kicker">Tarjeta</span>
+                            <h3>@card.BusinessName</h3>
+                        </div>
+                        <div class="client-stamp-track" aria-label="Sellos actuales">
+                            @for (var stamp = 1; stamp <= 10; stamp++)
+                            {
+                                <span class="@(stamp <= Math.Min(card.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
+                            }
+                        </div>
                         <p>@card.CurrentStamps sellos actuales &middot; @card.LifetimeStamps historicos</p>
                         <a class="btn btn-outline-primary btn-sm"
                            asp-page="/Wallet/Select"

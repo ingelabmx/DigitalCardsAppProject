@@ -674,6 +674,81 @@ h1 {
   gap: 1rem;
 }
 
+.client-legacy-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+}
+
+.client-action-grid .action-card {
+  border-left: 4px solid #5d87ff;
+  min-height: 88px;
+}
+
+.client-dashboard-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+}
+
+.client-identity-panel {
+  align-items: center;
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 1rem;
+}
+
+.client-qr-card {
+  background: #fff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(5, 12px);
+  padding: 10px;
+}
+
+.client-qr-card span {
+  background: #e5eaef;
+  border-radius: 3px;
+  height: 12px;
+  width: 12px;
+}
+
+.client-qr-card span.filled {
+  background: #2a3547;
+}
+
+.client-profile-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.client-profile-list dt,
+.client-card-kicker {
+  color: #7c8fac;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.client-profile-list dd {
+  color: #2a3547;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.client-dashboard-metrics {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .client-profile-panel {
   background: #f6f7f9;
   border-radius: 8px;
@@ -715,12 +790,96 @@ h1 {
   padding: 1rem;
 }
 
-.client-card-preview p {
-  color: #697586;
+.client-card-preview {
+  display: grid;
+  gap: 0.65rem;
 }
 
-.client-card-row + .client-card-row {
+.client-card-preview p {
+  color: #697586;
+  margin-bottom: 0;
+}
+
+.client-card-list {
+  display: grid;
+  gap: 1rem;
   margin-top: 1rem;
+}
+
+.client-card-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.client-card-main {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(230px, 0.75fr) minmax(0, 1.25fr);
+}
+
+.client-card-face {
+  background: linear-gradient(135deg, #2a3547, #5d87ff);
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  gap: 0.45rem;
+  min-height: 190px;
+  padding: 1rem;
+}
+
+.client-card-face .client-card-kicker {
+  color: #dbeafe;
+}
+
+.client-card-face h3 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.client-card-face p {
+  color: #ecf2ff;
+  margin: 0;
+}
+
+.client-card-state {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.client-stamp-track {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(5, 1fr);
+  margin-top: auto;
+}
+
+.client-stamp-track span {
+  aspect-ratio: 1;
+  background: #eef2f6;
+  border: 1px solid #d9e2ec;
+  border-radius: 999px;
+}
+
+.client-stamp-track span.filled {
+  background: #ffcf70;
+  border-color: #f4b942;
+}
+
+.client-card-preview .client-stamp-track {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  margin: 0;
+}
+
+.client-card-preview .client-stamp-track span {
+  min-width: 12px;
+}
+
+.client-auth-panel {
+  margin: 0 auto;
+}
+
+.client-auth-panel .lead {
+  margin-bottom: 1.25rem;
 }
 
 @media (max-width: 760px) {
@@ -729,6 +888,8 @@ h1 {
   .business-dashboard-grid,
   .business-profile-grid,
   .branding-color-row,
+  .client-dashboard-grid,
+  .client-card-main,
   .client-card-preview-grid,
   .client-profile-panel dl,
   .wallet-actions,
@@ -788,8 +949,14 @@ h1 {
   }
 
   .legacy-shell .admin-dashboard-hero,
+  .legacy-shell .client-legacy-hero,
   .legacy-shell .admin-action-grid,
   .legacy-admin-row {
+    grid-template-columns: 1fr;
+  }
+
+  .client-dashboard-metrics,
+  .client-identity-panel {
     grid-template-columns: 1fr;
   }
 }

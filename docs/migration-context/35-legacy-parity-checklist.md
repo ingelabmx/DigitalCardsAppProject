@@ -49,7 +49,7 @@ The goal is to make replacement decisions by flow, not by hope. Web Forms stays 
 | --- | --- | --- |
 | Client registration | Pilot | Modern registration creates legacy and modern credentials. |
 | Client login/logout | Ready | Cookie auth with `DigitalCards.Client`. |
-| Client dashboard | Pilot | `/Client/Dashboard` and `/Client/Cards` show owned cards only. |
+| Client dashboard | Pilot | `/Client/Dashboard` and `/Client/Cards` show owned cards only with legacy-style visual shell. |
 | Change password | Ready | Updates legacy and modern credentials. |
 | Forgot/reset password | Ready | One-time hashed reset tokens via email. |
 | Wallet landing | Ready | Public token-based landing remains outside cookie auth. |

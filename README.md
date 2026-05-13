@@ -388,13 +388,16 @@ ahi usan tokens opacos nuevos y no exponen `CardID` directo.
 El dashboard cliente muestra:
 
 - perfil basico: usuario y correo;
+- identificador visual estilo QR;
 - conteo de tarjetas;
 - sellos actuales e historicos;
 - estado Google Wallet y Apple Wallet;
 - vista previa de tarjetas con link Wallet.
 
 `/Client/Cards` muestra el detalle por tarjeta, incluyendo ultimo sello,
-dispositivos Apple registrados y links Wallet seguros.
+dispositivos Apple registrados, sellos visuales y links Wallet seguros. La UI
+usa el shell legacy con sidebar/header/footer para mantener paridad visual con
+Web Forms.
 
 ## Password hardening cliente
 
