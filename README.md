@@ -246,21 +246,22 @@ HostGator, ejecuta:
 docs/migration-context/20-wallet-link-token-hardening-hostgator.sql
 ```
 
-Configuracion de transicion:
+Configuracion segura por default:
 
 ```json
 {
   "DigitalCards": {
     "WalletLinks": {
-      "AllowLegacyCardIdTokens": true
+      "AllowLegacyCardIdTokens": false
     }
   }
 }
 ```
 
-Con compatibilidad activa, links viejos por `CardID` siguen funcionando. Los
-links nuevos usan tokens opacos guardados solo como hash. En un PR futuro se
-puede cambiar `AllowLegacyCardIdTokens` a `false`.
+Los links nuevos usan tokens opacos guardados solo como hash. Si necesitas una
+emergencia temporal para links antiguos por `CardID`, cambia
+`AllowLegacyCardIdTokens` a `true` en `appsettings.Local.json` y vuelve a
+`false` al terminar la ventana de soporte.
 
 ## Piloto controlado
 

@@ -1761,25 +1761,25 @@ public sealed class DigitalCardsAppServiceTests
     [Fact]
     public async Task LegacyCardIdToken_WorksOnlyWhenCompatibilityIsEnabled()
     {
-        var compatibleProvider = CreateDefaultServices().BuildServiceProvider();
-        var compatibleApp = compatibleProvider.GetRequiredService<DigitalCardsAppService>();
-        var compatibleEnrollment = await CreateEnrollmentAsync(compatibleApp, "compat-token");
-
-        var legacyLanding = await compatibleApp.GetWalletLandingAsync(compatibleEnrollment.Card.EnrollmentToken);
-
-        Assert.NotNull(legacyLanding);
-
-        var hardenedServices = CreateDefaultServices(new Dictionary<string, string?>
-        {
-            ["DigitalCards:WalletLinks:AllowLegacyCardIdTokens"] = "false"
-        });
-        var hardenedProvider = hardenedServices.BuildServiceProvider();
+        var hardenedProvider = CreateDefaultServices().BuildServiceProvider();
         var hardenedApp = hardenedProvider.GetRequiredService<DigitalCardsAppService>();
         var hardenedEnrollment = await CreateEnrollmentAsync(hardenedApp, "blocked-token");
         var publicToken = ExtractWalletToken(hardenedEnrollment.EnrollmentUrl);
 
         Assert.Null(await hardenedApp.GetWalletLandingAsync(hardenedEnrollment.Card.EnrollmentToken));
         Assert.NotNull(await hardenedApp.GetWalletLandingAsync(publicToken));
+
+        var compatibleServices = CreateDefaultServices(new Dictionary<string, string?>
+        {
+            ["DigitalCards:WalletLinks:AllowLegacyCardIdTokens"] = "true"
+        });
+        var compatibleProvider = compatibleServices.BuildServiceProvider();
+        var compatibleApp = compatibleProvider.GetRequiredService<DigitalCardsAppService>();
+        var compatibleEnrollment = await CreateEnrollmentAsync(compatibleApp, "compat-token");
+
+        var legacyLanding = await compatibleApp.GetWalletLandingAsync(compatibleEnrollment.Card.EnrollmentToken);
+
+        Assert.NotNull(legacyLanding);
     }
 
     [Fact]
