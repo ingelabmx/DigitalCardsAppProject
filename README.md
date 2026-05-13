@@ -329,6 +329,17 @@ rollback, y no depender de admin para cada cliente en el flujo normal.
 Es una vista solo lectura. No muestra tokens Wallet, enrollment tokens, push
 tokens, JWTs, passwords, hashes, certificados ni connection strings.
 
+## Paridad con Web Forms
+
+La paridad se controla por flujo, no por fecha. El checklist vivo esta en:
+
+```text
+docs/migration-context/35-legacy-parity-checklist.md
+```
+
+Antes de retirar una ruta Web Forms, el flujo moderno debe tener pruebas,
+smoke real, diagnostico en `/Admin/Support` y rollback documentado.
+
 ## Dashboard cliente
 
 El cliente moderno entra desde:
