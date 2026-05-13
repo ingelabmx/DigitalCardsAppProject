@@ -58,6 +58,17 @@
                 </div>
 
                 <div class="mb-3">
+                    <label asp-for="Input.ActivationStatus" class="form-label">Estado de activacion</label>
+                    <select asp-for="Input.ActivationStatus" class="form-select" data-testid="admin-business-activation-status">
+                        <option value="LegacyOnly">Legacy only</option>
+                        <option value="PilotModern">Piloto moderno</option>
+                        <option value="ModernPrimary">Moderno principal</option>
+                        <option value="LegacyRetired">Legacy retirado</option>
+                    </select>
+                    <small class="form-text text-muted">El estado documenta el avance de migracion por negocio. Cualquier estado distinto de legacy only habilita el flujo moderno.</small>
+                </div>
+
+                <div class="mb-3">
                     <label asp-for="Input.Notes" class="form-label">Notas piloto</label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-business-profile-notes"></textarea>
                 </div>

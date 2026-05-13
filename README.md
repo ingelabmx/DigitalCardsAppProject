@@ -474,10 +474,24 @@ El admin puede:
 - habilitar/deshabilitar piloto y editar notas;
 - resetear contrasena del negocio.
 
+Tambien puede ajustar el estado formal de activacion del negocio:
+
+- `LegacyOnly`;
+- `PilotModern`;
+- `ModernPrimary`;
+- `LegacyRetired`.
+
+Antes de usar estos estados contra HostGator, ejecuta:
+
+```text
+docs/migration-context/38-admin-business-activation-status-hostgator.sql
+```
+
 El reset de contrasena actualiza ambos mecanismos: `Business.BusinessPassword`
 con el hash legacy de 25 caracteres y `ModernBusinessCredential` con hash
-moderno. No hay SQL nuevo para este flujo; requiere las mismas tablas de
-password hardening y pilot management ya documentadas.
+moderno. Ese reset requiere las mismas tablas de password hardening y pilot
+management ya documentadas; el SQL de activacion solo agrega el estado formal de
+migracion por negocio.
 
 ## Branding de negocio
 

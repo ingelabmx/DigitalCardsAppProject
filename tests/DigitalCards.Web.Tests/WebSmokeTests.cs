@@ -565,6 +565,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["Input.BusinessEmail"] = updatedEmail,
                 ["Input.BusinessLogo"] = "~/Logos/updated.png",
                 ["Input.IsPilotEnabled"] = "true",
+                ["Input.ActivationStatus"] = "ModernPrimary",
                 ["Input.Notes"] = "actualizado por web test",
                 ["__RequestVerificationToken"] = saveToken
             }));
@@ -574,6 +575,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Negocio actualizado", saveHtml);
         Assert.Contains(updatedName, saveHtml);
         Assert.Contains("~/Logos/updated.png", saveHtml);
+        Assert.Contains("Moderno principal", saveHtml);
+
+        var updatedListHtml = await client.GetStringAsync($"/Admin/Businesses?Query={updatedEmail}");
+        Assert.Contains("Moderno principal", updatedListHtml);
 
         var brandingToken = ExtractAntiforgeryToken(saveHtml);
         var brandingResponse = await client.PostAsync(

@@ -50,6 +50,9 @@
                         <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-pilot-status">
                             @(business.IsEnabled ? "Piloto habilitado" : "Piloto deshabilitado")
                         </span>
+                        <span class="badge text-bg-light" data-testid="admin-business-activation-status">
+                            @ActivationLabel(business.ActivationStatus)
+                        </span>
                         @if (business.UpdatedAt is not null)
                         {
                             <small>Actualizado @business.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
@@ -79,3 +82,16 @@
         </div>
     }
 </section>
+
+@functions {
+    private static string ActivationLabel(DigitalCards.Domain.BusinessActivationStatus status)
+    {
+        return status switch
+        {
+            DigitalCards.Domain.BusinessActivationStatus.PilotModern => "Piloto moderno",
+            DigitalCards.Domain.BusinessActivationStatus.ModernPrimary => "Moderno principal",
+            DigitalCards.Domain.BusinessActivationStatus.LegacyRetired => "Legacy retirado",
+            _ => "Legacy only"
+        };
+    }
+}
