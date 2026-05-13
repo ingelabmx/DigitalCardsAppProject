@@ -389,6 +389,67 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task SearchSupportAsync_ReturnsSafeCardWalletAndLedgerState()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var applePasses = provider.GetRequiredService<IAppleWalletPassRepository>();
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "supportclient1",
+            "Support",
+            "Client",
+            "supportclient1@example.test"));
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        var publicToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        await app.SelectGoogleWalletAsync(publicToken);
+        await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+            "pass.com.puntelio.loyalty",
+            $"serial-{enrollment.Card.Id:N}",
+            enrollment.Card.Id,
+            "auth-token-secret-hash",
+            "42",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow));
+        await applePasses.UpsertDeviceAsync(new AppleWalletDeviceRecord(
+            "device-library-secret",
+            "push-token-secret",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow));
+        await applePasses.AddRegistrationAsync(
+            "device-library-secret",
+            "pass.com.puntelio.loyalty",
+            $"serial-{enrollment.Card.Id:N}",
+            DateTimeOffset.UtcNow);
+        await app.AddStampToCardAsync(business.Id, enrollment.Card.Id);
+
+        var result = await adminApp.SearchSupportAsync(new AdminSupportQuery("supportclient1"));
+
+        var card = Assert.Single(result.Cards);
+        Assert.Equal(enrollment.Card.Id, card.CardId);
+        Assert.Equal("supportclient1", card.Client.UserName);
+        Assert.Equal("Demo Coffee", card.Business.BusinessName);
+        Assert.True(card.GoogleIssued);
+        Assert.NotNull(card.GoogleObjectSuffix);
+        Assert.True(card.AppleTracked);
+        Assert.Equal(1, card.AppleRegisteredDeviceCount);
+        Assert.Equal("42", card.AppleUpdateTag);
+        Assert.DoesNotContain("auth-token-secret-hash", string.Join(' ', card.AppleSerialSuffix, card.GoogleObjectSuffix), StringComparison.OrdinalIgnoreCase);
+        var ledger = Assert.Single(card.RecentStampEvents);
+        Assert.Equal(StampLedgerSource.ModernBusiness, ledger.Source);
+        Assert.True(ledger.GoogleWalletAttempted);
+        Assert.True(ledger.GoogleWalletSucceeded);
+        Assert.True(ledger.AppleWalletAttempted);
+        Assert.True(ledger.AppleWalletSucceeded);
+    }
+
+    [Fact]
     public async Task ListPilotClientsAsync_SearchesLegacyClientsWithoutPasswordData()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

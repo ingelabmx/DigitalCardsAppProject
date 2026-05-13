@@ -292,6 +292,7 @@ El admin moderno usa usuarios legacy de `UserClient` con `RoleID=1`.
 - Crear admin: `http://localhost:5031/Admin/CreateAdmin`
 - Negocios piloto: `http://localhost:5031/Admin/Businesses`
 - Clientes piloto: `http://localhost:5031/Admin/Clients`
+- Soporte: `http://localhost:5031/Admin/Support`
 - Crear negocio: `http://localhost:5031/Admin/CreateBusiness`
 - Administrar negocio: `http://localhost:5031/Admin/BusinessProfile/{businessId}`
 
@@ -314,6 +315,19 @@ desde `/Business/Enroll` y opera la tarjeta desde `/Business/Cards`.
 
 La recomendacion operativa es dejar el allowlist local de clientes vacio salvo
 rollback, y no depender de admin para cada cliente en el flujo normal.
+
+## Soporte admin
+
+`/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:
+
+- sellos actuales e historicos;
+- estado Google Wallet y Apple Wallet;
+- dispositivos Apple registrados;
+- ultimos eventos de `StampLedger`;
+- estado de configuracion de `LegacyWalletSync`.
+
+Es una vista solo lectura. No muestra tokens Wallet, enrollment tokens, push
+tokens, JWTs, passwords, hashes, certificados ni connection strings.
 
 ## Dashboard cliente
 

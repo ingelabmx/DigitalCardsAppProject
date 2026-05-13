@@ -1,0 +1,191 @@
+@page
+@model DigitalCards.Web.Pages.Admin.SupportModel
+@{
+    ViewData["Title"] = "Soporte admin";
+}
+
+<section class="result-panel">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Soporte</h1>
+            <p class="lead">Diagnostico seguro por cliente, negocio o tarjeta. No muestra tokens, passwords, hashes ni credenciales.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-support-back-link">Dashboard</a>
+    </div>
+
+    <form method="get" class="search-row" data-testid="admin-support-search-form">
+        <label asp-for="Query" class="form-label visually-hidden"></label>
+        <input asp-for="Query" class="form-control" placeholder="usuario, correo, negocio, CardID o URL Wallet" data-testid="admin-support-search-input" />
+        <button class="btn btn-primary" type="submit" data-testid="admin-support-search-submit">Buscar</button>
+    </form>
+
+    <div class="support-sync-status" data-testid="admin-support-sync-status">
+        <strong>LegacyWalletSync:</strong>
+        @(Model.LegacyWalletSync.Enabled ? "Activo" : "Apagado")
+        <span>Intervalo @Model.LegacyWalletSync.PollIntervalSeconds s</span>
+        <span>Lookback @Model.LegacyWalletSync.LookbackMinutes min</span>
+        <span>Batch @Model.LegacyWalletSync.BatchSize</span>
+    </div>
+
+    @if (Model.Result is not null)
+    {
+        <section class="support-results" data-testid="admin-support-results">
+            <div class="metric-row">
+                <div class="metric">
+                    <span>Clientes</span>
+                    <strong data-testid="admin-support-client-count">@Model.Result.Clients.Count</strong>
+                </div>
+                <div class="metric">
+                    <span>Negocios</span>
+                    <strong data-testid="admin-support-business-count">@Model.Result.Businesses.Count</strong>
+                </div>
+                <div class="metric">
+                    <span>Tarjetas</span>
+                    <strong data-testid="admin-support-card-count">@Model.Result.Cards.Count</strong>
+                </div>
+            </div>
+
+            @if (Model.Result.Clients.Count > 0)
+            {
+                <section class="business-dashboard-panel">
+                    <h2>Clientes encontrados</h2>
+                    <div class="dashboard-card-list" data-testid="admin-support-clients">
+                        @foreach (var client in Model.Result.Clients)
+                        {
+                            <div class="dashboard-card-row" data-testid="admin-support-client-row">
+                                <div>
+                                    <strong>@client.UserName</strong>
+                                    <span>@client.ClientEmail</span>
+                                </div>
+                                <div>
+                                    <strong>@client.CardCount</strong>
+                                    <span>tarjetas</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (Model.Result.Businesses.Count > 0)
+            {
+                <section class="business-dashboard-panel">
+                    <h2>Negocios encontrados</h2>
+                    <div class="dashboard-card-list" data-testid="admin-support-businesses">
+                        @foreach (var business in Model.Result.Businesses)
+                        {
+                            <div class="dashboard-card-row" data-testid="admin-support-business-row">
+                                <div>
+                                    <strong>@business.BusinessName</strong>
+                                    <span>@business.BusinessEmail</span>
+                                </div>
+                                <div>
+                                    <strong>@business.RecentCardCount</strong>
+                                    <span>@(business.IsPilotEnabled ? "piloto activo" : "piloto apagado")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (Model.Result.Cards.Count == 0)
+            {
+                <p class="text-muted" data-testid="admin-support-no-cards">No se encontraron tarjetas relacionadas.</p>
+            }
+            else
+            {
+                <section class="business-dashboard-panel">
+                    <h2>Tarjetas</h2>
+                    <div class="support-card-list" data-testid="admin-support-cards">
+                        @foreach (var card in Model.Result.Cards)
+                        {
+                            <article class="support-card" data-testid="admin-support-card">
+                                <div class="page-heading">
+                                    <div>
+                                        <p class="eyebrow">Tarjeta @SupportModel.Suffix(card.CardId)</p>
+                                        <h3>@card.Client.UserName &middot; @card.Business.BusinessName</h3>
+                                        <p class="text-muted">@card.Client.ClientEmail &middot; @card.Business.BusinessEmail</p>
+                                    </div>
+                                    <span class="badge text-bg-light">@card.CurrentStamps actuales / @card.LifetimeStamps historicos</span>
+                                </div>
+
+                                <div class="metric-row">
+                                    <div class="metric">
+                                        <span>Google Wallet</span>
+                                        <strong data-testid="admin-support-google-state">@(card.GoogleIssued ? "Emitida" : "Pendiente")</strong>
+                                        @if (!string.IsNullOrWhiteSpace(card.GoogleObjectSuffix))
+                                        {
+                                            <small>obj ...@card.GoogleObjectSuffix</small>
+                                        }
+                                    </div>
+                                    <div class="metric">
+                                        <span>Apple Wallet</span>
+                                        <strong data-testid="admin-support-apple-state">@(card.AppleTracked ? "Instalada" : "Pendiente")</strong>
+                                        <small>@card.AppleRegisteredDeviceCount dispositivo(s)</small>
+                                    </div>
+                                    <div class="metric">
+                                        <span>Ultimo sello</span>
+                                        <strong>@card.LastStampedAt.ToLocalTime().ToString("g")</strong>
+                                    </div>
+                                    <div class="metric">
+                                        <span>Alertas Wallet</span>
+                                        <strong data-testid="admin-support-wallet-issues">@card.WalletIssueCount</strong>
+                                    </div>
+                                </div>
+
+                                @if (card.AppleTracked)
+                                {
+                                    <p class="text-muted" data-testid="admin-support-apple-detail">
+                                        Apple serial ...@card.AppleSerialSuffix &middot;
+                                        update tag @card.AppleUpdateTag &middot;
+                                        actualizado @card.AppleUpdatedAt?.ToLocalTime().ToString("g")
+                                    </p>
+                                }
+
+                                <h4>Eventos recientes</h4>
+                                @if (card.RecentStampEvents.Count == 0)
+                                {
+                                    <p class="text-muted" data-testid="admin-support-no-ledger">Sin eventos de StampLedger.</p>
+                                }
+                                else
+                                {
+                                    <div class="stamp-ledger-items" data-testid="admin-support-ledger">
+                                        @foreach (var item in card.RecentStampEvents)
+                                        {
+                                            <div class="stamp-ledger-item" data-testid="admin-support-ledger-event">
+                                                <div>
+                                                    <strong>@item.Source</strong>
+                                                    <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                                </div>
+                                                <p>Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY &middot; Historicos: @item.PreviousHistoricCheckQTY -> @item.NewHistoricCheckQTY</p>
+                                                <p>Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded) &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
+                                                @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                                                {
+                                                    <p class="text-danger">Error: @item.ErrorSummary</p>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+        </section>
+    }
+</section>
+
+@functions {
+    private static string WalletStatus(bool attempted, bool succeeded)
+    {
+        if (!attempted)
+        {
+            return "No aplica";
+        }
+
+        return succeeded ? "OK" : "Fallo";
+    }
+}
