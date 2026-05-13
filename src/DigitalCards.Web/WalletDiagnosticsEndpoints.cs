@@ -1,4 +1,7 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DigitalCards.Web;
 
@@ -10,7 +13,9 @@ public static class WalletDiagnosticsEndpoints
             "/internal/wallet-diagnostics/{cardId}",
             async (
                 string cardId,
+                HttpContext httpContext,
                 IConfiguration configuration,
+                IAuthorizationService authorization,
                 IBusinessRepository businesses,
                 IClientRepository clients,
                 ILoyaltyCardRepository loyaltyCards,
@@ -20,6 +25,20 @@ public static class WalletDiagnosticsEndpoints
                 if (!configuration.GetValue<bool>("DigitalCards:Diagnostics:EnableWalletDiagnostics"))
                 {
                     return Results.NotFound();
+                }
+
+                var adminAuthentication = await httpContext.AuthenticateAsync(AdminAuth.Scheme);
+                if (!adminAuthentication.Succeeded || adminAuthentication.Principal is null)
+                {
+                    return Results.Challenge(authenticationSchemes: [AdminAuth.Scheme]);
+                }
+
+                var authorizationResult = await authorization.AuthorizeAsync(
+                    adminAuthentication.Principal,
+                    AdminAuth.Policy);
+                if (!authorizationResult.Succeeded)
+                {
+                    return Results.Challenge(authenticationSchemes: [AdminAuth.Scheme]);
                 }
 
                 var card = await loyaltyCards.FindByEnrollmentTokenAsync(cardId, cancellationToken);

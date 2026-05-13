@@ -1,5 +1,6 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Web.Diagnostics;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -13,13 +14,19 @@ public sealed class DashboardModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
     private readonly PilotAccessService _pilotAccess;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
     public DashboardModel(
         DigitalCardsAppService appService,
-        PilotAccessService pilotAccess)
+        PilotAccessService pilotAccess,
+        IWebHostEnvironment environment,
+        IConfiguration configuration)
     {
         _appService = appService;
         _pilotAccess = pilotAccess;
+        _environment = environment;
+        _configuration = configuration;
     }
 
     public string BusinessName { get; private set; } = string.Empty;
@@ -29,6 +36,11 @@ public sealed class DashboardModel : PageModel
     public string? PilotBlockMessage { get; private set; }
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
+
+    public bool ShowDevOutboxLink => DevToolAccess.ShouldRenderDevOutboxLink(
+        _environment,
+        _configuration,
+        User);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {

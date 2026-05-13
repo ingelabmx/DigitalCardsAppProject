@@ -722,6 +722,7 @@ Google Wallet y push Apple Wallet. Los diagnosticos seguros se activan con:
 {
   "DigitalCards": {
     "Diagnostics": {
+      "EnableDevOutbox": false,
       "EnableWalletDiagnostics": true
     }
   }
@@ -733,6 +734,11 @@ Endpoint:
 ```text
 /internal/wallet-diagnostics/{CardID-or-enrollment-token}
 ```
+
+En `Development`, `/Dev/Outbox` sigue disponible para Playwright y fakes. En
+un ambiente real, Outbox queda apagado por default; si se necesita soporte
+temporal, activa `DigitalCards:Diagnostics:EnableDevOutbox=true` y entra con
+cookie admin. Al terminar, vuelve a `false`.
 
 ## Smoke real minimo
 
