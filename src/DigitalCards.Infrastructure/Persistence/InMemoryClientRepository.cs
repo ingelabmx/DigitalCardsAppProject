@@ -48,6 +48,34 @@ public sealed class InMemoryClientRepository : IClientRepository
         }
     }
 
+    public Task<Client> UpdateProfileAsync(
+        Guid clientId,
+        string firstName,
+        string lastName,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var index = _store.Clients.FindIndex(client => client.Id == clientId);
+            if (index < 0)
+            {
+                throw new InvalidOperationException("Client was not found.");
+            }
+
+            var existing = _store.Clients[index];
+            var updated = new Client(
+                existing.Id,
+                existing.UserName,
+                firstName,
+                lastName,
+                email,
+                existing.PasswordHashPlaceholder);
+            _store.Clients[index] = updated;
+            return Task.FromResult(updated);
+        }
+    }
+
     public Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         lock (_store.Sync)
@@ -78,6 +106,23 @@ public sealed class InMemoryClientRepository : IClientRepository
                     string.Equals(client.Email, normalized, StringComparison.OrdinalIgnoreCase)) ||
                 _store.AdminUsers.Any(admin =>
                     string.Equals(admin.UserName, normalized, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(admin.Email, normalized, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
+    public Task<bool> EmailExistsForOtherUserAsync(
+        Guid clientId,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = email.Trim();
+        lock (_store.Sync)
+        {
+            return Task.FromResult(
+                _store.Clients.Any(client =>
+                    client.Id != clientId &&
+                    string.Equals(client.Email, normalized, StringComparison.OrdinalIgnoreCase)) ||
+                _store.AdminUsers.Any(admin =>
                     string.Equals(admin.Email, normalized, StringComparison.OrdinalIgnoreCase)));
         }
     }

@@ -13,6 +13,8 @@ public sealed class DigitalCardsAppService
     private const int BrandingNameMaxLength = 80;
     private const int BrandingLogoMaxLength = 200;
     private const int BrandingDescriptionMaxLength = 280;
+    private const int ClientNameMaxLength = 30;
+    private const int ClientEmailMaxLength = 30;
     private const string DefaultPrimaryColor = "#111827";
     private const string DefaultSecondaryColor = "#2563eb";
     private const string DefaultProgramName = "Tarjeta de lealtad";
@@ -210,6 +212,60 @@ public sealed class DigitalCardsAppService
             cancellationToken);
 
         return new ChangeClientPasswordResult(true, ErrorMessage: null);
+    }
+
+    public async Task<ClientDto?> GetClientProfileAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await _clients.FindByIdAsync(clientId, cancellationToken);
+        return client is null ? null : ToDto(client);
+    }
+
+    public async Task<UpdateClientProfileResult> UpdateClientProfileAsync(
+        UpdateClientProfileCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.ClientId == Guid.Empty)
+        {
+            return new UpdateClientProfileResult(null, "La sesion de cliente no es valida.");
+        }
+
+        var firstName = command.FirstName.Trim();
+        var lastName = command.LastName.Trim();
+        var email = command.Email.Trim().ToLowerInvariant();
+        var validationError = ValidateClientProfile(firstName, lastName, email);
+        if (validationError is not null)
+        {
+            return new UpdateClientProfileResult(null, validationError);
+        }
+
+        var existing = await _clients.FindByIdAsync(command.ClientId, cancellationToken);
+        if (existing is null)
+        {
+            return new UpdateClientProfileResult(null, "El cliente no existe.");
+        }
+
+        if (!string.Equals(existing.Email, email, StringComparison.OrdinalIgnoreCase) &&
+            await _clients.EmailExistsForOtherUserAsync(existing.Id, email, cancellationToken))
+        {
+            return new UpdateClientProfileResult(null, "El correo ya esta registrado.");
+        }
+
+        try
+        {
+            var updated = await _clients.UpdateProfileAsync(
+                existing.Id,
+                firstName,
+                lastName,
+                email,
+                cancellationToken);
+            return new UpdateClientProfileResult(ToDto(updated), ErrorMessage: null);
+        }
+        catch (InvalidOperationException)
+        {
+            return new UpdateClientProfileResult(null, "No se pudo actualizar el perfil.");
+        }
     }
 
     public async Task<PasswordResetRequestResult> RequestClientPasswordResetAsync(
@@ -1423,6 +1479,46 @@ public sealed class DigitalCardsAppService
         return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
             (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
             (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
+    }
+
+    private static string? ValidateClientProfile(string firstName, string lastName, string email)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            return "El nombre es requerido.";
+        }
+
+        if (firstName.Length > ClientNameMaxLength)
+        {
+            return $"El nombre no puede exceder {ClientNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            return "El apellido es requerido.";
+        }
+
+        if (lastName.Length > ClientNameMaxLength)
+        {
+            return $"El apellido no puede exceder {ClientNameMaxLength} caracteres.";
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return "El correo es requerido.";
+        }
+
+        if (email.Length > ClientEmailMaxLength)
+        {
+            return $"El correo no puede exceder {ClientEmailMaxLength} caracteres.";
+        }
+
+        if (!email.Contains('@', StringComparison.Ordinal) || email[0] == '@' || email[^1] == '@')
+        {
+            return "El correo no tiene un formato valido.";
+        }
+
+        return null;
     }
 
     private static string? ValidateBusinessBranding(

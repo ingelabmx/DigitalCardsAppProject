@@ -62,6 +62,43 @@ public sealed class MySqlClientRepository : IClientRepository
             ?? throw new InvalidOperationException("Client was not found.");
     }
 
+    public async Task<Client> UpdateProfileAsync(
+        Guid clientId,
+        string firstName,
+        string lastName,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            update UserClient
+            set FirstName = @FirstName,
+                Lastname = @LastName,
+                UserEmail = @Email
+            where UserID = @UserId
+              and RoleID = 2;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.ExecuteAsync(new CommandDefinition(
+            sql,
+            new
+            {
+                UserId = LegacyIdMapper.ToInt32(clientId),
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email
+            },
+            cancellationToken: cancellationToken));
+
+        if (rows == 0)
+        {
+            throw new InvalidOperationException("Client was not found.");
+        }
+
+        return await FindByIdAsync(clientId, cancellationToken)
+            ?? throw new InvalidOperationException("Client was not found.");
+    }
+
     public async Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         const string sql = """
@@ -123,6 +160,33 @@ public sealed class MySqlClientRepository : IClientRepository
         await using var connection = _connectionFactory.Create();
         var exists = await connection.ExecuteScalarAsync<int?>(
             new CommandDefinition(sql, new { Value = value.Trim() }, cancellationToken: cancellationToken));
+
+        return exists is not null;
+    }
+
+    public async Task<bool> EmailExistsForOtherUserAsync(
+        Guid clientId,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select 1
+            from UserClient
+            where UserID <> @UserId
+              and lower(UserEmail) = lower(@Email)
+            limit 1;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var exists = await connection.ExecuteScalarAsync<int?>(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    UserId = LegacyIdMapper.ToInt32(clientId),
+                    Email = email.Trim()
+                },
+                cancellationToken: cancellationToken));
 
         return exists is not null;
     }

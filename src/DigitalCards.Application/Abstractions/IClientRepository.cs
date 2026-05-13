@@ -11,11 +11,23 @@ public interface IClientRepository
         string legacyPasswordHash,
         CancellationToken cancellationToken = default);
 
+    Task<Client> UpdateProfileAsync(
+        Guid clientId,
+        string firstName,
+        string lastName,
+        string email,
+        CancellationToken cancellationToken = default);
+
     Task<Client?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<Client?> FindByUserNameOrEmailAsync(string value, CancellationToken cancellationToken = default);
 
     Task<bool> UserNameOrEmailExistsAsync(string value, CancellationToken cancellationToken = default);
+
+    Task<bool> EmailExistsForOtherUserAsync(
+        Guid clientId,
+        string email,
+        CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Client>> SearchAsync(
         string query,

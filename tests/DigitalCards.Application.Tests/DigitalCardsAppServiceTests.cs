@@ -1097,6 +1097,65 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task UpdateClientProfileAsync_UpdatesLegacyProfileAndKeepsUserNameStable()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "profileclient1",
+            "Profile",
+            "Client",
+            "profileclient1@example.test",
+            "clientpass1"));
+
+        var result = await app.UpdateClientProfileAsync(new UpdateClientProfileCommand(
+            registered.Id,
+            "Updated",
+            "Person",
+            "profile1new@example.test"));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("profileclient1", result.Client!.UserName);
+        Assert.Equal("Updated", result.Client.FirstName);
+        Assert.Equal("Person", result.Client.LastName);
+        Assert.Equal("profile1new@example.test", result.Client.Email);
+        var profile = await app.GetClientProfileAsync(registered.Id);
+        Assert.Equal("profileclient1", profile!.UserName);
+        Assert.Equal("Updated", profile.FirstName);
+        Assert.Equal("profile1new@example.test", profile.Email);
+    }
+
+    [Fact]
+    public async Task UpdateClientProfileAsync_DuplicateEmailFailsSafely()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var first = await app.RegisterClientAsync(new RegisterClientCommand(
+            "profileclient2",
+            "Profile",
+            "Client",
+            "profileclient2@example.test",
+            "clientpass1"));
+        await app.RegisterClientAsync(new RegisterClientCommand(
+            "profileclient3",
+            "Profile",
+            "Other",
+            "profileclient3@example.test",
+            "clientpass1"));
+
+        var result = await app.UpdateClientProfileAsync(new UpdateClientProfileCommand(
+            first.Id,
+            "Profile",
+            "Client",
+            "profileclient3@example.test"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("El correo ya esta registrado.", result.ErrorMessage);
+        var profile = await app.GetClientProfileAsync(first.Id);
+        Assert.Equal("profileclient2@example.test", profile!.Email);
+    }
+
+    [Fact]
     public async Task GetClientDashboardAsync_ReturnsProfileWalletSummaryAndOpaqueLinks()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

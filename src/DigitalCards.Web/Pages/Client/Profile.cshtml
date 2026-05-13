@@ -1,0 +1,59 @@
+@page
+@model DigitalCards.Web.Pages.Client.ProfileModel
+@{
+    ViewData["Title"] = "Perfil cliente";
+}
+
+<section class="form-panel client-auth-panel" data-testid="client-profile">
+    <p class="eyebrow">Cliente</p>
+    <h1>Perfil</h1>
+    <p class="lead">Actualiza tus datos basicos. El usuario se mantiene fijo para no romper tarjetas ni links Wallet.</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="client-profile-status">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.Client is not null)
+    {
+        <dl class="client-profile-list" data-testid="client-profile-readonly">
+            <div>
+                <dt>Usuario</dt>
+                <dd data-testid="client-profile-username">@Model.Client.UserName</dd>
+            </div>
+        </dl>
+    }
+
+    <form method="post" data-testid="client-profile-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Input.FirstName" class="form-label"></label>
+            <input asp-for="Input.FirstName" class="form-control" data-testid="client-profile-first-name" />
+            <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.LastName" class="form-label"></label>
+            <input asp-for="Input.LastName" class="form-control" data-testid="client-profile-last-name" />
+            <span asp-validation-for="Input.LastName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Email" class="form-label"></label>
+            <input asp-for="Input.Email" class="form-control" data-testid="client-profile-email" />
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit" data-testid="client-profile-submit">Actualizar perfil</button>
+            <a class="btn btn-outline-secondary" asp-page="/Client/Dashboard">Volver</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

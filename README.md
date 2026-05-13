@@ -356,6 +356,12 @@ El `BusinessID` se toma de la cookie del negocio. La pantalla no acepta
 `businessId` por query string y no muestra tokens, push tokens, passwords,
 hashes ni connection strings.
 
+## Perfil de cliente
+
+`/Client/Profile` permite que el cliente autenticado actualice nombre, apellido
+y correo dentro de los limites legacy de `UserClient`. El username queda fijo
+para no romper flujos existentes, soporte ni referencias operativas.
+
 ## Soporte admin
 
 `/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:
