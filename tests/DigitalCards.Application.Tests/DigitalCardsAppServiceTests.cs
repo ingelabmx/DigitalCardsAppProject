@@ -1778,6 +1778,38 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task GetBusinessReportsAsync_ReturnsBusinessScopedOperationalReports()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "bizreport1");
+        var token = ExtractWalletToken(enrollment.EnrollmentUrl);
+        await app.SelectGoogleWalletAsync(token);
+        await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+
+        var reports = await app.GetBusinessReportsAsync(business.Id);
+
+        Assert.NotNull(reports);
+        Assert.Equal("Demo Coffee", reports!.Business.Name);
+        Assert.Equal(1, reports.CardCount);
+        Assert.Equal(1, reports.CardsCreatedLast30Days);
+        Assert.Equal(1, reports.ClientCount);
+        Assert.Equal(2, reports.CurrentStampTotal);
+        Assert.Equal(2, reports.LifetimeStampTotal);
+        Assert.Equal(1, reports.StampsLast30Days);
+        Assert.Equal(1, reports.GoogleIssuedCount);
+        Assert.Equal(0, reports.GooglePendingCount);
+        Assert.True(reports.StampPeriods.Count >= 1);
+        var client = Assert.Single(reports.RecentClients);
+        Assert.Equal("bizreport1", client.UserName);
+        Assert.Equal(0, reports.WalletIssueCount);
+        Assert.Empty(reports.RecentWalletIssues);
+    }
+
+    [Fact]
     public async Task SelectAppleWallet_ReturnsNullForInvalidToken()
     {
         var services = new ServiceCollection();

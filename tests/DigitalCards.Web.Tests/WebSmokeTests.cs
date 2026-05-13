@@ -220,10 +220,13 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        var response = await client.GetAsync("/Business/Dashboard");
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Reports" })
+        {
+            var response = await client.GetAsync(path);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Contains("/Business/Login", response.Headers.Location?.OriginalString);
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Contains("/Business/Login", response.Headers.Location?.OriginalString);
+        }
     }
 
     [Fact]
@@ -1502,6 +1505,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-dashboard-card-count", html);
         Assert.Contains("business-dashboard-current-stamps", html);
         Assert.Contains("business-dashboard-google-count", html);
+        Assert.Contains("business-reports-link", html);
         Assert.Contains("business-dashboard-recent-card", html);
         Assert.Contains("business-dashboard-ledger-event", html);
         Assert.Contains(userName, html);
@@ -1509,6 +1513,43 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("jwt", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BusinessReports_ShowsBusinessScopedReportingWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("br");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+        }
+
+        await LoginBusinessAsync(client);
+        var html = await client.GetStringAsync("/Business/Reports");
+
+        Assert.Contains("business-reports", html);
+        Assert.Contains("business-report-card-count", html);
+        Assert.Contains("business-report-client-count", html);
+        Assert.Contains("business-report-google-count", html);
+        Assert.Contains("business-report-period", html);
+        Assert.Contains("business-report-recent-client", html);
+        Assert.Contains(userName, html);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push-token", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("auth-token", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

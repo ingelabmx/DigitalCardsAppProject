@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using DigitalCards.Application.Abstractions;
@@ -692,6 +693,99 @@ public sealed class DigitalCardsAppService
             events.Count(HasWalletIssue),
             recentCards.Take(8).ToArray(),
             events);
+    }
+
+    public async Task<BusinessReportsDto?> GetBusinessReportsAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        if (business is null)
+        {
+            return null;
+        }
+
+        var cards = await _loyaltyCards.SearchByBusinessAsync(
+            business.Id,
+            query: string.Empty,
+            limit: 250,
+            cancellationToken);
+        var reportCards = new List<BusinessCardDto>(cards.Count);
+
+        foreach (var card in cards)
+        {
+            var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+            if (client is null)
+            {
+                continue;
+            }
+
+            reportCards.Add(await ToBusinessCardDtoAsync(card, client, business, cancellationToken));
+        }
+
+        var now = _clock.UtcNow;
+        var since30Days = now.AddDays(-30);
+        var events = reportCards
+            .SelectMany(card => card.RecentStampEvents.Select(item => new BusinessDashboardStampEventDto(
+                card.Id,
+                card.Client.UserName,
+                item.CreatedAt,
+                item.Source,
+                item.PreviousCheckQTY,
+                item.NewCheckQTY,
+                item.GoogleWalletAttempted,
+                item.GoogleWalletSucceeded,
+                item.AppleWalletAttempted,
+                item.AppleWalletSucceeded,
+                item.ErrorSummary)))
+            .ToArray();
+        var periods = events
+            .Where(item => item.CreatedAt >= now.AddMonths(-6))
+            .GroupBy(item => item.CreatedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture))
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => new BusinessReportPeriodDto(group.Key, group.Count()))
+            .ToArray();
+        var recentClients = reportCards
+            .GroupBy(card => card.Client.Id)
+            .Select(group =>
+            {
+                var first = group
+                    .OrderByDescending(card => card.LastStampedAt)
+                    .First();
+                return new BusinessReportClientDto(
+                    first.Client.Id,
+                    first.Client.UserName,
+                    first.Client.Email,
+                    group.Count(),
+                    group.Max(card => card.LastStampedAt));
+            })
+            .OrderByDescending(client => client.LastActivityAt)
+            .ThenBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
+            .Take(12)
+            .ToArray();
+        var walletIssues = events
+            .Where(HasWalletIssue)
+            .OrderByDescending(item => item.CreatedAt)
+            .Take(10)
+            .ToArray();
+
+        return new BusinessReportsDto(
+            ToDto(business),
+            reportCards.Count,
+            reportCards.Count(card => card.LastStampedAt >= since30Days),
+            reportCards.Select(card => card.Client.Id).Distinct().Count(),
+            reportCards.Sum(card => card.CurrentStamps),
+            reportCards.Sum(card => card.LifetimeStamps),
+            events.Count(item => item.CreatedAt >= since30Days),
+            reportCards.Count(card => card.GoogleIssued),
+            reportCards.Count(card => !card.GoogleIssued),
+            reportCards.Count(card => card.AppleTracked),
+            reportCards.Count(card => !card.AppleTracked),
+            reportCards.Sum(card => card.AppleRegisteredDeviceCount),
+            walletIssues.Length,
+            periods,
+            recentClients,
+            walletIssues);
     }
 
     public async Task<BusinessCardDto?> GetBusinessCardDetailAsync(

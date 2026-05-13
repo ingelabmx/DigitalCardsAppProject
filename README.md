@@ -343,6 +343,19 @@ como fallback. Ya no hay allowlist operativo de clientes: el admin habilita el
 negocio y el negocio habilitado asocia al cliente desde `/Business/Enroll` u
 opera la tarjeta desde `/Business/Cards`.
 
+## Reportes de negocio
+
+`/Business/Reports` muestra un resumen read-only del negocio autenticado:
+
+- tarjetas y clientes recientes;
+- sellos actuales, historicos y eventos por periodo;
+- Wallets Google/Apple emitidas o pendientes;
+- alertas Wallet recientes.
+
+El `BusinessID` se toma de la cookie del negocio. La pantalla no acepta
+`businessId` por query string y no muestra tokens, push tokens, passwords,
+hashes ni connection strings.
+
 ## Soporte admin
 
 `/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:
