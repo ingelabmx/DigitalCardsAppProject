@@ -32,10 +32,13 @@ public sealed class AdminAppService
     private readonly IBusinessRepository _businesses;
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
+    private readonly IAppleWalletPassRepository _appleWalletPasses;
+    private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
     private readonly IPilotBusinessRepository _pilotBusinesses;
     private readonly IPilotClientRepository _pilotClients;
+    private readonly IStampLedgerRepository _stampLedger;
 
     public AdminAppService(
         IAdminUserRepository adminUsers,
@@ -44,6 +47,9 @@ public sealed class AdminAppService
         IBusinessBrandingRepository businessBranding,
         IBusinessCredentialRepository businessCredentials,
         IClientRepository clients,
+        ILoyaltyCardRepository loyaltyCards,
+        IAppleWalletPassRepository appleWalletPasses,
+        IStampLedgerRepository stampLedger,
         IPilotBusinessRepository pilotBusinesses,
         IPilotClientRepository pilotClients,
         IClock clock,
@@ -56,6 +62,9 @@ public sealed class AdminAppService
         _businessBranding = businessBranding;
         _businessCredentials = businessCredentials;
         _clients = clients;
+        _loyaltyCards = loyaltyCards;
+        _appleWalletPasses = appleWalletPasses;
+        _stampLedger = stampLedger;
         _pilotBusinesses = pilotBusinesses;
         _pilotClients = pilotClients;
         _clock = clock;
@@ -556,11 +565,166 @@ public sealed class AdminAppService
         return ToPilotClientDto(client, access);
     }
 
+    public async Task<AdminSupportResult> SearchSupportAsync(
+        AdminSupportQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = NormalizeSupportQuery(query.Query);
+        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            return new AdminSupportResult(string.Empty, [], [], []);
+        }
+
+        var cards = new Dictionary<Guid, LoyaltyCard>();
+
+        var exactCard = await FindSupportCardByQueryAsync(normalizedQuery, cancellationToken);
+        if (exactCard is not null)
+        {
+            cards[exactCard.Id] = exactCard;
+        }
+
+        var clients = (await _clients.SearchAsync(normalizedQuery, cancellationToken))
+            .Take(10)
+            .ToArray();
+        foreach (var client in clients)
+        {
+            var clientCards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
+            foreach (var card in clientCards)
+            {
+                cards.TryAdd(card.Id, card);
+            }
+        }
+
+        var businesses = await _businesses.ListAsync(cancellationToken);
+        var pilotBusinesses = await _pilotBusinesses.ListAsync(cancellationToken);
+        var pilotByBusinessId = pilotBusinesses.ToDictionary(record => record.BusinessId);
+        var matchingBusinesses = businesses
+            .Where(business => MatchesQuery(business, normalizedQuery))
+            .OrderBy(business => business.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .ToArray();
+
+        foreach (var business in matchingBusinesses)
+        {
+            var businessCards = await _loyaltyCards.SearchByBusinessAsync(
+                business.Id,
+                query: string.Empty,
+                limit: 10,
+                cancellationToken);
+            foreach (var card in businessCards)
+            {
+                cards.TryAdd(card.Id, card);
+            }
+        }
+
+        var clientDtos = new List<AdminSupportClientDto>(clients.Length);
+        foreach (var client in clients)
+        {
+            var clientCards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
+            clientDtos.Add(ToSupportClientDto(client, clientCards.Count));
+        }
+
+        var businessDtos = new List<AdminSupportBusinessDto>(matchingBusinesses.Length);
+        foreach (var business in matchingBusinesses)
+        {
+            pilotByBusinessId.TryGetValue(business.Id, out var pilot);
+            var recentCards = await _loyaltyCards.SearchByBusinessAsync(
+                business.Id,
+                query: string.Empty,
+                limit: 25,
+                cancellationToken);
+            businessDtos.Add(ToSupportBusinessDto(business, recentCards.Count, pilot));
+        }
+
+        var cardDtos = new List<AdminSupportCardDto>();
+        foreach (var card in cards.Values
+            .OrderByDescending(card => card.LastStampedAt)
+            .ThenBy(card => card.Id)
+            .Take(25))
+        {
+            var cardDto = await ToSupportCardDtoAsync(card, cancellationToken);
+            if (cardDto is not null)
+            {
+                cardDtos.Add(cardDto);
+            }
+        }
+
+        return new AdminSupportResult(
+            normalizedQuery,
+            clientDtos,
+            businessDtos,
+            cardDtos);
+    }
+
     private static bool MatchesQuery(Business business, string query)
     {
         return string.IsNullOrWhiteSpace(query) ||
             business.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             business.Email.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<LoyaltyCard?> FindSupportCardByQueryAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(query, out var cardId))
+        {
+            return await _loyaltyCards.FindByIdAsync(cardId, cancellationToken);
+        }
+
+        return await _loyaltyCards.FindByEnrollmentTokenAsync(query, cancellationToken);
+    }
+
+    private async Task<AdminSupportCardDto?> ToSupportCardDtoAsync(
+        LoyaltyCard card,
+        CancellationToken cancellationToken)
+    {
+        var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+        var business = await _businesses.FindByIdAsync(card.BusinessId, cancellationToken);
+        if (client is null || business is null)
+        {
+            return null;
+        }
+
+        var pilot = await _pilotBusinesses.FindByBusinessIdAsync(business.Id, cancellationToken);
+        var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
+        var appleDeviceCount = 0;
+        if (applePass is not null)
+        {
+            var devices = await _appleWalletPasses.ListDevicesForPassAsync(
+                applePass.PassTypeIdentifier,
+                applePass.SerialNumber,
+                cancellationToken);
+            appleDeviceCount = devices.Count;
+        }
+
+        var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 8, cancellationToken);
+        var issueCount = recentEvents.Count(HasWalletIssue);
+
+        return new AdminSupportCardDto(
+            card.Id,
+            ToSupportClientDto(client, CardCount: 0),
+            ToSupportBusinessDto(business, RecentCardCount: 0, pilot),
+            card.CurrentStamps,
+            card.LifetimeStamps,
+            card.CreatedAt,
+            card.LastStampedAt,
+            !string.IsNullOrWhiteSpace(card.GoogleObjectId),
+            Suffix(card.GoogleObjectId, 8),
+            applePass is not null,
+            appleDeviceCount,
+            applePass?.UpdatedAt,
+            applePass?.UpdateTag,
+            Suffix(applePass?.SerialNumber, 8),
+            issueCount,
+            recentEvents.Select(ToStampLedgerEventDto).ToArray());
+    }
+
+    private static bool HasWalletIssue(StampLedgerRecord item)
+    {
+        return !string.IsNullOrWhiteSpace(item.ErrorSummary) ||
+            (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
+            (item.AppleWalletAttempted && !item.AppleWalletSucceeded);
     }
 
     private async Task<PilotClientAccess> UpsertPilotClientAsync(
@@ -968,5 +1132,69 @@ public sealed class AdminAppService
             access?.IsEnabled ?? false,
             access?.Notes,
             access?.UpdatedAt);
+    }
+
+    private static AdminSupportClientDto ToSupportClientDto(Client client, int CardCount)
+    {
+        return new AdminSupportClientDto(
+            client.Id,
+            client.UserName,
+            client.FullName,
+            client.Email,
+            CardCount);
+    }
+
+    private static AdminSupportBusinessDto ToSupportBusinessDto(
+        Business business,
+        int RecentCardCount,
+        PilotBusinessAccess? pilot)
+    {
+        return new AdminSupportBusinessDto(
+            business.Id,
+            business.Name,
+            business.Email,
+            RecentCardCount,
+            pilot?.IsEnabled ?? false);
+    }
+
+    private static StampLedgerEventDto ToStampLedgerEventDto(StampLedgerRecord record)
+    {
+        return new StampLedgerEventDto(
+            record.CreatedAt,
+            record.Source,
+            record.PreviousCheckQTY,
+            record.NewCheckQTY,
+            record.PreviousHistoricCheckQTY,
+            record.NewHistoricCheckQTY,
+            record.ObservedLastCheck,
+            record.GoogleWalletAttempted,
+            record.GoogleWalletSucceeded,
+            record.AppleWalletAttempted,
+            record.AppleWalletSucceeded,
+            record.ErrorSummary);
+    }
+
+    private static string NormalizeSupportQuery(string query)
+    {
+        var normalized = query.Trim();
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
+        {
+            normalized = uri.Segments.LastOrDefault()?.Trim('/') ?? normalized;
+        }
+
+        return normalized.EndsWith(".pkpass", StringComparison.OrdinalIgnoreCase)
+            ? normalized[..^".pkpass".Length]
+            : normalized;
+    }
+
+    private static string? Suffix(string? value, int length)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        return normalized.Length <= length ? normalized : normalized[^length..];
     }
 }

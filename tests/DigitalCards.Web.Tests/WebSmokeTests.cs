@@ -215,7 +215,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
 
-        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin", "/Admin/Clients" })
+        foreach (var path in new[] { "/Admin/Dashboard", "/Admin/Businesses", "/Admin/CreateBusiness", "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111", "/Admin/AdminUsers", "/Admin/CreateAdmin", "/Admin/Clients", "/Admin/Support" })
         {
             var response = await client.GetAsync(path);
 
@@ -369,6 +369,47 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
         Assert.Contains("Piloto deshabilitado", disableHtml);
+    }
+
+    [Fact]
+    public async Task AdminSupport_SearchesCardsWalletStateAndLedgerWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:LegacyWalletSync:Enabled"] = "true"
+        });
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("su");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
+        }
+
+        await LoginAdminAsync(http);
+        var html = await http.GetStringAsync($"/Admin/Support?Query={userName}");
+
+        Assert.Contains("admin-support-results", html);
+        Assert.Contains("LegacyWalletSync:", html);
+        Assert.Contains("Activo", html);
+        Assert.Contains(userName, html);
+        Assert.Contains("Demo Coffee", html);
+        Assert.Contains("Emitida", html);
+        Assert.Contains("ModernBusiness", html);
+        Assert.Contains("Sellos:", html);
+        Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push-token", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("auth-token", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

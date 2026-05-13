@@ -134,3 +134,43 @@ public sealed record SetPilotClientCommand(
     Guid AdminUserId,
     bool IsEnabled,
     string? Notes);
+
+public sealed record AdminSupportQuery(string Query);
+
+public sealed record AdminSupportResult(
+    string Query,
+    IReadOnlyList<AdminSupportClientDto> Clients,
+    IReadOnlyList<AdminSupportBusinessDto> Businesses,
+    IReadOnlyList<AdminSupportCardDto> Cards);
+
+public sealed record AdminSupportClientDto(
+    Guid ClientId,
+    string UserName,
+    string ClientName,
+    string ClientEmail,
+    int CardCount);
+
+public sealed record AdminSupportBusinessDto(
+    Guid BusinessId,
+    string BusinessName,
+    string BusinessEmail,
+    int RecentCardCount,
+    bool IsPilotEnabled);
+
+public sealed record AdminSupportCardDto(
+    Guid CardId,
+    AdminSupportClientDto Client,
+    AdminSupportBusinessDto Business,
+    int CurrentStamps,
+    int LifetimeStamps,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset LastStampedAt,
+    bool GoogleIssued,
+    string? GoogleObjectSuffix,
+    bool AppleTracked,
+    int AppleRegisteredDeviceCount,
+    DateTimeOffset? AppleUpdatedAt,
+    string? AppleUpdateTag,
+    string? AppleSerialSuffix,
+    int WalletIssueCount,
+    IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
