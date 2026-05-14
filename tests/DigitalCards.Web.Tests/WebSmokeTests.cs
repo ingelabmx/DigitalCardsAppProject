@@ -31,10 +31,15 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var html = await client.GetStringAsync("/");
 
-        Assert.Contains("Puntelio DigitalCards", html);
+        Assert.Contains("Puntelio", html);
         Assert.Contains("Tarjetas de lealtad digitales", html);
-        Assert.Contains("Registro cliente", html);
         Assert.Contains("home-login-gateway", html);
+        Assert.DoesNotContain("Puntelio DigitalCards", html);
+        Assert.DoesNotContain("Registro cliente", html);
+        Assert.DoesNotContain("home-admin-login-link", html);
+        Assert.DoesNotContain("/Admin/Login", html);
+        Assert.DoesNotContain("home-outbox-link", html);
+        Assert.DoesNotContain("Outbox fake", html);
         Assert.DoesNotContain("data-testid=\"legacy-shell\"", html);
     }
 
@@ -166,9 +171,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
+    public async Task DevOutboxRoute_IsRemovedAndLinksAreHidden()
     {
-        using var fake = WithFakeIntegrations(environmentName: "Production");
+        using var fake = WithFakeIntegrations(environmentName: "Development");
         var client = fake.Factory.CreateClient();
 
         var response = await client.GetAsync("/Dev/Outbox");
@@ -180,31 +185,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.DoesNotContain("home-outbox-link", homeHtml);
         Assert.DoesNotContain("dashboard-outbox-link", dashboardHtml);
-    }
-
-    [Fact]
-    public async Task DevOutbox_InProductionWithFlag_RequiresAdminCookie()
-    {
-        using var fake = WithFakeIntegrations(
-            new Dictionary<string, string?>
-            {
-                ["DigitalCards:Diagnostics:EnableDevOutbox"] = "true"
-            },
-            environmentName: "Production");
-        var anonymous = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
-        var admin = fake.Factory.CreateClient();
-
-        var anonymousResponse = await anonymous.GetAsync("/Dev/Outbox");
-
-        await LoginAdminAsync(admin);
-        var adminResponse = await admin.GetAsync("/Dev/Outbox");
-
-        Assert.Equal(HttpStatusCode.Redirect, anonymousResponse.StatusCode);
-        Assert.Contains("/Admin/Login", anonymousResponse.Headers.Location?.OriginalString);
-        adminResponse.EnsureSuccessStatusCode();
+        Assert.DoesNotContain("Outbox fake", homeHtml);
+        Assert.DoesNotContain("Ver outbox", dashboardHtml);
     }
 
     [Fact]

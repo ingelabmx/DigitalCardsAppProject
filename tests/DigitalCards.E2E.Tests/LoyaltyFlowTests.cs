@@ -158,8 +158,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("enroll-submit").ClickAsync();
         Assert.Contains("Correo generado", await page.GetByTestId("enroll-success").InnerTextAsync());
 
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
-        await page.GetByTestId("email-link").First.ClickAsync();
+        await page.GetByTestId("inline-enrollment-link").ClickAsync();
         Assert.Contains(publicBrandName, await page.GetByTestId("wallet-select").InnerTextAsync());
     }
 
@@ -202,8 +201,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("enroll-submit").ClickAsync();
         Assert.Contains("Correo generado", await page.GetByTestId("enroll-success").InnerTextAsync());
 
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
-        await page.GetByTestId("email-link").First.ClickAsync();
+        await page.GetByTestId("inline-enrollment-link").ClickAsync();
         Assert.Contains(businessName, await page.GetByTestId("wallet-select").InnerTextAsync());
         var walletLandingUrl = page.Url;
 
@@ -289,9 +287,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var userName = NewLegacySafeUserName("p");
 
         await EnableDemoBusinessPilotAsync(page);
-        await CreateEnrollmentAsync(page, userName);
-        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Dev/Outbox").ToString());
-        var enrollmentUrl = await page.GetByTestId("email-link").First.GetAttributeAsync("href");
+        var enrollmentUrl = await CreateEnrollmentAsync(page, userName);
 
         foreach (var viewport in new[] { new ViewportSize { Width = 390, Height = 844 }, new ViewportSize { Width = 412, Height = 915 } })
         {
@@ -308,7 +304,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         }
     }
 
-    private async Task CreateEnrollmentAsync(IPage page, string userName)
+    private async Task<string> CreateEnrollmentAsync(IPage page, string userName)
     {
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Register").ToString());
         await page.GetByTestId("register-username").FillAsync(userName);
@@ -326,6 +322,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);
         await page.GetByTestId("enroll-submit").ClickAsync();
+        return await page.GetByTestId("inline-enrollment-link").GetAttributeAsync("href")
+            ?? throw new InvalidOperationException("Enrollment link was not rendered.");
     }
 
     private async Task EnableDemoBusinessPilotAsync(IPage page)
