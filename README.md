@@ -661,6 +661,13 @@ La migracion productiva se hace por negocio usando el estado de activacion en
 - `ModernPrimary`: moderno es el flujo diario, Web Forms queda como fallback.
 - `LegacyRetired`: estado futuro para negocio sin pantallas legacy.
 
+Web Forms ya lee `ModernPilotBusiness.ActivationStatus` para el flujo de
+negocio. Si un negocio esta en `ModernPrimary`, Web Forms muestra aviso para
+usar `app.puntelio.com` y queda como fallback. Si esta en `LegacyRetired`, Web
+Forms bloquea el login/entrada legacy del negocio y muestra mensaje para usar
+la app moderna. Si la tabla moderna no esta disponible, Web Forms conserva el
+comportamiento legacy.
+
 Checklist operativo:
 
 ```text

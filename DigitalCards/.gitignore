@@ -1,0 +1,17 @@
+[Bb]in/
+[Oo]bj/
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+GW-K/*.json
+**/*service-account*.json
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+*.pkpass
