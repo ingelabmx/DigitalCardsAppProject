@@ -824,6 +824,19 @@ de `LegacyWalletSync`: ultimo run, candidatos, sincronizados, saltados, fallos y
 error seguro. Este estado se pierde al reiniciar; para auditoria persistente por
 tarjeta usa `StampLedger`.
 
+Antes de guardar evidencia persistente de smoke contra HostGator, aplica
+manualmente:
+
+```text
+docs/migration-context/73-cutover-smoke-evidence-hostgator.sql
+```
+
+Despues de ejecutar el smoke real, `/Admin/Cutover` permite registrar evidencia
+por negocio: health, readiness, correo, Apple Wallet, Google Wallet, sello
+moderno y revision de soporte. La evidencia queda fechada y ligada al admin que
+la capturo; no guarda tokens, JWTs, push tokens, passwords ni connection
+strings.
+
 Antes de mover un negocio a `ModernPrimary`, usa el runbook:
 
 ```text

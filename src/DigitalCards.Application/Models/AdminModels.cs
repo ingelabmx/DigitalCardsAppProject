@@ -214,6 +214,41 @@ public sealed record AdminWalletBrandingRefreshResult(
     public bool Succeeded => Refresh is not null && ErrorMessage is null && Refresh.ErrorMessage is null;
 }
 
+public sealed record CutoverSmokeEvidenceDto(
+    long Id,
+    Guid BusinessId,
+    Guid AdminUserId,
+    string AdminUserName,
+    bool HealthOk,
+    bool ReadyOk,
+    bool EmailOk,
+    bool AppleWalletOk,
+    bool GoogleWalletOk,
+    bool ModernStampOk,
+    bool SupportReviewed,
+    bool IsComplete,
+    string? Notes,
+    DateTimeOffset CreatedAt);
+
+public sealed record RecordCutoverSmokeEvidenceCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    bool HealthOk,
+    bool ReadyOk,
+    bool EmailOk,
+    bool AppleWalletOk,
+    bool GoogleWalletOk,
+    bool ModernStampOk,
+    bool SupportReviewed,
+    string? Notes);
+
+public sealed record RecordCutoverSmokeEvidenceResult(
+    CutoverSmokeEvidenceDto? Evidence,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Evidence is not null && ErrorMessage is null;
+}
+
 public sealed record AdminReportsDto(
     int BusinessCount,
     int CardCount,

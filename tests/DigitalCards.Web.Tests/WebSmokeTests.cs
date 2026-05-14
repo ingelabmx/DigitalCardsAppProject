@@ -223,6 +223,46 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminCutover_CanRecordSmokeEvidenceWithoutSecrets()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        await LoginAdminAsync(client);
+        var html = await client.GetStringAsync("/Admin/Cutover?Query=demo");
+        var token = ExtractAntiforgeryToken(html);
+        using var scope = fake.Factory.Services.CreateScope();
+        var businesses = scope.ServiceProvider.GetRequiredService<IBusinessRepository>();
+        var business = await businesses.FindByEmailAsync("demo@digitalcards.test");
+
+        var response = await client.PostAsync(
+            "/Admin/Cutover?handler=Smoke",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Query"] = "demo",
+                ["SmokeInput.BusinessId"] = business!.Id.ToString(),
+                ["SmokeInput.HealthOk"] = "true",
+                ["SmokeInput.ReadyOk"] = "true",
+                ["SmokeInput.EmailOk"] = "true",
+                ["SmokeInput.AppleWalletOk"] = "true",
+                ["SmokeInput.GoogleWalletOk"] = "true",
+                ["SmokeInput.ModernStampOk"] = "true",
+                ["SmokeInput.SupportReviewed"] = "true",
+                ["SmokeInput.Notes"] = "validado con iPhone controlado",
+                ["__RequestVerificationToken"] = token
+            }));
+        var updatedHtml = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("admin-cutover-smoke-evidence", updatedHtml);
+        Assert.Contains("Smoke de cutover registrado como completo", updatedHtml);
+        Assert.Contains("validado con iPhone controlado", updatedHtml);
+        Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push token", updatedHtml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task PublicBusinessEnrollment_UsesOpaqueBusinessTokenAndSendsWalletEmail()
     {
         using var fake = WithFakeIntegrations();

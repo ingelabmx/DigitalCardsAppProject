@@ -39,6 +39,9 @@ public sealed class CutoverModel : PageModel
     [BindProperty]
     public CutoverStatusInput Input { get; set; } = new();
 
+    [BindProperty]
+    public CutoverSmokeInput SmokeInput { get; set; } = new();
+
     public IReadOnlyList<CutoverBusinessViewModel> Businesses { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
@@ -96,6 +99,57 @@ public sealed class CutoverModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostSmokeAsync(CancellationToken cancellationToken)
+    {
+        if (SmokeInput.BusinessId == Guid.Empty)
+        {
+            ModelState.AddModelError(string.Empty, "El negocio no existe.");
+        }
+
+        if (SmokeInput.Notes?.Length > 500)
+        {
+            ModelState.AddModelError(string.Empty, "Las notas no pueden exceder 500 caracteres.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
+        var result = await _adminApp.RecordCutoverSmokeEvidenceAsync(
+            new RecordCutoverSmokeEvidenceCommand(
+                SmokeInput.BusinessId,
+                AdminAuth.GetAdminUserId(User),
+                SmokeInput.HealthOk,
+                SmokeInput.ReadyOk,
+                SmokeInput.EmailOk,
+                SmokeInput.AppleWalletOk,
+                SmokeInput.GoogleWalletOk,
+                SmokeInput.ModernStampOk,
+                SmokeInput.SupportReviewed,
+                SmokeInput.Notes),
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo guardar la evidencia.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} recorded cutover smoke evidence for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            SmokeInput.BusinessId);
+
+        StatusMessage = result.Evidence!.IsComplete
+            ? "Smoke de cutover registrado como completo."
+            : "Smoke de cutover registrado con pendientes.";
+        await LoadAsync(cancellationToken);
+        return Page();
+    }
+
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         var businesses = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
@@ -112,7 +166,15 @@ public sealed class CutoverModel : PageModel
 
             reportsByBusinessId.TryGetValue(business.BusinessId, out var report);
             var profile = await _adminApp.GetBusinessProfileAsync(business.BusinessId, cancellationToken);
-            views.Add(CutoverBusinessViewModel.Create(business, report, profile?.Branding));
+            var smokeEvidence = await _adminApp.ListCutoverSmokeEvidenceAsync(
+                business.BusinessId,
+                limit: 1,
+                cancellationToken);
+            views.Add(CutoverBusinessViewModel.Create(
+                business,
+                report,
+                profile?.Branding,
+                smokeEvidence.FirstOrDefault()));
         }
 
         Businesses = views
@@ -149,18 +211,41 @@ public sealed class CutoverStatusInput
     public string? Notes { get; set; }
 }
 
+public sealed class CutoverSmokeInput
+{
+    public Guid BusinessId { get; set; }
+
+    public bool HealthOk { get; set; }
+
+    public bool ReadyOk { get; set; }
+
+    public bool EmailOk { get; set; }
+
+    public bool AppleWalletOk { get; set; }
+
+    public bool GoogleWalletOk { get; set; }
+
+    public bool ModernStampOk { get; set; }
+
+    public bool SupportReviewed { get; set; }
+
+    public string? Notes { get; set; }
+}
+
 public sealed record CutoverBusinessViewModel(
     PilotBusinessDto Business,
     AdminReportBusinessDto? Report,
     bool HasBranding,
     int ReadinessScore,
     IReadOnlyList<string> ReadySignals,
-    IReadOnlyList<string> MissingSignals)
+    IReadOnlyList<string> MissingSignals,
+    CutoverSmokeEvidenceDto? LatestSmoke)
 {
     public static CutoverBusinessViewModel Create(
         PilotBusinessDto business,
         AdminReportBusinessDto? report,
-        BusinessBrandingDto? branding)
+        BusinessBrandingDto? branding,
+        CutoverSmokeEvidenceDto? latestSmoke)
     {
         var ready = new List<string>();
         var missing = new List<string>();
@@ -178,7 +263,8 @@ public sealed record CutoverBusinessViewModel(
             hasBranding,
             ready.Count,
             ready,
-            missing);
+            missing,
+            latestSmoke);
     }
 
     private static void AddSignal(

@@ -39,6 +39,7 @@ public sealed class AdminAppService
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
     private readonly IAuditEventRepository _auditEvents;
+    private readonly ICutoverSmokeRepository _cutoverSmoke;
     private readonly IPilotBusinessRepository _pilotBusinesses;
     private readonly IPilotClientRepository _pilotClients;
     private readonly IStampLedgerRepository _stampLedger;
@@ -58,6 +59,7 @@ public sealed class AdminAppService
         IStampLedgerRepository stampLedger,
         WalletBrandingRefreshService walletBrandingRefresh,
         IAuditEventRepository auditEvents,
+        ICutoverSmokeRepository cutoverSmoke,
         IPilotBusinessRepository pilotBusinesses,
         IPilotClientRepository pilotClients,
         IClock clock,
@@ -77,6 +79,7 @@ public sealed class AdminAppService
         _stampLedger = stampLedger;
         _walletBrandingRefresh = walletBrandingRefresh;
         _auditEvents = auditEvents;
+        _cutoverSmoke = cutoverSmoke;
         _pilotBusinesses = pilotBusinesses;
         _pilotClients = pilotClients;
         _clock = clock;
@@ -617,6 +620,79 @@ public sealed class AdminAppService
         }
 
         return ToPilotBusinessDto(business, access);
+    }
+
+    public async Task<IReadOnlyList<CutoverSmokeEvidenceDto>> ListCutoverSmokeEvidenceAsync(
+        Guid businessId,
+        int limit = 3,
+        CancellationToken cancellationToken = default)
+    {
+        var records = await _cutoverSmoke.ListRecentByBusinessIdAsync(
+            businessId,
+            limit,
+            cancellationToken);
+
+        var result = new List<CutoverSmokeEvidenceDto>(records.Count);
+        foreach (var record in records)
+        {
+            result.Add(await ToCutoverSmokeEvidenceDtoAsync(record, cancellationToken));
+        }
+
+        return result;
+    }
+
+    public async Task<RecordCutoverSmokeEvidenceResult> RecordCutoverSmokeEvidenceAsync(
+        RecordCutoverSmokeEvidenceCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return FailedCutoverSmoke("La sesion de admin no es valida.");
+        }
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return FailedCutoverSmoke("El negocio no existe.");
+        }
+
+        var notes = command.Notes?.Trim();
+        if (notes?.Length > NotesMaxLength)
+        {
+            return FailedCutoverSmoke($"Las notas no pueden exceder {NotesMaxLength} caracteres.");
+        }
+
+        var evidence = new CutoverSmokeEvidence(
+            0,
+            command.BusinessId,
+            command.AdminUserId,
+            command.HealthOk,
+            command.ReadyOk,
+            command.EmailOk,
+            command.AppleWalletOk,
+            command.GoogleWalletOk,
+            command.ModernStampOk,
+            command.SupportReviewed,
+            string.IsNullOrWhiteSpace(notes) ? null : notes,
+            _clock.UtcNow);
+
+        await _cutoverSmoke.AddAsync(evidence, cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.CutoverSmokeEvidenceRecorded,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Cutover smoke evidence recorded for {business.Name}. Complete: {evidence.IsComplete}.",
+            cancellationToken: cancellationToken);
+
+        var latest = (await _cutoverSmoke.ListRecentByBusinessIdAsync(
+            command.BusinessId,
+            limit: 1,
+            cancellationToken)).FirstOrDefault() ?? evidence;
+
+        return new RecordCutoverSmokeEvidenceResult(
+            await ToCutoverSmokeEvidenceDtoAsync(latest, cancellationToken),
+            ErrorMessage: null);
     }
 
     public async Task<IReadOnlyList<PilotClientDto>> ListPilotClientsAsync(
@@ -1174,6 +1250,11 @@ public sealed class AdminAppService
         return new AdminWalletBrandingRefreshResult(null, errorMessage);
     }
 
+    private static RecordCutoverSmokeEvidenceResult FailedCutoverSmoke(string errorMessage)
+    {
+        return new RecordCutoverSmokeEvidenceResult(null, errorMessage);
+    }
+
     private static string SafeExceptionSummary(Exception exception)
     {
         return exception.GetType().Name;
@@ -1251,6 +1332,29 @@ public sealed class AdminAppService
             targetAdmin?.UserName ?? Suffix(auditEvent.TargetAdminUserId),
             auditEvent.Summary,
             auditEvent.CreatedAt);
+    }
+
+    private async Task<CutoverSmokeEvidenceDto> ToCutoverSmokeEvidenceDtoAsync(
+        CutoverSmokeEvidence evidence,
+        CancellationToken cancellationToken)
+    {
+        var admin = await _adminUsers.FindByIdAsync(evidence.AdminUserId, cancellationToken);
+
+        return new CutoverSmokeEvidenceDto(
+            evidence.Id,
+            evidence.BusinessId,
+            evidence.AdminUserId,
+            admin?.UserName ?? Suffix(evidence.AdminUserId),
+            evidence.HealthOk,
+            evidence.ReadyOk,
+            evidence.EmailOk,
+            evidence.AppleWalletOk,
+            evidence.GoogleWalletOk,
+            evidence.ModernStampOk,
+            evidence.SupportReviewed,
+            evidence.IsComplete,
+            evidence.Notes,
+            evidence.CreatedAt);
     }
 
     private static string SafeAuditSummary(string value)

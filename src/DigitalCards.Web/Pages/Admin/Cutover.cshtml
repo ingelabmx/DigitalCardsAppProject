@@ -126,6 +126,35 @@
                         </div>
                     </div>
 
+                    <div class="cutover-smoke-evidence" data-testid="admin-cutover-smoke-evidence">
+                        <h3>Ultimo smoke real</h3>
+                        @if (item.LatestSmoke is null)
+                        {
+                            <p class="text-muted">Sin evidencia registrada para este negocio.</p>
+                        }
+                        else
+                        {
+                            var smoke = item.LatestSmoke;
+                            <p>
+                                <strong>@(smoke.IsComplete ? "Completo" : "Con pendientes")</strong>
+                                registrado por @smoke.AdminUserName el @smoke.CreatedAt.ToLocalTime().ToString("g")
+                            </p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge @(smoke.HealthOk ? "text-bg-success" : "text-bg-warning")">Health</span>
+                                <span class="badge @(smoke.ReadyOk ? "text-bg-success" : "text-bg-warning")">Ready</span>
+                                <span class="badge @(smoke.EmailOk ? "text-bg-success" : "text-bg-warning")">Correo</span>
+                                <span class="badge @(smoke.AppleWalletOk ? "text-bg-success" : "text-bg-warning")">Apple</span>
+                                <span class="badge @(smoke.GoogleWalletOk ? "text-bg-success" : "text-bg-warning")">Google</span>
+                                <span class="badge @(smoke.ModernStampOk ? "text-bg-success" : "text-bg-warning")">Sello</span>
+                                <span class="badge @(smoke.SupportReviewed ? "text-bg-success" : "text-bg-warning")">Soporte</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(smoke.Notes))
+                            {
+                                <p class="text-muted">@smoke.Notes</p>
+                            }
+                        }
+                    </div>
+
                     <form method="post" asp-page-handler="Status" class="cutover-status-form" data-testid="admin-cutover-status-form">
                         <input type="hidden" asp-for="Query" />
                         <input type="hidden" asp-for="ActivationStatusFilter" />
@@ -160,6 +189,51 @@
                                 Diagnostico
                             </a>
                         </div>
+                    </form>
+
+                    <form method="post" asp-page-handler="Smoke" class="cutover-smoke-form" data-testid="admin-cutover-smoke-form">
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="ActivationStatusFilter" />
+                        <input type="hidden" name="SmokeInput.BusinessId" value="@business.BusinessId" />
+                        <h3>Registrar smoke de cutover</h3>
+                        <div class="cutover-smoke-checks">
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.HealthOk" value="true" checked="@(item.LatestSmoke?.HealthOk == true)" />
+                                <span class="form-check-label">/health OK</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.ReadyOk" value="true" checked="@(item.LatestSmoke?.ReadyOk == true)" />
+                                <span class="form-check-label">/health/ready OK</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.EmailOk" value="true" checked="@(item.LatestSmoke?.EmailOk == true)" />
+                                <span class="form-check-label">Correo real validado</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.AppleWalletOk" value="true" checked="@(item.LatestSmoke?.AppleWalletOk == true)" />
+                                <span class="form-check-label">Apple Wallet actualizado</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.GoogleWalletOk" value="true" checked="@(item.LatestSmoke?.GoogleWalletOk == true)" />
+                                <span class="form-check-label">Google Wallet actualizado</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.ModernStampOk" value="true" checked="@(item.LatestSmoke?.ModernStampOk == true)" />
+                                <span class="form-check-label">Sello moderno probado</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SmokeInput.SupportReviewed" value="true" checked="@(item.LatestSmoke?.SupportReviewed == true)" />
+                                <span class="form-check-label">Soporte revisado</span>
+                            </label>
+                        </div>
+                        <label class="form-label" for="cutover-smoke-notes-@business.BusinessId">Notas de evidencia</label>
+                        <textarea id="cutover-smoke-notes-@business.BusinessId" name="SmokeInput.Notes" class="form-control" rows="2" data-testid="admin-cutover-smoke-notes"></textarea>
+                        <button class="btn btn-outline-primary mt-2"
+                                type="submit"
+                                data-testid="admin-cutover-smoke-save"
+                                onclick="return confirm('Confirma que esta evidencia no incluye secretos ni datos sensibles.');">
+                            Guardar evidencia
+                        </button>
                     </form>
                 </article>
             }

@@ -99,6 +99,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<MySqlAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<MySqlAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<MySqlAuditEventRepository>(provider.GetRequiredService<IAuditEventRepository>());
+        Assert.IsType<MySqlCutoverSmokeRepository>(provider.GetRequiredService<ICutoverSmokeRepository>());
         Assert.IsType<MySqlBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
         Assert.IsType<MySqlLoyaltyCardRepository>(provider.GetRequiredService<ILoyaltyCardRepository>());
         Assert.IsType<MySqlAppleWalletPassRepository>(provider.GetRequiredService<IAppleWalletPassRepository>());
@@ -126,6 +127,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<InMemoryAuditEventRepository>(provider.GetRequiredService<IAuditEventRepository>());
+        Assert.IsType<InMemoryCutoverSmokeRepository>(provider.GetRequiredService<ICutoverSmokeRepository>());
         Assert.IsType<InMemoryClientConsentRepository>(provider.GetRequiredService<IClientConsentRepository>());
         Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<InMemoryBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
@@ -861,6 +863,51 @@ public sealed class DigitalCardsAppServiceTests
         Assert.NotNull(access);
         Assert.False(access!.IsEnabled);
         Assert.Equal(BusinessActivationStatus.Inactive, access.ActivationStatus);
+    }
+
+    [Fact]
+    public async Task RecordCutoverSmokeEvidenceAsync_StoresLatestEvidenceAndAuditEvent()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var audit = provider.GetRequiredService<IAuditEventRepository>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var business = await businesses.FindByEmailAsync("demo@digitalcards.test");
+
+        var result = await adminApp.RecordCutoverSmokeEvidenceAsync(
+            new RecordCutoverSmokeEvidenceCommand(
+                business!.Id,
+                admin!.Id,
+                HealthOk: true,
+                ReadyOk: true,
+                EmailOk: true,
+                AppleWalletOk: true,
+                GoogleWalletOk: true,
+                ModernStampOk: true,
+                SupportReviewed: true,
+                Notes: "smoke real validado"));
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Evidence!.IsComplete);
+        Assert.Equal("smoke real validado", result.Evidence.Notes);
+        Assert.Equal("DCAdmin", result.Evidence.AdminUserName);
+
+        var latest = await adminApp.ListCutoverSmokeEvidenceAsync(business.Id);
+        Assert.Single(latest);
+        Assert.True(latest[0].IsComplete);
+
+        var auditRecords = await audit.ListRecentAsync(
+            OperationalAuditEventType.CutoverSmokeEvidenceRecorded,
+            search: null,
+            from: null,
+            to: null,
+            limit: 10);
+        Assert.Contains(auditRecords, item =>
+            item.BusinessId == business.Id &&
+            item.Summary.Contains("Complete: True", StringComparison.Ordinal));
     }
 
     [Fact]
