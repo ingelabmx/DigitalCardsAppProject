@@ -38,6 +38,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("Registro cliente", html);
         Assert.DoesNotContain("home-admin-login-link", html);
         Assert.DoesNotContain("/Admin/Login", html);
+        Assert.Contains("navbar-nav ms-auto", html);
         Assert.DoesNotContain("home-outbox-link", html);
         Assert.DoesNotContain("Outbox fake", html);
         Assert.DoesNotContain("Apple Wallet", html);
@@ -362,6 +363,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var adminsHtml = await client.GetStringAsync("/Admin/AdminUsers");
 
         Assert.Contains("admin-action-grid", dashboardHtml);
+        Assert.Contains("admin-clients-link", dashboardHtml);
+        Assert.Contains("limpia cuentas de prueba", dashboardHtml);
         Assert.Contains("legacy-admin-list", businessesHtml);
         Assert.Contains("legacy-admin-row", businessesHtml);
         Assert.Contains("legacy-admin-list", adminsHtml);
@@ -807,6 +810,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         await LoginAdminAsync(client);
         var businessesBefore = await client.GetStringAsync("/Admin/Businesses");
+        Assert.Contains("admin-business-row-actions", businessesBefore);
+        Assert.Contains("admin-manage-business", businessesBefore);
         Assert.Contains("admin-enable-pilot", businessesBefore);
         Assert.DoesNotContain("admin-disable-pilot", businessesBefore);
         var enableToken = await GetAntiforgeryTokenAsync(client, "/Admin/Businesses");
@@ -822,6 +827,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
         Assert.Contains("Negocio activado", enableHtml);
+        Assert.Contains("admin-business-row-actions", enableHtml);
+        Assert.Contains("admin-manage-business", enableHtml);
         Assert.Contains("admin-disable-pilot", enableHtml);
         Assert.DoesNotContain("admin-enable-pilot", enableHtml);
 
@@ -876,6 +883,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-client-delete-form", searchHtml);
         Assert.Contains("admin-client-cleanup-note", searchHtml);
         Assert.Contains("limpiar cuentas de prueba", searchHtml);
+        Assert.Contains("no borra negocios", searchHtml);
         Assert.Contains("Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.", searchHtml);
     }
 
@@ -2818,6 +2826,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("Recompensa", getHtml);
         Assert.DoesNotContain(">Descripcion<", getHtml);
+        Assert.Contains("business-branding-description", getHtml);
+        Assert.Contains("type=\"text\"", getHtml);
+        Assert.DoesNotContain("<textarea", getHtml);
         Assert.DoesNotContain("business-wallet-branding-refresh-limit", getHtml);
         Assert.Contains(">Guardar<", getHtml);
         Assert.Contains("Guardar y actualizar", getHtml);

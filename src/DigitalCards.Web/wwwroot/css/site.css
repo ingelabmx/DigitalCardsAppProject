@@ -1640,6 +1640,11 @@ form.is-submitting input[type="submit"] {
   gap: 0.65rem;
 }
 
+.pilot-business-actions .pilot-business-inline-form {
+  display: inline-flex;
+  gap: 0;
+}
+
 .pilot-business-actions {
   display: flex;
   flex-wrap: wrap;

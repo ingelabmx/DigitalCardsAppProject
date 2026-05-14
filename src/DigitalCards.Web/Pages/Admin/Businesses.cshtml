@@ -69,21 +69,21 @@
                            data-testid="admin-manage-business">
                             Administrar
                         </a>
+                        @if (business.IsEnabled)
+                        {
+                            <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form" data-testid="admin-business-row-actions">
+                                <input type="hidden" name="businessId" value="@business.BusinessId" />
+                                <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-pilot">Desactivar</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-inline-form" data-testid="admin-business-row-actions">
+                                <input type="hidden" name="businessId" value="@business.BusinessId" />
+                                <button class="btn btn-outline-success" type="submit" data-testid="admin-enable-pilot">Activar</button>
+                            </form>
+                        }
                     </div>
-                    @if (business.IsEnabled)
-                    {
-                        <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form">
-                            <input type="hidden" name="businessId" value="@business.BusinessId" />
-                            <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-pilot">Desactivar</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-form">
-                            <input type="hidden" name="businessId" value="@business.BusinessId" />
-                            <button class="btn btn-primary" type="submit" data-testid="admin-enable-pilot">Activar</button>
-                        </form>
-                    }
                 </article>
             }
         </div>
