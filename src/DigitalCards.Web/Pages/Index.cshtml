@@ -4,44 +4,109 @@
 @inject IConfiguration Configuration
 @model IndexModel
 @{
-    ViewData["Title"] = "Migracion ASP.NET Core";
+    ViewData["Title"] = "Inicio";
     var showDevOutboxLink = DevToolAccess.ShouldRenderDevOutboxLink(
         HostEnvironment,
         Configuration,
         User);
 }
 
-<section class="app-surface">
-    <div>
-        <p class="eyebrow">ASP.NET Core paralelo</p>
-        <h1>DigitalCards migration shell</h1>
+<section class="home-gateway" data-testid="home-login-gateway">
+    <div class="home-hero-copy">
+        <p class="eyebrow">Puntelio DigitalCards</p>
+        <h1>Tarjetas de lealtad digitales para clientes, negocios y administradores.</h1>
         <p class="lead">
-            Esqueleto modular con dominio, casos de uso, providers controlados y Razor Pages para cubrir los primeros flujos criticos sin reemplazar Web Forms.
+            Entra a tu panel para consultar tarjetas, operar sellos, administrar negocios o abrir links Wallet con una experiencia moderna y compatible con Apple Wallet y Google Wallet.
         </p>
+        <div class="home-hero-actions">
+            <a class="btn btn-primary btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
+            <a class="btn btn-outline-primary btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
+        </div>
     </div>
 
-    <div class="action-grid" aria-label="Flujos disponibles">
-        <a class="action-card" asp-page="/Register" data-testid="home-register-link">
-            <span>Registro cliente</span>
-            <small>Alta de cliente con el provider configurado.</small>
-        </a>
-        <a class="action-card" asp-page="/Business/Login" data-testid="home-business-login-link">
-            <span>Login negocio</span>
-            <small>Usa demo local o negocio legacy segun configuracion.</small>
-        </a>
-        @if (showDevOutboxLink)
-        {
-            <a class="action-card" asp-page="/Dev/Outbox" data-testid="home-outbox-link">
-                <span>Outbox fake</span>
-                <small>Simula correo de enrolamiento Wallet.</small>
-            </a>
-        }
+    <div class="home-wallet-preview" aria-label="Vista previa de tarjeta digital">
+        <div class="home-wallet-card">
+            <span>Puntelio</span>
+            <strong>Tarjeta digital</strong>
+            <p>Sellos, recompensas y Wallet en un solo lugar.</p>
+            <div class="home-stamp-row" aria-hidden="true">
+                <span class="filled"></span>
+                <span class="filled"></span>
+                <span class="filled"></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <div class="home-wallet-status">
+            <span>Apple Wallet</span>
+            <span>Google Wallet</span>
+        </div>
     </div>
 </section>
 
-<section class="info-band">
-    <h2>Estado de esta fase</h2>
+<section class="gateway-grid" aria-label="Accesos principales">
+    <article class="gateway-card gateway-card-client">
+        <p class="gateway-kicker">Cliente</p>
+        <h2>Mis tarjetas</h2>
+        <p>Consulta tus sellos, revisa tus tarjetas activas y vuelve a abrir tus links Wallet cuando los necesites.</p>
+        @if (Model.ClientSession is not null)
+        {
+            <a class="btn btn-primary" asp-page="/Client/Dashboard" data-testid="home-client-dashboard-link">Continuar como @Model.ClientSession.DisplayName</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-page="/Client/Login" data-testid="home-client-card-login-link">Entrar cliente</a>
+        }
+        <a class="gateway-secondary-link" asp-page="/Register" data-testid="home-register-link">Crear cuenta de cliente</a>
+    </article>
+
+    <article class="gateway-card gateway-card-business">
+        <p class="gateway-kicker">Negocio</p>
+        <h2>Panel operativo</h2>
+        <p>Busca clientes, asocia tarjetas, agrega sellos y confirma updates de Apple Wallet y Google Wallet.</p>
+        @if (Model.BusinessSession is not null)
+        {
+            <a class="btn btn-primary" asp-page="/Business/Dashboard" data-testid="home-business-dashboard-link">Continuar como @Model.BusinessSession.DisplayName</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-page="/Business/Login" data-testid="home-business-card-login-link">Entrar negocio</a>
+        }
+        <a class="gateway-secondary-link" asp-page="/Business/ForgotPassword">Recuperar acceso</a>
+    </article>
+
+    <article class="gateway-card gateway-card-admin">
+        <p class="gateway-kicker">Admin</p>
+        <h2>Administracion</h2>
+        <p>Gestiona negocios, soporte, auditoria, cutover y operacion segura de la plataforma.</p>
+        @if (Model.AdminSession is not null)
+        {
+            <a class="btn btn-primary" asp-page="/Admin/Dashboard" data-testid="home-admin-dashboard-link">Continuar como @Model.AdminSession.DisplayName</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-page="/Admin/Login" data-testid="home-admin-login-link">Entrar admin</a>
+        }
+        <a class="gateway-secondary-link" asp-page="/Privacy">Privacidad</a>
+    </article>
+</section>
+
+<section class="home-info-band">
+    <div>
+        <p class="eyebrow">Operacion real</p>
+        <h2>Un flujo para el mostrador y otro para el cliente.</h2>
+    </div>
     <p>
-        Los fakes siguen siendo el default para desarrollo, CI y Playwright. MySQL HostGator, Google Wallet y SMTP real se activan solo desde configuracion local fuera del repo.
+        El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para elegir Apple Wallet o Google Wallet, y las actualizaciones se mantienen conectadas al estado de su tarjeta.
     </p>
 </section>
+
+@if (showDevOutboxLink)
+{
+    <section class="home-dev-tools">
+        <a class="action-card" asp-page="/Dev/Outbox" data-testid="home-outbox-link">
+            <span>Outbox fake</span>
+            <small>Herramienta de desarrollo disponible solo cuando la configuracion lo permite.</small>
+        </a>
+    </section>
+}

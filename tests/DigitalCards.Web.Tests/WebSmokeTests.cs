@@ -24,15 +24,17 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task HomePage_ReturnsMigrationShell()
+    public async Task HomePage_ReturnsLoginGateway()
     {
         using var fake = WithFakeIntegrations();
         var client = fake.Factory.CreateClient();
 
         var html = await client.GetStringAsync("/");
 
-        Assert.Contains("DigitalCards migration shell", html);
+        Assert.Contains("Puntelio DigitalCards", html);
+        Assert.Contains("Tarjetas de lealtad digitales", html);
         Assert.Contains("Registro cliente", html);
+        Assert.Contains("home-login-gateway", html);
         Assert.DoesNotContain("data-testid=\"legacy-shell\"", html);
     }
 
