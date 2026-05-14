@@ -711,11 +711,77 @@ h1 {
   grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
 }
 
+.business-card-quick-summary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.business-card-quick-summary div {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-left: 4px solid #5d87ff;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.business-card-quick-summary span,
+.business-card-action-strip span {
+  color: #7c8fac;
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.business-card-quick-summary strong {
+  color: #2a3547;
+  display: block;
+  font-size: 1.2rem;
+}
+
 .business-card-list,
 .business-card-detail {
   border: 1px solid #dde3ea;
   border-radius: 8px;
   padding: 1rem;
+}
+
+.business-card-result-row {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.business-card-result-row small {
+  color: #7c8fac;
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.business-card-result-state {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.business-card-result-state span:first-child {
+  color: #2a3547;
+  font-weight: 800;
+}
+
+.business-card-result-state .wallet-status-ok,
+.business-card-result-state .wallet-status-pending {
+  align-items: center;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  padding: 0;
+  width: 26px;
 }
 
 .detail-heading {
@@ -728,6 +794,30 @@ h1 {
 .detail-heading p {
   color: #697586;
   margin-bottom: 0;
+}
+
+.business-card-action-strip {
+  align-items: center;
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 1rem 0;
+  padding: 0.85rem;
+}
+
+.business-card-action-strip strong {
+  color: #2a3547;
+  display: block;
+}
+
+.business-card-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .business-detail-card-face {
@@ -1311,6 +1401,7 @@ h1 {
 @media (max-width: 760px) {
   .app-surface,
   .business-card-grid,
+  .business-card-quick-summary,
   .business-card-toolbar,
   .business-dashboard-grid,
   .business-hero-grid,
@@ -1328,7 +1419,9 @@ h1 {
   .page-heading,
   .search-row,
   .wallet-public-brand,
-  .pilot-business-item {
+  .pilot-business-item,
+  .business-card-action-strip,
+  .business-card-result-row {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -1402,5 +1495,14 @@ h1 {
   .client-identity-panel,
   .business-action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .business-card-action-buttons,
+  .business-card-result-state {
+    justify-content: stretch;
+  }
+
+  .business-card-action-buttons .btn {
+    width: 100%;
   }
 }

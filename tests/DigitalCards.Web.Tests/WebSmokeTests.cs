@@ -2368,6 +2368,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains(userName, html);
         Assert.Contains(enrollment.Card.Id.ToString(), html);
         Assert.Contains("business-qr-scanner", html);
+        Assert.Contains("business-card-quick-summary", html);
+        Assert.Contains("business-card-action-strip", html);
+        Assert.Contains("business-card-result-state", html);
         Assert.Contains("business-detail-card-face", html);
         Assert.Contains("business-wallet-status-row", html);
         Assert.DoesNotContain("othercard1", html);

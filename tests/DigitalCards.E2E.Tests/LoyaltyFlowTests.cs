@@ -217,8 +217,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GotoAsync(new Uri(_fixture.BaseAddress, cardsUrl!).ToString());
         await page.GetByTestId("business-card-search-input").FillAsync(userName);
         await page.GetByTestId("business-card-search-submit").ClickAsync();
+        Assert.True(await page.GetByTestId("business-card-quick-summary").IsVisibleAsync());
         await page.GetByTestId("business-card-result").First.ClickAsync();
         Assert.Contains(userName, await page.GetByTestId("business-card-detail").InnerTextAsync());
+        Assert.True(await page.GetByTestId("business-card-action-strip").IsVisibleAsync());
         await page.GetByTestId("business-card-resend-submit").ClickAsync();
         Assert.Contains("Correo reenviado", await page.GetByTestId("business-card-status").InnerTextAsync());
         await page.GetByTestId("business-card-stamp-submit").ClickAsync();
