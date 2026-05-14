@@ -14,6 +14,13 @@ La app escucha en:
 http://localhost:5031
 ```
 
+La pagina principal `/` es la puerta de entrada publica de Puntelio:
+
+- clientes entran a `/Client/Login` o crean cuenta desde `/Register`;
+- negocios entran a `/Business/Login`;
+- admins entran a `/Admin/Login`;
+- si una cookie de cliente, negocio o admin ya existe, la home muestra una accion para continuar a su dashboard.
+
 Si hay una instancia previa corriendo:
 
 ```powershell

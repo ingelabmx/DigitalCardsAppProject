@@ -395,6 +395,167 @@ h1 {
   color: #697586;
 }
 
+.home-gateway {
+  align-items: center;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  padding: 2.25rem 0 1.25rem;
+}
+
+.home-hero-copy h1 {
+  color: #2a3547;
+  font-size: clamp(2.15rem, 5vw, 4rem);
+  line-height: 1.02;
+  max-width: 860px;
+}
+
+.home-hero-actions,
+.home-wallet-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.home-wallet-preview {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgb(42 53 71 / 10%);
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.home-wallet-card {
+  background: #2a3547;
+  border: 1px solid #445066;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  min-height: 260px;
+  padding: 1.35rem;
+}
+
+.home-wallet-card span,
+.home-wallet-card p {
+  color: #d6e3ff;
+}
+
+.home-wallet-card strong {
+  align-self: end;
+  display: block;
+  font-size: 2rem;
+  line-height: 1.05;
+}
+
+.home-stamp-row {
+  align-items: end;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.home-stamp-row span {
+  background: #eef3fb;
+  border: 2px solid #eef3fb;
+  border-radius: 999px;
+  display: block;
+  height: 18px;
+}
+
+.home-stamp-row span.filled {
+  background: #5d87ff;
+  border-color: #5d87ff;
+}
+
+.home-wallet-status {
+  justify-content: space-between;
+}
+
+.home-wallet-status span {
+  background: #ecf2ff;
+  border-radius: 999px;
+  color: #2a3547;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.45rem 0.75rem;
+}
+
+.gateway-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1rem 0 1.5rem;
+}
+
+.gateway-card {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgb(42 53 71 / 7%);
+  display: grid;
+  gap: 0.75rem;
+  min-height: 310px;
+  padding: 1.15rem;
+}
+
+.gateway-card h2 {
+  color: #2a3547;
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.gateway-card p {
+  color: #5a6a85;
+  margin: 0;
+}
+
+.gateway-kicker {
+  color: #5d87ff !important;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.gateway-secondary-link {
+  align-self: end;
+  color: #2a3547;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gateway-secondary-link:hover {
+  color: #5d87ff;
+}
+
+.home-info-band {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-left: 5px solid #5d87ff;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 0.45fr) minmax(0, 0.55fr);
+  margin-bottom: 1.5rem;
+  padding: 1.2rem;
+}
+
+.home-info-band h2,
+.home-info-band p {
+  margin: 0;
+}
+
+.home-info-band p {
+  color: #5a6a85;
+}
+
+.home-dev-tools {
+  margin-bottom: 1.5rem;
+}
+
 .business-hero-grid {
   align-items: stretch;
   display: grid;
@@ -1460,6 +1621,9 @@ h1 {
   .client-card-main,
   .client-card-preview-grid,
   .client-profile-panel dl,
+  .gateway-grid,
+  .home-gateway,
+  .home-info-band,
   .wallet-actions,
   .metric-row {
     grid-template-columns: 1fr;
@@ -1554,5 +1718,14 @@ h1 {
 
   .business-card-action-buttons .btn {
     width: 100%;
+  }
+
+  .home-hero-actions .btn,
+  .gateway-card .btn {
+    width: 100%;
+  }
+
+  .gateway-card {
+    min-height: auto;
   }
 }

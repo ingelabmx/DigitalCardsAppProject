@@ -140,7 +140,7 @@
         <header>
             <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
                 <div class="container">
-                    <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">DigitalCards</a>
+                    <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">Puntelio</a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                             aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
@@ -148,13 +148,13 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Client/Login">Clientes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Business/Login">Negocios</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Register">Registro cliente</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Client/Login">Login cliente</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Business/Login">Login negocio</a>
                             </li>
                             @if (showDevOutboxLink)
                             {
@@ -178,7 +178,7 @@
 
         <footer class="border-top footer text-muted">
             <div class="container">
-                &copy; 2026 - DigitalCards migration shell
+                &copy; 2026 - Puntelio DigitalCards. Propiedad de IngeLabs.
             </div>
         </footer>
     }
