@@ -13,6 +13,12 @@
   --dc-border-strong: #dde3ea;
   --dc-brand-soft: #ecf2ff;
   --dc-warning: #ffcf70;
+  --dc-success: #16a34a;
+  --dc-danger: #dc2626;
+  --dc-danger-soft: #fff1f2;
+  --dc-warning-soft: #fff7ed;
+  --dc-shadow-card: 0 12px 30px rgb(42 53 71 / 8%);
+  --dc-shadow-hover: 0 18px 38px rgb(42 53 71 / 12%);
   --dc-radius: 8px;
 }
 
@@ -2258,6 +2264,264 @@ form.is-submitting input[type="submit"] {
   padding: 1rem;
 }
 
+/* Final product polish: shared depth, spacing, forms, and danger zones. */
+body.public-shell {
+  background:
+    linear-gradient(180deg, #f7faff 0%, #f6f7f9 44%, #eef3fb 100%);
+}
+
+.public-shell .navbar {
+  min-height: 68px;
+}
+
+.public-shell .navbar.bg-white {
+  background: rgb(255 255 255 / 94%) !important;
+  backdrop-filter: blur(12px);
+}
+
+.public-shell .navbar .nav-link,
+.legacy-sidebar-link,
+.btn {
+  min-height: 40px;
+}
+
+.btn {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.btn-lg {
+  min-height: 48px;
+}
+
+.btn-sm {
+  min-height: 34px;
+}
+
+.form-control,
+.form-select {
+  border-color: #d7e0ea;
+  border-radius: 8px;
+  color: #2a3547;
+  min-height: 42px;
+}
+
+.form-control-sm {
+  min-height: 36px;
+}
+
+.form-control::placeholder {
+  color: #98a6ba;
+}
+
+.form-label {
+  color: #2a3547;
+  font-weight: 800;
+}
+
+.alert {
+  border-radius: 8px;
+  border-width: 1px;
+}
+
+.result-panel,
+.form-panel,
+.info-band,
+.wallet-panel,
+.admin-command-hero,
+.admin-command-card,
+.business-dashboard-panel,
+.business-profile-panel,
+.business-card-list,
+.business-card-detail,
+.client-card-preview,
+.client-card-row,
+.support-card,
+.auth-form-card,
+.auth-copy-panel,
+.home-wallet-preview,
+.home-info-band {
+  box-shadow: var(--dc-shadow-card);
+}
+
+.result-panel,
+.form-panel,
+.info-band,
+.wallet-panel,
+.admin-command-hero {
+  margin-bottom: 1.25rem;
+}
+
+.page-heading {
+  margin-bottom: 1rem;
+}
+
+.page-heading h1,
+.page-heading h2 {
+  color: #2a3547;
+  margin-bottom: 0.35rem;
+}
+
+.page-heading .lead,
+.page-heading .text-muted {
+  margin-bottom: 0;
+}
+
+.metric,
+.business-card-quick-summary div,
+.client-cards-summary div,
+.client-card-progress-panel,
+.qr-scanner-panel,
+.client-identity-panel,
+.dashboard-empty-state {
+  box-shadow: 0 8px 20px rgb(42 53 71 / 5%);
+}
+
+.metric {
+  background: #fbfcfe;
+  border: 1px solid #e5eaef;
+}
+
+.metric span {
+  color: #7c8fac;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dashboard-empty-state {
+  background: #fbfcfe;
+  border-color: #c8d5e5;
+}
+
+.dashboard-empty-actions .btn {
+  min-width: 132px;
+}
+
+.business-dashboard-grid,
+.client-card-list,
+.support-card-list,
+.stamp-ledger-items,
+.pilot-business-list {
+  gap: 1rem;
+}
+
+.business-card-list h2,
+.business-card-detail h2,
+.business-dashboard-panel h2,
+.support-card h3,
+.support-card h4 {
+  color: #2a3547;
+  font-weight: 800;
+}
+
+.business-card-result-row,
+.dashboard-card-row,
+.legacy-admin-row,
+.client-card-preview,
+.client-card-row,
+.support-card {
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.business-card-result-row:hover,
+.dashboard-card-row:hover,
+.legacy-admin-row:hover,
+.client-card-preview:hover,
+.client-card-row:hover,
+.support-card:hover {
+  box-shadow: var(--dc-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.stamp-ledger-item {
+  border: 1px solid #e5eaef;
+  border-left: 4px solid #49beff;
+}
+
+.wallet-status-ok,
+.wallet-status-pending {
+  border: 1px solid transparent;
+}
+
+.wallet-status-ok {
+  border-color: #bbf7d0;
+}
+
+.wallet-status-pending {
+  border-color: #fde68a;
+}
+
+.danger-action-panel,
+.danger-zone-card,
+.business-profile-panel.border-danger {
+  background: var(--dc-danger-soft);
+  border: 1px solid #fecdd3 !important;
+  border-left: 5px solid var(--dc-danger) !important;
+  box-shadow: 0 12px 28px rgb(220 38 38 / 8%);
+}
+
+.danger-action-panel strong,
+.danger-zone-card h2,
+.danger-zone-card strong {
+  color: #991b1b;
+}
+
+.danger-action-panel p,
+.danger-zone-card p,
+.danger-zone-card .text-muted {
+  color: #7f1d1d !important;
+}
+
+.danger-action-controls {
+  background: rgb(255 255 255 / 62%);
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+}
+
+.danger-action-controls .form-control,
+.business-card-delete-form .form-control,
+.admin-client-delete-form .form-control {
+  max-width: 320px;
+}
+
+.auth-copy-panel {
+  border-color: #3d4960;
+}
+
+.auth-form-card {
+  min-height: 420px;
+}
+
+.auth-link-row {
+  margin-top: 0.75rem;
+}
+
+.client-card-face,
+.business-detail-card-face,
+.home-wallet-card,
+.public-wallet-mini-card,
+.wallet-visual-card {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 12px 26px rgb(42 53 71 / 12%);
+}
+
+.client-stamp-track span,
+.business-stamp-track span,
+.wallet-public-stamps span,
+.home-stamp-row span {
+  min-width: 0;
+}
+
+.client-qr-card {
+  box-shadow: 0 8px 18px rgb(42 53 71 / 8%);
+}
+
 @media (max-width: 760px) {
   .app-surface,
   .business-card-grid,
@@ -2389,5 +2653,29 @@ form.is-submitting input[type="submit"] {
 
   .auth-copy-panel {
     min-height: 300px;
+  }
+
+  .dashboard-empty-actions,
+  .danger-action-controls,
+  .form-actions {
+    align-items: stretch;
+    display: grid;
+    justify-content: stretch;
+  }
+
+  .dashboard-empty-actions .btn,
+  .danger-action-controls .btn,
+  .danger-action-controls .form-control,
+  .business-card-delete-form .form-control,
+  .admin-client-delete-form .form-control,
+  .form-actions .btn {
+    max-width: none;
+    width: 100%;
+  }
+
+  .home-wallet-preview,
+  .auth-copy-panel,
+  .auth-form-card {
+    box-shadow: 0 10px 24px rgb(42 53 71 / 8%);
   }
 }

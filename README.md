@@ -32,6 +32,9 @@ El panel admin mantiene paridad visual incremental con Web Forms mediante
 comandos principales, filtros en paneles y estados operativos mas escaneables.
 El negocio tiene una ruta visual diaria: buscar o escanear cliente, validar la
 tarjeta y agregar sello desde `Tarjetas` o el acceso rapido `Checadas`.
+La capa visual final refuerza sombras, espaciado, formularios, tarjetas,
+responsive y zonas de peligro para borrados permanentes sin cambiar reglas de
+negocio ni integraciones.
 
 Si hay una instancia previa corriendo:
 
