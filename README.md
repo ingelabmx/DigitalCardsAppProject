@@ -1078,3 +1078,11 @@ Apple y Google quedan visibles solo en el flujo publico de instalacion:
 ```text
 docs/migration-context/100-wallet-language-unification-v1.md
 ```
+
+La operacion visible de Puntelio ya no depende de paneles LegacySync. La
+compatibilidad tecnica con HostGator queda interna mientras se completa la
+migracion de esquema:
+
+```text
+docs/migration-context/101-legacy-removal-phase-1-v1.md
+```

@@ -44,32 +44,6 @@
         </div>
     </form>
 
-    <div class="support-sync-status" data-testid="admin-support-sync-status">
-        <strong>LegacyWalletSync:</strong>
-        @(Model.LegacyWalletSync.Enabled ? "Activo" : "Apagado")
-        <span>Intervalo @Model.LegacyWalletSync.PollIntervalSeconds s</span>
-        <span>Lookback @Model.LegacyWalletSync.LookbackMinutes min</span>
-        <span>Batch @Model.LegacyWalletSync.BatchSize</span>
-        <span data-testid="admin-support-sync-last-run">
-            Ultimo run:
-            @(Model.LegacyWalletSyncState.LastCompletedAt?.ToLocalTime().ToString("g") ?? "no ejecutado")
-        </span>
-        @if (Model.LegacyWalletSyncState.LastResult is not null)
-        {
-            <span data-testid="admin-support-sync-last-result">
-                Procesados @Model.LegacyWalletSyncState.LastResult.Synced /
-                candidatos @Model.LegacyWalletSyncState.LastResult.Candidates /
-                fallos @Model.LegacyWalletSyncState.LastResult.Failed
-            </span>
-        }
-        @if (Model.LegacyWalletSyncState.LastErrorSummary is not null)
-        {
-            <span class="text-danger" data-testid="admin-support-sync-last-error">
-                Ultimo error seguro: @Model.LegacyWalletSyncState.LastErrorSummary
-            </span>
-        }
-    </div>
-
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
         <div class="alert alert-success" role="status" data-testid="admin-support-status-message">
@@ -206,11 +180,6 @@
 
                                 <div class="support-operational-state" data-testid="admin-support-operational-state">
                                     <span>Activacion negocio: @ActivationLabel(card.Business.ActivationStatus)</span>
-                                    <span>LegacySync: @(card.LegacySyncEventCount > 0 ? $"{card.LegacySyncEventCount} evento(s)" : "sin eventos recientes")</span>
-                                    @if (card.LastLegacySyncAt is not null)
-                                    {
-                                        <span>Ultimo legacy @card.LastLegacySyncAt?.ToLocalTime().ToString("g")</span>
-                                    }
                                     <span>Errores seguros: @card.RecentSafeErrors.Count</span>
                                 </div>
 
@@ -255,7 +224,7 @@
                                         {
                                             <div class="stamp-ledger-item" data-testid="admin-support-ledger-event">
                                                 <div>
-                                                    <strong>@item.Source</strong>
+                                                    <strong>@SourceLabel(item.Source)</strong>
                                                     <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                                 </div>
                                                 <p>Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY &middot; Historicos: @item.PreviousHistoricCheckQTY -> @item.NewHistoricCheckQTY</p>
@@ -301,5 +270,12 @@
             DigitalCards.Domain.BusinessActivationStatus.Inactive or DigitalCards.Domain.BusinessActivationStatus.LegacyOnly => "Inactivo",
             _ => "Activo"
         };
+    }
+
+    private static string SourceLabel(DigitalCards.Application.Models.StampLedgerSource source)
+    {
+        return source == DigitalCards.Application.Models.StampLedgerSource.LegacySync
+            ? "Operacion externa"
+            : source.ToString();
     }
 }

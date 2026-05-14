@@ -133,7 +133,7 @@
                                 <strong>@item.ClientUserName</strong>
                                 <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                             </div>
-                            <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
+                            <p>@SourceLabel(item.Source) &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
                             <p>Tarjeta: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
                             @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                             {
@@ -162,5 +162,12 @@
         return (googleAttempted && !googleSucceeded) || (appleAttempted && !appleSucceeded)
             ? "Con alerta"
             : "Actualizada";
+    }
+
+    private static string SourceLabel(DigitalCards.Application.Models.StampLedgerSource source)
+    {
+        return source == DigitalCards.Application.Models.StampLedgerSource.LegacySync
+            ? "Operacion externa"
+            : source.ToString();
     }
 }
