@@ -72,9 +72,9 @@
                         }
                         else if (isClient)
                         {
-                            <li><a class="@SidebarClass("/Client/Dashboard")" asp-page="/Client/Dashboard"><span>DA</span>Dashboard</a></li>
-                            <li><a class="@SidebarClass("/Client/Cards")" asp-page="/Client/Cards"><span>MT</span>Mis tarjetas</a></li>
-                            <li><a class="@SidebarClass("/Client/Profile")" asp-page="/Client/Profile"><span>PE</span>Perfil</a></li>
+                            <li><a class="@SidebarClass("/Client/Dashboard")" asp-page="/Client/Dashboard" data-testid="client-sidebar-dashboard-link"><span>DA</span>Dashboard</a></li>
+                            <li><a class="@SidebarClass("/Client/Cards")" asp-page="/Client/Cards" data-testid="client-sidebar-cards-link"><span>MT</span>Mis tarjetas</a></li>
+                            <li><a class="@SidebarClass("/Client/Profile")" asp-page="/Client/Profile" data-testid="client-sidebar-profile-link"><span>PE</span>Perfil</a></li>
                         }
                     </ul>
 

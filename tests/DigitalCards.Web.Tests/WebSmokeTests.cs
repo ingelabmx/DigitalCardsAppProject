@@ -235,6 +235,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var profileHtml = await client.GetStringAsync("/Client/Profile");
 
         Assert.Contains("client-wallet-guide", dashboardHtml);
+        Assert.DoesNotContain("client-action-grid", dashboardHtml);
+        Assert.DoesNotContain("client-dashboard-cards-link", dashboardHtml);
+        Assert.DoesNotContain("client-dashboard-profile-link", dashboardHtml);
+        Assert.DoesNotContain("client-logout-link", dashboardHtml);
+        Assert.Contains("client-sidebar-dashboard-link", dashboardHtml);
+        Assert.Contains("client-sidebar-cards-link", dashboardHtml);
+        Assert.Contains("client-sidebar-profile-link", dashboardHtml);
+        Assert.Contains("client-layout-logout-link", dashboardHtml);
         Assert.Contains("client-cards-empty-state", cardsHtml);
         Assert.Contains("client-profile-helper", profileHtml);
         Assert.DoesNotContain("PasswordHash", dashboardHtml);
@@ -2225,7 +2233,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-dashboard-card-count", html);
         Assert.Contains("client-dashboard-current-stamps", html);
         Assert.Contains("client-dashboard-wallet-link", html);
-        Assert.Contains("client-dashboard-profile-link", html);
+        Assert.DoesNotContain("client-action-grid", html);
+        Assert.DoesNotContain("client-dashboard-cards-link", html);
+        Assert.DoesNotContain("client-dashboard-profile-link", html);
+        Assert.DoesNotContain("client-logout-link", html);
+        Assert.Contains("client-sidebar-dashboard-link", html);
+        Assert.Contains("client-sidebar-cards-link", html);
+        Assert.Contains("client-sidebar-profile-link", html);
+        Assert.Contains("client-layout-logout-link", html);
         Assert.DoesNotContain("client-dashboard-change-password-link", html);
         Assert.DoesNotContain("client-dashboard-google-count", html);
         Assert.DoesNotContain("client-dashboard-apple-count", html);
@@ -2233,6 +2248,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("box-sizing: border-box;", css);
         Assert.Contains("overflow: hidden;", css);
+        Assert.Contains("width: clamp(88px, 16vw, 112px);", css);
+        Assert.Contains(".client-cards-qr-panel .client-qr-card", css);
         Assert.DoesNotContain("00000000-0000-0000", html);
     }
 

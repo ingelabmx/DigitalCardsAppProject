@@ -1905,7 +1905,7 @@ form.is-submitting input[type="submit"] {
   overflow: hidden;
   padding: 10px;
   place-items: center;
-  width: clamp(108px, 20vw, 136px);
+  width: clamp(88px, 16vw, 112px);
 }
 
 .client-qr-card svg {
@@ -1919,6 +1919,10 @@ form.is-submitting input[type="submit"] {
 
 .client-cards-qr-panel {
   margin-top: 1rem;
+}
+
+.client-cards-qr-panel .client-qr-card {
+  width: clamp(88px, 14vw, 108px);
 }
 
 .client-profile-list {
