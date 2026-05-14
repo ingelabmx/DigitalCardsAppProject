@@ -1086,3 +1086,10 @@ migracion de esquema:
 ```text
 docs/migration-context/101-legacy-removal-phase-1-v1.md
 ```
+
+Los documentos historicos de migracion quedan como referencia tecnica. La UI
+moderna se protege con pruebas para no reintroducir lenguaje operativo legacy:
+
+```text
+docs/migration-context/102-legacy-removal-phase-2-v1.md
+```

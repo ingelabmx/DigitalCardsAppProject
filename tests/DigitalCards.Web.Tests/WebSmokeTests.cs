@@ -139,6 +139,40 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AuthenticatedOperations_DoNotRenderLegacyOperationalLanguage()
+    {
+        using var fake = WithFakeIntegrations();
+        var adminClient = fake.Factory.CreateClient();
+        var businessClient = fake.Factory.CreateClient();
+        var clientClient = fake.Factory.CreateClient();
+        var userName = NewLegacySafeUserName("ol");
+        const string clientPassword = "ClientPass123!";
+
+        await LoginAdminAsync(adminClient);
+        await LoginBusinessAsync(businessClient);
+        await RegisterClientAsync(fake.Factory, userName, password: clientPassword);
+        await LoginClientAsync(clientClient, userName, clientPassword);
+
+        var pages = new[]
+        {
+            await adminClient.GetStringAsync("/Admin/Dashboard"),
+            await adminClient.GetStringAsync("/Admin/Support"),
+            await adminClient.GetStringAsync("/Admin/Cutover"),
+            await businessClient.GetStringAsync("/Business/Dashboard"),
+            await businessClient.GetStringAsync("/Business/Reports"),
+            await clientClient.GetStringAsync("/Client/Dashboard")
+        };
+
+        foreach (var html in pages)
+        {
+            Assert.DoesNotContain("LegacyWalletSync", html);
+            Assert.DoesNotContain("LegacySync", html);
+            Assert.DoesNotContain("Web Forms", html);
+            Assert.DoesNotContain("fallback", html, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
     public async Task BusinessPages_RenderOperationsUx()
     {
         using var fake = WithFakeIntegrations();
