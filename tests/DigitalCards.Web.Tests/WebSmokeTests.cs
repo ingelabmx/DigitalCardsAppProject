@@ -110,6 +110,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-login-form", businessHtml);
         Assert.Contains("client-login-form", clientHtml);
         Assert.DoesNotContain("demo@digitalcards.test", businessHtml);
+        Assert.DoesNotContain("auth-role-mark", adminHtml);
         Assert.DoesNotContain("auth-role-mark", businessHtml);
         Assert.DoesNotContain("auth-role-mark", clientHtml);
         Assert.DoesNotContain("Entrar como negocio", businessHtml);
@@ -2177,6 +2178,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
 
         var html = await http.GetStringAsync($"/Client/Cards?UserName={secondUserName}");
+        var css = await http.GetStringAsync("/css/site.css");
 
         Assert.Contains("client-card-results", html);
         Assert.Contains(firstUserName, html);
@@ -2191,6 +2193,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-cards-summary", html);
         Assert.Contains("client-card-progress-panel", html);
         Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(".client-qr-card", css);
+        Assert.Contains("aspect-ratio: 1;", css);
+        Assert.Contains(".client-qr-card svg", css);
+        Assert.Contains("max-height: 100%;", css);
+        Assert.Contains("width: 100%;", css);
     }
 
     [Fact]
@@ -2209,6 +2216,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
 
         var html = await http.GetStringAsync("/Client/Dashboard");
+        var css = await http.GetStringAsync("/css/site.css");
 
         Assert.Contains("client-dashboard-summary", html);
         Assert.Contains("client-profile-summary", html);
@@ -2223,6 +2231,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("client-dashboard-apple-count", html);
         Assert.Contains("client-qr-card", html);
         Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("box-sizing: border-box;", css);
+        Assert.Contains("overflow: hidden;", css);
         Assert.DoesNotContain("00000000-0000-0000", html);
     }
 

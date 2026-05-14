@@ -24,6 +24,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         const string resetPassword = "ChangedAdmin123!";
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Login").ToString());
+        Assert.Equal(0, await page.Locator(".auth-role-mark").CountAsync());
         await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
         await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
         await page.GetByTestId("admin-login-submit").ClickAsync();
@@ -239,6 +240,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("1 tarjeta", await page.GetByTestId("client-dashboard-card-count").InnerTextAsync());
         Assert.Equal("2", await page.GetByTestId("client-dashboard-current-stamps").InnerTextAsync());
         Assert.True(await page.GetByTestId("client-qr-card").Locator("svg").IsVisibleAsync());
+        await AssertQrFitsCardAsync(page, "client-qr-card");
         Assert.Contains(userName, await page.GetByTestId("client-profile-summary").InnerTextAsync());
         await page.GetByTestId("client-dashboard-cards-link").ClickAsync();
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();
@@ -249,6 +251,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.DoesNotContain("Google emitida", cardText);
         Assert.DoesNotContain("Apple Wallet", cardText);
         Assert.True(await page.GetByTestId("client-cards-qr-card").Locator("svg").IsVisibleAsync());
+        await AssertQrFitsCardAsync(page, "client-cards-qr-card");
 
         const string changedClientPassword = "ChangedClient123!";
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Dashboard").ToString());
@@ -347,6 +350,24 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-disable-pilot").First.ClickAsync();
         Assert.Contains("Negocio desactivado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+    }
+
+    private static async Task AssertQrFitsCardAsync(IPage page, string testId)
+    {
+        var fits = await page.GetByTestId(testId).EvaluateAsync<bool>(
+            @"element => {
+                const svg = element.querySelector('svg');
+                if (!svg) return false;
+
+                const box = element.getBoundingClientRect();
+                const qr = svg.getBoundingClientRect();
+                return qr.width <= box.width
+                    && qr.height <= box.height
+                    && box.width <= 150
+                    && Math.abs(box.width - box.height) <= 1;
+            }");
+
+        Assert.True(fits);
     }
 
     private static string NewLegacySafeUserName(string prefix)
