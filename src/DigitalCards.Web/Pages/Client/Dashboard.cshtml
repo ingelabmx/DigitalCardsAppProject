@@ -10,21 +10,6 @@
         <h1 data-testid="client-dashboard-title">Mis tarjetas de @Model.ClientName</h1>
         <p class="lead">@Model.ClientName, consulta tus tarjetas de lealtad, revisa tus sellos y vuelve a abrir tus links Wallet.</p>
     </div>
-
-    <div class="action-grid client-action-grid">
-        <a class="action-card" asp-page="/Client/Cards" data-testid="client-dashboard-cards-link">
-            <span>Mis tarjetas</span>
-            <small>Sellos actuales, historicos y estado Wallet.</small>
-        </a>
-        <a class="action-card" asp-page="/Client/Profile" data-testid="client-dashboard-profile-link">
-            <span>Perfil</span>
-            <small>Edita tus datos y modifica tu contrasena.</small>
-        </a>
-        <a class="action-card" asp-page="/Client/Logout" data-testid="client-logout-link">
-            <span>Salir cliente</span>
-            <small>Cierra la sesion de cliente.</small>
-        </a>
-    </div>
 </section>
 
 @if (Model.Dashboard is not null)

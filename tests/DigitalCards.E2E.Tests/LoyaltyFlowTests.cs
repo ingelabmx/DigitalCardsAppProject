@@ -251,7 +251,11 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.True(await page.GetByTestId("client-qr-card").Locator("svg").IsVisibleAsync());
         await AssertQrFitsCardAsync(page, "client-qr-card");
         Assert.Contains(userName, await page.GetByTestId("client-profile-summary").InnerTextAsync());
-        await page.GetByTestId("client-dashboard-cards-link").ClickAsync();
+        Assert.Equal(0, await page.GetByTestId("client-dashboard-cards-link").CountAsync());
+        Assert.Equal(0, await page.GetByTestId("client-dashboard-profile-link").CountAsync());
+        Assert.True(await page.GetByTestId("client-sidebar-cards-link").IsVisibleAsync());
+        Assert.True(await page.GetByTestId("client-sidebar-profile-link").IsVisibleAsync());
+        await page.GetByTestId("client-sidebar-cards-link").ClickAsync();
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();
         Assert.True(await page.GetByTestId("client-cards-summary").IsVisibleAsync());
         Assert.True(await page.GetByTestId("client-card-progress-panel").First.IsVisibleAsync());
@@ -264,7 +268,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
 
         const string changedClientPassword = "ChangedClient123!";
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Dashboard").ToString());
-        await page.GetByTestId("client-dashboard-profile-link").ClickAsync();
+        await page.GetByTestId("client-sidebar-profile-link").ClickAsync();
         await page.GetByTestId("client-current-password").FillAsync(clientPassword);
         await page.GetByTestId("client-new-password").FillAsync(changedClientPassword);
         await page.GetByTestId("client-confirm-password").FillAsync(changedClientPassword);
@@ -372,7 +376,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
                 const qr = svg.getBoundingClientRect();
                 return qr.width <= box.width
                     && qr.height <= box.height
-                    && box.width <= 150
+                    && box.width <= 112
                     && Math.abs(box.width - box.height) <= 1;
             }");
 
