@@ -36,6 +36,7 @@ public sealed class DigitalCardsAppService
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
     private readonly IPasswordHasher<ClientPasswordHashSubject> _clientPasswordHasher;
     private readonly IStampLedgerRepository _stampLedger;
+    private readonly WalletBrandingRefreshService _walletBrandingRefresh;
     private readonly IWalletLinkTokenService _walletLinkTokens;
 
     public DigitalCardsAppService(
@@ -54,6 +55,7 @@ public sealed class DigitalCardsAppService
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
         IPasswordHasher<ClientPasswordHashSubject> clientPasswordHasher,
         IStampLedgerRepository stampLedger,
+        WalletBrandingRefreshService walletBrandingRefresh,
         IWalletLinkTokenService walletLinkTokens,
         IPasswordResetTokenRepository passwordResetTokens)
     {
@@ -73,6 +75,7 @@ public sealed class DigitalCardsAppService
         _passwordHasher = passwordHasher;
         _clientPasswordHasher = clientPasswordHasher;
         _stampLedger = stampLedger;
+        _walletBrandingRefresh = walletBrandingRefresh;
         _walletLinkTokens = walletLinkTokens;
     }
 
@@ -569,6 +572,17 @@ public sealed class DigitalCardsAppService
 
         var settings = await ToBusinessBrandingSettingsAsync(business, cancellationToken);
         return new BusinessSelfServiceBrandingResult(settings, ErrorMessage: null);
+    }
+
+    public Task<WalletBrandingRefreshResult> RefreshBusinessWalletBrandingAsync(
+        WalletBrandingRefreshCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        return _walletBrandingRefresh.RefreshAsync(
+            command.BusinessId,
+            command.Limit,
+            actorBusinessId: command.BusinessId,
+            cancellationToken);
     }
 
     public async Task<EnrollClientResult> EnrollClientAsync(EnrollClientCommand command, CancellationToken cancellationToken = default)

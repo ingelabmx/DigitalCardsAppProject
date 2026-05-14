@@ -32,9 +32,14 @@ public sealed class BrandingModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    [BindProperty]
+    public int RefreshLimit { get; set; } = 25;
+
     public BusinessBrandingSettingsDto? Settings { get; private set; }
 
     public string? StatusMessage { get; private set; }
+
+    public WalletBrandingRefreshResult? RefreshResult { get; private set; }
 
     public string? PilotBlockMessage { get; private set; }
 
@@ -100,6 +105,38 @@ public sealed class BrandingModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostRefreshWalletsAsync(CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(cancellationToken, populateInput: true))
+        {
+            return RedirectToPage("/Business/Logout");
+        }
+
+        if (IsPilotBlocked)
+        {
+            ModelState.AddModelError(string.Empty, PilotBlockMessage!);
+            return Page();
+        }
+
+        RefreshResult = await _appService.RefreshBusinessWalletBrandingAsync(
+            new WalletBrandingRefreshCommand(BusinessAuth.GetBusinessId(User), RefreshLimit),
+            cancellationToken);
+
+        if (RefreshResult.ErrorMessage is not null)
+        {
+            ModelState.AddModelError(string.Empty, RefreshResult.ErrorMessage);
+            return Page();
+        }
+
+        StatusMessage = ToRefreshStatus(RefreshResult);
+
+        _logger.LogInformation(
+            "Business {BusinessId} refreshed wallet branding.",
+            Settings!.BusinessId);
+
+        return Page();
+    }
+
     private async Task<bool> LoadAsync(CancellationToken cancellationToken, bool populateInput)
     {
         var businessId = BusinessAuth.GetBusinessId(User);
@@ -130,6 +167,14 @@ public sealed class BrandingModel : PageModel
             ProgramName = settings.Branding.ProgramName,
             ProgramDescription = settings.Branding.ProgramDescription
         };
+    }
+
+    private static string ToRefreshStatus(WalletBrandingRefreshResult result)
+    {
+        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, Google {result.GoogleWalletSucceeded}/{result.GoogleWalletAttempted}, Apple {result.AppleWalletSucceeded}/{result.AppleWalletAttempted}.";
+        return result.HasWarnings
+            ? $"{status} Hubo alertas seguras: {string.Join(", ", result.SafeErrors)}."
+            : status;
     }
 
     public sealed class InputModel

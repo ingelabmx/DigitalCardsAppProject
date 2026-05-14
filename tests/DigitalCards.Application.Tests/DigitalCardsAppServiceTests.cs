@@ -545,6 +545,77 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RefreshBusinessWalletBrandingAsync_RecordsBrandingRefreshForTrackedWallets()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var applePasses = provider.GetRequiredService<IAppleWalletPassRepository>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "brand-refresh");
+        await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+            "pass.com.puntelio.loyalty",
+            $"serial-{enrollment.Card.Id:N}",
+            enrollment.Card.Id,
+            "auth-token-secret-hash",
+            "42",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow));
+
+        var result = await app.RefreshBusinessWalletBrandingAsync(
+            new WalletBrandingRefreshCommand(business!.Id, Limit: 10));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, result.CardsWithTrackedWallets);
+        Assert.Equal(1, result.GoogleWalletAttempted);
+        Assert.Equal(1, result.GoogleWalletSucceeded);
+        Assert.Equal(1, result.AppleWalletAttempted);
+        Assert.Equal(1, result.AppleWalletSucceeded);
+
+        var ledger = provider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single((await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5))
+            .Where(item => item.Source == StampLedgerSource.BrandingRefresh));
+        Assert.Equal(business.Id, record.ActorBusinessId);
+        Assert.Equal(record.PreviousCheckQTY, record.NewCheckQTY);
+        Assert.Equal(record.PreviousHistoricCheckQTY, record.NewHistoricCheckQTY);
+        Assert.True(record.GoogleWalletAttempted);
+        Assert.True(record.GoogleWalletSucceeded);
+        Assert.True(record.AppleWalletAttempted);
+        Assert.True(record.AppleWalletSucceeded);
+        Assert.Null(record.ErrorSummary);
+    }
+
+    [Fact]
+    public async Task AdminRefreshBusinessWalletBrandingAsync_RecordsAuditEvent()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
+            "DCAdmin",
+            "admin123"));
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var enrollment = await CreateEnrollmentAsync(app, "admin-brand-refresh");
+        await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+
+        var result = await adminApp.RefreshBusinessWalletBrandingAsync(
+            new AdminWalletBrandingRefreshCommand(business!.Id, admin!.Id, Limit: 10));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Refresh);
+        Assert.Equal(1, result.Refresh.GoogleWalletSucceeded);
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        Assert.Contains(store.AuditEvents, item =>
+            item.EventType == OperationalAuditEventType.WalletBrandingRefreshRequested &&
+            item.BusinessId == business.Id &&
+            item.ActorAdminUserId == admin.Id);
+    }
+
+    [Fact]
     public async Task GetReportsAsync_ReturnsSafeOperationalSummary()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

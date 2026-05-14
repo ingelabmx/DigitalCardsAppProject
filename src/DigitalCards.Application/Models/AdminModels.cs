@@ -202,6 +202,18 @@ public sealed record AdminWalletRetryResult(
     public bool Succeeded => Card is not null && ErrorMessage is null;
 }
 
+public sealed record AdminWalletBrandingRefreshCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    int Limit = 25);
+
+public sealed record AdminWalletBrandingRefreshResult(
+    WalletBrandingRefreshResult? Refresh,
+    string? ErrorMessage)
+{
+    public bool Succeeded => Refresh is not null && ErrorMessage is null && Refresh.ErrorMessage is null;
+}
+
 public sealed record AdminReportsDto(
     int BusinessCount,
     int CardCount,

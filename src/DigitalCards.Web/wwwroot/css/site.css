@@ -862,6 +862,21 @@ h1 {
   font-size: 1.15rem;
 }
 
+.wallet-refresh-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.wallet-refresh-summary span {
+  background: #f4f7fb;
+  border: 1px solid #dde3ea;
+  border-radius: 6px;
+  color: #243244;
+  font-size: 0.92rem;
+  padding: 0.5rem 0.65rem;
+}
+
 .business-dashboard-summary {
   display: grid;
   gap: 1rem;
