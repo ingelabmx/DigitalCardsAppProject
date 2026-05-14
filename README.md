@@ -945,3 +945,10 @@ Guia de esta capa visual:
 ```text
 docs/migration-context/75-interactive-ui-polish-v1.md
 ```
+
+La landing publica de Wallet tambien incluye una vista visual de tarjeta,
+progreso de sellos y botones diferenciados para iPhone/Android:
+
+```text
+docs/migration-context/76-wallet-landing-visual-v2.md
+```

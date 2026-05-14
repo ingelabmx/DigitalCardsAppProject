@@ -16,6 +16,8 @@ else
     var primaryColor = Model.Landing.PrimaryColor ?? "#111827";
     var secondaryColor = Model.Landing.SecondaryColor ?? "#5d87ff";
     var fallbackInitials = Model.Landing.BusinessName[..Math.Min(Model.Landing.BusinessName.Length, 2)].ToUpperInvariant();
+    var stampsToGoal = Math.Max(0, 10 - Math.Min(Model.Landing.CurrentStamps, 10));
+    var stampProgress = Math.Min(Model.Landing.CurrentStamps, 10) * 10;
 
     <section class="wallet-panel wallet-public-panel"
              style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;"
@@ -35,7 +37,31 @@ else
             </div>
         </div>
 
-        <p class="lead">Tarjeta de @Model.Landing.ClientName con @Model.Landing.CurrentStamps sellos actuales.</p>
+        <div class="wallet-visual-card" data-testid="wallet-visual-card">
+            <div>
+                <span>Cliente</span>
+                <strong>@Model.Landing.ClientName</strong>
+            </div>
+            <div>
+                <span>Programa</span>
+                <strong>@Model.Landing.BusinessName</strong>
+            </div>
+            <div class="wallet-visual-progress" aria-label="Progreso de sellos">
+                <div style="width:@stampProgress%"></div>
+            </div>
+            <p>
+                @if (stampsToGoal == 0)
+                {
+                    <span>Tarjeta lista para recompensa o siguiente ciclo.</span>
+                }
+                else
+                {
+                    <span>Faltan @stampsToGoal sello(s) para completar esta tarjeta.</span>
+                }
+            </p>
+        </div>
+
+        <p class="lead">Elige el Wallet de tu celular. La tarjeta refleja tus sellos actuales y podra actualizarse cuando el negocio agregue nuevos sellos.</p>
 
         <div class="metric-row">
             <div class="metric">
@@ -63,11 +89,17 @@ else
             <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
                asp-page="/Wallet/Apple"
                asp-route-token="@Model.Landing.Token"
-               data-testid="apple-wallet-button">Apple Wallet</a>
+               data-testid="apple-wallet-button">
+                <span>Apple Wallet</span>
+                <small>iPhone</small>
+            </a>
             <a class="btn btn-primary wallet-button d-flex align-items-center justify-content-center"
                asp-page="/Wallet/Google"
                asp-route-token="@Model.Landing.Token"
-               data-testid="google-wallet-button">Google Wallet</a>
+               data-testid="google-wallet-button">
+                <span>Google Wallet</span>
+                <small>Android</small>
+            </a>
         </div>
     </section>
 }
