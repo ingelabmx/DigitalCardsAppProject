@@ -31,6 +31,8 @@ Los formularios POST aplican UX compartida de validacion/envio para evitar
 doble-submit y enfocar errores visibles.
 El panel admin mantiene paridad visual incremental con Web Forms mediante
 comandos principales, filtros en paneles y estados operativos mas escaneables.
+El negocio tiene una ruta visual diaria: buscar o escanear cliente, validar la
+tarjeta y agregar sello desde herramientas optimizadas para mostrador.
 
 Si hay una instancia previa corriendo:
 

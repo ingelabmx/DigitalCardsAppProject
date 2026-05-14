@@ -924,6 +924,48 @@ form.is-submitting input[type="submit"] {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.business-operation-strip {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.business-operation-step {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-left: 4px solid #5d87ff;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
+  color: #2a3547;
+  display: grid;
+  gap: 0.35rem;
+  min-height: 122px;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.business-operation-step:hover {
+  border-color: #5d87ff;
+  color: #2a3547;
+  transform: translateY(-1px);
+}
+
+.business-operation-step span {
+  color: #5d87ff;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.business-operation-step strong {
+  align-self: end;
+  font-size: 1.05rem;
+}
+
+.business-operation-step small {
+  color: #7c8fac;
+}
+
 .info-band,
 .form-panel,
 .result-panel,
@@ -1167,6 +1209,22 @@ form.is-submitting input[type="submit"] {
   gap: 0.5rem;
 }
 
+.business-checkin-guide {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.business-checkin-guide span {
+  background: #ecf2ff;
+  border: 1px solid #d8e5ff;
+  border-radius: 8px;
+  color: #2a3547;
+  font-weight: 800;
+  padding: 0.75rem;
+  text-align: center;
+}
+
 .business-checkin-scanner {
   max-width: 520px;
 }
@@ -1234,6 +1292,11 @@ form.is-submitting input[type="submit"] {
   border: 1px solid #dde3ea;
   border-radius: 8px;
   padding: 1rem;
+}
+
+.business-primary-workflow .business-card-list,
+.business-primary-workflow .business-card-detail {
+  box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
 }
 
 .business-card-result-row {
@@ -2148,6 +2211,8 @@ form.is-submitting input[type="submit"] {
   .client-dashboard-metrics,
   .client-cards-summary,
   .client-identity-panel,
+  .business-checkin-guide,
+  .business-operation-strip,
   .business-action-grid {
     grid-template-columns: 1fr;
   }
