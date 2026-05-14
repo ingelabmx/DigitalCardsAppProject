@@ -4,7 +4,8 @@ public enum StampLedgerSource
 {
     ModernBusiness,
     LegacySync,
-    AdminRetry
+    AdminRetry,
+    BrandingRefresh
 }
 
 public sealed record StampLedgerRecord(

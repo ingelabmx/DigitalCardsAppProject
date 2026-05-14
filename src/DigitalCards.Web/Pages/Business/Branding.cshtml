@@ -89,6 +89,30 @@
 
                 <button class="btn btn-primary" type="submit" data-testid="business-branding-submit">Guardar branding</button>
             </form>
+
+            <form method="post"
+                  asp-page-handler="RefreshWallets"
+                  class="business-profile-panel"
+                  data-testid="business-wallet-branding-refresh-form">
+                <h2>Refrescar Wallets</h2>
+                <p class="text-muted">Aplica el branding actual a Wallets ya emitidas para tarjetas recientes. No modifica sellos ni datos del cliente.</p>
+
+                <div class="mb-3">
+                    <label asp-for="RefreshLimit" class="form-label">Limite de tarjetas recientes</label>
+                    <input asp-for="RefreshLimit" class="form-control" type="number" min="1" max="100" data-testid="business-wallet-branding-refresh-limit" />
+                </div>
+
+                @if (Model.RefreshResult is not null)
+                {
+                    <div class="wallet-refresh-summary" data-testid="business-wallet-branding-refresh-result">
+                        <span>Tarjetas Wallet: @Model.RefreshResult.CardsWithTrackedWallets</span>
+                        <span>Google: @Model.RefreshResult.GoogleWalletSucceeded / @Model.RefreshResult.GoogleWalletAttempted</span>
+                        <span>Apple: @Model.RefreshResult.AppleWalletSucceeded / @Model.RefreshResult.AppleWalletAttempted</span>
+                    </div>
+                }
+
+                <button class="btn btn-outline-primary" type="submit" data-testid="business-wallet-branding-refresh-submit">Refrescar Wallets recientes</button>
+            </form>
         </div>
     }
 </section>

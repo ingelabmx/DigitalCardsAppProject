@@ -1390,6 +1390,56 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminBusinessProfile_RefreshesWalletBrandingForRecentCards()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, NewLegacySafeUserName("abr"));
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var applePasses = scope.ServiceProvider.GetRequiredService<IAppleWalletPassRepository>();
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+                "pass.com.puntelio.loyalty",
+                $"serial-{enrollment.Card.Id:N}",
+                enrollment.Card.Id,
+                "auth-token-secret-hash",
+                "42",
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow));
+        }
+
+        await LoginAdminAsync(client);
+        var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+        var token = await GetAntiforgeryTokenAsync(client, profilePath);
+        var response = await client.PostAsync(
+            $"{profilePath}?handler=RefreshWalletBranding",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["RefreshLimit"] = "10",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Refresh Wallet ejecutado", html);
+        Assert.Contains("admin-business-wallet-branding-refresh-result", html);
+        Assert.DoesNotContain("auth-token-secret-hash", html, StringComparison.OrdinalIgnoreCase);
+
+        using var verifyScope = fake.Factory.Services.CreateScope();
+        var ledger = verifyScope.ServiceProvider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single((await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5))
+            .Where(item => item.Source == StampLedgerSource.BrandingRefresh));
+        Assert.True(record.GoogleWalletSucceeded);
+        Assert.True(record.AppleWalletSucceeded);
+        Assert.Null(record.ErrorSummary);
+    }
+
+    [Fact]
     public async Task AdminCreateAdmin_CreatesAdminWithModernCredentialAndAllowsLogin()
     {
         using var fake = WithFakeIntegrations();
@@ -2128,6 +2178,56 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 Directory.Delete(uploadRoot, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public async Task BusinessBranding_CanRefreshWalletBrandingForRecentCards()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, NewLegacySafeUserName("bbr"));
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var applePasses = scope.ServiceProvider.GetRequiredService<IAppleWalletPassRepository>();
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+            await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
+                "pass.com.puntelio.loyalty",
+                $"serial-{enrollment.Card.Id:N}",
+                enrollment.Card.Id,
+                "auth-token-secret-hash",
+                "42",
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow));
+        }
+
+        await LoginBusinessAsync(client);
+        var getHtml = await client.GetStringAsync("/Business/Branding");
+        var token = ExtractAntiforgeryToken(getHtml);
+        var response = await client.PostAsync(
+            "/Business/Branding?handler=RefreshWallets",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["RefreshLimit"] = "10",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Refresh Wallet ejecutado", html);
+        Assert.Contains("business-wallet-branding-refresh-result", html);
+        Assert.DoesNotContain("auth-token-secret-hash", html, StringComparison.OrdinalIgnoreCase);
+
+        using var verifyScope = fake.Factory.Services.CreateScope();
+        var ledger = verifyScope.ServiceProvider.GetRequiredService<IStampLedgerRepository>();
+        var record = Assert.Single((await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5))
+            .Where(item => item.Source == StampLedgerSource.BrandingRefresh));
+        Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), record.ActorBusinessId);
+        Assert.True(record.GoogleWalletSucceeded);
+        Assert.True(record.AppleWalletSucceeded);
     }
 
     [Fact]

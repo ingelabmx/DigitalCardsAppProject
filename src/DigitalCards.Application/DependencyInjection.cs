@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher<ClientPasswordHashSubject>, PasswordHasher<ClientPasswordHashSubject>>();
         services.AddScoped<AdminAppService>();
         services.AddScoped<DigitalCardsAppService>();
+        services.AddScoped<WalletBrandingRefreshService>();
         return services;
     }
 }

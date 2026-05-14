@@ -42,6 +42,7 @@ public sealed class AdminAppService
     private readonly IPilotBusinessRepository _pilotBusinesses;
     private readonly IPilotClientRepository _pilotClients;
     private readonly IStampLedgerRepository _stampLedger;
+    private readonly WalletBrandingRefreshService _walletBrandingRefresh;
 
     public AdminAppService(
         IAdminUserRepository adminUsers,
@@ -55,6 +56,7 @@ public sealed class AdminAppService
         IAppleWalletService appleWallet,
         IGoogleWalletService googleWallet,
         IStampLedgerRepository stampLedger,
+        WalletBrandingRefreshService walletBrandingRefresh,
         IAuditEventRepository auditEvents,
         IPilotBusinessRepository pilotBusinesses,
         IPilotClientRepository pilotClients,
@@ -73,6 +75,7 @@ public sealed class AdminAppService
         _appleWallet = appleWallet;
         _googleWallet = googleWallet;
         _stampLedger = stampLedger;
+        _walletBrandingRefresh = walletBrandingRefresh;
         _auditEvents = auditEvents;
         _pilotBusinesses = pilotBusinesses;
         _pilotClients = pilotClients;
@@ -926,6 +929,37 @@ public sealed class AdminAppService
         return new AdminWalletRetryResult(dto, errorMessage);
     }
 
+    public async Task<AdminWalletBrandingRefreshResult> RefreshBusinessWalletBrandingAsync(
+        AdminWalletBrandingRefreshCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return FailedWalletBrandingRefresh("Sesion admin no valida.");
+        }
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return FailedWalletBrandingRefresh("El negocio no existe.");
+        }
+
+        var refresh = await _walletBrandingRefresh.RefreshAsync(
+            command.BusinessId,
+            command.Limit,
+            actorBusinessId: null,
+            cancellationToken);
+
+        await AddAuditAsync(
+            OperationalAuditEventType.WalletBrandingRefreshRequested,
+            command.AdminUserId,
+            businessId: command.BusinessId,
+            summary: $"Wallet branding refresh requested for business {Suffix(command.BusinessId)}. Cards {refresh.CardsWithTrackedWallets}.",
+            cancellationToken: cancellationToken);
+
+        return new AdminWalletBrandingRefreshResult(refresh, refresh.ErrorMessage);
+    }
+
     public async Task<AdminReportsDto> GetReportsAsync(CancellationToken cancellationToken = default)
     {
         var businesses = await _businesses.ListAsync(cancellationToken);
@@ -1133,6 +1167,11 @@ public sealed class AdminAppService
     private static AdminWalletRetryResult FailedWalletRetry(string errorMessage)
     {
         return new AdminWalletRetryResult(null, errorMessage);
+    }
+
+    private static AdminWalletBrandingRefreshResult FailedWalletBrandingRefresh(string errorMessage)
+    {
+        return new AdminWalletBrandingRefreshResult(null, errorMessage);
     }
 
     private static string SafeExceptionSummary(Exception exception)

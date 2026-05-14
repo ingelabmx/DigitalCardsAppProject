@@ -645,6 +645,12 @@ Antes de habilitarlo contra HostGator, aplica:
 docs/migration-context/48-business-self-service-v1-hostgator.sql
 ```
 
+Despues de cambiar logo, colores o nombre publico, admin y negocio pueden usar
+`Refrescar Wallets recientes` para aplicar el branding a Wallets ya emitidas.
+El refresh ejecuta patch Google y update Apple/APNs para tarjetas recientes con
+Wallet trackeada, y registra `StampLedger.Source=BrandingRefresh`. No cambia
+sellos, tokens ni datos legacy.
+
 ## Cutover por negocio
 
 La migracion productiva se hace por negocio usando el estado de activacion en

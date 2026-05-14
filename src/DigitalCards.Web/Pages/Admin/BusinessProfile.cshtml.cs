@@ -45,11 +45,16 @@ public sealed class BusinessProfileModel : PageModel
     [BindProperty]
     public BrandingInputModel BrandingInput { get; set; } = new();
 
+    [BindProperty]
+    public int RefreshLimit { get; set; } = 25;
+
     public BusinessProfileDto? Profile { get; private set; }
 
     public string? StatusMessage { get; private set; }
 
     public string? GeneratedEnrollmentUrl { get; private set; }
+
+    public WalletBrandingRefreshResult? RefreshResult { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(Guid businessId, CancellationToken cancellationToken)
     {
@@ -203,6 +208,37 @@ public sealed class BusinessProfileModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostRefreshWalletBrandingAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var result = await _adminApp.RefreshBusinessWalletBrandingAsync(
+            new AdminWalletBrandingRefreshCommand(
+                businessId,
+                AdminAuth.GetAdminUserId(User),
+                RefreshLimit),
+            cancellationToken);
+
+        if (!result.Succeeded || result.Refresh is null)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo refrescar el branding Wallet.");
+            return Page();
+        }
+
+        RefreshResult = result.Refresh;
+        StatusMessage = ToRefreshStatus(RefreshResult);
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} refreshed wallet branding for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        return Page();
+    }
+
     public async Task<IActionResult> OnPostGenerateEnrollmentLinkAsync(
         Guid businessId,
         CancellationToken cancellationToken)
@@ -268,6 +304,14 @@ public sealed class BusinessProfileModel : PageModel
     {
         PasswordInput.NewPassword = string.Empty;
         PasswordInput.ConfirmPassword = string.Empty;
+    }
+
+    private static string ToRefreshStatus(WalletBrandingRefreshResult result)
+    {
+        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, Google {result.GoogleWalletSucceeded}/{result.GoogleWalletAttempted}, Apple {result.AppleWalletSucceeded}/{result.AppleWalletAttempted}.";
+        return result.HasWarnings
+            ? $"{status} Hubo alertas seguras: {string.Join(", ", result.SafeErrors)}."
+            : status;
     }
 
     private string GetBaseUrl()

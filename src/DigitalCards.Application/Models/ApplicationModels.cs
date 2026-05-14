@@ -66,6 +66,24 @@ public sealed record UpdateBusinessSelfServiceBrandingCommand(
     string ProgramName,
     string ProgramDescription);
 
+public sealed record WalletBrandingRefreshCommand(Guid BusinessId, int Limit = 25);
+
+public sealed record WalletBrandingRefreshResult(
+    Guid BusinessId,
+    int CardsScanned,
+    int CardsWithTrackedWallets,
+    int GoogleWalletAttempted,
+    int GoogleWalletSucceeded,
+    int AppleWalletAttempted,
+    int AppleWalletSucceeded,
+    IReadOnlyList<string> SafeErrors,
+    string? ErrorMessage)
+{
+    public bool Succeeded => ErrorMessage is null && SafeErrors.Count == 0;
+
+    public bool HasWarnings => SafeErrors.Count > 0;
+}
+
 public sealed record LoyaltyCardDto(
     Guid Id,
     string EnrollmentToken,

@@ -13,5 +13,6 @@ public enum OperationalAuditEventType
     PilotClientChanged = 9,
     SupportExported = 10,
     WalletRetryRequested = 11,
-    BusinessEnrollmentLinkGenerated = 12
+    BusinessEnrollmentLinkGenerated = 12,
+    WalletBrandingRefreshRequested = 13
 }
