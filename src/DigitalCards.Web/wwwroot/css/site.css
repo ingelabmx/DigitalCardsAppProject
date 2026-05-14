@@ -986,20 +986,20 @@ h1 {
   border: 1px solid #d9e2ec;
   border-radius: 8px;
   display: grid;
-  gap: 4px;
-  grid-template-columns: repeat(5, 12px);
+  min-height: 136px;
   padding: 10px;
+  place-items: center;
+  width: 136px;
 }
 
-.client-qr-card span {
-  background: #e5eaef;
-  border-radius: 3px;
-  height: 12px;
-  width: 12px;
+.client-qr-card svg {
+  display: block;
+  height: 112px;
+  width: 112px;
 }
 
-.client-qr-card span.filled {
-  background: #2a3547;
+.client-cards-qr-panel {
+  margin-top: 1rem;
 }
 
 .client-profile-list {

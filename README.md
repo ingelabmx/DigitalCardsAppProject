@@ -376,6 +376,13 @@ manualmente para ese negocio hasta que exista automatizacion legacy.
 y correo dentro de los limites legacy de `UserClient`. El username queda fijo
 para no romper flujos existentes, soporte ni referencias operativas.
 
+## QR real de cliente
+
+`/Client/Dashboard` y `/Client/Cards` muestran un QR real con el `UserName`
+del cliente. El negocio puede escanearlo para buscar/asociar la tarjeta en el
+flujo moderno. El QR no contiene tokens Wallet, passwords, CardID ni datos
+secretos.
+
 ## Soporte admin
 
 `/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:

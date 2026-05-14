@@ -22,6 +22,10 @@ public sealed class DashboardModel : PageModel
         ? $"{client.FirstName} {client.LastName}"
         : ClientAuth.GetClientName(User);
 
+    public string ClientQrSvg => Dashboard is null
+        ? string.Empty
+        : EnrollmentQrCodeRenderer.RenderSvg(Dashboard.Client.UserName);
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         Dashboard = await _appService.GetClientDashboardAsync(

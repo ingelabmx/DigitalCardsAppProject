@@ -13,6 +13,16 @@
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Client/Dashboard" data-testid="client-cards-dashboard-link">Dashboard</a>
     </div>
+    <div class="client-identity-panel client-cards-qr-panel" data-testid="client-cards-qr-panel">
+        <div class="client-qr-card" data-testid="client-cards-qr-card" aria-label="QR real del usuario @Model.ClientUserName">
+            @Html.Raw(Model.ClientQrSvg)
+        </div>
+        <div>
+            <p class="eyebrow">QR cliente</p>
+            <strong data-testid="client-cards-qr-username">@Model.ClientUserName</strong>
+            <p class="text-muted mb-0">El negocio puede escanear este codigo para encontrarte por usuario.</p>
+        </div>
+    </div>
 </section>
 
 @if (Model.Cards.Count > 0)

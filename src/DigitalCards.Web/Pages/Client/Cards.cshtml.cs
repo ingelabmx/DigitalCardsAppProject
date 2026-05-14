@@ -18,6 +18,10 @@ public sealed class CardsModel : PageModel
 
     public IReadOnlyList<ClientLoyaltyCardDto> Cards { get; private set; } = [];
 
+    public string ClientUserName => ClientAuth.GetClientUserName(User);
+
+    public string ClientQrSvg => EnrollmentQrCodeRenderer.RenderSvg(ClientUserName);
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         try
