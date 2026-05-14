@@ -1600,6 +1600,113 @@ h1 {
   min-width: 12px;
 }
 
+.auth-gateway {
+  align-items: stretch;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 0.65fr);
+  margin: 2rem auto;
+  max-width: 1040px;
+}
+
+.auth-copy-panel,
+.auth-form-card {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgb(42 53 71 / 8%);
+}
+
+.auth-copy-panel {
+  background: #2a3547;
+  color: #fff;
+  display: grid;
+  min-height: 420px;
+  padding: 2rem;
+}
+
+.auth-copy-panel .eyebrow {
+  color: #9bb6ff;
+}
+
+.auth-copy-panel h1 {
+  align-self: end;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+.auth-copy-panel p {
+  color: #d6e3ff;
+  font-size: 1.05rem;
+  max-width: 36rem;
+}
+
+.auth-home-link,
+.auth-forgot-link {
+  color: #5d87ff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.auth-home-link {
+  align-self: end;
+  color: #fff;
+}
+
+.auth-home-link:hover,
+.auth-forgot-link:hover {
+  color: #4a6ccc;
+}
+
+.auth-form-card {
+  align-content: center;
+  display: grid;
+  padding: 1.5rem;
+}
+
+.auth-form-heading {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-role-mark {
+  align-items: center;
+  background: #ecf2ff;
+  border-radius: 8px;
+  color: #5d87ff;
+  display: inline-flex;
+  font-weight: 900;
+  height: 52px;
+  justify-content: center;
+  width: 58px;
+}
+
+.auth-form-heading h2 {
+  color: #2a3547;
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.auth-form-heading p {
+  color: #7c8fac;
+  margin: 0;
+}
+
+.auth-link-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.auth-forgot-link {
+  display: inline-block;
+  margin-top: 1rem;
+}
+
 .client-auth-panel {
   margin: 0 auto;
 }
@@ -1621,6 +1728,7 @@ h1 {
   .client-card-main,
   .client-card-preview-grid,
   .client-profile-panel dl,
+  .auth-gateway,
   .gateway-grid,
   .home-gateway,
   .home-info-band,
@@ -1727,5 +1835,9 @@ h1 {
 
   .gateway-card {
     min-height: auto;
+  }
+
+  .auth-copy-panel {
+    min-height: 300px;
   }
 }

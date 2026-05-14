@@ -4,27 +4,43 @@
     ViewData["Title"] = "Login admin";
 }
 
-<section class="form-panel">
-    <h1>Login admin</h1>
-    <p class="text-muted">Acceso para administrar el piloto moderno de negocios.</p>
+<section class="auth-gateway auth-gateway-admin">
+    <div class="auth-copy-panel">
+        <p class="eyebrow">Administracion</p>
+        <h1>Centro de control Puntelio</h1>
+        <p>
+            Gestiona negocios, soporte, auditoria y cutover desde el panel moderno.
+        </p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
+    </div>
 
-    <form method="post" data-testid="admin-login-form">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <div class="mb-3">
-            <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
-            <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="admin-username" />
-            <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <span class="auth-role-mark">AD</span>
+            <div>
+                <h2>Entrar como admin</h2>
+                <p>Usa tu cuenta administrativa autorizada.</p>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Input.Password" class="form-label"></label>
-            <input asp-for="Input.Password" class="form-control" data-testid="admin-password" />
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-        </div>
+        <form method="post" data-testid="admin-login-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <button class="btn btn-primary" type="submit" data-testid="admin-login-submit">Entrar</button>
-    </form>
+            <div class="mb-3">
+                <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
+                <input asp-for="Input.UserNameOrEmail" class="form-control form-control-lg" data-testid="admin-username" />
+                <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control form-control-lg" data-testid="admin-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="admin-login-submit">Entrar al panel</button>
+        </form>
+    </div>
 </section>
 
 @section Scripts {

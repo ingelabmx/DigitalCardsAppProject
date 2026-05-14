@@ -4,28 +4,44 @@
     ViewData["Title"] = "Login negocio";
 }
 
-<section class="form-panel">
-    <h1>Login negocio</h1>
-    <p class="text-muted">Cuenta local de prueba: demo@digitalcards.test / business123.</p>
+<section class="auth-gateway auth-gateway-business">
+    <div class="auth-copy-panel">
+        <p class="eyebrow">Negocios</p>
+        <h1>Opera tarjetas y sellos desde tu mostrador.</h1>
+        <p>
+            Busca clientes, asocia tarjetas, reenvia links Wallet y confirma updates despues de cada sello.
+        </p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
+    </div>
 
-    <form method="post" data-testid="business-login-form">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <div class="mb-3">
-            <label asp-for="Input.Email" class="form-label"></label>
-            <input asp-for="Input.Email" class="form-control" data-testid="business-email" />
-            <span asp-validation-for="Input.Email" class="text-danger"></span>
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <span class="auth-role-mark">NE</span>
+            <div>
+                <h2>Entrar como negocio</h2>
+                <p>Acceso para negocios habilitados en Puntelio.</p>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Input.Password" class="form-label"></label>
-            <input asp-for="Input.Password" class="form-control" data-testid="business-password" />
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-        </div>
+        <form method="post" data-testid="business-login-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <button class="btn btn-primary" type="submit" data-testid="business-login-submit">Entrar</button>
-        <a class="btn btn-link" asp-page="/Business/ForgotPassword" data-testid="business-forgot-password-link">Olvide mi contrasena</a>
-    </form>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control form-control-lg" data-testid="business-email" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control form-control-lg" data-testid="business-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="business-login-submit">Entrar al negocio</button>
+            <a class="auth-forgot-link" asp-page="/Business/ForgotPassword" data-testid="business-forgot-password-link">Olvide mi contrasena</a>
+        </form>
+    </div>
 </section>
 
 @section Scripts {

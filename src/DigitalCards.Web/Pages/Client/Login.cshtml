@@ -4,31 +4,47 @@
     ViewData["Title"] = "Login cliente";
 }
 
-<section class="form-panel client-auth-panel">
-    <p class="eyebrow">Cliente</p>
-    <h1>Login cliente</h1>
-    <p class="lead">Entra para consultar tus tarjetas, sellos y links Wallet.</p>
+<section class="auth-gateway auth-gateway-client client-auth-panel">
+    <div class="auth-copy-panel">
+        <p class="eyebrow">Clientes</p>
+        <h1>Tus tarjetas de lealtad siempre contigo.</h1>
+        <p>
+            Revisa sellos, abre links Wallet y consulta las tarjetas que tienes con tus negocios favoritos.
+        </p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
+    </div>
 
-    <form method="post" data-testid="client-login-form">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <div class="mb-3">
-            <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
-            <input asp-for="Input.UserNameOrEmail" class="form-control" data-testid="client-login-username" />
-            <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <span class="auth-role-mark">CL</span>
+            <div>
+                <h2>Entrar como cliente</h2>
+                <p>Consulta tus tarjetas y sellos digitales.</p>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Input.Password" class="form-label"></label>
-            <input asp-for="Input.Password" class="form-control" data-testid="client-login-password" />
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-        </div>
+        <form method="post" data-testid="client-login-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <div class="form-actions">
-            <button class="btn btn-primary" type="submit" data-testid="client-login-submit">Entrar</button>
-            <a class="btn btn-link" asp-page="/Client/ForgotPassword" data-testid="client-forgot-password-link">Olvide mi contrasena</a>
-        </div>
-    </form>
+            <div class="mb-3">
+                <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
+                <input asp-for="Input.UserNameOrEmail" class="form-control form-control-lg" data-testid="client-login-username" />
+                <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control form-control-lg" data-testid="client-login-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="client-login-submit">Entrar a mis tarjetas</button>
+            <div class="auth-link-row">
+                <a class="auth-forgot-link" asp-page="/Client/ForgotPassword" data-testid="client-forgot-password-link">Olvide mi contrasena</a>
+                <a class="auth-forgot-link" asp-page="/Register">Crear cuenta</a>
+            </div>
+        </form>
+    </div>
 </section>
 
 @section Scripts {
