@@ -14,6 +14,7 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class BusinessProfileModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly DigitalCardsAppService _appService;
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly BusinessLogoUploadService _logoUploads;
     private readonly IConfiguration _configuration;
@@ -21,12 +22,14 @@ public sealed class BusinessProfileModel : PageModel
 
     public BusinessProfileModel(
         AdminAppService adminApp,
+        DigitalCardsAppService appService,
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
         BusinessLogoUploadService logoUploads,
         IConfiguration configuration,
         ILogger<BusinessProfileModel> logger)
     {
         _adminApp = adminApp;
+        _appService = appService;
         _businessEnrollmentLinks = businessEnrollmentLinks;
         _logoUploads = logoUploads;
         _configuration = configuration;
@@ -125,6 +128,27 @@ public sealed class BusinessProfileModel : PageModel
             "Admin {AdminUserId} reset password for business {BusinessId}.",
             AdminAuth.GetAdminUserId(User),
             Profile.BusinessId);
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostSendInviteAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        await _appService.RequestBusinessPasswordResetAsync(
+            new RequestBusinessPasswordResetCommand(Profile!.BusinessEmail, GetBaseUrl()),
+            cancellationToken);
+
+        StatusMessage = "Invitacion enviada por correo para que el negocio configure su acceso.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} sent onboarding invite for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
 
         return Page();
     }

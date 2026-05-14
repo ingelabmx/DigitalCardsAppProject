@@ -12,11 +12,19 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class CreateBusinessModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly DigitalCardsAppService _appService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<CreateBusinessModel> _logger;
 
-    public CreateBusinessModel(AdminAppService adminApp, ILogger<CreateBusinessModel> logger)
+    public CreateBusinessModel(
+        AdminAppService adminApp,
+        DigitalCardsAppService appService,
+        IConfiguration configuration,
+        ILogger<CreateBusinessModel> logger)
     {
         _adminApp = adminApp;
+        _appService = appService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -40,6 +48,7 @@ public sealed class CreateBusinessModel : PageModel
         }
 
         var adminUserId = AdminAuth.GetAdminUserId(User);
+        var sendInvite = Input.SendInvite;
         var result = await _adminApp.CreateBusinessAsync(
             new CreateBusinessCommand(
                 Input.BusinessName,
@@ -59,15 +68,27 @@ public sealed class CreateBusinessModel : PageModel
         }
 
         CreatedBusiness = result.Business;
+        if (sendInvite)
+        {
+            await _appService.RequestBusinessPasswordResetAsync(
+                new RequestBusinessPasswordResetCommand(CreatedBusiness!.BusinessEmail, GetBaseUrl()),
+                cancellationToken);
+        }
+
         StatusMessage = CreatedBusiness!.IsEnabled
             ? $"Negocio creado y habilitado para piloto: {CreatedBusiness.BusinessName}."
             : $"Negocio creado: {CreatedBusiness.BusinessName}.";
+        if (sendInvite)
+        {
+            StatusMessage += " Invitacion enviada por correo para configurar acceso.";
+        }
 
         _logger.LogInformation(
-            "Admin {AdminUserId} created business {BusinessId} with pilot enabled {IsPilotEnabled}.",
+            "Admin {AdminUserId} created business {BusinessId} with pilot enabled {IsPilotEnabled} and invite sent {InviteSent}.",
             adminUserId,
             CreatedBusiness.BusinessId,
-            CreatedBusiness.IsEnabled);
+            CreatedBusiness.IsEnabled,
+            sendInvite);
 
         Input = new InputModel();
         return Page();
@@ -77,6 +98,14 @@ public sealed class CreateBusinessModel : PageModel
     {
         Input.InitialPassword = string.Empty;
         Input.ConfirmPassword = string.Empty;
+    }
+
+    private string GetBaseUrl()
+    {
+        return EnrollmentBaseUrlResolver.Resolve(
+            _configuration["DigitalCards:PublicBaseUrl"],
+            Request.Scheme,
+            Request.Host);
     }
 
     public sealed class InputModel
@@ -107,6 +136,9 @@ public sealed class CreateBusinessModel : PageModel
 
         [Display(Name = "Habilitar piloto")]
         public bool EnablePilot { get; set; }
+
+        [Display(Name = "Enviar invitacion por correo")]
+        public bool SendInvite { get; set; }
 
         [Display(Name = "Notas")]
         [StringLength(500, ErrorMessage = "Las notas no pueden exceder 500 caracteres.")]
