@@ -1009,3 +1009,11 @@ footer y lockups Puntelio/DigitalCards:
 ```text
 docs/migration-context/88-brand-consistency-v1.md
 ```
+
+La revision final de paridad Web Forms vs moderno resume que flujos ya estan
+listos, cuales siguen en piloto y que falta antes de retirar Web Forms por
+negocio:
+
+```text
+docs/migration-context/89-webforms-parity-final-check-v1.md
+```
