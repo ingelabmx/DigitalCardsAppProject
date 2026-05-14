@@ -63,10 +63,6 @@
                     <span>Sellos actuales</span>
                     <strong data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</strong>
                 </div>
-                <div class="metric">
-                    <span>Sellos historicos</span>
-                    <strong data-testid="client-dashboard-lifetime-stamps">@Model.Dashboard.TotalLifetimeStamps</strong>
-                </div>
             </div>
         </div>
 
@@ -86,7 +82,7 @@
                                 <span class="@(stamp <= Math.Min(card.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
                             }
                         </div>
-                        <p>@card.CurrentStamps sellos actuales &middot; @card.LifetimeStamps historicos</p>
+                        <p>@card.CurrentStamps sellos actuales</p>
                         <a class="btn btn-outline-primary btn-sm"
                            asp-page="/Wallet/Select"
                            asp-route-token="@card.WalletSelectToken"
