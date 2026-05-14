@@ -18,6 +18,11 @@
 
     @if (Model.Client is not null)
     {
+        <div class="client-profile-helper" data-testid="client-profile-helper">
+            <span>Usuario fijo</span>
+            <p>Tu username se usa para QR y busqueda de mostrador. No se cambia para proteger tarjetas y Wallets existentes.</p>
+        </div>
+
         <dl class="client-profile-list" data-testid="client-profile-readonly">
             <div>
                 <dt>Usuario</dt>
