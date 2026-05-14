@@ -72,14 +72,17 @@ public sealed class GoogleWalletService : IGoogleWalletService
 
         var walletClient = CreateWalletClient();
         var objectSuffix = NormalizeSuffix(card.GoogleObjectId, "Google object suffix");
+        var classSuffix = NormalizeSuffix(business.GoogleClassSuffix, "business class suffix");
         var objectId = BuildFullId(objectSuffix);
+        var classId = BuildFullId(classSuffix);
+
+        await EnsureClassAsync(walletClient.Service, classId, cancellationToken);
 
         var patchBody = new GenericObject
         {
-            TextModulesData = BuildTextModules(card),
+            TextModulesData = BuildTextModules(card, client, business),
             CardTitle = Localized(GetCardTitle(business)),
-            Header = Localized(client.FullName),
-            Subheader = Localized("Titular"),
+            Header = Localized(business.DisplayName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor,
             Logo = BuildLogoImage(business)
         };
@@ -99,9 +102,6 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 "Google Wallet object {ObjectId} was missing during patch. Recreating it.",
                 objectId);
 
-            var classSuffix = NormalizeSuffix(business.GoogleClassSuffix, "business class suffix");
-            var classId = BuildFullId(classSuffix);
-            await EnsureClassAsync(walletClient.Service, classId, cancellationToken);
             await EnsureObjectAsync(walletClient.Service, objectId, classId, card, client, business, cancellationToken);
         }
     }
@@ -151,58 +151,14 @@ public sealed class GoogleWalletService : IGoogleWalletService
         try
         {
             await service.Genericclass.Get(classId).ExecuteAsync(cancellationToken);
+            await service.Genericclass.Patch(BuildClass(classId), classId).ExecuteAsync(cancellationToken);
             return;
         }
         catch (GoogleApiException exception) when (exception.HttpStatusCode == HttpStatusCode.NotFound)
         {
         }
 
-        var newClass = new GenericClass
-        {
-            Id = classId,
-            MultipleDevicesAndHoldersAllowedStatus = "ONE_USER_ALL_DEVICES",
-            ClassTemplateInfo = new ClassTemplateInfo
-            {
-                CardTemplateOverride = new CardTemplateOverride
-                {
-                    CardRowTemplateInfos =
-                    [
-                        new CardRowTemplateInfo
-                        {
-                            TwoItems = new CardRowTwoItems
-                            {
-                                StartItem = new TemplateItem
-                                {
-                                    FirstValue = new FieldSelector
-                                    {
-                                        Fields =
-                                        [
-                                            new FieldReference
-                                            {
-                                                FieldPath = "object.textModulesData['checks']"
-                                            }
-                                        ]
-                                    }
-                                },
-                                EndItem = new TemplateItem
-                                {
-                                    FirstValue = new FieldSelector
-                                    {
-                                        Fields =
-                                        [
-                                            new FieldReference
-                                            {
-                                                FieldPath = "object.textModulesData['dateCreated']"
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        };
+        var newClass = BuildClass(classId);
 
         try
         {
@@ -258,15 +214,14 @@ public sealed class GoogleWalletService : IGoogleWalletService
             Id = objectId,
             ClassId = classId,
             State = "ACTIVE",
-            TextModulesData = BuildTextModules(card),
+            TextModulesData = BuildTextModules(card, client, business),
             Barcode = new Barcode
             {
                 Type = "QR_CODE",
                 Value = client.UserName
             },
             CardTitle = Localized(GetCardTitle(business)),
-            Header = Localized(client.FullName),
-            Subheader = Localized("Titular"),
+            Header = Localized(business.DisplayName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
 
@@ -284,10 +239,19 @@ public sealed class GoogleWalletService : IGoogleWalletService
         return genericObject;
     }
 
-    private IList<TextModuleData> BuildTextModules(LoyaltyCard card)
+    private IList<TextModuleData> BuildTextModules(
+        LoyaltyCard card,
+        Client client,
+        Business business)
     {
         return
         [
+            new TextModuleData
+            {
+                Id = "client",
+                Header = "Cliente",
+                Body = client.FullName
+            },
             new TextModuleData
             {
                 Id = "checks",
@@ -296,17 +260,55 @@ public sealed class GoogleWalletService : IGoogleWalletService
             },
             new TextModuleData
             {
-                Id = "totalchecks",
-                Header = "Sellos historicos",
-                Body = card.LifetimeStamps.ToString(CultureInfo.InvariantCulture)
-            },
-            new TextModuleData
-            {
-                Id = "dateCreated",
-                Header = "Fecha de alta",
-                Body = card.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                Id = "reward",
+                Header = "Recompensa",
+                Body = business.ProgramDescription ?? string.Empty
             }
         ];
+    }
+
+    private static GenericClass BuildClass(string classId)
+    {
+        return new GenericClass
+        {
+            Id = classId,
+            MultipleDevicesAndHoldersAllowedStatus = "ONE_USER_ALL_DEVICES",
+            ClassTemplateInfo = new ClassTemplateInfo
+            {
+                CardTemplateOverride = new CardTemplateOverride
+                {
+                    CardRowTemplateInfos =
+                    [
+                        new CardRowTemplateInfo
+                        {
+                            ThreeItems = new CardRowThreeItems
+                            {
+                                StartItem = TemplateItem("object.textModulesData['client']"),
+                                MiddleItem = TemplateItem("object.textModulesData['checks']"),
+                                EndItem = TemplateItem("object.textModulesData['reward']")
+                            }
+                        }
+                    ]
+                }
+            }
+        };
+    }
+
+    private static TemplateItem TemplateItem(string fieldPath)
+    {
+        return new TemplateItem
+        {
+            FirstValue = new FieldSelector
+            {
+                Fields =
+                [
+                    new FieldReference
+                    {
+                        FieldPath = fieldPath
+                    }
+                ]
+            }
+        };
     }
 
     private string CreateSaveUrl(

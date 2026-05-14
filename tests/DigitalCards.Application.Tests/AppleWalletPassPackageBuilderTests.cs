@@ -11,7 +11,7 @@ namespace DigitalCards.Application.Tests;
 public sealed class AppleWalletPassPackageBuilderTests
 {
     [Fact]
-    public void BuildPassJson_ContainsStoreCardFields()
+    public void BuildPassJson_ContainsGenericPassLayoutFields()
     {
         var builder = new AppleWalletPassPackageBuilder();
         var card = CreateCard();
@@ -34,14 +34,21 @@ public sealed class AppleWalletPassPackageBuilderTests
         Assert.Equal("pass.com.example.digitalcards", root.GetProperty("passTypeIdentifier").GetString());
         Assert.Equal("TEAMID1234", root.GetProperty("teamIdentifier").GetString());
         Assert.Equal("serial-123", root.GetProperty("serialNumber").GetString());
+        Assert.Equal("Demo Coffee", root.GetProperty("description").GetString());
         Assert.Equal("https://example.test/apple-wallet", root.GetProperty("webServiceURL").GetString());
         Assert.Equal("auth-token", root.GetProperty("authenticationToken").GetString());
-        Assert.True(root.TryGetProperty("storeCard", out var storeCard));
-        Assert.Equal("Programa", storeCard.GetProperty("primaryFields")[0].GetProperty("label").GetString());
-        Assert.Equal("Cafe Rewards", storeCard.GetProperty("primaryFields")[0].GetProperty("value").GetString());
-        Assert.Equal("2", storeCard.GetProperty("secondaryFields")[1].GetProperty("value").GetString());
-        Assert.Equal("Recompensa", storeCard.GetProperty("auxiliaryFields")[0].GetProperty("label").GetString());
-        Assert.Equal("Cafe gratis al completar sellos.", storeCard.GetProperty("auxiliaryFields")[0].GetProperty("value").GetString());
+        Assert.Equal("Cafe Rewards", root.GetProperty("logoText").GetString());
+        Assert.True(root.TryGetProperty("generic", out var generic));
+        Assert.False(root.TryGetProperty("storeCard", out _));
+        Assert.Equal("Nombre publico", generic.GetProperty("primaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Demo Coffee", generic.GetProperty("primaryFields")[0].GetProperty("value").GetString());
+        Assert.Equal("Cliente", generic.GetProperty("secondaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Maria Lopez", generic.GetProperty("secondaryFields")[0].GetProperty("value").GetString());
+        Assert.Equal("Sellos", generic.GetProperty("secondaryFields")[1].GetProperty("label").GetString());
+        Assert.Equal("2", generic.GetProperty("secondaryFields")[1].GetProperty("value").GetString());
+        Assert.Equal("Recompensa", generic.GetProperty("secondaryFields")[2].GetProperty("label").GetString());
+        Assert.Equal("Cafe gratis al completar sellos.", generic.GetProperty("secondaryFields")[2].GetProperty("value").GetString());
+        Assert.False(generic.TryGetProperty("auxiliaryFields", out _));
         Assert.Equal("maria-test", root.GetProperty("barcodes")[0].GetProperty("message").GetString());
         Assert.False(root.GetProperty("barcodes")[0].TryGetProperty("altText", out _));
         Assert.False(root.GetProperty("barcode").TryGetProperty("altText", out _));

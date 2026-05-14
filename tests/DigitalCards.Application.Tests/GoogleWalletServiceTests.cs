@@ -11,7 +11,7 @@ namespace DigitalCards.Application.Tests;
 public sealed class GoogleWalletServiceTests
 {
     [Fact]
-    public void BuildObject_UsesBusinessLogoPathAsPublicLogoUri()
+    public void BuildObject_UsesBusinessLogoAndAppleAlignedFields()
     {
         var service = new GoogleWalletService(
             Options.Create(new GoogleWalletOptions
@@ -31,14 +31,59 @@ public sealed class GoogleWalletServiceTests
             "demo@example.test",
             "hash",
             "/uploads/business-logos/cccccccccccccccccccccccccccccccc/logo.png",
-            publicName: "Puntelio Cafe");
+            publicName: "Puntelio Cafe",
+            programName: "Cafe Rewards",
+            programDescription: "Cafe gratis al completar sellos.");
 
         var genericObject = BuildObject(service, card, client, business);
 
         Assert.Equal(
             "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/logo.png",
             genericObject.Logo.SourceUri.Uri);
-        Assert.Equal("Puntelio Cafe", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Cafe Rewards", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Puntelio Cafe", genericObject.Header.DefaultValue.Value);
+        Assert.Null(genericObject.Subheader);
+        Assert.Equal("maria-test", genericObject.Barcode.Value);
+
+        Assert.Collection(
+            genericObject.TextModulesData,
+            module =>
+            {
+                Assert.Equal("client", module.Id);
+                Assert.Equal("Cliente", module.Header);
+                Assert.Equal("Maria Lopez", module.Body);
+            },
+            module =>
+            {
+                Assert.Equal("checks", module.Id);
+                Assert.Equal("Sellos", module.Header);
+                Assert.Equal("1", module.Body);
+            },
+            module =>
+            {
+                Assert.Equal("reward", module.Id);
+                Assert.Equal("Recompensa", module.Header);
+                Assert.Equal("Cafe gratis al completar sellos.", module.Body);
+            });
+        Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Sellos historicos");
+        Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Fecha de alta");
+    }
+
+    [Fact]
+    public void BuildClass_UsesClientChecksRewardTemplate()
+    {
+        var genericClass = BuildClass();
+
+        var row = Assert.Single(genericClass.ClassTemplateInfo.CardTemplateOverride.CardRowTemplateInfos);
+        Assert.Equal(
+            "object.textModulesData['client']",
+            row.ThreeItems.StartItem.FirstValue.Fields[0].FieldPath);
+        Assert.Equal(
+            "object.textModulesData['checks']",
+            row.ThreeItems.MiddleItem.FirstValue.Fields[0].FieldPath);
+        Assert.Equal(
+            "object.textModulesData['reward']",
+            row.ThreeItems.EndItem.FirstValue.Fields[0].FieldPath);
     }
 
     private static GenericObject BuildObject(
@@ -55,6 +100,16 @@ public sealed class GoogleWalletServiceTests
         return (GenericObject)method.Invoke(
             service,
             ["issuer.object", "issuer.class", card, client, business])!;
+    }
+
+    private static GenericClass BuildClass()
+    {
+        var method = typeof(GoogleWalletService).GetMethod(
+            "BuildClass",
+            BindingFlags.Static | BindingFlags.NonPublic) ??
+            throw new InvalidOperationException("BuildClass method was not found.");
+
+        return (GenericClass)method.Invoke(null, ["issuer.class"])!;
     }
 
     private static LoyaltyCard CreateCard()

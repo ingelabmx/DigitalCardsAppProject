@@ -91,7 +91,7 @@ public sealed class AppleWalletPassPackageBuilder
             serialNumber = serialNumber ?? CreateSerialNumber(card),
             teamIdentifier = options.TeamIdentifier,
             organizationName = options.OrganizationName,
-            description = business.ProgramDescription ?? options.Description,
+            description = business.DisplayName,
             webServiceURL = settings?.WebServiceUrl,
             authenticationToken = settings?.AuthenticationToken,
             logoText = business.ProgramName ?? business.DisplayName,
@@ -113,11 +113,11 @@ public sealed class AppleWalletPassPackageBuilder
                 format = "PKBarcodeFormatQR",
                 messageEncoding = "iso-8859-1"
             },
-            storeCard = new
+            generic = new
             {
                 primaryFields = new[]
                 {
-                    Field("program", "Programa", business.ProgramName ?? business.DisplayName)
+                    Field("publicName", "Nombre publico", business.DisplayName)
                 },
                 secondaryFields = new[]
                 {
@@ -126,10 +126,7 @@ public sealed class AppleWalletPassPackageBuilder
                         "currentStamps",
                         "Sellos",
                         card.CurrentStamps.ToString(CultureInfo.InvariantCulture),
-                        "Sellos actualizados: %@")
-                },
-                auxiliaryFields = new[]
-                {
+                        "Sellos actualizados: %@"),
                     Field("reward", "Recompensa", business.ProgramDescription ?? options.Description ?? string.Empty)
                 },
                 backFields = new[]
