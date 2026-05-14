@@ -960,3 +960,10 @@ Wallet o agregar sello:
 ```text
 docs/migration-context/77-business-cards-visual-v2.md
 ```
+
+La pantalla `/Client/Cards` muestra resumen visual de tarjetas, sellos,
+Wallets y progreso por tarjeta:
+
+```text
+docs/migration-context/78-client-cards-visual-v2.md
+```
