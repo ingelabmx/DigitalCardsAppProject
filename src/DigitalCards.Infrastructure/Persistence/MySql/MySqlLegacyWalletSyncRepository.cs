@@ -86,25 +86,42 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
             : new DateTimeOffset(dateTime.ToUniversalTime());
     }
 
-    private sealed record LegacyWalletSyncRow(
-        int CardID,
-        string? CardIDGoogle,
-        DateTime? CreationDate,
-        int? CheckQTY,
-        DateTime? LastCheck,
-        int UserID,
-        int BusinessID,
-        int? HistoricCheckQTY,
-        string UserName,
-        string FirstName,
-        string Lastname,
-        string UserEmail,
-        string BusinessName,
-        string BusinessEmail,
-        string BusinessPassword,
-        string? BusinessLogo,
-        long HasRegisteredAppleDevices)
+    private sealed class LegacyWalletSyncRow
     {
+        public int CardID { get; set; }
+
+        public string? CardIDGoogle { get; set; }
+
+        public DateTime? CreationDate { get; set; }
+
+        public int? CheckQTY { get; set; }
+
+        public DateTime? LastCheck { get; set; }
+
+        public int UserID { get; set; }
+
+        public int BusinessID { get; set; }
+
+        public int? HistoricCheckQTY { get; set; }
+
+        public string UserName { get; set; } = string.Empty;
+
+        public string FirstName { get; set; } = string.Empty;
+
+        public string Lastname { get; set; } = string.Empty;
+
+        public string UserEmail { get; set; } = string.Empty;
+
+        public string BusinessName { get; set; } = string.Empty;
+
+        public string BusinessEmail { get; set; } = string.Empty;
+
+        public string BusinessPassword { get; set; } = string.Empty;
+
+        public string? BusinessLogo { get; set; }
+
+        public int HasRegisteredAppleDevices { get; set; }
+
         public LegacyWalletSyncCandidate ToCandidate()
         {
             var cardGuid = LegacyIdMapper.ToGuid(CardID);
