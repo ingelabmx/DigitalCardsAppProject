@@ -59,7 +59,7 @@ public sealed class LoginModel : PageModel
         if (!pilotAccess.IsAllowed)
         {
             _logger.LogWarning("Business login blocked for business {BusinessId}.", business.Id);
-            ModelState.AddModelError(string.Empty, pilotAccess.Message ?? "El negocio no puede usar el flujo moderno.");
+            ModelState.AddModelError(string.Empty, pilotAccess.Message ?? "El negocio no puede usar Puntelio.");
             return Page();
         }
 

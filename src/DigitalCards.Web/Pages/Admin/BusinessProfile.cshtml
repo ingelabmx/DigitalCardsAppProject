@@ -28,13 +28,6 @@
 
     @if (Model.Profile is not null)
     {
-        @if (Model.Profile.ActivationStatus == DigitalCards.Domain.BusinessActivationStatus.LegacyRetired)
-        {
-            <div class="alert alert-warning" role="status" data-testid="admin-business-legacy-retired-warning">
-                Legacy retirado: el flujo moderno queda activo, pero Web Forms debe bloquearse manualmente para este negocio hasta que exista automatizacion legacy.
-            </div>
-        }
-
         <section class="business-profile-panel mb-4" data-testid="admin-business-public-enrollment">
             <h2>Registro publico del negocio</h2>
             <p class="text-muted">Genera un link opaco para que clientes se registren directamente en este programa. El token plano no se guarda en base de datos.</p>
@@ -75,28 +68,22 @@
                 <div class="mb-3">
                     <label asp-for="Input.BusinessLogo" class="form-label">Logo</label>
                     <input asp-for="Input.BusinessLogo" class="form-control" maxlength="100" data-testid="admin-business-profile-logo" />
-                    <small class="form-text text-muted">Ruta legacy o URL corta. Upload queda para un PR posterior.</small>
+                    <small class="form-text text-muted">Ruta publica del logo o URL corta.</small>
                 </div>
 
-                <div class="form-check mb-3">
-                    <input asp-for="Input.IsPilotEnabled" class="form-check-input" data-testid="admin-business-profile-pilot" />
-                    <label asp-for="Input.IsPilotEnabled" class="form-check-label">Piloto habilitado</label>
-                </div>
+                <input asp-for="Input.IsPilotEnabled" type="hidden" />
 
                 <div class="mb-3">
                     <label asp-for="Input.ActivationStatus" class="form-label">Estado de activacion</label>
                     <select asp-for="Input.ActivationStatus" class="form-select" data-testid="admin-business-activation-status">
-                        <option value="LegacyOnly">Legacy only</option>
-                        <option value="PilotModern">Piloto moderno</option>
-                        <option value="ModernPrimary">Moderno principal</option>
-                        <option value="LegacyRetired">Legacy retirado</option>
+                        <option value="ModernPrimary">Activo</option>
                         <option value="Inactive">Inactivo</option>
                     </select>
-                    <small class="form-text text-muted">El estado documenta el avance de migracion por negocio. Inactivo bloquea login moderno.</small>
+                    <small class="form-text text-muted">Inactivo bloquea el acceso del negocio.</small>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Input.Notes" class="form-label">Notas piloto</label>
+                    <label asp-for="Input.Notes" class="form-label">Notas operativas</label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-business-profile-notes"></textarea>
                 </div>
 
@@ -109,7 +96,7 @@
                   class="business-profile-panel"
                   data-testid="admin-business-password-form">
                 <h2>Reset de contrasena</h2>
-                <p class="text-muted">Actualiza la credencial legacy y el hash moderno del negocio.</p>
+                <p class="text-muted">Actualiza la credencial de acceso del negocio.</p>
 
                 <div class="mb-3">
                     <label asp-for="PasswordInput.NewPassword" class="form-label">Nueva contrasena</label>
@@ -122,6 +109,26 @@
                 </div>
 
                 <button class="btn btn-outline-danger" type="submit" data-testid="admin-business-password-submit">Actualizar contrasena</button>
+            </form>
+
+            <form method="post"
+                  asp-page-handler="DeleteBusiness"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel border-danger"
+                  data-testid="admin-business-delete-form">
+                <h2>Eliminar negocio permanentemente</h2>
+                <p class="text-muted">
+                    Elimina el negocio, sus tarjetas/asociaciones de clientes y datos Wallet relacionados. Las cuentas globales de clientes no se borran.
+                </p>
+                <label class="form-label" for="business-delete-confirmation">Escribe exactamente: @Model.Profile.BusinessName</label>
+                <input id="business-delete-confirmation"
+                       name="confirmation"
+                       class="form-control"
+                       autocomplete="off"
+                       data-testid="admin-business-delete-confirmation" />
+                <button class="btn btn-danger mt-3" type="submit" data-testid="admin-business-delete-submit">
+                    Eliminar permanentemente
+                </button>
             </form>
 
             <form method="post"

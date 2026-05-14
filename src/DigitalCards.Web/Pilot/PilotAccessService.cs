@@ -7,7 +7,7 @@ namespace DigitalCards.Web.Pilot;
 
 public sealed class PilotAccessService
 {
-    private const string InactiveBusinessMessage = "Este negocio esta desactivado para el flujo moderno. Contacta al administrador.";
+    private const string InactiveBusinessMessage = "Este negocio esta inactivo en Puntelio. Contacta al administrador.";
 
     private readonly PilotOptions _options;
     private readonly IPilotBusinessRepository _pilotBusinesses;

@@ -159,14 +159,8 @@
                                 </div>
                                 <div>
                                     <strong>@business.RecentCardCount</strong>
-                                    <span>@ActivationLabel(business.ActivationStatus) &middot; @(business.IsPilotEnabled ? "piloto activo" : "piloto apagado")</span>
+                                    <span>@ActivationLabel(business.ActivationStatus) &middot; @(business.IsPilotEnabled ? "activo" : "inactivo")</span>
                                 </div>
-                                @if (business.ActivationStatus == DigitalCards.Domain.BusinessActivationStatus.LegacyRetired)
-                                {
-                                    <div class="support-safe-errors" data-testid="admin-support-legacy-retired">
-                                        Legacy retirado: confirmar bloqueo manual de Web Forms para este negocio.
-                                    </div>
-                                }
                             </div>
                         }
                     </div>
@@ -315,11 +309,8 @@
     {
         return status switch
         {
-            DigitalCards.Domain.BusinessActivationStatus.PilotModern => "Piloto moderno",
-            DigitalCards.Domain.BusinessActivationStatus.ModernPrimary => "Moderno principal",
-            DigitalCards.Domain.BusinessActivationStatus.LegacyRetired => "Legacy retirado",
-            DigitalCards.Domain.BusinessActivationStatus.Inactive => "Inactivo",
-            _ => "Legacy only"
+            DigitalCards.Domain.BusinessActivationStatus.Inactive or DigitalCards.Domain.BusinessActivationStatus.LegacyOnly => "Inactivo",
+            _ => "Activo"
         };
     }
 }

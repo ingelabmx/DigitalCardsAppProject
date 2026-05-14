@@ -8,17 +8,17 @@
     <div>
         <p class="eyebrow">Admin</p>
         <h1 data-testid="admin-dashboard-title">@Model.AdminName</h1>
-        <p class="lead">Administra que negocios pueden usar el flujo moderno en app.puntelio.com.</p>
+        <p class="lead">Administra negocios, clientes, soporte y operacion de app.puntelio.com.</p>
     </div>
 
     <div class="action-grid admin-action-grid" data-testid="admin-action-grid">
         <a class="action-card" asp-page="/Admin/CreateBusiness" data-testid="admin-create-business-link">
             <span>Crear negocio</span>
-            <small>Registra un negocio con acceso legacy-compatible.</small>
+            <small>Registra un negocio y envia invitacion de acceso.</small>
         </a>
         <a class="action-card" asp-page="/Admin/Businesses" data-testid="admin-businesses-link">
-            <span>Negocios piloto</span>
-            <small>Habilita o deshabilita el unico allowlist operativo.</small>
+            <span>Negocios</span>
+            <small>Activa, desactiva o administra perfiles.</small>
         </a>
         <a class="action-card" asp-page="/Admin/Cutover" data-testid="admin-cutover-link">
             <span>Cutover</span>
@@ -51,7 +51,7 @@
     <a class="admin-command-card" asp-page="/Admin/Businesses">
         <span>01</span>
         <strong>Negocios</strong>
-        <small>Alta, piloto, activacion y perfil.</small>
+        <small>Alta, activacion y perfil.</small>
     </a>
     <a class="admin-command-card" asp-page="/Admin/Support">
         <span>02</span>
@@ -73,14 +73,14 @@
 <section class="result-panel dashboard-empty-state" data-testid="admin-dashboard-next-steps">
     <div>
         <p class="eyebrow">Siguiente paso</p>
-        <h2>Prepara un negocio para operar en moderno</h2>
+        <h2>Prepara un negocio para operar en Puntelio</h2>
         <p>
-            Si todavia no hay negocios activos, crea uno o habilita un negocio existente para piloto. Despues valida branding, soporte y cutover desde esta misma consola.
+            Si todavia no hay negocios activos, crea uno o activa un negocio existente. Despues valida branding, soporte y cutover desde esta misma consola.
         </p>
     </div>
     <div class="dashboard-empty-actions">
         <a class="btn btn-primary" asp-page="/Admin/CreateBusiness">Crear negocio</a>
-        <a class="btn btn-outline-primary" asp-page="/Admin/Businesses">Habilitar piloto</a>
+        <a class="btn btn-outline-primary" asp-page="/Admin/Businesses">Activar negocio</a>
         <a class="btn btn-outline-secondary" asp-page="/Admin/Cutover">Revisar cutover</a>
     </div>
 </section>

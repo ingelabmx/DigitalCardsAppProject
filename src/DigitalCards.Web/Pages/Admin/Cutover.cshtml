@@ -10,7 +10,7 @@
         <div>
             <p class="eyebrow">Admin</p>
             <h1>Cutover por negocio</h1>
-            <p class="lead">Revisa readiness y cambia el estado operativo antes de mover un negocio al flujo moderno.</p>
+            <p class="lead">Revisa readiness y cambia el estado operativo antes de activar un negocio.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-outline-primary" asp-page="/Admin/Support" data-testid="admin-cutover-support-link">Soporte</a>
@@ -23,10 +23,7 @@
         <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-cutover-query" />
         <select asp-for="ActivationStatusFilter" class="form-select" data-testid="admin-cutover-status-filter">
             <option value="">Todos los estados</option>
-            <option value="LegacyOnly">Legacy only</option>
-            <option value="PilotModern">Piloto moderno</option>
-            <option value="ModernPrimary">Moderno principal</option>
-            <option value="LegacyRetired">Legacy retirado</option>
+            <option value="ModernPrimary">Activo</option>
             <option value="Inactive">Inactivo</option>
         </select>
         <button class="btn btn-primary" type="submit" data-testid="admin-cutover-search-submit">Filtrar</button>
@@ -78,7 +75,7 @@
                                 @CutoverModel.ActivationLabel(business.ActivationStatus)
                             </span>
                             <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")">
-                                @(business.IsEnabled ? "moderno habilitado" : "moderno apagado")
+                                @(business.IsEnabled ? "activo" : "inactivo")
                             </span>
                             <span class="badge @(item.ReadinessScore >= 5 ? "text-bg-success" : "text-bg-warning")" data-testid="admin-cutover-readiness">
                                 @item.ReadinessScore/6 readiness
@@ -161,10 +158,7 @@
                         <input type="hidden" asp-for="Input.BusinessId" value="@business.BusinessId" />
                         <label class="form-label" for="cutover-status-@business.BusinessId">Nuevo estado</label>
                         <select id="cutover-status-@business.BusinessId" name="Input.ActivationStatus" class="form-select" data-testid="admin-cutover-new-status">
-                            <option value="LegacyOnly" selected="@(business.ActivationStatus == BusinessActivationStatus.LegacyOnly)">Legacy only</option>
-                            <option value="PilotModern" selected="@(business.ActivationStatus == BusinessActivationStatus.PilotModern)">Piloto moderno</option>
-                            <option value="ModernPrimary" selected="@(business.ActivationStatus == BusinessActivationStatus.ModernPrimary)">Moderno principal</option>
-                            <option value="LegacyRetired" selected="@(business.ActivationStatus == BusinessActivationStatus.LegacyRetired)">Legacy retirado</option>
+                            <option value="ModernPrimary" selected="@(business.ActivationStatus != BusinessActivationStatus.Inactive && business.ActivationStatus != BusinessActivationStatus.LegacyOnly)">Activo</option>
                             <option value="Inactive" selected="@(business.ActivationStatus == BusinessActivationStatus.Inactive)">Inactivo</option>
                         </select>
                         <label class="form-label" for="cutover-notes-@business.BusinessId">Notas</label>
@@ -219,7 +213,7 @@
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.ModernStampOk" value="true" checked="@(item.LatestSmoke?.ModernStampOk == true)" />
-                                <span class="form-check-label">Sello moderno probado</span>
+                                <span class="form-check-label">Sello probado</span>
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.SupportReviewed" value="true" checked="@(item.LatestSmoke?.SupportReviewed == true)" />

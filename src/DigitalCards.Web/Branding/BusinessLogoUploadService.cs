@@ -83,6 +83,31 @@ public sealed class BusinessLogoUploadService
         return new BusinessLogoUploadResult(publicPath, ErrorMessage: null);
     }
 
+    public void DeleteIfOwned(string? publicPath)
+    {
+        if (string.IsNullOrWhiteSpace(publicPath))
+        {
+            return;
+        }
+
+        var requestPath = _options.GetRequestPath().TrimEnd('/');
+        if (!publicPath.StartsWith($"{requestPath}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var relativePath = publicPath[(requestPath.Length + 1)..]
+            .Replace('/', Path.DirectorySeparatorChar);
+        var root = _options.GetPhysicalRoot();
+        var physicalPath = Path.GetFullPath(Path.Combine(root, relativePath));
+        EnsureChildPath(root, physicalPath);
+
+        if (File.Exists(physicalPath))
+        {
+            File.Delete(physicalPath);
+        }
+    }
+
     private static bool MatchesExtension(ReadOnlySpan<byte> signature, string extension)
     {
         return extension switch

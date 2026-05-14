@@ -28,6 +28,7 @@ public sealed class BusinessesModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        StatusMessage = TempData["AdminBusinessStatus"] as string;
         await LoadAsync(cancellationToken);
     }
 
@@ -74,7 +75,8 @@ public sealed class BusinessesModel : PageModel
                 businessId,
                 AdminAuth.GetAdminUserId(User),
                 isEnabled,
-                notes),
+                notes,
+                isEnabled ? DigitalCards.Domain.BusinessActivationStatus.ModernPrimary : DigitalCards.Domain.BusinessActivationStatus.Inactive),
             cancellationToken);
 
         if (result is null)
@@ -90,8 +92,8 @@ public sealed class BusinessesModel : PageModel
             result.BusinessId,
             result.IsEnabled);
         StatusMessage = result.IsEnabled
-            ? $"Piloto habilitado para {result.BusinessName}."
-            : $"Piloto deshabilitado para {result.BusinessName}.";
+            ? $"Negocio activado: {result.BusinessName}."
+            : $"Negocio desactivado: {result.BusinessName}.";
         await LoadAsync(cancellationToken);
         return Page();
     }

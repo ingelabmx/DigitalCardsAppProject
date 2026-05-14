@@ -94,7 +94,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-create-business-submit").ClickAsync();
 
         Assert.Contains("Negocio creado", await page.GetByTestId("admin-create-business-status").InnerTextAsync());
-        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-created-business-result").InnerTextAsync());
+        Assert.Contains("Activo", await page.GetByTestId("admin-created-business-result").InnerTextAsync());
         Assert.DoesNotContain(businessPassword, await page.ContentAsync(), StringComparison.Ordinal);
 
         await page.GetByTestId("admin-created-business-open-link").ClickAsync();
@@ -275,7 +275,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
 
         await DisableDemoBusinessPilotAsync(page);
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
-        Assert.Contains("no esta habilitado", await page.GetByTestId("pilot-business-blocked").InnerTextAsync());
+        Assert.Contains("inactivo en Puntelio", await page.GetByTestId("pilot-business-blocked").InnerTextAsync());
     }
 
     [PlaywrightFact]
@@ -338,7 +338,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
-        Assert.Contains("Piloto habilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+        Assert.Contains("Negocio activado", await page.GetByTestId("admin-business-status").InnerTextAsync());
     }
 
     private async Task DisableDemoBusinessPilotAsync(IPage page)
@@ -347,7 +347,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
         await page.GetByTestId("admin-disable-pilot").First.ClickAsync();
-        Assert.Contains("Piloto deshabilitado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+        Assert.Contains("Negocio desactivado", await page.GetByTestId("admin-business-status").InnerTextAsync());
     }
 
     private static string NewLegacySafeUserName(string prefix)

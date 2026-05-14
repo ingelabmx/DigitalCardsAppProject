@@ -84,6 +84,15 @@ public sealed record ResetBusinessPasswordCommand(
     Guid AdminUserId,
     string NewPassword);
 
+public sealed record DeleteBusinessCommand(
+    Guid BusinessId,
+    Guid AdminUserId,
+    string Confirmation);
+
+public sealed record DeleteBusinessResult(
+    bool Succeeded,
+    string? ErrorMessage);
+
 public sealed record BusinessBrandingDto(
     string PublicName,
     string LogoPath,

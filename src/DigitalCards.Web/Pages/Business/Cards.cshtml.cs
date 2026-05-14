@@ -110,6 +110,52 @@ public sealed class CardsModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostDeactivateAsync(Guid cardId, CancellationToken cancellationToken)
+    {
+        return await SetCardActiveAsync(cardId, isActive: false, "Tarjeta desactivada para este negocio.", cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostReactivateAsync(Guid cardId, CancellationToken cancellationToken)
+    {
+        return await SetCardActiveAsync(cardId, isActive: true, "Tarjeta reactivada para este negocio.", cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(Guid cardId, string confirmation, CancellationToken cancellationToken)
+    {
+        CardId = cardId;
+
+        if (!await ValidateOperationAsync(cancellationToken, allowInactive: true))
+        {
+            return Page();
+        }
+
+        var expected = Detail!.Client.UserName;
+        if (!string.Equals(confirmation?.Trim(), expected, StringComparison.Ordinal))
+        {
+            ModelState.AddModelError(string.Empty, $"Escribe exactamente {expected} para eliminar la tarjeta.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return Page();
+        }
+
+        var result = await _appService.DeleteBusinessCardAsync(
+            BusinessAuth.GetBusinessId(User),
+            cardId,
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo eliminar la tarjeta.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return Page();
+        }
+
+        CardId = null;
+        Detail = null;
+        StatusMessage = "Tarjeta eliminada para este negocio. La cuenta global del cliente se conserva.";
+        await LoadSearchResultsAsync(cancellationToken);
+        return Page();
+    }
+
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         await LoadSearchResultsAsync(cancellationToken);
@@ -146,7 +192,39 @@ public sealed class CardsModel : PageModel
             cancellationToken);
     }
 
-    private async Task<bool> ValidateOperationAsync(CancellationToken cancellationToken)
+    private async Task<IActionResult> SetCardActiveAsync(
+        Guid cardId,
+        bool isActive,
+        string statusMessage,
+        CancellationToken cancellationToken)
+    {
+        CardId = cardId;
+
+        if (!await ValidateOperationAsync(cancellationToken, allowInactive: true))
+        {
+            return Page();
+        }
+
+        var result = await _appService.SetBusinessCardActiveAsync(
+            BusinessAuth.GetBusinessId(User),
+            cardId,
+            isActive,
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo cambiar el estado de la tarjeta.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return Page();
+        }
+
+        Detail = result.Card;
+        StatusMessage = statusMessage;
+        await LoadSearchResultsAsync(cancellationToken);
+        return Page();
+    }
+
+    private async Task<bool> ValidateOperationAsync(CancellationToken cancellationToken, bool allowInactive = false)
     {
         if (!await SetPilotBusinessBlockAsync(cancellationToken))
         {
@@ -159,6 +237,13 @@ public sealed class CardsModel : PageModel
         if (Detail is null)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta no existe para este negocio.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return false;
+        }
+
+        if (!allowInactive && !Detail.IsActive)
+        {
+            ModelState.AddModelError(string.Empty, "La tarjeta esta desactivada para este negocio.");
             await LoadSearchResultsAsync(cancellationToken);
             return false;
         }

@@ -185,19 +185,15 @@ public sealed class CutoverModel : PageModel
 
     private static bool IsModernEnabled(BusinessActivationStatus activationStatus)
     {
-        return activationStatus is not BusinessActivationStatus.LegacyOnly
-            and not BusinessActivationStatus.Inactive;
+        return activationStatus is not BusinessActivationStatus.Inactive;
     }
 
     public static string ActivationLabel(BusinessActivationStatus status)
     {
         return status switch
         {
-            BusinessActivationStatus.PilotModern => "Piloto moderno",
-            BusinessActivationStatus.ModernPrimary => "Moderno principal",
-            BusinessActivationStatus.LegacyRetired => "Legacy retirado",
-            BusinessActivationStatus.Inactive => "Inactivo",
-            _ => "Legacy only"
+            BusinessActivationStatus.Inactive or BusinessActivationStatus.LegacyOnly => "Inactivo",
+            _ => "Activo"
         };
     }
 }

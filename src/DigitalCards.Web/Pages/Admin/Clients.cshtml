@@ -9,13 +9,13 @@
         <div>
             <p class="eyebrow">Admin</p>
             <h1>Clientes</h1>
-            <p class="lead">El acceso moderno ya no se controla por allowlist de cliente. Habilita el negocio piloto y deja que el negocio asocie clientes desde su flujo.</p>
+            <p class="lead">Consulta clientes y deja que cada negocio administre sus asociaciones desde Tarjetas.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-clients-back-link">Dashboard</a>
     </div>
 
     <div class="alert alert-info" role="status" data-testid="admin-client-allowlist-retired">
-        La allowlist de clientes quedo retirada del flujo operativo. Esta vista queda solo como consulta segura de clientes legacy.
+        La activacion operativa se controla por negocio. Esta vista queda como consulta segura de clientes.
     </div>
 
     <form method="get" class="search-row" data-testid="admin-client-search-form">
@@ -54,10 +54,10 @@
                         </span>
                         @if (client.UpdatedAt is not null)
                         {
-                            <small>Registro piloto historico actualizado @client.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
+                            <small>Registro operativo actualizado @client.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
                         }
                     </div>
-                    <p class="text-muted mb-0">Para permitir operacion moderna, habilita el negocio desde <a asp-page="/Admin/Businesses">Negocios</a>.</p>
+                    <p class="text-muted mb-0">Para permitir operacion, activa el negocio desde <a asp-page="/Admin/Businesses">Negocios</a>.</p>
                 </article>
             }
         </div>

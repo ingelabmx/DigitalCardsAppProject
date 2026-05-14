@@ -409,6 +409,23 @@ validacion de tarjeta, el reenvio de Wallet y el agregado de sello. `Checadas`
 se conserva como acceso rapido para aplicar sellos. `/Business/CheckIn`
 redirige a `Tarjetas`.
 
+Desde el detalle de tarjeta, el negocio puede desactivar/reactivar o eliminar
+la asociacion del cliente con ese negocio. Esto no elimina la cuenta global del
+cliente.
+
+## Lifecycle y eliminacion controlada
+
+Antes de usar desactivar/eliminar tarjetas contra HostGator, aplica:
+
+```text
+docs/migration-context/94-account-lifecycle-and-delete-hostgator.sql
+```
+
+Admin puede activar/desactivar negocios o eliminarlos permanentemente desde
+`/Admin/BusinessProfile/{businessId}`. La eliminacion de negocio borra sus
+tarjetas/asociaciones y datos Wallet relacionados, pero conserva las cuentas
+globales de clientes.
+
 ## Consentimiento de cliente
 
 `/Register` y `/Enroll/{businessToken}` requieren aceptar terminos y privacidad.

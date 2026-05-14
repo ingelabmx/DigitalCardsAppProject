@@ -143,11 +143,13 @@
 
                     <div class="business-card-action-strip" data-testid="business-card-action-strip">
                         <div>
-                            <span>Siguiente accion</span>
+                            <span>Estado de tarjeta</span>
                             <strong>
-                                @(stampsToGoal == 0
-                                    ? "Recompensa lista o nuevo ciclo"
-                                    : $"Faltan {stampsToGoal} sello(s)")
+                                @(Model.Detail.IsActive
+                                    ? stampsToGoal == 0
+                                        ? "Activa · Recompensa lista o nuevo ciclo"
+                                        : $"Activa · Faltan {stampsToGoal} sello(s)"
+                                    : "Inactiva")
                             </strong>
                         </div>
                         <div class="business-card-action-buttons">
@@ -157,12 +159,12 @@
                                 Administrar
                             </a>
                             <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                                <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit">
+                                <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit" disabled="@(!Model.Detail.IsActive)">
                                     Reenviar Wallet
                                 </button>
                             </form>
                             <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                                <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit">
+                                <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit" disabled="@(!Model.Detail.IsActive)">
                                     Agregar sello
                                 </button>
                             </form>
@@ -171,7 +173,34 @@
 
                     <div class="business-management-note" id="business-card-management-panel" data-testid="business-card-management-panel">
                         <strong>Administracion de tarjeta</strong>
-                        <p>Desde aqui se concentraran las acciones de estado del cliente para este negocio.</p>
+                        <p>Estas acciones afectan solo la relacion del cliente con este negocio. No borran la cuenta global del cliente.</p>
+                        <div class="business-card-action-buttons">
+                            @if (Model.Detail.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Deactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                    <button class="btn btn-outline-warning" type="submit" data-testid="business-card-deactivate-submit">
+                                        Desactivar cliente
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Reactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                    <button class="btn btn-outline-success" type="submit" data-testid="business-card-reactivate-submit">
+                                        Reactivar cliente
+                                    </button>
+                                </form>
+                            }
+                            <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form">
+                                <input class="form-control form-control-sm"
+                                       name="confirmation"
+                                       placeholder="Escribe @Model.Detail.Client.UserName"
+                                       data-testid="business-card-delete-confirmation" />
+                                <button class="btn btn-outline-danger" type="submit" data-testid="business-card-delete-submit">
+                                    Eliminar permanentemente
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="business-detail-card-face" data-testid="business-detail-card-face">

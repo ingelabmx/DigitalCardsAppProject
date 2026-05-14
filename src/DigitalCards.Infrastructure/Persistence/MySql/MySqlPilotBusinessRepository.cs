@@ -184,8 +184,8 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
             return Enum.TryParse<BusinessActivationStatus>(value, ignoreCase: true, out var status)
                 ? status
                 : isEnabled
-                    ? BusinessActivationStatus.PilotModern
-                    : BusinessActivationStatus.LegacyOnly;
+                    ? BusinessActivationStatus.ModernPrimary
+                    : BusinessActivationStatus.Inactive;
         }
     }
 }

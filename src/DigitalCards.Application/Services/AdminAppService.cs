@@ -36,6 +36,7 @@ public sealed class AdminAppService
     private readonly IAppleWalletService _appleWallet;
     private readonly IGoogleWalletService _googleWallet;
     private readonly ILoyaltyCardRepository _loyaltyCards;
+    private readonly IAccountLifecycleRepository _accountLifecycle;
     private readonly IPasswordHasher<AdminPasswordHashSubject> _adminPasswordHasher;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _businessPasswordHasher;
     private readonly IAuditEventRepository _auditEvents;
@@ -56,6 +57,7 @@ public sealed class AdminAppService
         IAppleWalletPassRepository appleWalletPasses,
         IAppleWalletService appleWallet,
         IGoogleWalletService googleWallet,
+        IAccountLifecycleRepository accountLifecycle,
         IStampLedgerRepository stampLedger,
         WalletBrandingRefreshService walletBrandingRefresh,
         IAuditEventRepository auditEvents,
@@ -76,6 +78,7 @@ public sealed class AdminAppService
         _appleWalletPasses = appleWalletPasses;
         _appleWallet = appleWallet;
         _googleWallet = googleWallet;
+        _accountLifecycle = accountLifecycle;
         _stampLedger = stampLedger;
         _walletBrandingRefresh = walletBrandingRefresh;
         _auditEvents = auditEvents;
@@ -523,6 +526,39 @@ public sealed class AdminAppService
         return new BusinessProfileResult(
             await ToBusinessProfileDtoAsync(business, access, cancellationToken),
             ErrorMessage: null);
+    }
+
+    public async Task<DeleteBusinessResult> DeleteBusinessPermanentlyAsync(
+        DeleteBusinessCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return new DeleteBusinessResult(false, "La sesion de admin no es valida.");
+        }
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return new DeleteBusinessResult(false, "El negocio no existe.");
+        }
+
+        if (!string.Equals(command.Confirmation?.Trim(), business.Name, StringComparison.Ordinal))
+        {
+            return new DeleteBusinessResult(false, "La confirmacion debe coincidir exactamente con el nombre del negocio.");
+        }
+
+        await AddAuditAsync(
+            OperationalAuditEventType.BusinessDeleted,
+            command.AdminUserId,
+            businessId: business.Id,
+            summary: $"Business {business.Name} permanently deleted.",
+            cancellationToken: cancellationToken);
+
+        var deleted = await _accountLifecycle.DeleteBusinessAsync(business.Id, cancellationToken);
+        return deleted
+            ? new DeleteBusinessResult(true, ErrorMessage: null)
+            : new DeleteBusinessResult(false, "No se pudo eliminar el negocio.");
     }
 
     public async Task<BusinessBrandingResult> UpdateBusinessBrandingAsync(
@@ -1730,7 +1766,7 @@ public sealed class AdminAppService
             business.Name,
             business.Email,
             access?.IsEnabled ?? false,
-            access?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly,
+            access?.ActivationStatus ?? BusinessActivationStatus.Inactive,
             access?.Notes,
             access?.UpdatedAt);
     }
@@ -1748,7 +1784,7 @@ public sealed class AdminAppService
             business.Email,
             business.LogoPath,
             access?.IsEnabled ?? false,
-            access?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly,
+            access?.ActivationStatus ?? BusinessActivationStatus.Inactive,
             access?.Notes,
             access?.UpdatedAt,
             ToBrandingDto(business, branding));
@@ -1759,8 +1795,8 @@ public sealed class AdminAppService
         BusinessActivationStatus? requestedStatus)
     {
         return requestedStatus ?? (isPilotEnabled
-            ? BusinessActivationStatus.PilotModern
-            : BusinessActivationStatus.LegacyOnly);
+            ? BusinessActivationStatus.ModernPrimary
+            : BusinessActivationStatus.Inactive);
     }
 
     private static bool IsModernEnabled(BusinessActivationStatus activationStatus)
@@ -1814,7 +1850,7 @@ public sealed class AdminAppService
             business.Email,
             RecentCardCount,
             pilot?.IsEnabled ?? false,
-            pilot?.ActivationStatus ?? BusinessActivationStatus.LegacyOnly);
+            pilot?.ActivationStatus ?? BusinessActivationStatus.Inactive);
     }
 
     private static StampLedgerEventDto ToStampLedgerEventDto(StampLedgerRecord record)

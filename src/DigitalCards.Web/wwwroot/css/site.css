@@ -1402,6 +1402,17 @@ form.is-submitting input[type="submit"] {
   margin-bottom: 0.25rem;
 }
 
+.business-card-delete-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.business-card-delete-form .form-control {
+  max-width: 220px;
+}
+
 .business-detail-card-face {
   background: linear-gradient(135deg, #2a3547, #5d87ff);
   border-radius: 8px;

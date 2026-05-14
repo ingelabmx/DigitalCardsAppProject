@@ -23,8 +23,8 @@ public sealed class PilotBusinessAccess
 
         BusinessId = businessId;
         ActivationStatus = activationStatus ?? (isEnabled
-            ? BusinessActivationStatus.PilotModern
-            : BusinessActivationStatus.LegacyOnly);
+            ? BusinessActivationStatus.ModernPrimary
+            : BusinessActivationStatus.Inactive);
         IsEnabled = isEnabled;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         CreatedAt = createdAt;

@@ -45,6 +45,8 @@ public sealed class InMemoryDigitalCardsStore
 
     public List<LoyaltyCard> LoyaltyCards { get; } = [];
 
+    public List<ClientCardLifecycleRecord> ClientCardStatuses { get; } = [];
+
     public List<AppleWalletPassRecord> AppleWalletPasses { get; } = [];
 
     public List<AppleWalletDeviceRecord> AppleWalletDevices { get; } = [];

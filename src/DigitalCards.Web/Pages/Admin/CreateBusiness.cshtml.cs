@@ -76,7 +76,7 @@ public sealed class CreateBusinessModel : PageModel
         }
 
         StatusMessage = CreatedBusiness!.IsEnabled
-            ? $"Negocio creado y habilitado para piloto: {CreatedBusiness.BusinessName}."
+            ? $"Negocio creado y activado: {CreatedBusiness.BusinessName}."
             : $"Negocio creado: {CreatedBusiness.BusinessName}.";
         if (sendInvite)
         {
@@ -134,11 +134,11 @@ public sealed class CreateBusinessModel : PageModel
         [Required(ErrorMessage = "Confirma la contrasena inicial.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        [Display(Name = "Habilitar piloto")]
+        [Display(Name = "Activar negocio")]
         public bool EnablePilot { get; set; }
 
         [Display(Name = "Enviar invitacion por correo")]
-        public bool SendInvite { get; set; }
+        public bool SendInvite { get; set; } = true;
 
         [Display(Name = "Notas")]
         [StringLength(500, ErrorMessage = "Las notas no pueden exceder 500 caracteres.")]

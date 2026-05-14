@@ -65,6 +65,10 @@ public sealed class BusinessProfileModel : PageModel
 
     public async Task<IActionResult> OnPostSaveAsync(Guid businessId, CancellationToken cancellationToken)
     {
+        var activationStatus = Input.ActivationStatus == BusinessActivationStatus.Inactive
+            ? BusinessActivationStatus.Inactive
+            : BusinessActivationStatus.ModernPrimary;
+        var isActive = activationStatus != BusinessActivationStatus.Inactive;
         var result = await _adminApp.UpdateBusinessProfileAsync(
             new UpdateBusinessProfileCommand(
                 businessId,
@@ -72,9 +76,9 @@ public sealed class BusinessProfileModel : PageModel
                 Input.BusinessName,
                 Input.BusinessEmail,
                 Input.BusinessLogo,
-                Input.IsPilotEnabled,
+                isActive,
                 Input.Notes,
-                Input.ActivationStatus),
+                activationStatus),
             cancellationToken);
 
         ClearPasswordFields();
@@ -160,6 +164,7 @@ public sealed class BusinessProfileModel : PageModel
 
     public async Task<IActionResult> OnPostBrandingAsync(Guid businessId, CancellationToken cancellationToken)
     {
+        var previousProfile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
         var logoPath = BrandingInput.LogoPath;
         if (BrandingInput.LogoUpload is { Length: > 0 })
         {
@@ -199,6 +204,11 @@ public sealed class BusinessProfileModel : PageModel
         Profile = result.Business!;
         SetInputFromProfile(Profile);
         StatusMessage = "Branding del negocio actualizado.";
+        if (!string.IsNullOrWhiteSpace(logoPath) &&
+            !string.Equals(previousProfile?.Branding.LogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            _logoUploads.DeleteIfOwned(previousProfile?.Branding.LogoPath);
+        }
 
         _logger.LogInformation(
             "Admin {AdminUserId} updated branding for business {BusinessId}.",
@@ -206,6 +216,37 @@ public sealed class BusinessProfileModel : PageModel
             Profile.BusinessId);
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostDeleteBusinessAsync(
+        Guid businessId,
+        string confirmation,
+        CancellationToken cancellationToken)
+    {
+        var previousProfile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
+        var result = await _adminApp.DeleteBusinessPermanentlyAsync(
+            new DeleteBusinessCommand(
+                businessId,
+                AdminAuth.GetAdminUserId(User),
+                confirmation),
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo eliminar el negocio.");
+            await LoadAsync(businessId, cancellationToken);
+            return Page();
+        }
+
+        _logoUploads.DeleteIfOwned(previousProfile?.Branding.LogoPath);
+
+        _logger.LogWarning(
+            "Admin {AdminUserId} permanently deleted business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        TempData["AdminBusinessStatus"] = "Negocio eliminado permanentemente.";
+        return RedirectToPage("/Admin/Businesses");
     }
 
     public async Task<IActionResult> OnPostRefreshWalletBrandingAsync(Guid businessId, CancellationToken cancellationToken)
@@ -285,7 +326,9 @@ public sealed class BusinessProfileModel : PageModel
             BusinessEmail = profile.BusinessEmail,
             BusinessLogo = profile.BusinessLogo,
             IsPilotEnabled = profile.IsPilotEnabled,
-            ActivationStatus = profile.ActivationStatus,
+            ActivationStatus = !profile.IsPilotEnabled || profile.ActivationStatus == BusinessActivationStatus.Inactive
+                ? BusinessActivationStatus.Inactive
+                : BusinessActivationStatus.ModernPrimary,
             Notes = profile.Notes
         };
 
