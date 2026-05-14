@@ -1,0 +1,71 @@
+<body
+  style="
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  "
+>
+  <table
+    align="center"
+    width="600"
+    style="background-color: #ffffff; padding: 20px; border-radius: 8px"
+  >
+    <tr>
+      <td style="text-align: center; padding-bottom: 20px">
+        <h1 style="color: #333">�Tu tarjeta digital est� lista!</h1>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.5;
+          padding-bottom: 30px;
+        "
+      >
+        <p>Estimado usuario {userName},</p>
+        <p>
+          Nos complace informarte que tu tarjeta digital de {BusinessName} est�
+          lista para ser a�adida a tu billetera digital. Puedes agregarla a tu
+          dispositivo m�vil usando Google Wallet o Apple Wallet, seg�n tu
+          preferencia.
+        </p>
+        <p>
+          Haz clic en los botones a continuaci�n para agregar tu tarjeta
+          digital:
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">
+        <!-- Bot�n con el logo de Google Wallet -->
+        <a href="{GoogleURL}">
+          <img
+            class="wallet"
+            src="cid:google_logo"
+            alt="Agregar a la Billetera de Google"
+          />
+        </a>
+        <!-- Bot�n con el logo de Apple Wallet -->
+        <a href="{AppleURL}">
+          <img class="wallet" src="" alt="Agregar a la Billetera de Apple" />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style="
+          text-align: center;
+          font-size: 14px;
+          color: #888;
+          padding-top: 30px;
+        "
+      >
+        <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+        <p>Gracias por usar nuestros servicios.</p>
+      </td>
+    </tr>
+  </table>
+</body>

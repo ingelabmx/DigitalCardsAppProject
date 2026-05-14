@@ -1,0 +1,15 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Avoid printing previously committed secrets in cleanup diffs.
+Web.config -diff
+bin/*.config -diff
+BusinessInsertionPage.aspx.cs -diff
+RequestPasswordResetPage.aspx.cs -diff
+GW-Methods/REST-API_Loyalty.cs -diff
+GW-K/*.json -diff
+*.p12 -diff
+*.pfx -diff
+*.pem -diff
+*.key -diff
+*.pkpass -diff
