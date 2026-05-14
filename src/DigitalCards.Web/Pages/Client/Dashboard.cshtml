@@ -44,12 +44,8 @@
 
         <div class="client-dashboard-grid">
             <div class="client-identity-panel" data-testid="client-identity-panel">
-                <div class="client-qr-card" data-testid="client-qr-card" aria-label="Identificador visual de cliente">
-                    @for (var index = 0; index < 25; index++)
-                    {
-                        var isDark = index is 0 or 1 or 2 or 5 or 7 or 10 or 12 or 14 or 17 or 19 or 20 or 22 or 24;
-                        <span class="@(isDark ? "filled" : string.Empty)"></span>
-                    }
+                <div class="client-qr-card" data-testid="client-qr-card" aria-label="QR real del usuario @Model.Dashboard.Client.UserName">
+                    @Html.Raw(Model.ClientQrSvg)
                 </div>
                 <dl class="client-profile-list" data-testid="client-profile-summary">
                     <div>

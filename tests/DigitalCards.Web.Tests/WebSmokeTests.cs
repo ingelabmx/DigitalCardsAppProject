@@ -1603,6 +1603,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-card-google-status", html);
         Assert.Contains("client-card-apple-status", html);
         Assert.Contains("client-card-wallet-link", html);
+        Assert.Contains("client-cards-qr-card", html);
+        Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -1630,6 +1632,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-dashboard-current-stamps", html);
         Assert.Contains("client-dashboard-wallet-link", html);
         Assert.Contains("client-dashboard-profile-link", html);
+        Assert.Contains("client-qr-card", html);
+        Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("00000000-0000-0000", html);
     }
 
