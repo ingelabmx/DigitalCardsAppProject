@@ -37,6 +37,7 @@ public sealed class CreateBusinessModel : PageModel
 
     public void OnGet()
     {
+        Input.SendInvite = true;
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)

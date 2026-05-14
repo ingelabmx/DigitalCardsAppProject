@@ -1,5 +1,6 @@
 @page "{businessId:guid}"
 @model DigitalCards.Web.Pages.Admin.BusinessProfileModel
+@using DigitalCards.Domain
 @{
     ViewData["Title"] = "Administrar negocio";
 }
@@ -76,8 +77,8 @@
                 <div class="mb-3">
                     <label asp-for="Input.ActivationStatus" class="form-label">Estado de activacion</label>
                     <select asp-for="Input.ActivationStatus" class="form-select" data-testid="admin-business-activation-status">
-                        <option value="ModernPrimary">Activo</option>
-                        <option value="Inactive">Inactivo</option>
+                        <option value="@((int)BusinessActivationStatus.ModernPrimary)">Activo</option>
+                        <option value="@((int)BusinessActivationStatus.Inactive)">Inactivo</option>
                     </select>
                     <small class="form-text text-muted">Inactivo bloquea el acceso del negocio.</small>
                 </div>

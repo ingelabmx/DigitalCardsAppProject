@@ -1056,3 +1056,11 @@ Web Forms globalmente:
 ```text
 docs/migration-context/91-final-business-cutover-runbook-v1.md
 ```
+
+La administracion moderna ahora presenta la activacion de negocios como un
+estado simple `Activo` / `Inactivo`. Los nombres tecnicos historicos quedan
+reservados para compatibilidad interna y documentacion tecnica:
+
+```text
+docs/migration-context/98-admin-activation-simplification-v2.md
+```

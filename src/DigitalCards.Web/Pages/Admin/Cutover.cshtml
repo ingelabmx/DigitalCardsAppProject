@@ -23,8 +23,8 @@
         <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-cutover-query" />
         <select asp-for="ActivationStatusFilter" class="form-select" data-testid="admin-cutover-status-filter">
             <option value="">Todos los estados</option>
-            <option value="ModernPrimary">Activo</option>
-            <option value="Inactive">Inactivo</option>
+            <option value="@((int)BusinessActivationStatus.ModernPrimary)">Activo</option>
+            <option value="@((int)BusinessActivationStatus.Inactive)">Inactivo</option>
         </select>
         <button class="btn btn-primary" type="submit" data-testid="admin-cutover-search-submit">Filtrar</button>
     </form>
@@ -158,8 +158,8 @@
                         <input type="hidden" asp-for="Input.BusinessId" value="@business.BusinessId" />
                         <label class="form-label" for="cutover-status-@business.BusinessId">Nuevo estado</label>
                         <select id="cutover-status-@business.BusinessId" name="Input.ActivationStatus" class="form-select" data-testid="admin-cutover-new-status">
-                            <option value="ModernPrimary" selected="@(business.ActivationStatus != BusinessActivationStatus.Inactive && business.ActivationStatus != BusinessActivationStatus.LegacyOnly)">Activo</option>
-                            <option value="Inactive" selected="@(business.ActivationStatus == BusinessActivationStatus.Inactive)">Inactivo</option>
+                            <option value="@((int)BusinessActivationStatus.ModernPrimary)" selected="@(business.ActivationStatus != BusinessActivationStatus.Inactive && business.ActivationStatus != BusinessActivationStatus.LegacyOnly)">Activo</option>
+                            <option value="@((int)BusinessActivationStatus.Inactive)" selected="@(business.ActivationStatus == BusinessActivationStatus.Inactive)">Inactivo</option>
                         </select>
                         <label class="form-label" for="cutover-notes-@business.BusinessId">Notas</label>
                         <textarea id="cutover-notes-@business.BusinessId" name="Input.Notes" class="form-control" rows="2" data-testid="admin-cutover-notes">@business.Notes</textarea>
