@@ -1695,6 +1695,28 @@ form.is-submitting input[type="submit"] {
   font-size: 1.15rem;
 }
 
+.branding-logo-preview {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  display: flex;
+  height: 108px;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  max-width: 132px;
+  padding: 0.75rem;
+}
+
+.branding-logo-preview img {
+  display: block;
+  height: auto;
+  max-height: 84px;
+  max-width: 84px;
+  object-fit: contain;
+  width: auto;
+}
+
 .wallet-refresh-summary {
   display: grid;
   gap: 0.35rem;

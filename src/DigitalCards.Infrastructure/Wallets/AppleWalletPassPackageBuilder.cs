@@ -166,6 +166,13 @@ public sealed class AppleWalletPassPackageBuilder
             files[asset.Key] = asset.Value;
         }
 
+        var hasManagedLogoPath = IsManagedUploadedLogoPath(business.LogoPath);
+        if (hasManagedLogoPath)
+        {
+            files.Remove("logo.png");
+            files.Remove("logo@2x.png");
+        }
+
         if (TryLoadUploadedLogoPng(business.LogoPath) is { } logoBytes)
         {
             files["logo.png"] = logoBytes;
@@ -173,6 +180,17 @@ public sealed class AppleWalletPassPackageBuilder
         }
 
         return files;
+    }
+
+    private bool IsManagedUploadedLogoPath(string? logoPath)
+    {
+        if (string.IsNullOrWhiteSpace(logoPath))
+        {
+            return false;
+        }
+
+        var requestPath = _logoUploadOptions.GetRequestPath();
+        return logoPath.StartsWith($"{requestPath}/", StringComparison.OrdinalIgnoreCase);
     }
 
     public IReadOnlyDictionary<string, byte[]> BuildUnsignedFiles(

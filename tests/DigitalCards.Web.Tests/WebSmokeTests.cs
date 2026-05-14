@@ -1484,7 +1484,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["BrandingInput.PublicName"] = "Perfil Publico",
                 ["BrandingInput.ProgramName"] = "Perfil Rewards",
                 ["BrandingInput.ProgramDescription"] = "Sellos con branding desde web test.",
-                ["BrandingInput.LogoPath"] = "/img/profile-brand.svg",
                 ["BrandingInput.PrimaryColor"] = "#123456",
                 ["BrandingInput.SecondaryColor"] = "#abcdef",
                 ["__RequestVerificationToken"] = brandingToken
@@ -1729,18 +1728,20 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
             await LoginAdminAsync(client);
             var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
-            var token = await GetAntiforgeryTokenAsync(client, profilePath);
+            var getHtml = await client.GetStringAsync(profilePath);
+            Assert.DoesNotContain("data-testid=\"admin-business-branding-logo\"", getHtml);
+            Assert.Contains("data-testid=\"admin-business-branding-logo-preview\"", getHtml);
+            var token = ExtractAntiforgeryToken(getHtml);
             using var form = new MultipartFormDataContent
             {
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
-                { new StringContent("/img/demo-coffee.svg"), "BrandingInput.LogoPath" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
             };
-            var file = new ByteArrayContent(TinyPng());
+            var file = new ByteArrayContent(RectangularPng());
             file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
             form.Add(file, "BrandingInput.LogoUpload", "logo.png");
 
@@ -1760,23 +1761,24 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             }
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
+            Assert.EndsWith("/logo.png", logoPath, StringComparison.Ordinal);
             var logoResponse = await client.GetAsync(logoPath);
             Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
-            Assert.Equal(TinyPng(), await logoResponse.Content.ReadAsByteArrayAsync());
+            Assert.Equal((512, 512), ReadPngDimensions(await logoResponse.Content.ReadAsByteArrayAsync()));
 
             var firstLogoPath = logoPath;
+            File.Delete(ToLogoPhysicalPath(uploadRoot, firstLogoPath));
             var secondToken = await GetAntiforgeryTokenAsync(client, profilePath);
             using var secondForm = new MultipartFormDataContent
             {
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo replacement test."), "BrandingInput.ProgramDescription" },
-                { new StringContent(firstLogoPath), "BrandingInput.LogoPath" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(secondToken), "__RequestVerificationToken" }
             };
-            var secondFile = new ByteArrayContent(TinyPng());
+            var secondFile = new ByteArrayContent(RectangularPng());
             secondFile.Headers.ContentType = new MediaTypeHeaderValue("image/png");
             secondForm.Add(secondFile, "BrandingInput.LogoUpload", "logo-2.png");
 
@@ -1826,7 +1828,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
-                { new StringContent("/img/demo-coffee.svg"), "BrandingInput.LogoPath" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
@@ -1839,7 +1840,55 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             var html = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Contains("El logo debe ser PNG, JPG, JPEG o WebP", html);
+            Assert.Contains("El logo debe ser PNG", html);
+            Assert.DoesNotContain("/uploads/business-logos/", html);
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_RejectsPngExtensionWithNonPngContent()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-web-logo-{Guid.NewGuid():N}");
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:Branding:LogoUploads:Path"] = uploadRoot,
+            ["DigitalCards:Branding:LogoUploads:RequestPath"] = "/uploads/business-logos"
+        });
+        try
+        {
+            var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+
+            await LoginAdminAsync(client);
+            const string profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+            var token = await GetAntiforgeryTokenAsync(client, profilePath);
+            using var form = new MultipartFormDataContent
+            {
+                { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
+                { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
+                { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
+                { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
+                { new StringContent(token), "__RequestVerificationToken" }
+            };
+            var file = new ByteArrayContent("not a png"u8.ToArray());
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            form.Add(file, "BrandingInput.LogoUpload", "logo.png");
+
+            var response = await client.PostAsync($"{profilePath}?handler=Branding", form);
+            var html = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("El archivo no es un PNG valido", html);
             Assert.DoesNotContain("/uploads/business-logos/", html);
         }
         finally
@@ -1931,7 +1980,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["BrandingInput.PublicName"] = "Admin Cafe Puntelio",
-                ["BrandingInput.LogoPath"] = "/img/demo-coffee.svg",
                 ["BrandingInput.PrimaryColor"] = "#123456",
                 ["BrandingInput.SecondaryColor"] = "#abcdef",
                 ["BrandingInput.ProgramName"] = "Admin Programa",
@@ -2690,6 +2738,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
             Assert.Contains("business-branding-form", getHtml);
             Assert.Contains("Demo Coffee", getHtml);
+            Assert.DoesNotContain("data-testid=\"business-branding-logo\"", getHtml);
 
             var token = ExtractAntiforgeryToken(getHtml);
             using var form = new MultipartFormDataContent
@@ -2697,12 +2746,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Self Managed Coffee"), "Input.PublicName" },
                 { new StringContent("Self Rewards"), "Input.ProgramName" },
                 { new StringContent("Branding editado por negocio."), "Input.ProgramDescription" },
-                { new StringContent("/img/demo-coffee.svg"), "Input.LogoPath" },
                 { new StringContent("#102030"), "Input.PrimaryColor" },
                 { new StringContent("#405060"), "Input.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
             };
-            var file = new ByteArrayContent(TinyPng());
+            var file = new ByteArrayContent(RectangularPng());
             file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
             form.Add(file, "Input.LogoUpload", "logo.png");
 
@@ -2726,9 +2774,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             }
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
+            Assert.EndsWith("/logo.png", logoPath, StringComparison.Ordinal);
             var logoResponse = await client.GetAsync(logoPath);
             Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
-            Assert.Equal(TinyPng(), await logoResponse.Content.ReadAsByteArrayAsync());
+            Assert.Equal((512, 512), ReadPngDimensions(await logoResponse.Content.ReadAsByteArrayAsync()));
         }
         finally
         {
@@ -2820,7 +2869,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["Input.PublicName"] = "Cafe Puntelio",
-                ["Input.LogoPath"] = "/img/demo-coffee.svg",
                 ["Input.PrimaryColor"] = "#123456",
                 ["Input.SecondaryColor"] = "#abcdef",
                 ["Input.ProgramName"] = "Programa Puntelio",
@@ -3729,5 +3777,38 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     {
         return Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
+    }
+
+    private static byte[] RectangularPng()
+    {
+        return Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8AAQv8BD/kD/YURmXYAAAAASUVORK5CYII=");
+    }
+
+    private static (int Width, int Height) ReadPngDimensions(byte[] bytes)
+    {
+        Assert.True(bytes.Length >= 24);
+        Assert.Equal(TinyPng().AsSpan(0, 8).ToArray(), bytes.AsSpan(0, 8).ToArray());
+
+        var width = ReadBigEndianInt32(bytes.AsSpan(16, 4));
+        var height = ReadBigEndianInt32(bytes.AsSpan(20, 4));
+        return (width, height);
+    }
+
+    private static int ReadBigEndianInt32(ReadOnlySpan<byte> bytes)
+    {
+        return (bytes[0] << 24) |
+            (bytes[1] << 16) |
+            (bytes[2] << 8) |
+            bytes[3];
+    }
+
+    private static string ToLogoPhysicalPath(string uploadRoot, string publicPath)
+    {
+        const string requestPath = "/uploads/business-logos/";
+        Assert.StartsWith(requestPath, publicPath, StringComparison.Ordinal);
+        return Path.Combine(
+            uploadRoot,
+            publicPath[requestPath.Length..].Replace('/', Path.DirectorySeparatorChar));
     }
 }
