@@ -920,3 +920,15 @@ Remove-Item Env:\RUN_PILOT_BUSINESS_CUTOVER_REAL_SMOKE -ErrorAction SilentlyCont
 
 El real usa MySQL, SMTP, Google Wallet y Apple Wallet segun
 `%USERPROFILE%\.digitalcards\appsettings.Local.json`.
+
+## Checklist final de produccion controlada
+
+Antes de operar un negocio real como `ModernPrimary`, usa:
+
+```text
+docs/migration-context/74-final-production-readiness-v1.md
+```
+
+Ese checklist consolida SQL aplicado, secretos fuera del repo, health/ready,
+Data Protection, dominio `app.puntelio.com`, Wallets, SMTP, evidencia de smoke,
+rollback por negocio y criterios para marcar `LegacyRetired`.
