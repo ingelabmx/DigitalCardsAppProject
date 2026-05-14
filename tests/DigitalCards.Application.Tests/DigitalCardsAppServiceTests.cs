@@ -92,6 +92,7 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.IsType<MySqlClientRepository>(provider.GetRequiredService<IClientRepository>());
         Assert.IsType<MySqlClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
+        Assert.IsType<MySqlClientConsentRepository>(provider.GetRequiredService<IClientConsentRepository>());
         Assert.IsType<MySqlBusinessRepository>(provider.GetRequiredService<IBusinessRepository>());
         Assert.IsType<MySqlBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<EmailTemplateRenderer>(provider.GetRequiredService<IEmailTemplateRenderer>());
@@ -125,6 +126,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.IsType<InMemoryAdminUserRepository>(provider.GetRequiredService<IAdminUserRepository>());
         Assert.IsType<InMemoryAdminCredentialRepository>(provider.GetRequiredService<IAdminCredentialRepository>());
         Assert.IsType<InMemoryAuditEventRepository>(provider.GetRequiredService<IAuditEventRepository>());
+        Assert.IsType<InMemoryClientConsentRepository>(provider.GetRequiredService<IClientConsentRepository>());
         Assert.IsType<InMemoryClientCredentialRepository>(provider.GetRequiredService<IClientCredentialRepository>());
         Assert.IsType<InMemoryBusinessBrandingRepository>(provider.GetRequiredService<IBusinessBrandingRepository>());
         Assert.IsType<InMemoryBusinessCredentialRepository>(provider.GetRequiredService<IBusinessCredentialRepository>());
@@ -1081,6 +1083,37 @@ public sealed class DigitalCardsAppServiceTests
         Assert.NotNull(login);
         Assert.Equal(registered.Id, login!.Id);
         Assert.Equal("clientlogin1@example.test", login.Email);
+    }
+
+    [Fact]
+    public async Task RecordClientConsentAsync_StoresConsentWithoutSecrets()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var consentRepository = provider.GetRequiredService<IClientConsentRepository>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "consent1",
+            "Consent",
+            "Client",
+            "consent1@example.test",
+            "clientpass1"));
+
+        await app.RecordClientConsentAsync(
+            new RecordClientConsentCommand(
+                client.Id,
+                business!.Id,
+                "privacy-2026-05",
+                "PublicBusinessEnrollment"));
+
+        var consents = await consentRepository.ListByClientIdAsync(client.Id);
+        var consent = Assert.Single(consents);
+        Assert.Equal(business.Id, consent.BusinessId);
+        Assert.Equal("privacy-2026-05", consent.PolicyVersion);
+        Assert.Equal("PublicBusinessEnrollment", consent.Source);
+        Assert.DoesNotContain("clientpass1", consent.Source, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

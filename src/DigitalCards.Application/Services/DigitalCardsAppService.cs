@@ -23,6 +23,7 @@ public sealed class DigitalCardsAppService
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessBrandingRepository _businessBranding;
     private readonly IBusinessRepository _businesses;
+    private readonly IClientConsentRepository _clientConsents;
     private readonly IClientCredentialRepository _clientCredentials;
     private readonly IClientRepository _clients;
     private readonly IClock _clock;
@@ -40,6 +41,7 @@ public sealed class DigitalCardsAppService
     public DigitalCardsAppService(
         IClientRepository clients,
         IClientCredentialRepository clientCredentials,
+        IClientConsentRepository clientConsents,
         IBusinessRepository businesses,
         IBusinessBrandingRepository businessBranding,
         IBusinessCredentialRepository businessCredentials,
@@ -57,6 +59,7 @@ public sealed class DigitalCardsAppService
     {
         _clients = clients;
         _clientCredentials = clientCredentials;
+        _clientConsents = clientConsents;
         _businesses = businesses;
         _businessBranding = businessBranding;
         _businessCredentials = businessCredentials;
@@ -106,6 +109,38 @@ public sealed class DigitalCardsAppService
         }
 
         return ToDto(client);
+    }
+
+    public async Task RecordClientConsentAsync(
+        RecordClientConsentCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.ClientId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Client is required for consent.");
+        }
+
+        var client = await _clients.FindByIdAsync(command.ClientId, cancellationToken);
+        if (client is null)
+        {
+            throw new InvalidOperationException("Client does not exist.");
+        }
+
+        if (command.BusinessId is not null &&
+            await _businesses.FindByIdAsync(command.BusinessId.Value, cancellationToken) is null)
+        {
+            throw new InvalidOperationException("Business does not exist.");
+        }
+
+        await _clientConsents.AddAsync(
+            new ClientConsent(
+                0,
+                command.ClientId,
+                command.BusinessId,
+                NormalizeConsentValue(command.PolicyVersion, "privacy-2026-05"),
+                NormalizeConsentValue(command.Source, "Unknown"),
+                _clock.UtcNow),
+            cancellationToken);
     }
 
     public async Task<ClientDto?> LoginClientAsync(ClientLoginCommand command, CancellationToken cancellationToken = default)
@@ -1575,6 +1610,12 @@ public sealed class DigitalCardsAppService
     private static string NormalizeBrandingValue(string value, string fallback)
     {
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string NormalizeConsentValue(string value, string fallback)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        return normalized.Length <= 64 ? normalized : normalized[..64];
     }
 
     private static bool IsHexColor(string value)

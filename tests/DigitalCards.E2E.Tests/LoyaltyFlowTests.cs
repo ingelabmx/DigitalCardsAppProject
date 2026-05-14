@@ -144,6 +144,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-last-name").FillAsync("Cliente");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-password").FillAsync(clientPassword);
+        await page.GetByTestId("register-accept-terms").CheckAsync();
         await page.GetByTestId("register-submit").ClickAsync();
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());
@@ -182,6 +183,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-last-name").FillAsync("Lopez");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-password").FillAsync(clientPassword);
+        await page.GetByTestId("register-accept-terms").CheckAsync();
         await page.GetByTestId("register-submit").ClickAsync();
         Assert.Contains("registrado", await page.GetByTestId("register-success").InnerTextAsync());
 
@@ -309,6 +311,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("register-last-name").FillAsync("User");
         await page.GetByTestId("register-email").FillAsync($"{userName}@e.test");
         await page.GetByTestId("register-password").FillAsync("ClientPass123!");
+        await page.GetByTestId("register-accept-terms").CheckAsync();
         await page.GetByTestId("register-submit").ClickAsync();
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Login").ToString());

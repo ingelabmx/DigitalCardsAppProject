@@ -65,6 +65,14 @@
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
 
+            <div class="form-check mb-3">
+                <input asp-for="Input.AcceptTerms" class="form-check-input" data-testid="public-enroll-accept-terms" />
+                <label asp-for="Input.AcceptTerms" class="form-check-label">
+                    Acepto los <a asp-page="/Privacy" target="_blank" rel="noopener">terminos y privacidad</a>.
+                </label>
+                <span asp-validation-for="Input.AcceptTerms" class="text-danger"></span>
+            </div>
+
             <button class="btn btn-primary" type="submit" data-testid="public-enroll-submit">Registrarme</button>
         </form>
     }

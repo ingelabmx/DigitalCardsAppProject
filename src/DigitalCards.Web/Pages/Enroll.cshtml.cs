@@ -14,6 +14,7 @@ namespace DigitalCards.Web.Pages;
 [EnableRateLimiting(SecurityRateLimitPolicyNames.PublicWrite)]
 public sealed class EnrollModel : PageModel
 {
+    private const string ConsentPolicyVersion = "privacy-2026-05";
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly IBusinessRepository _businesses;
     private readonly DigitalCardsAppService _appService;
@@ -62,6 +63,11 @@ public sealed class EnrollModel : PageModel
             return Page();
         }
 
+        if (!Input.AcceptTerms)
+        {
+            ModelState.AddModelError("Input.AcceptTerms", "Debes aceptar terminos y privacidad para registrarte.");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -80,6 +86,13 @@ public sealed class EnrollModel : PageModel
 
             var enrollment = await _appService.EnrollClientAsync(
                 new EnrollClientCommand(_business!.Id, client.UserName, GetBaseUrl()),
+                cancellationToken);
+            await _appService.RecordClientConsentAsync(
+                new RecordClientConsentCommand(
+                    client.Id,
+                    _business.Id,
+                    ConsentPolicyVersion,
+                    "PublicBusinessEnrollment"),
                 cancellationToken);
 
             WalletLink = enrollment.EnrollmentUrl;
@@ -158,5 +171,8 @@ public sealed class EnrollModel : PageModel
         [Required]
         [MinLength(8)]
         public string Password { get; set; } = string.Empty;
+
+        [Display(Name = "Acepto terminos y privacidad")]
+        public bool AcceptTerms { get; set; }
     }
 }
