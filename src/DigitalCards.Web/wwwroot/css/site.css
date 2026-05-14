@@ -1226,11 +1226,17 @@ form.is-submitting input[type="submit"] {
   align-items: stretch;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.38fr);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.45fr);
 }
 
 .business-card-toolbar .search-row {
+  align-content: center;
+  background: #f6f9fc;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
   margin: 0;
+  min-height: 112px;
+  padding: 0.85rem;
 }
 
 .business-card-search-row {
@@ -1249,11 +1255,13 @@ form.is-submitting input[type="submit"] {
 }
 
 .qr-scanner-panel {
+  align-content: center;
   background: #f6f9fc;
   border: 1px solid #dde3ea;
   border-radius: 8px;
   display: grid;
   gap: 0.65rem;
+  min-height: 112px;
   padding: 0.85rem;
 }
 
@@ -1273,6 +1281,7 @@ form.is-submitting input[type="submit"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .qr-scanner-video {

@@ -56,17 +56,6 @@
             </div>
         }
 
-        <div class="business-card-quick-summary" data-testid="business-card-quick-summary">
-            <div>
-                <span>Resultados</span>
-                <strong>@Model.Results.Count</strong>
-            </div>
-            <div>
-                <span>Seleccionada</span>
-                <strong>@(Model.Detail is null ? "No" : "Si")</strong>
-            </div>
-        </div>
-
         <div class="business-card-grid">
             <div class="business-card-list">
                 <h2>Resultados</h2>
@@ -160,44 +149,6 @@
                         </div>
                     </div>
 
-                    <div class="business-management-note" id="business-card-management-panel" data-testid="business-card-management-panel">
-                        <strong>Administracion de tarjeta</strong>
-                        <p>Desactivar pausa la operacion de esta tarjeta. Eliminar borra permanentemente la relacion del cliente con este negocio, sin borrar su cuenta global.</p>
-                        <div class="business-card-action-buttons">
-                            @if (Model.Detail.IsActive)
-                            {
-                                <form method="post" asp-page-handler="Deactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                                    <button class="btn btn-outline-warning" type="submit" data-testid="business-card-deactivate-submit">
-                                        Desactivar cliente
-                                    </button>
-                                </form>
-                            }
-                            else
-                            {
-                                <form method="post" asp-page-handler="Reactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                                    <button class="btn btn-outline-success" type="submit" data-testid="business-card-reactivate-submit">
-                                        Reactivar cliente
-                                    </button>
-                                </form>
-                            }
-                        </div>
-                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel danger-zone-card">
-                            <div>
-                                <strong>Eliminar permanentemente</strong>
-                                <p>Esta accion elimina la tarjeta, sus links Wallet y sus datos asociados para este negocio. Escribe <b>@Model.Detail.Client.UserName</b> para confirmar.</p>
-                            </div>
-                            <div class="danger-action-controls">
-                                <input class="form-control form-control-sm"
-                                       name="confirmation"
-                                       placeholder="Escribe @Model.Detail.Client.UserName"
-                                       data-testid="business-card-delete-confirmation" />
-                                <button class="btn btn-outline-danger" type="submit" data-testid="business-card-delete-submit">
-                                    Eliminar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
                     <div class="business-detail-card-face" data-testid="business-detail-card-face">
                         <div>
                             <span>Tarjeta digital</span>
@@ -265,6 +216,44 @@
                                 }
                             </div>
                         }
+                    </div>
+
+                    <div class="business-management-note" id="business-card-management-panel" data-testid="business-card-management-panel">
+                        <strong>Administracion de tarjeta</strong>
+                        <p>Desactivar pausa la operacion de esta tarjeta. Eliminar borra permanentemente la relacion del cliente con este negocio, sin borrar su cuenta global.</p>
+                        <div class="business-card-action-buttons">
+                            @if (Model.Detail.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Deactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                    <button class="btn btn-outline-warning" type="submit" data-testid="business-card-deactivate-submit">
+                                        Desactivar cliente
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Reactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                    <button class="btn btn-outline-success" type="submit" data-testid="business-card-reactivate-submit">
+                                        Reactivar cliente
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel danger-zone-card">
+                            <div>
+                                <strong>Eliminar permanentemente</strong>
+                                <p>Esta accion elimina la tarjeta, sus links Wallet y sus datos asociados para este negocio. Escribe <b>@Model.Detail.Client.UserName</b> para confirmar.</p>
+                            </div>
+                            <div class="danger-action-controls">
+                                <input class="form-control form-control-sm"
+                                       name="confirmation"
+                                       placeholder="Escribe @Model.Detail.Client.UserName"
+                                       data-testid="business-card-delete-confirmation" />
+                                <button class="btn btn-outline-danger" type="submit" data-testid="business-card-delete-submit">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 }
             </div>

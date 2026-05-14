@@ -2676,6 +2676,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Recompensa", getHtml);
         Assert.DoesNotContain(">Descripcion<", getHtml);
         Assert.DoesNotContain("business-wallet-branding-refresh-limit", getHtml);
+        Assert.Contains(">Guardar<", getHtml);
+        Assert.Contains("Guardar y actualizar", getHtml);
+        Assert.Contains("Actualizar Tarjetas", getHtml);
+        Assert.Contains(">Actualizar<", getHtml);
+        Assert.DoesNotContain("Refrescar Wallets recientes", getHtml);
 
         var response = await client.PostAsync(
             "/Business/Branding?handler=RefreshWallets",
@@ -2686,7 +2691,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Refresh Wallet ejecutado", html);
+        Assert.Contains("Actualizacion ejecutada", html);
         Assert.Contains("business-wallet-branding-refresh-result", html);
         Assert.DoesNotContain("auth-token-secret-hash", html, StringComparison.OrdinalIgnoreCase);
 
@@ -2697,6 +2702,49 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), record.ActorBusinessId);
         Assert.True(record.GoogleWalletSucceeded);
         Assert.True(record.AppleWalletSucceeded);
+    }
+
+    [Fact]
+    public async Task BusinessBranding_SaveAndRefreshStoresBrandingAndUpdatesTrackedCards()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, NewLegacySafeUserName("bsr"));
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        }
+
+        await LoginBusinessAsync(client);
+        var getHtml = await client.GetStringAsync("/Business/Branding");
+        var response = await client.PostAsync(
+            "/Business/Branding?handler=SaveAndRefresh",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.PublicName"] = "Cafe Puntelio",
+                ["Input.LogoPath"] = "/img/demo-coffee.svg",
+                ["Input.PrimaryColor"] = "#123456",
+                ["Input.SecondaryColor"] = "#abcdef",
+                ["Input.ProgramName"] = "Programa Puntelio",
+                ["Input.ProgramDescription"] = "Recompensa de prueba",
+                ["__RequestVerificationToken"] = ExtractAntiforgeryToken(getHtml)
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Branding actualizado. Actualizacion ejecutada", html);
+        Assert.Contains("business-wallet-branding-refresh-result", html);
+        Assert.Contains("Cafe Puntelio", html);
+
+        using var verifyScope = fake.Factory.Services.CreateScope();
+        var ledger = verifyScope.ServiceProvider.GetRequiredService<IStampLedgerRepository>();
+        Assert.Contains(
+            await ledger.ListRecentByCardIdAsync(enrollment.Card.Id, 5),
+            item => item.Source == StampLedgerSource.BrandingRefresh && item.GoogleWalletSucceeded);
     }
 
     [Fact]
@@ -2766,7 +2814,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains(userName, html);
         Assert.Contains(enrollment.Card.Id.ToString(), html);
         Assert.Contains("business-qr-scanner", html);
-        Assert.Contains("business-card-quick-summary", html);
+        Assert.DoesNotContain("business-card-quick-summary", html);
+        Assert.DoesNotContain(">Seleccionada<", html);
         Assert.Contains("business-card-action-strip", html);
         Assert.Contains("business-card-result-state", html);
         Assert.Contains("business-detail-card-face", html);
@@ -2778,6 +2827,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("business-card-manage-link", html);
         Assert.DoesNotContain("othercard1", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
+        Assert.True(html.IndexOf("stamp-ledger-list", StringComparison.Ordinal) < html.IndexOf("business-card-management-panel", StringComparison.Ordinal));
+        Assert.True(html.IndexOf("business-card-deactivate-submit", StringComparison.Ordinal) < html.IndexOf("business-card-delete-submit", StringComparison.Ordinal));
     }
 
     [Fact]
