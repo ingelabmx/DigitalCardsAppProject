@@ -74,6 +74,24 @@
 
 @if (!Model.IsPilotBlocked && Model.Dashboard is not null)
 {
+    <section class="business-operation-strip" data-testid="business-operation-strip">
+        <a class="business-operation-step" asp-page="/Business/CheckIn">
+            <span>01</span>
+            <strong>Escanear o buscar</strong>
+            <small>Modo mostrador para QR, username o correo.</small>
+        </a>
+        <a class="business-operation-step" asp-page="/Business/Cards">
+            <span>02</span>
+            <strong>Validar tarjeta</strong>
+            <small>Confirma cliente, sellos y estado Wallet.</small>
+        </a>
+        <a class="business-operation-step" asp-page="/Business/Cards">
+            <span>03</span>
+            <strong>Agregar sello</strong>
+            <small>Actualiza tarjeta, Wallets y auditoria.</small>
+        </a>
+    </section>
+
     <section class="result-panel" data-testid="business-public-enrollment-panel">
         <div class="page-heading">
             <div>

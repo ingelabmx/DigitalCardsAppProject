@@ -107,6 +107,23 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessPages_RenderOperationsUx()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        await LoginBusinessAsync(client);
+
+        var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
+        var cardsHtml = await client.GetStringAsync("/Business/Cards");
+        var checkInHtml = await client.GetStringAsync("/Business/CheckIn");
+
+        Assert.Contains("business-operation-strip", dashboardHtml);
+        Assert.Contains("business-primary-workflow", cardsHtml);
+        Assert.Contains("business-card-detail-empty", cardsHtml);
+        Assert.Contains("business-checkin-guide", checkInHtml);
+    }
+
+    [Fact]
     public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
     {
         using var fake = WithFakeIntegrations(environmentName: "Production");

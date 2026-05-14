@@ -4,7 +4,7 @@
     ViewData["Title"] = "Tarjetas de negocio";
 }
 
-<section class="result-panel business-cards">
+<section class="result-panel business-cards business-primary-workflow" data-testid="business-primary-workflow">
     <div class="page-heading">
         <div>
             <p class="eyebrow">Operacion</p>
@@ -80,11 +80,20 @@
 
                 @if (string.IsNullOrWhiteSpace(Model.Query))
                 {
-                    <p class="text-muted" data-testid="business-card-empty-search">Escribe un usuario o correo para buscar.</p>
+                    <div class="dashboard-empty-state compact" data-testid="business-card-empty-search">
+                        <p class="eyebrow">Busca una tarjeta</p>
+                        <h3>Escanea QR o captura usuario/correo</h3>
+                        <p>Cuando selecciones una tarjeta, aqui apareceran acciones para reenviar Wallet y agregar sello.</p>
+                    </div>
                 }
                 else if (Model.Results.Count == 0)
                 {
-                    <p class="text-muted" data-testid="business-card-no-results">No se encontraron tarjetas para este negocio.</p>
+                    <div class="dashboard-empty-state compact" data-testid="business-card-no-results">
+                        <p class="eyebrow">Sin resultados</p>
+                        <h3>No hay tarjeta asociada</h3>
+                        <p>No se encontraron tarjetas para este negocio. Asocia el cliente para enviar su link Wallet.</p>
+                        <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
+                    </div>
                 }
                 else
                 {
@@ -114,8 +123,11 @@
             <div class="business-card-detail" data-testid="business-card-detail">
                 @if (Model.Detail is null)
                 {
-                    <h2>Detalle</h2>
-                    <p class="text-muted">Selecciona una tarjeta para operar.</p>
+                    <div class="dashboard-empty-state compact" data-testid="business-card-detail-empty">
+                        <p class="eyebrow">Detalle</p>
+                        <h2>Selecciona una tarjeta para operar</h2>
+                        <p>El detalle muestra sellos, estado Wallet, auditoria y acciones seguras del negocio autenticado.</p>
+                    </div>
                 }
                 else
                 {
