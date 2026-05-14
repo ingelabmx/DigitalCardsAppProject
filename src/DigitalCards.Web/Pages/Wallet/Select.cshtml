@@ -63,6 +63,19 @@ else
 
         <p class="lead">Elige el Wallet de tu celular. La tarjeta refleja tus sellos actuales y podra actualizarse cuando el negocio agregue nuevos sellos.</p>
 
+        <div class="wallet-device-guidance" data-testid="wallet-device-guidance">
+            <article class="wallet-guidance-card" data-wallet-platform="apple">
+                <span>iPhone</span>
+                <strong>Apple Wallet</strong>
+                <small>Abre este link desde Safari para instalar el pase en Wallet.</small>
+            </article>
+            <article class="wallet-guidance-card" data-wallet-platform="google">
+                <span>Android</span>
+                <strong>Google Wallet</strong>
+                <small>Usa la cuenta de Google con la que guardaras la tarjeta.</small>
+            </article>
+        </div>
+
         <div class="metric-row">
             <div class="metric">
                 <span>Sellos actuales</span>
@@ -89,17 +102,49 @@ else
             <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
                asp-page="/Wallet/Apple"
                asp-route-token="@Model.Landing.Token"
+               data-wallet-button="apple"
                data-testid="apple-wallet-button">
                 <span>Apple Wallet</span>
                 <small>iPhone</small>
+                <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
             <a class="btn btn-primary wallet-button d-flex align-items-center justify-content-center"
                asp-page="/Wallet/Google"
                asp-route-token="@Model.Landing.Token"
+               data-wallet-button="google"
                data-testid="google-wallet-button">
                 <span>Google Wallet</span>
                 <small>Android</small>
+                <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
         </div>
     </section>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const root = document.querySelector("[data-testid='wallet-select']");
+                if (!root) {
+                    return;
+                }
+
+                const userAgent = navigator.userAgent || "";
+                const recommendedWallet = /iPhone|iPad|iPod/i.test(userAgent)
+                    ? "apple"
+                    : /Android/i.test(userAgent)
+                        ? "google"
+                        : "";
+
+                if (!recommendedWallet) {
+                    return;
+                }
+
+                root.dataset.recommendedWallet = recommendedWallet;
+                root.querySelector(`[data-wallet-platform="${recommendedWallet}"]`)?.classList.add("is-recommended");
+                const button = root.querySelector(`[data-wallet-button="${recommendedWallet}"]`);
+                button?.classList.add("is-recommended");
+                button?.querySelector("[data-wallet-recommendation]")?.removeAttribute("hidden");
+            })();
+        </script>
+    }
 }

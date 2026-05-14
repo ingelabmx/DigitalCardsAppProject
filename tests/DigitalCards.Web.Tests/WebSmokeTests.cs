@@ -2695,6 +2695,27 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task WalletInstallGuidance_RendersPlatformHintsAndTroubleshooting()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        var token = await CreateEnrollmentTokenAsync(fake.Factory, "wguide1");
+
+        var landingHtml = await client.GetStringAsync($"/Wallet/Select/{token}");
+        var appleHtml = await client.GetStringAsync($"/Wallet/Apple/{token}");
+        var googleHtml = await client.GetStringAsync($"/Wallet/Google/{token}");
+
+        Assert.Contains("wallet-device-guidance", landingHtml);
+        Assert.Contains("data-wallet-platform=\"apple\"", landingHtml);
+        Assert.Contains("data-wallet-platform=\"google\"", landingHtml);
+        Assert.Contains("data-wallet-recommendation", landingHtml);
+        Assert.Contains("apple-wallet-install-help", appleHtml);
+        Assert.Contains("google-wallet-install-help", googleHtml);
+        Assert.DoesNotContain("Authorization", landingHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ApplePass", appleHtml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AppleWalletPage_WithInvalidToken_ReturnsNotFoundState()
     {
         using var fake = WithFakeIntegrations();

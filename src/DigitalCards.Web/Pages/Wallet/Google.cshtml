@@ -20,6 +20,14 @@ else
         <p class="eyebrow">Google Wallet</p>
         <h1>@(Model.Landing?.BusinessName ?? "Google Wallet") emitida</h1>
         <p>Object ID: <strong data-testid="google-object-id">@Model.Result.ObjectId</strong></p>
+        <div class="wallet-install-help" data-testid="google-wallet-install-help">
+            <strong>Para guardar en Android</strong>
+            <ul>
+                <li>Abre el boton con Chrome o el navegador asociado a tu cuenta Google.</li>
+                <li>Confirma que la cuenta correcta este iniciada antes de guardar.</li>
+                <li>Si ya existe la tarjeta, vuelve a abrir Google Wallet para ver el ultimo sello.</li>
+            </ul>
+        </div>
         <div class="form-actions">
             <a class="btn btn-primary" href="@Model.Result.SaveUrl" data-testid="google-save-url">Abrir Google Wallet</a>
             @if (Model.Landing is not null)
