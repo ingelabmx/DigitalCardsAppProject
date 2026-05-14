@@ -786,6 +786,70 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("hash", searchHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("admin-enable-client-pilot", searchHtml);
         Assert.DoesNotContain("admin-disable-client-pilot", searchHtml);
+        Assert.Contains("admin-client-delete-form", searchHtml);
+    }
+
+    [Fact]
+    public async Task AdminClients_CanPermanentlyDeleteClientCardsAndWalletData()
+    {
+        using var fake = WithFakeIntegrations();
+        var http = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var userName = NewLegacySafeUserName("dc");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        var walletToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+        Guid clientId;
+
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            lock (store.Sync)
+            {
+                clientId = store.Clients.Single(client => client.UserName == userName).Id;
+                var businessId = store.Businesses.Single(business => business.Name == "Demo Coffee").Id;
+                store.ClientCredentials.Add(new ClientCredential(clientId, "modern-client-hash", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+                store.ClientConsents.Add(new ClientConsent(1, clientId, businessId, "privacy-test", "Web", DateTimeOffset.UtcNow));
+            }
+        }
+
+        await LoginAdminAsync(http);
+        var searchHtml = await http.GetStringAsync($"/Admin/Clients?Query={userName}");
+        var token = ExtractAntiforgeryToken(searchHtml);
+
+        var response = await http.PostAsync(
+            $"/Admin/Clients?handler=Delete&clientId={clientId}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["confirmation"] = userName,
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Cliente eliminado permanentemente", html);
+        Assert.DoesNotContain(userName, html);
+
+        using (var verifyScope = fake.Factory.Services.CreateScope())
+        {
+            var store = verifyScope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            lock (store.Sync)
+            {
+                Assert.DoesNotContain(store.Clients, client => client.Id == clientId);
+                Assert.DoesNotContain(store.LoyaltyCards, card => card.ClientId == clientId);
+                Assert.DoesNotContain(store.WalletLinkTokens, tokenRecord => tokenRecord.CardId == enrollment.Card.Id);
+                Assert.DoesNotContain(store.ClientCredentials, credential => credential.ClientId == clientId);
+                Assert.DoesNotContain(store.ClientConsents, consent => consent.ClientId == clientId);
+                Assert.Contains(store.Businesses, business => business.Name == "Demo Coffee");
+                Assert.Contains(store.AuditEvents, audit =>
+                    audit.EventType == OperationalAuditEventType.ClientDeleted &&
+                    audit.ClientId == clientId);
+            }
+        }
+
+        var walletHtml = await http.GetStringAsync($"/Wallet/Select/{walletToken}");
+        Assert.Contains("wallet-not-found", walletHtml);
     }
 
     [Fact]

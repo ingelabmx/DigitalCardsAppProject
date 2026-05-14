@@ -82,6 +82,32 @@ public sealed class InMemoryAccountLifecycleRepository : IAccountLifecycleReposi
         }
     }
 
+    public Task<bool> DeleteClientAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var clientRemoved = _store.Clients.RemoveAll(client => client.Id == clientId) > 0;
+            var cards = _store.LoyaltyCards
+                .Where(card => card.ClientId == clientId)
+                .Select(card => new { card.BusinessId, card.Id })
+                .ToArray();
+
+            foreach (var card in cards)
+            {
+                DeleteBusinessCardCore(card.BusinessId, card.Id);
+            }
+
+            _store.ClientCredentials.RemoveAll(credential => credential.ClientId == clientId);
+            _store.PilotClients.RemoveAll(access => access.ClientId == clientId);
+            _store.PasswordResetTokens.RemoveAll(token => token.AccountId == clientId);
+            _store.ClientConsents.RemoveAll(consent => consent.ClientId == clientId);
+
+            return Task.FromResult(clientRemoved);
+        }
+    }
+
     private bool DeleteBusinessCardCore(Guid businessId, Guid cardId)
     {
         var cardRemoved = _store.LoyaltyCards.RemoveAll(card =>

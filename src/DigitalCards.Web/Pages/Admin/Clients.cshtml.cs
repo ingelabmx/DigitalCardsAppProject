@@ -47,6 +47,34 @@ public sealed class ClientsModel : PageModel
         return await ShowRetiredAllowlistMessageAsync(cancellationToken);
     }
 
+    public async Task<IActionResult> OnPostDeleteAsync(
+        Guid clientId,
+        string confirmation,
+        CancellationToken cancellationToken)
+    {
+        var result = await _adminApp.DeleteClientPermanentlyAsync(
+            new DeleteClientCommand(
+                clientId,
+                AdminAuth.GetAdminUserId(User),
+                confirmation),
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo eliminar el cliente.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} permanently deleted client {ClientId}.",
+            AdminAuth.GetAdminUserId(User),
+            clientId);
+        StatusMessage = "Cliente eliminado permanentemente. Sus tarjetas y datos Wallet relacionados fueron removidos.";
+        await LoadAsync(cancellationToken);
+        return Page();
+    }
+
     private async Task<IActionResult> ShowRetiredAllowlistMessageAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation(

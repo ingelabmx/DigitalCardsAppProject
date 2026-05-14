@@ -776,6 +776,41 @@ public sealed class AdminAppService
         return ToPilotClientDto(client, access);
     }
 
+    public async Task<DeleteClientResult> DeleteClientPermanentlyAsync(
+        DeleteClientCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.AdminUserId == Guid.Empty)
+        {
+            return new DeleteClientResult(false, "La sesion de admin no es valida.");
+        }
+
+        var client = await _clients.FindByIdAsync(command.ClientId, cancellationToken);
+        if (client is null)
+        {
+            return new DeleteClientResult(false, "El cliente no existe.");
+        }
+
+        var confirmation = command.Confirmation?.Trim();
+        if (!string.Equals(confirmation, client.UserName, StringComparison.Ordinal) &&
+            !string.Equals(confirmation, client.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            return new DeleteClientResult(false, "La confirmacion debe coincidir exactamente con el usuario o correo del cliente.");
+        }
+
+        await AddAuditAsync(
+            OperationalAuditEventType.ClientDeleted,
+            command.AdminUserId,
+            clientId: client.Id,
+            summary: $"Client {client.UserName} permanently deleted.",
+            cancellationToken: cancellationToken);
+
+        var deleted = await _accountLifecycle.DeleteClientAsync(client.Id, cancellationToken);
+        return deleted
+            ? new DeleteClientResult(true, ErrorMessage: null)
+            : new DeleteClientResult(false, "No se pudo eliminar el cliente.");
+    }
+
     public async Task<IReadOnlyList<AdminAuditEventDto>> SearchAuditAsync(
         AdminAuditQuery query,
         CancellationToken cancellationToken = default)

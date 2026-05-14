@@ -150,6 +150,15 @@ public sealed record SetPilotClientCommand(
     bool IsEnabled,
     string? Notes);
 
+public sealed record DeleteClientCommand(
+    Guid ClientId,
+    Guid AdminUserId,
+    string Confirmation);
+
+public sealed record DeleteClientResult(
+    bool Succeeded,
+    string? ErrorMessage);
+
 public sealed record AdminSupportQuery(
     string Query,
     string? BusinessFilter = null,
