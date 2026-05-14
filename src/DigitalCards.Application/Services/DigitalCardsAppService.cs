@@ -774,6 +774,7 @@ public sealed class DigitalCardsAppService
             .SelectMany(card => card.RecentStampEvents.Select(item => new BusinessDashboardStampEventDto(
                 card.Id,
                 card.Client.UserName,
+                $"{card.Client.FirstName} {card.Client.LastName}".Trim(),
                 item.CreatedAt,
                 item.Source,
                 item.PreviousCheckQTY,
@@ -834,6 +835,7 @@ public sealed class DigitalCardsAppService
             .SelectMany(card => card.RecentStampEvents.Select(item => new BusinessDashboardStampEventDto(
                 card.Id,
                 card.Client.UserName,
+                $"{card.Client.FirstName} {card.Client.LastName}".Trim(),
                 item.CreatedAt,
                 item.Source,
                 item.PreviousCheckQTY,

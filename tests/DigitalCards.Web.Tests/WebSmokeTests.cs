@@ -140,12 +140,13 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
         var cardsHtml = await client.GetStringAsync("/Business/Cards");
-        var checkInHtml = await client.GetStringAsync("/Business/CheckIn");
+        var checkInResponse = await client.GetAsync("/Business/CheckIn");
 
-        Assert.Contains("business-operation-strip", dashboardHtml);
+        Assert.DoesNotContain("business-operation-strip", dashboardHtml);
+        Assert.DoesNotContain("Modo mostrador", dashboardHtml);
         Assert.Contains("business-primary-workflow", cardsHtml);
         Assert.Contains("business-card-detail-empty", cardsHtml);
-        Assert.Contains("business-checkin-guide", checkInHtml);
+        Assert.Equal("/Business/Cards", checkInResponse.RequestMessage?.RequestUri?.AbsolutePath);
     }
 
     [Fact]
@@ -255,6 +256,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("data-testid=\"legacy-shell\"", businessHtml);
         Assert.Contains("Duenos de negocios", businessHtml);
         Assert.Contains("Tarjetas", businessHtml);
+        Assert.Contains("Checadas", businessHtml);
+        Assert.DoesNotContain("Mostrador", businessHtml);
 
         await RegisterClientAsync(fake.Factory, userName, password: clientPassword);
         await LoginClientAsync(clientClient, userName, clientPassword);
@@ -1729,12 +1732,16 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/CheckIn", "/Business/Branding" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
         {
             var response = await client.GetAsync(path);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
+
+        var checkInResponse = await client.GetAsync("/Business/CheckIn");
+        Assert.Equal(HttpStatusCode.Redirect, checkInResponse.StatusCode);
+        Assert.Contains("/Business/Cards", checkInResponse.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -2220,7 +2227,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-dashboard-card-count", html);
         Assert.Contains("business-dashboard-current-stamps", html);
         Assert.Contains("business-dashboard-google-count", html);
-        Assert.Contains("business-reports-link", html);
+        Assert.DoesNotContain("business-reports-link", html);
         Assert.Contains("business-dashboard-recent-card", html);
         Assert.Contains("business-dashboard-ledger-event", html);
         Assert.Contains(userName, html);
@@ -2405,10 +2412,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("pilot-business-blocked", html);
         Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", html);
-        Assert.DoesNotContain("data-testid=\"enroll-link\"", html);
-        Assert.DoesNotContain("data-testid=\"cards-link\"", html);
+        Assert.DoesNotContain("business-dashboard-summary", html);
+        Assert.DoesNotContain("business-public-enrollment-panel", html);
 
-        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/CheckIn", "/Business/Branding" })
+        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
         {
             var blockedPage = await client.GetStringAsync(path);
 
@@ -2420,7 +2427,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task BusinessCheckIn_LooksUpQrPayloadAndAddsStamp()
+    public async Task BusinessCheckIn_RedirectsToCards()
     {
         using var fake = WithFakeIntegrations();
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -2428,38 +2435,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             AllowAutoRedirect = false
         });
         await LoginBusinessAsync(client);
-        var userName = NewLegacySafeUserName("ci");
-        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
-        var lookupToken = await GetAntiforgeryTokenAsync(client, "/Business/CheckIn");
 
-        var lookupResponse = await client.PostAsync(
-            "/Business/CheckIn?handler=Lookup",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Query"] = userName,
-                ["__RequestVerificationToken"] = lookupToken
-            }));
-        var lookupHtml = await lookupResponse.Content.ReadAsStringAsync();
+        var getResponse = await client.GetAsync("/Business/CheckIn");
 
-        Assert.Equal(HttpStatusCode.OK, lookupResponse.StatusCode);
-        Assert.Contains("business-checkin-card", lookupHtml);
-        Assert.Contains(userName, lookupHtml);
-        Assert.Contains("business-checkin-stamp-submit", lookupHtml);
-
-        var stampToken = ExtractAntiforgeryToken(lookupHtml);
-        var stampResponse = await client.PostAsync(
-            $"/Business/CheckIn?handler=Stamp&cardId={enrollment.Card.Id}",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Query"] = userName,
-                ["__RequestVerificationToken"] = stampToken
-            }));
-        var stampHtml = await stampResponse.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, stampResponse.StatusCode);
-        Assert.Contains("Sello agregado", stampHtml);
-        Assert.Contains("data-testid=\"business-checkin-current-stamps\">2</strong>", stampHtml);
-        Assert.Equal(2, FindInMemoryCard(fake.Factory, enrollment.Card.Id).CurrentStamps);
+        Assert.Equal(HttpStatusCode.Redirect, getResponse.StatusCode);
+        Assert.Contains("/Business/Cards", getResponse.Headers.Location?.OriginalString);
     }
 
     [Fact]

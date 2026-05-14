@@ -151,6 +151,11 @@
                             </strong>
                         </div>
                         <div class="business-card-action-buttons">
+                            <a class="btn btn-outline-secondary"
+                               href="#business-card-management-panel"
+                               data-testid="business-card-manage-link">
+                                Administrar
+                            </a>
                             <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
                                 <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit">
                                     Reenviar Wallet
@@ -162,6 +167,11 @@
                                 </button>
                             </form>
                         </div>
+                    </div>
+
+                    <div class="business-management-note" id="business-card-management-panel" data-testid="business-card-management-panel">
+                        <strong>Administracion de tarjeta</strong>
+                        <p>Desde aqui se concentraran las acciones de estado del cliente para este negocio.</p>
                     </div>
 
                     <div class="business-detail-card-face" data-testid="business-detail-card-face">

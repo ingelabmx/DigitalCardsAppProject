@@ -149,6 +149,7 @@ public sealed record BusinessDashboardDto(
 public sealed record BusinessDashboardStampEventDto(
     Guid CardId,
     string ClientUserName,
+    string ClientName,
     DateTimeOffset CreatedAt,
     StampLedgerSource Source,
     int PreviousCheckQTY,

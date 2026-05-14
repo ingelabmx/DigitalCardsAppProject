@@ -982,52 +982,6 @@ form.is-submitting input[type="submit"] {
   font-weight: 700;
 }
 
-.business-action-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.business-operation-strip {
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 1rem;
-}
-
-.business-operation-step {
-  background: #fff;
-  border: 1px solid #e5eaef;
-  border-left: 4px solid #5d87ff;
-  border-radius: 8px;
-  box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
-  color: #2a3547;
-  display: grid;
-  gap: 0.35rem;
-  min-height: 122px;
-  padding: 1rem;
-  text-decoration: none;
-}
-
-.business-operation-step:hover {
-  border-color: #5d87ff;
-  color: #2a3547;
-  transform: translateY(-1px);
-}
-
-.business-operation-step span {
-  color: #5d87ff;
-  font-size: 0.75rem;
-  font-weight: 900;
-}
-
-.business-operation-step strong {
-  align-self: end;
-  font-size: 1.05rem;
-}
-
-.business-operation-step small {
-  color: #7c8fac;
-}
-
 .info-band,
 .form-panel,
 .result-panel,
@@ -1313,58 +1267,6 @@ form.is-submitting input[type="submit"] {
   display: block;
 }
 
-.business-checkin-panel {
-  display: grid;
-  gap: 1rem;
-}
-
-.business-checkin-search {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.business-checkin-guide {
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.business-checkin-guide span {
-  background: #ecf2ff;
-  border: 1px solid #d8e5ff;
-  border-radius: 8px;
-  color: #2a3547;
-  font-weight: 800;
-  padding: 0.75rem;
-  text-align: center;
-}
-
-.business-checkin-scanner {
-  max-width: 520px;
-}
-
-.business-checkin-result,
-.business-checkin-card {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-}
-
-.business-checkin-card {
-  align-items: stretch;
-  background: #fff;
-  border: 1px solid #d9e2ec;
-  border-radius: 8px;
-  flex-direction: column;
-  padding: 1rem;
-}
-
-.business-checkin-stamp-form {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .business-card-grid {
   display: grid;
   gap: 1rem;
@@ -1483,6 +1385,21 @@ form.is-submitting input[type="submit"] {
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+.business-management-note {
+  background: #fff;
+  border: 1px dashed #cad3dd;
+  border-radius: 8px;
+  color: #516173;
+  margin: 1rem 0;
+  padding: 0.85rem;
+}
+
+.business-management-note strong {
+  color: #2a3547;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 .business-detail-card-face {
@@ -2384,10 +2301,7 @@ form.is-submitting input[type="submit"] {
   .client-dashboard-metrics,
   .client-wallet-guide,
   .client-cards-summary,
-  .client-identity-panel,
-  .business-checkin-guide,
-  .business-operation-strip,
-  .business-action-grid {
+  .client-identity-panel {
     grid-template-columns: 1fr;
   }
 

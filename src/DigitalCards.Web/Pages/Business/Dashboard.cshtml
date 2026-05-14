@@ -26,65 +26,11 @@
         <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
             @Model.PilotBlockMessage
         </div>
-
-        <div class="action-grid business-action-grid">
-            <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
-                <span>Salir</span>
-                <small>Cierra la sesion del negocio.</small>
-            </a>
-        </div>
-    }
-    else
-    {
-        <div class="action-grid">
-            <a class="action-card" asp-page="/Business/CheckIn" data-testid="business-checkin-link">
-                <span>Modo mostrador</span>
-                <small>Escanea QR, valida tarjeta y agrega sello rapido.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Cards" data-testid="cards-link">
-                <span>Tarjetas y sellos</span>
-                <small>Busca clientes, reenvia Wallet y agrega sellos.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Enroll" data-testid="enroll-link">
-                <span>Asociar cliente</span>
-                <small>Genera correo con link de Wallet.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Branding" data-testid="business-branding-link">
-                <span>Branding Wallet</span>
-                <small>Edita logo, colores y nombre publico del programa.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Reports" data-testid="business-reports-link">
-                <span>Reportes</span>
-                <small>Consulta tarjetas, sellos, Wallets y alertas recientes.</small>
-            </a>
-            <a class="action-card" asp-page="/Business/Logout" data-testid="logout-link">
-                <span>Salir</span>
-                <small>Cierra la sesion del negocio.</small>
-            </a>
-        </div>
     }
 </section>
 
 @if (!Model.IsPilotBlocked && Model.Dashboard is not null)
 {
-    <section class="business-operation-strip" data-testid="business-operation-strip">
-        <a class="business-operation-step" asp-page="/Business/CheckIn">
-            <span>01</span>
-            <strong>Escanear o buscar</strong>
-            <small>Modo mostrador para QR, username o correo.</small>
-        </a>
-        <a class="business-operation-step" asp-page="/Business/Cards">
-            <span>02</span>
-            <strong>Validar tarjeta</strong>
-            <small>Confirma cliente, sellos y estado Wallet.</small>
-        </a>
-        <a class="business-operation-step" asp-page="/Business/Cards">
-            <span>03</span>
-            <strong>Agregar sello</strong>
-            <small>Actualiza tarjeta, Wallets y auditoria.</small>
-        </a>
-    </section>
-
     <section class="result-panel" data-testid="business-public-enrollment-panel">
         <div class="page-heading">
             <div>
@@ -121,7 +67,6 @@
                 <h2>Actividad reciente</h2>
                 <p class="text-muted">Datos recientes del negocio autenticado. No se muestran tokens ni credenciales.</p>
             </div>
-            <a class="btn btn-outline-primary" asp-page="/Business/Cards" data-testid="business-dashboard-open-cards">Abrir tarjetas</a>
         </div>
 
         <div class="metric-row">
@@ -168,13 +113,18 @@
                     <div class="dashboard-card-list" data-testid="business-dashboard-recent-cards">
                         @foreach (var card in Model.Dashboard.RecentCards)
                         {
+                            var clientName = $"{card.Client.FirstName} {card.Client.LastName}".Trim();
+                            if (string.IsNullOrWhiteSpace(clientName))
+                            {
+                                clientName = card.Client.UserName;
+                            }
                             <a class="dashboard-card-row"
                                asp-page="/Business/Cards"
                                asp-route-query="@card.Client.UserName"
                                asp-route-cardId="@card.Id"
                                data-testid="business-dashboard-recent-card">
                                 <div>
-                                    <strong>@card.Client.UserName</strong>
+                                    <strong>@clientName</strong>
                                     <span>@card.Client.Email</span>
                                 </div>
                                 <div>
@@ -205,7 +155,7 @@
                         {
                             <div class="stamp-ledger-item" data-testid="business-dashboard-ledger-event">
                                 <div>
-                                    <strong>@item.ClientUserName</strong>
+                                    <strong>@item.ClientName</strong>
                                     <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                 </div>
                                 <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
