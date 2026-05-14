@@ -214,7 +214,7 @@ El flujo recomendado para negocio es `/Business/Cards`:
 
 1. buscar cliente por username o correo;
 2. abrir la tarjeta cliente-negocio;
-3. revisar sellos, Google Wallet, Apple Wallet y dispositivos Apple;
+3. revisar sellos y estado unificado de la tarjeta digital;
 4. reenviar el correo/link Wallet si hace falta;
 5. agregar sello desde el detalle de la tarjeta.
 
@@ -227,9 +227,7 @@ autenticado:
 
 - tarjetas recientes;
 - sellos actuales e historicos del lote reciente;
-- conteo Google Wallet y Apple Wallet;
-- alertas recientes de Wallet;
-- eventos recientes de `StampLedger`.
+- eventos recientes de sellos con estado simple de tarjeta.
 
 El dashboard no muestra `businessId`, tokens Wallet, JWTs, push tokens,
 passwords ni connection strings. Para operar una tarjeta, abre

@@ -223,15 +223,15 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("Correo reenviado", await page.GetByTestId("business-card-status").InnerTextAsync());
         await page.GetByTestId("business-card-stamp-submit").ClickAsync();
         Assert.Equal("2", await page.GetByTestId("business-card-current-stamps").InnerTextAsync());
-        Assert.Equal("Emitida", await page.GetByTestId("business-card-google-status").InnerTextAsync());
+        Assert.Equal("Lista", await page.GetByTestId("business-card-wallet-status").InnerTextAsync());
         var ledgerText = await page.GetByTestId("stamp-ledger-list").InnerTextAsync();
-        Assert.Contains("ModernBusiness", ledgerText);
-        Assert.Contains("Sellos: 1 -> 2", ledgerText);
+        Assert.Contains("Actualizado", ledgerText);
+        Assert.Contains("Sellos actuales 2", ledgerText);
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
         Assert.True(await page.GetByTestId("business-dashboard-summary").IsVisibleAsync());
         Assert.Contains(userName, await page.GetByTestId("business-dashboard-recent-cards").InnerTextAsync());
-        Assert.Contains("ModernBusiness", await page.GetByTestId("business-dashboard-ledger").InnerTextAsync());
+        Assert.Contains("Actualizado", await page.GetByTestId("business-dashboard-ledger").InnerTextAsync());
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Login").ToString());
         await page.GetByTestId("client-login-username").FillAsync(userName);
