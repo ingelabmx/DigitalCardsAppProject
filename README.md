@@ -390,6 +390,16 @@ capturar username/correo, validar la tarjeta asociada al negocio autenticado y
 agregar sello desde una pantalla rapida. Usa la misma logica de sellos que
 `/Business/Cards`, por lo que conserva updates Apple/Google y `StampLedger`.
 
+## Consentimiento de cliente
+
+`/Register` y `/Enroll/{businessToken}` requieren aceptar terminos y privacidad.
+La aceptacion se guarda en `ModernClientConsent` con version de politica,
+origen y fecha. Para MySQL aplica manualmente:
+
+```text
+docs/migration-context/69-public-enrollment-consent-hostgator.sql
+```
+
 ## Soporte admin
 
 `/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:

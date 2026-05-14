@@ -266,6 +266,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["Input.LastName"] = "Enroll",
                 ["Input.Email"] = $"{userName}@example.test",
                 ["Input.Password"] = "ClientPass123!",
+                ["Input.AcceptTerms"] = "true",
                 ["__RequestVerificationToken"] = publicCsrf
             }));
         var registerHtml = await registerResponse.Content.ReadAsStringAsync();
@@ -279,6 +280,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var outbox = outboxScope.ServiceProvider.GetRequiredService<IWalletEmailOutbox>();
         var messages = await outbox.ListAsync();
         Assert.Contains(messages, message => string.Equals(message.To, $"{userName}@example.test", StringComparison.Ordinal));
+
+        var consentStore = outboxScope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        var client = consentStore.Clients.Single(item => item.UserName == userName);
+        var consent = Assert.Single(consentStore.ClientConsents, item => item.ClientId == client.Id);
+        Assert.Equal("privacy-2026-05", consent.PolicyVersion);
+        Assert.Equal("PublicBusinessEnrollment", consent.Source);
     }
 
     [Fact]

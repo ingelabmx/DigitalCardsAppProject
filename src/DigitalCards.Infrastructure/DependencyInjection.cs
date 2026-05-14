@@ -71,6 +71,7 @@ public static class DependencyInjection
             services.AddSingleton(new MySqlConnectionFactory(providers.DigitalCardsConnectionString!));
             services.AddScoped<IClientRepository, MySqlClientRepository>();
             services.AddScoped<IClientCredentialRepository, MySqlClientCredentialRepository>();
+            services.AddScoped<IClientConsentRepository, MySqlClientConsentRepository>();
             services.AddScoped<IAdminUserRepository, MySqlAdminUserRepository>();
             services.AddScoped<IAdminCredentialRepository, MySqlAdminCredentialRepository>();
             services.AddScoped<IAuditEventRepository, MySqlAuditEventRepository>();
@@ -92,6 +93,7 @@ public static class DependencyInjection
             services.AddSingleton<InMemoryDigitalCardsStore>();
             services.AddScoped<IClientRepository, InMemoryClientRepository>();
             services.AddScoped<IClientCredentialRepository, InMemoryClientCredentialRepository>();
+            services.AddScoped<IClientConsentRepository, InMemoryClientConsentRepository>();
             services.AddScoped<IAdminUserRepository, InMemoryAdminUserRepository>();
             services.AddScoped<IAdminCredentialRepository, InMemoryAdminCredentialRepository>();
             services.AddScoped<IAuditEventRepository, InMemoryAuditEventRepository>();

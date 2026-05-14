@@ -60,4 +60,6 @@ public sealed class InMemoryDigitalCardsStore
     public List<StampLedgerRecord> StampLedger { get; } = [];
 
     public List<OperationalAuditEvent> AuditEvents { get; } = [];
+
+    public List<ClientConsent> ClientConsents { get; } = [];
 }
