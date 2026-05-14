@@ -1,11 +1,9 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
-using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -16,19 +14,13 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class SupportModel : PageModel
 {
     private readonly AdminAppService _adminApp;
-    private readonly LegacyWalletSyncOptions _legacyWalletSyncOptions;
-    private readonly LegacyWalletSyncState _legacyWalletSyncState;
     private readonly ILogger<SupportModel> _logger;
 
     public SupportModel(
         AdminAppService adminApp,
-        IOptions<LegacyWalletSyncOptions> legacyWalletSyncOptions,
-        LegacyWalletSyncState legacyWalletSyncState,
         ILogger<SupportModel> logger)
     {
         _adminApp = adminApp;
-        _legacyWalletSyncOptions = legacyWalletSyncOptions.Value;
-        _legacyWalletSyncState = legacyWalletSyncState;
         _logger = logger;
     }
 
@@ -58,11 +50,6 @@ public sealed class SupportModel : PageModel
     public string? StatusMessage { get; private set; }
 
     public string? ErrorMessage { get; private set; }
-
-    public LegacyWalletSyncOptions LegacyWalletSync => _legacyWalletSyncOptions;
-
-    public LegacyWalletSyncStateSnapshot LegacyWalletSyncState =>
-        _legacyWalletSyncState.Snapshot(_legacyWalletSyncOptions.Enabled);
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -100,14 +87,6 @@ public sealed class SupportModel : PageModel
                 From,
                 To
             },
-            legacyWalletSync = new
-            {
-                _legacyWalletSyncOptions.Enabled,
-                _legacyWalletSyncOptions.PollIntervalSeconds,
-                _legacyWalletSyncOptions.LookbackMinutes,
-                _legacyWalletSyncOptions.BatchSize,
-                State = LegacyWalletSyncState
-            },
             counts = new
             {
                 clients = result.Clients.Count,
@@ -116,7 +95,37 @@ public sealed class SupportModel : PageModel
             },
             result.Clients,
             result.Businesses,
-            result.Cards
+            cards = result.Cards.Select(card => new
+            {
+                cardSuffix = Suffix(card.CardId),
+                client = new
+                {
+                    card.Client.UserName,
+                    card.Client.ClientEmail
+                },
+                business = new
+                {
+                    card.Business.BusinessName,
+                    card.Business.BusinessEmail
+                },
+                card.CurrentStamps,
+                card.LifetimeStamps,
+                walletReady = card.GoogleIssued || card.AppleTracked,
+                registeredDevices = card.AppleRegisteredDeviceCount,
+                card.WalletIssueCount,
+                card.LastStampedAt,
+                card.RecentSafeErrors,
+                recentStampEvents = card.RecentStampEvents.Select(item => new
+                {
+                    source = SourceLabel(item.Source),
+                    item.CreatedAt,
+                    item.PreviousCheckQTY,
+                    item.NewCheckQTY,
+                    item.PreviousHistoricCheckQTY,
+                    item.NewHistoricCheckQTY,
+                    item.ErrorSummary
+                })
+            })
         };
         var json = JsonSerializer.Serialize(
             export,
@@ -155,7 +164,7 @@ public sealed class SupportModel : PageModel
 
         var result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
         var csv = new StringBuilder();
-        csv.AppendLine("CardSuffix,ClientUserName,BusinessName,CurrentStamps,LifetimeStamps,GoogleIssued,AppleTracked,AppleDevices,WalletIssueCount,LegacySyncEventCount,LastStampedAt");
+        csv.AppendLine("CardSuffix,ClientUserName,BusinessName,CurrentStamps,LifetimeStamps,WalletReady,RegisteredDevices,WalletIssueCount,LastStampedAt");
         foreach (var card in result.Cards)
         {
             csv.Append(Csv(Suffix(card.CardId))).Append(',')
@@ -163,11 +172,9 @@ public sealed class SupportModel : PageModel
                 .Append(Csv(card.Business.BusinessName)).Append(',')
                 .Append(card.CurrentStamps).Append(',')
                 .Append(card.LifetimeStamps).Append(',')
-                .Append(card.GoogleIssued).Append(',')
-                .Append(card.AppleTracked).Append(',')
+                .Append(card.GoogleIssued || card.AppleTracked).Append(',')
                 .Append(card.AppleRegisteredDeviceCount).Append(',')
                 .Append(card.WalletIssueCount).Append(',')
-                .Append(card.LegacySyncEventCount).Append(',')
                 .Append(Csv(card.LastStampedAt.ToString("o")))
                 .AppendLine();
         }
@@ -252,5 +259,12 @@ public sealed class SupportModel : PageModel
     {
         value ??= string.Empty;
         return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private static string SourceLabel(StampLedgerSource source)
+    {
+        return source == StampLedgerSource.LegacySync
+            ? "Operacion externa"
+            : source.ToString();
     }
 }

@@ -132,7 +132,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-businesses-panel", businessesHtml);
         Assert.Contains("admin-filter-card", businessesHtml);
         Assert.Contains("support-filter-panel", supportHtml);
-        Assert.Contains("admin-cutover-sync-status", cutoverHtml);
+        Assert.Contains("admin-cutover-page", cutoverHtml);
+        Assert.DoesNotContain("LegacyWalletSync", cutoverHtml);
         Assert.DoesNotContain("PasswordHash", supportHtml);
         Assert.DoesNotContain("connection string", supportHtml, StringComparison.OrdinalIgnoreCase);
     }
@@ -324,7 +325,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-cutover-page", html);
         Assert.Contains("Demo Coffee", html);
         Assert.Contains("admin-cutover-readiness", html);
-        Assert.Contains("admin-cutover-sync-status", html);
+        Assert.DoesNotContain("LegacyWalletSync", html);
 
         var response = await client.PostAsync(
             "/Admin/Cutover?handler=Status",
@@ -378,7 +379,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("admin-cutover-smoke-evidence", updatedHtml);
-        Assert.Contains("Smoke de cutover registrado como completo", updatedHtml);
+        Assert.Contains("Smoke de activacion registrado como completo", updatedHtml);
         Assert.Contains("validado con iPhone controlado", updatedHtml);
         Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
@@ -906,16 +907,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("admin-support-results", html);
         Assert.Contains("admin-support-filters", html);
-        Assert.Contains("LegacyWalletSync:", html);
-        Assert.Contains("Activo", html);
-        Assert.Contains("admin-support-sync-last-run", html);
+        Assert.DoesNotContain("LegacyWalletSync", html);
         Assert.Contains(userName, html);
         Assert.Contains("Demo Coffee", html);
         Assert.Contains("Emitida", html);
         Assert.Contains("admin-support-operational-state", html);
         Assert.Contains("Errores recientes seguros", html);
         Assert.Contains("Tarjeta digital fallo seguro", html);
-        Assert.Contains("LegacySync", html);
+        Assert.DoesNotContain("LegacySync", html);
         Assert.Contains("ModernBusiness", html);
         Assert.Contains("Sellos:", html);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
@@ -995,7 +994,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         Assert.Contains("attachment", response.Content.Headers.ContentDisposition?.DispositionType);
         Assert.Contains("support-diagnostic-", response.Content.Headers.ContentDisposition?.FileName);
-        Assert.Contains("\"legacyWalletSync\"", json);
+        Assert.DoesNotContain("legacyWalletSync", json, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(userName, json);
         Assert.Contains("Demo Coffee", json);
         Assert.Contains("ModernBusiness", json);

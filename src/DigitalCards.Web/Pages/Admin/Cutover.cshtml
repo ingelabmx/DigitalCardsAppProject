@@ -2,14 +2,14 @@
 @model DigitalCards.Web.Pages.Admin.CutoverModel
 @using DigitalCards.Domain
 @{
-    ViewData["Title"] = "Cutover por negocio";
+    ViewData["Title"] = "Activacion por negocio";
 }
 
 <section class="result-panel" data-testid="admin-cutover-page">
     <div class="page-heading">
         <div>
             <p class="eyebrow">Admin</p>
-            <h1>Cutover por negocio</h1>
+            <h1>Activacion por negocio</h1>
             <p class="lead">Revisa readiness y cambia el estado operativo antes de activar un negocio.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
@@ -29,23 +29,6 @@
         <button class="btn btn-primary" type="submit" data-testid="admin-cutover-search-submit">Filtrar</button>
     </form>
 
-    <div class="support-sync-status" data-testid="admin-cutover-sync-status">
-        <strong>LegacyWalletSync:</strong>
-        @(Model.LegacyWalletSyncState.Enabled ? "Activo" : "Apagado")
-        <span>
-            Ultimo run:
-            @(Model.LegacyWalletSyncState.LastCompletedAt?.ToLocalTime().ToString("g") ?? "no ejecutado")
-        </span>
-        @if (Model.LegacyWalletSyncState.LastResult is not null)
-        {
-            <span>
-                Sync @Model.LegacyWalletSyncState.LastResult.Synced /
-                Skip @Model.LegacyWalletSyncState.LastResult.Skipped /
-                Fallos @Model.LegacyWalletSyncState.LastResult.Failed
-            </span>
-        }
-    </div>
-
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     @if (Model.StatusMessage is not null)
@@ -57,7 +40,7 @@
 
     @if (Model.Businesses.Count == 0)
     {
-        <p class="text-muted" data-testid="admin-cutover-no-results">No se encontraron negocios para cutover.</p>
+        <p class="text-muted" data-testid="admin-cutover-no-results">No se encontraron negocios para activacion.</p>
     }
     else
     {
@@ -163,7 +146,7 @@
                             <button class="btn btn-primary"
                                     type="submit"
                                     data-testid="admin-cutover-save"
-                                    onclick="return confirm('Confirma el cambio de estado de cutover para este negocio.');">
+                                    onclick="return confirm('Confirma el cambio de estado de activacion para este negocio.');">
                                 Guardar estado
                             </button>
                             <a class="btn btn-outline-primary"
@@ -185,7 +168,7 @@
                         <input type="hidden" asp-for="Query" />
                         <input type="hidden" asp-for="ActivationStatusFilter" />
                         <input type="hidden" name="SmokeInput.BusinessId" value="@business.BusinessId" />
-                        <h3>Registrar smoke de cutover</h3>
+                        <h3>Registrar smoke de activacion</h3>
                         <div class="cutover-smoke-checks">
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.HealthOk" value="true" checked="@(item.LatestSmoke?.HealthOk == true)" />
