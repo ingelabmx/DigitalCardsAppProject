@@ -104,5 +104,19 @@
                 }
             </div>
         }
+        else
+        {
+            <div class="dashboard-empty-state" data-testid="client-dashboard-empty-cards">
+                <div>
+                    <p class="eyebrow">Sin tarjetas activas</p>
+                    <h3>Registrate con un negocio participante</h3>
+                    <p>Escanea el QR del mostrador o abre el link que te comparta el negocio para asociar tu primera tarjeta.</p>
+                </div>
+                <div class="dashboard-empty-actions">
+                    <a class="btn btn-primary" asp-page="/Index">Ir al inicio</a>
+                    <a class="btn btn-outline-primary" asp-page="/Client/Profile">Revisar perfil</a>
+                </div>
+            </div>
+        }
     </section>
 }

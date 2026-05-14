@@ -696,6 +696,48 @@ h1 {
   border-color: var(--enroll-secondary);
 }
 
+.dashboard-empty-state {
+  align-items: center;
+  background: #fff;
+  border: 1px dashed #b7c5d8;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.dashboard-empty-state.compact {
+  align-items: start;
+  border-style: solid;
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+.dashboard-empty-state h2,
+.dashboard-empty-state h3,
+.dashboard-empty-state p {
+  margin: 0;
+}
+
+.dashboard-empty-state h2,
+.dashboard-empty-state h3 {
+  color: #2a3547;
+}
+
+.dashboard-empty-state p {
+  color: #5a6a85;
+}
+
+.dashboard-empty-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
 .business-hero-grid {
   align-items: stretch;
   display: grid;
@@ -1885,7 +1927,8 @@ h1 {
   .wallet-public-brand,
   .pilot-business-item,
   .business-card-action-strip,
-  .business-card-result-row {
+  .business-card-result-row,
+  .dashboard-empty-state {
     display: grid;
     grid-template-columns: 1fr;
   }
