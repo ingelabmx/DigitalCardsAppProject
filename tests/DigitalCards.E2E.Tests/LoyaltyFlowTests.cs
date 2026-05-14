@@ -112,7 +112,6 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
             await page.GetByTestId("admin-business-branding-public-name").FillAsync(publicBrandName);
             await page.GetByTestId("admin-business-branding-program-name").FillAsync("Playwright Rewards");
             await page.GetByTestId("admin-business-branding-description").FillAsync("Programa de sellos para Playwright.");
-            await page.GetByTestId("admin-business-branding-logo").FillAsync("/img/playwright-brand.svg");
             await page.GetByTestId("admin-business-branding-logo-upload").SetInputFilesAsync(logoFile);
             await page.GetByTestId("admin-business-branding-primary").FillAsync("#123456");
             await page.GetByTestId("admin-business-branding-secondary").FillAsync("#abcdef");
@@ -121,7 +120,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
             await page.GotoAsync(page.Url.Split('?')[0]);
             Assert.Contains(
                 "/uploads/business-logos/",
-                await page.GetByTestId("admin-business-branding-logo").InputValueAsync());
+                await page.GetByTestId("admin-business-branding-logo-preview").Locator("img").GetAttributeAsync("src"));
         }
         finally
         {
@@ -430,6 +429,6 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
     private static byte[] TinyPng()
     {
         return Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
+            "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8AAQv8BD/kD/YURmXYAAAAASUVORK5CYII=");
     }
 }

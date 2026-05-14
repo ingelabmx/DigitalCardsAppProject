@@ -1,19 +1,18 @@
 using System.Security.Cryptography;
 using DigitalCards.Infrastructure.Branding;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace DigitalCards.Web.Branding;
 
 public sealed class BusinessLogoUploadService
 {
+    private const int NormalizedLogoSize = 512;
+    private const string NormalizedLogoFileName = "logo.png";
+
     private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".webp"
-    };
 
     private readonly BusinessLogoUploadOptions _options;
 
@@ -38,91 +37,139 @@ public sealed class BusinessLogoUploadService
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!AllowedExtensions.Contains(extension))
+        if (!string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase))
         {
-            return new BusinessLogoUploadResult(null, "El logo debe ser PNG, JPG, JPEG o WebP.");
+            return new BusinessLogoUploadResult(null, "El logo debe ser PNG.");
         }
 
-        var signature = new byte[12];
+        var signature = new byte[PngSignature.Length];
         await using (var signatureInput = file.OpenReadStream())
         {
             var read = await signatureInput.ReadAsync(signature.AsMemory(0, signature.Length), cancellationToken);
-            if (!MatchesExtension(signature.AsSpan(0, read), extension))
+            if (read < PngSignature.Length ||
+                !signature.AsSpan(0, read).SequenceEqual(PngSignature))
             {
-                return new BusinessLogoUploadResult(null, "El archivo no coincide con un formato de logo permitido.");
+                return new BusinessLogoUploadResult(null, "El archivo no es un PNG valido.");
             }
         }
 
-        await using var input = file.OpenReadStream();
-        if (input.CanSeek)
+        Image<Rgba32> uploaded;
+        try
         {
-            input.Position = 0;
+            await using var input = file.OpenReadStream();
+            uploaded = await Image.LoadAsync<Rgba32>(input, cancellationToken);
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return new BusinessLogoUploadResult(null, "El archivo PNG no se pudo procesar.");
+        }
+
         var root = _options.GetPhysicalRoot();
         var businessFolderName = businessId.ToString("N");
         var businessFolder = Path.GetFullPath(Path.Combine(root, businessFolderName));
         EnsureChildPath(root, businessFolder);
         Directory.CreateDirectory(businessFolder);
 
-        var fileName = $"{CreateToken()}{extension}";
-        var physicalPath = Path.GetFullPath(Path.Combine(businessFolder, fileName));
-        EnsureChildPath(businessFolder, physicalPath);
+        var versionFolderName = CreateToken();
+        var versionFolder = Path.GetFullPath(Path.Combine(businessFolder, versionFolderName));
+        EnsureChildPath(businessFolder, versionFolder);
+        Directory.CreateDirectory(versionFolder);
 
+        var physicalPath = Path.GetFullPath(Path.Combine(versionFolder, NormalizedLogoFileName));
+        EnsureChildPath(versionFolder, physicalPath);
+
+        using (uploaded)
+        using (var normalized = NormalizeToSquare(uploaded))
         await using (var output = new FileStream(
-            physicalPath,
-            FileMode.CreateNew,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 64 * 1024,
-            useAsync: true))
+                         physicalPath,
+                         FileMode.CreateNew,
+                         FileAccess.Write,
+                         FileShare.None,
+                         bufferSize: 64 * 1024,
+                         useAsync: true))
         {
-            await input.CopyToAsync(output, cancellationToken);
+            await normalized.SaveAsPngAsync(output, cancellationToken);
         }
 
-        var publicPath = $"{_options.GetRequestPath()}/{businessFolderName}/{fileName}";
+        var publicPath = $"{_options.GetRequestPath()}/{businessFolderName}/{versionFolderName}/{NormalizedLogoFileName}";
         return new BusinessLogoUploadResult(publicPath, ErrorMessage: null);
+    }
+
+    public bool IsOwned(string? publicPath)
+    {
+        return TryGetOwnedPhysicalPath(publicPath, out _);
+    }
+
+    public bool ExistsIfOwned(string? publicPath)
+    {
+        return TryGetOwnedPhysicalPath(publicPath, out var physicalPath) &&
+            File.Exists(physicalPath);
     }
 
     public void DeleteIfOwned(string? publicPath)
     {
-        if (string.IsNullOrWhiteSpace(publicPath))
+        if (!TryGetOwnedPhysicalPath(publicPath, out var physicalPath) ||
+            !File.Exists(physicalPath))
         {
             return;
+        }
+
+        File.Delete(physicalPath);
+
+        var versionFolder = Path.GetDirectoryName(physicalPath);
+        DeleteIfEmpty(versionFolder);
+
+        var businessFolder = versionFolder is null ? null : Path.GetDirectoryName(versionFolder);
+        DeleteIfEmpty(businessFolder);
+    }
+
+    private bool TryGetOwnedPhysicalPath(string? publicPath, out string physicalPath)
+    {
+        physicalPath = string.Empty;
+        if (string.IsNullOrWhiteSpace(publicPath))
+        {
+            return false;
         }
 
         var requestPath = _options.GetRequestPath().TrimEnd('/');
         if (!publicPath.StartsWith($"{requestPath}/", StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return false;
         }
 
         var relativePath = publicPath[(requestPath.Length + 1)..]
             .Replace('/', Path.DirectorySeparatorChar);
         var root = _options.GetPhysicalRoot();
-        var physicalPath = Path.GetFullPath(Path.Combine(root, relativePath));
-        EnsureChildPath(root, physicalPath);
+        var resolvedPath = Path.GetFullPath(Path.Combine(root, relativePath));
+        EnsureChildPath(root, resolvedPath);
 
-        if (File.Exists(physicalPath))
-        {
-            File.Delete(physicalPath);
-        }
+        physicalPath = resolvedPath;
+        return true;
     }
 
-    private static bool MatchesExtension(ReadOnlySpan<byte> signature, string extension)
+    private static Image<Rgba32> NormalizeToSquare(Image<Rgba32> image)
     {
-        return extension switch
+        var ratio = Math.Min(
+            (float)NormalizedLogoSize / image.Width,
+            (float)NormalizedLogoSize / image.Height);
+        var targetWidth = Math.Max(1, (int)Math.Round(image.Width * ratio));
+        var targetHeight = Math.Max(1, (int)Math.Round(image.Height * ratio));
+
+        image.Mutate(context => context.Resize(new ResizeOptions
         {
-            ".png" => signature.Length >= PngSignature.Length &&
-                signature[..PngSignature.Length].SequenceEqual(PngSignature),
-            ".jpg" or ".jpeg" => signature.Length >= 3 &&
-                signature[0] == 0xFF &&
-                signature[1] == 0xD8 &&
-                signature[2] == 0xFF,
-            ".webp" => signature.Length >= 12 &&
-                signature[..4].SequenceEqual("RIFF"u8) &&
-                signature[8..12].SequenceEqual("WEBP"u8),
-            _ => false
-        };
+            Size = new Size(targetWidth, targetHeight),
+            Mode = ResizeMode.Max
+        }));
+
+        var canvas = new Image<Rgba32>(
+            NormalizedLogoSize,
+            NormalizedLogoSize,
+            new Rgba32(0, 0, 0, 0));
+        var location = new Point(
+            (NormalizedLogoSize - image.Width) / 2,
+            (NormalizedLogoSize - image.Height) / 2);
+        canvas.Mutate(context => context.DrawImage(image, location, opacity: 1f));
+        return canvas;
     }
 
     private static void EnsureChildPath(string root, string path)
@@ -134,6 +181,31 @@ public sealed class BusinessLogoUploadService
         if (!normalizedPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("The logo upload path is invalid.");
+        }
+    }
+
+    private static void DeleteIfEmpty(string? directory)
+    {
+        if (string.IsNullOrWhiteSpace(directory) ||
+            !Directory.Exists(directory))
+        {
+            return;
+        }
+
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(directory).Any())
+            {
+                Directory.Delete(directory);
+            }
+        }
+        catch (IOException)
+        {
+            // Best effort cleanup only; stale empty folders do not affect wallet rendering.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Best effort cleanup only; upload ownership checks still protect file deletion.
         }
     }
 

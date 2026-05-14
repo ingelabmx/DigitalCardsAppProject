@@ -53,6 +53,8 @@ public sealed class BusinessProfileModel : PageModel
 
     public WalletBrandingRefreshResult? RefreshResult { get; private set; }
 
+    public bool BrandingLogoUnavailable { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(Guid businessId, CancellationToken cancellationToken)
     {
         return await LoadAsync(businessId, cancellationToken)
@@ -175,7 +177,8 @@ public sealed class BusinessProfileModel : PageModel
         CancellationToken cancellationToken)
     {
         var previousProfile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
-        var logoPath = BrandingInput.LogoPath;
+        var previousLogoPath = previousProfile?.Branding.LogoPath;
+        var logoPath = previousLogoPath ?? string.Empty;
         if (BrandingInput.LogoUpload is { Length: > 0 })
         {
             var upload = await _logoUploads.SaveAsync(businessId, BrandingInput.LogoUpload, cancellationToken);
@@ -188,6 +191,13 @@ public sealed class BusinessProfileModel : PageModel
             }
 
             logoPath = upload.PublicPath!;
+        }
+        else if (IsManagedLogoMissing(previousLogoPath))
+        {
+            ModelState.AddModelError(string.Empty, "El logo actual no esta disponible; sube un PNG nuevo.");
+            ClearPasswordFields();
+            await LoadAsync(businessId, cancellationToken);
+            return Page();
         }
 
         var result = await _adminApp.UpdateBusinessBrandingAsync(
@@ -215,9 +225,9 @@ public sealed class BusinessProfileModel : PageModel
         SetInputFromProfile(Profile);
         StatusMessage = "Branding del negocio actualizado.";
         if (!string.IsNullOrWhiteSpace(logoPath) &&
-            !string.Equals(previousProfile?.Branding.LogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(previousLogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
         {
-            _logoUploads.DeleteIfOwned(previousProfile?.Branding.LogoPath);
+            _logoUploads.DeleteIfOwned(previousLogoPath);
         }
 
         _logger.LogInformation(
@@ -338,12 +348,18 @@ public sealed class BusinessProfileModel : PageModel
         BrandingInput = new BrandingInputModel
         {
             PublicName = profile.Branding.PublicName,
-            LogoPath = profile.Branding.LogoPath,
             PrimaryColor = profile.Branding.PrimaryColor,
             SecondaryColor = profile.Branding.SecondaryColor,
             ProgramName = profile.Branding.ProgramName,
             ProgramDescription = profile.Branding.ProgramDescription
         };
+        BrandingLogoUnavailable = IsManagedLogoMissing(profile.Branding.LogoPath);
+    }
+
+    private bool IsManagedLogoMissing(string? logoPath)
+    {
+        return _logoUploads.IsOwned(logoPath) &&
+            !_logoUploads.ExistsIfOwned(logoPath);
     }
 
     private void ClearPasswordFields()
@@ -419,8 +435,6 @@ public sealed class BusinessProfileModel : PageModel
     public sealed class BrandingInputModel
     {
         public string PublicName { get; set; } = string.Empty;
-
-        public string LogoPath { get; set; } = string.Empty;
 
         public IFormFile? LogoUpload { get; set; }
 

@@ -40,6 +40,8 @@ public sealed class BrandingModel : PageModel
 
     public string? PilotBlockMessage { get; private set; }
 
+    public bool CurrentLogoUnavailable { get; private set; }
+
     public bool IsPilotBlocked => PilotBlockMessage is not null;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -94,7 +96,7 @@ public sealed class BrandingModel : PageModel
         }
 
         var previousLogoPath = Settings!.Branding.LogoPath;
-        var logoPath = Input.LogoPath;
+        var logoPath = previousLogoPath;
         if (Input.LogoUpload is { Length: > 0 })
         {
             var upload = await _logoUploads.SaveAsync(BusinessAuth.GetBusinessId(User), Input.LogoUpload, cancellationToken);
@@ -105,6 +107,11 @@ public sealed class BrandingModel : PageModel
             }
 
             logoPath = upload.PublicPath!;
+        }
+        else if (CurrentLogoUnavailable)
+        {
+            ModelState.AddModelError(string.Empty, "El logo actual no esta disponible; sube un PNG nuevo.");
+            return Page();
         }
 
         var result = await _appService.UpdateBusinessBrandingAsync(
@@ -126,6 +133,7 @@ public sealed class BrandingModel : PageModel
 
         Settings = result.Settings!;
         SetInputFromSettings(Settings);
+        RefreshLogoAvailability();
         StatusMessage = "Branding actualizado.";
         if (!string.IsNullOrWhiteSpace(logoPath) &&
             !string.Equals(previousLogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
@@ -177,6 +185,7 @@ public sealed class BrandingModel : PageModel
         {
             return false;
         }
+        RefreshLogoAvailability();
 
         var pilotAccess = await _pilotAccess.CheckAuthenticatedBusinessAsync(User, cancellationToken);
         PilotBlockMessage = pilotAccess.IsAllowed ? null : pilotAccess.Message;
@@ -193,12 +202,17 @@ public sealed class BrandingModel : PageModel
         Input = new InputModel
         {
             PublicName = settings.Branding.PublicName,
-            LogoPath = settings.Branding.LogoPath,
             PrimaryColor = settings.Branding.PrimaryColor,
             SecondaryColor = settings.Branding.SecondaryColor,
             ProgramName = settings.Branding.ProgramName,
             ProgramDescription = settings.Branding.ProgramDescription
         };
+    }
+
+    private void RefreshLogoAvailability()
+    {
+        CurrentLogoUnavailable = _logoUploads.IsOwned(Settings?.Branding.LogoPath) &&
+            !_logoUploads.ExistsIfOwned(Settings?.Branding.LogoPath);
     }
 
     private static string ToRefreshStatus(WalletBrandingRefreshResult result)
@@ -214,8 +228,6 @@ public sealed class BrandingModel : PageModel
     public sealed class InputModel
     {
         public string PublicName { get; set; } = string.Empty;
-
-        public string LogoPath { get; set; } = string.Empty;
 
         public IFormFile? LogoUpload { get; set; }
 

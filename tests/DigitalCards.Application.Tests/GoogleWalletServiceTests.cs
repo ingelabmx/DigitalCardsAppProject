@@ -30,7 +30,7 @@ public sealed class GoogleWalletServiceTests
             "Demo Coffee",
             "demo@example.test",
             "hash",
-            "/uploads/business-logos/cccccccccccccccccccccccccccccccc/logo.png",
+            "/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             publicName: "Puntelio Cafe",
             programName: "Cafe Rewards",
             programDescription: "Cafe gratis al completar sellos.");
@@ -38,7 +38,7 @@ public sealed class GoogleWalletServiceTests
         var genericObject = BuildObject(service, card, client, business);
 
         Assert.Equal(
-            "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/logo.png",
+            "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             genericObject.Logo.SourceUri.Uri);
         Assert.Equal("Cafe Rewards", genericObject.CardTitle.DefaultValue.Value);
         Assert.Equal("Puntelio Cafe", genericObject.Header.DefaultValue.Value);

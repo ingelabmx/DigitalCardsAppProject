@@ -86,7 +86,7 @@ public sealed class AppleWalletPassPackageBuilderTests
         var assetsRoot = Path.Combine(uploadRoot, "assets");
         var card = CreateCard();
         var client = CreateClient(card.ClientId);
-        var businessLogoFolder = Path.Combine(uploadRoot, card.BusinessId.ToString("N"));
+        var businessLogoFolder = Path.Combine(uploadRoot, card.BusinessId.ToString("N"), "version-token");
         var logoBytes = TinyPng();
         try
         {
@@ -112,7 +112,7 @@ public sealed class AppleWalletPassPackageBuilderTests
                 "Demo Coffee",
                 "demo@example.test",
                 "hash",
-                $"/uploads/business-logos/{card.BusinessId:N}/logo.png");
+                $"/uploads/business-logos/{card.BusinessId:N}/version-token/logo.png");
 
             var files = builder.BuildUnsignedFiles(card, client, business, options);
 
@@ -121,6 +121,55 @@ public sealed class AppleWalletPassPackageBuilderTests
             Assert.True(files.ContainsKey("logo@2x.png"));
             Assert.Equal(logoBytes, files["logo.png"]);
             Assert.Equal(logoBytes, files["logo@2x.png"]);
+        }
+        finally
+        {
+            if (Directory.Exists(uploadRoot))
+            {
+                Directory.Delete(uploadRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BuildUnsignedFiles_DoesNotUseStaticLogoWhenManagedLogoIsMissing()
+    {
+        var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-logo-{Guid.NewGuid():N}");
+        var assetsRoot = Path.Combine(uploadRoot, "assets");
+        var card = CreateCard();
+        var client = CreateClient(card.ClientId);
+        byte[] staticLogoBytes = [9, 8, 7];
+        try
+        {
+            Directory.CreateDirectory(assetsRoot);
+            File.WriteAllBytes(Path.Combine(assetsRoot, "icon.png"), TinyPng());
+            File.WriteAllBytes(Path.Combine(assetsRoot, "logo.png"), staticLogoBytes);
+            File.WriteAllBytes(Path.Combine(assetsRoot, "logo@2x.png"), staticLogoBytes);
+
+            var builder = new AppleWalletPassPackageBuilder(Options.Create(new BusinessLogoUploadOptions
+            {
+                Path = uploadRoot,
+                RequestPath = "/uploads/business-logos"
+            }));
+            var options = new AppleWalletOptions
+            {
+                TeamIdentifier = "TEAMID1234",
+                PassTypeIdentifier = "pass.com.example.digitalcards",
+                OrganizationName = "DigitalCards",
+                AssetsPath = assetsRoot
+            };
+            var business = new Business(
+                card.BusinessId,
+                "Demo Coffee",
+                "demo@example.test",
+                "hash",
+                $"/uploads/business-logos/{card.BusinessId:N}/missing/logo.png");
+
+            var files = builder.BuildUnsignedFiles(card, client, business, options);
+
+            Assert.True(files.ContainsKey("icon.png"));
+            Assert.False(files.ContainsKey("logo.png"));
+            Assert.False(files.ContainsKey("logo@2x.png"));
         }
         finally
         {

@@ -168,15 +168,26 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="BrandingInput.LogoPath" class="form-label">Logo publico</label>
-                    <input asp-for="BrandingInput.LogoPath" class="form-control" maxlength="200" data-testid="admin-business-branding-logo" />
-                    <small class="form-text text-muted">Debe ser URL publica o ruta relativa. El upload seguro llena este campo automaticamente.</small>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="BrandingInput.LogoUpload" class="form-label">Subir logo</label>
-                    <input asp-for="BrandingInput.LogoUpload" class="form-control" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-testid="admin-business-branding-logo-upload" />
-                    <small class="form-text text-muted">PNG recomendado para Wallet. Maximo 2 MB.</small>
+                    <label class="form-label">Logo actual</label>
+                    @if (Model.BrandingLogoUnavailable)
+                    {
+                        <div class="alert alert-warning py-2 mb-2" role="status" data-testid="admin-business-branding-logo-missing">
+                            El logo actual no esta disponible; sube un PNG nuevo.
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.Profile.Branding.LogoPath))
+                    {
+                        <div class="branding-logo-preview" data-testid="admin-business-branding-logo-preview">
+                            <img src="@Model.Profile.Branding.LogoPath" alt="Logo actual" />
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-2" data-testid="admin-business-branding-logo-empty">Sin logo personalizado.</p>
+                    }
+                    <label asp-for="BrandingInput.LogoUpload" class="form-label">Subir logo PNG</label>
+                    <input asp-for="BrandingInput.LogoUpload" class="form-control" type="file" accept=".png,image/png" data-testid="admin-business-branding-logo-upload" />
+                    <small class="form-text text-muted">Solo PNG. Maximo 2 MB. Si no es cuadrado, Puntelio lo centra en un lienzo transparente para Wallet.</small>
                 </div>
 
                 <div class="branding-color-row">
