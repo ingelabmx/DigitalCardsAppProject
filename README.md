@@ -391,7 +391,8 @@ manualmente para ese negocio hasta que exista automatizacion legacy.
 
 `/Client/Profile` permite que el cliente autenticado actualice nombre, apellido
 y correo dentro de los limites legacy de `UserClient`. El username queda fijo
-para no romper flujos existentes, soporte ni referencias operativas.
+para no romper flujos existentes, soporte ni referencias operativas. El cambio
+de contrasena tambien vive en esta pagina, en la seccion `Seguridad`.
 
 ## QR real de cliente
 
@@ -399,6 +400,10 @@ para no romper flujos existentes, soporte ni referencias operativas.
 del cliente. El negocio puede escanearlo para buscar/asociar la tarjeta en el
 flujo moderno. El QR no contiene tokens Wallet, passwords, CardID ni datos
 secretos.
+
+En las pantallas del cliente, Wallet se presenta como una sola tarjeta digital.
+Apple y Google se mantienen separados solo en la pantalla publica de instalacion,
+donde el cliente elige la plataforma de su telefono.
 
 ## Operacion de tarjetas y checadas
 

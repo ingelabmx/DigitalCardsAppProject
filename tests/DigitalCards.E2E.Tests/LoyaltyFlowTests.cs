@@ -247,13 +247,14 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.True(await page.GetByTestId("client-cards-summary").IsVisibleAsync());
         Assert.True(await page.GetByTestId("client-card-progress-panel").First.IsVisibleAsync());
         Assert.Equal("2", await page.GetByTestId("client-card-current-stamps").First.InnerTextAsync());
-        Assert.Contains("Google emitida", cardText);
-        Assert.Contains("Apple Wallet", cardText);
+        Assert.Contains("Tarjeta lista", cardText);
+        Assert.DoesNotContain("Google emitida", cardText);
+        Assert.DoesNotContain("Apple Wallet", cardText);
         Assert.True(await page.GetByTestId("client-cards-qr-card").Locator("svg").IsVisibleAsync());
 
         const string changedClientPassword = "ChangedClient123!";
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Client/Dashboard").ToString());
-        await page.GetByTestId("client-dashboard-change-password-link").ClickAsync();
+        await page.GetByTestId("client-dashboard-profile-link").ClickAsync();
         await page.GetByTestId("client-current-password").FillAsync(clientPassword);
         await page.GetByTestId("client-new-password").FillAsync(changedClientPassword);
         await page.GetByTestId("client-confirm-password").FillAsync(changedClientPassword);

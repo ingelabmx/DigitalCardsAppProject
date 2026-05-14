@@ -1883,14 +1883,18 @@ form.is-submitting input[type="submit"] {
   border-radius: 8px;
   display: grid;
   min-height: 136px;
+  max-width: 100%;
+  overflow: hidden;
   padding: 10px;
   place-items: center;
-  width: 136px;
+  width: min(136px, 100%);
 }
 
 .client-qr-card svg {
   display: block;
   height: 112px;
+  max-height: 100%;
+  max-width: 100%;
   width: 112px;
 }
 
@@ -2239,6 +2243,19 @@ form.is-submitting input[type="submit"] {
 .client-profile-helper p {
   color: #5a6a85;
   margin: 0.25rem 0 0;
+}
+
+.section-divider {
+  border: 0;
+  border-top: 1px solid #dde3ea;
+  margin: 1.5rem 0;
+}
+
+.client-password-panel {
+  background: #f6f9fc;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 1rem;
 }
 
 @media (max-width: 760px) {
