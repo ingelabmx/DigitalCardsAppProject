@@ -590,6 +590,34 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RefreshBusinessWalletBrandingAsync_WithFullRefreshProcessesMoreThanSearchLimit()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+
+        for (var index = 0; index < 105; index++)
+        {
+            var enrollment = await CreateEnrollmentAsync(app, $"refresh-all-{index:D3}");
+            await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        }
+
+        var result = await app.RefreshBusinessWalletBrandingAsync(
+            new WalletBrandingRefreshCommand(business!.Id, Limit: 0));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(105, result.CardsScanned);
+        Assert.Equal(105, result.CardsWithTrackedWallets);
+        Assert.Equal(105, result.GoogleWalletAttempted);
+        Assert.Equal(105, result.GoogleWalletSucceeded);
+
+        var store = provider.GetRequiredService<InMemoryDigitalCardsStore>();
+        Assert.Equal(105, store.StampLedger.Count(item => item.Source == StampLedgerSource.BrandingRefresh));
+    }
+
+    [Fact]
     public async Task AdminRefreshBusinessWalletBrandingAsync_RecordsAuditEvent()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

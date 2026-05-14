@@ -53,7 +53,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Input.ProgramDescription" class="form-label">Descripcion</label>
+                    <label asp-for="Input.ProgramDescription" class="form-label">Recompensa</label>
                     <textarea asp-for="Input.ProgramDescription" class="form-control" rows="3" maxlength="280" data-testid="business-branding-description"></textarea>
                 </div>
 
@@ -95,12 +95,7 @@
                   class="business-profile-panel"
                   data-testid="business-wallet-branding-refresh-form">
                 <h2>Refrescar Wallets</h2>
-                <p class="text-muted">Aplica el branding actual a Wallets ya emitidas para tarjetas recientes. No modifica sellos ni datos del cliente.</p>
-
-                <div class="mb-3">
-                    <label asp-for="RefreshLimit" class="form-label">Limite de tarjetas recientes</label>
-                    <input asp-for="RefreshLimit" class="form-control" type="number" min="1" max="100" data-testid="business-wallet-branding-refresh-limit" />
-                </div>
+                <p class="text-muted">Aplica el branding actual a todas las tarjetas digitales ya emitidas de este negocio. No modifica sellos ni datos del cliente.</p>
 
                 @if (Model.RefreshResult is not null)
                 {

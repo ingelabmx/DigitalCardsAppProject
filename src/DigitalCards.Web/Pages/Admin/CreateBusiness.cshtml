@@ -79,12 +79,6 @@
             <div class="form-text">El correo usa el flujo seguro de reset para que el negocio configure su acceso.</div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Input.Notes" class="form-label"></label>
-            <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-create-business-notes"></textarea>
-            <span asp-validation-for="Input.Notes" class="text-danger"></span>
-        </div>
-
         <button class="btn btn-primary" type="submit" data-testid="admin-create-business-submit">Crear negocio</button>
     </form>
 </section>

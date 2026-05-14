@@ -37,9 +37,18 @@ public sealed class AppleWalletPassPackageBuilderTests
         Assert.Equal("https://example.test/apple-wallet", root.GetProperty("webServiceURL").GetString());
         Assert.Equal("auth-token", root.GetProperty("authenticationToken").GetString());
         Assert.True(root.TryGetProperty("storeCard", out var storeCard));
-        Assert.Equal("Demo Coffee", storeCard.GetProperty("primaryFields")[0].GetProperty("value").GetString());
+        Assert.Equal("Programa", storeCard.GetProperty("primaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Cafe Rewards", storeCard.GetProperty("primaryFields")[0].GetProperty("value").GetString());
         Assert.Equal("2", storeCard.GetProperty("secondaryFields")[1].GetProperty("value").GetString());
+        Assert.Equal("Recompensa", storeCard.GetProperty("auxiliaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Cafe gratis al completar sellos.", storeCard.GetProperty("auxiliaryFields")[0].GetProperty("value").GetString());
         Assert.Equal("maria-test", root.GetProperty("barcodes")[0].GetProperty("message").GetString());
+        Assert.False(root.GetProperty("barcodes")[0].TryGetProperty("altText", out _));
+        Assert.False(root.GetProperty("barcode").TryGetProperty("altText", out _));
+        var json = Encoding.UTF8.GetString(bytes);
+        Assert.DoesNotContain("\"Negocio\"", json);
+        Assert.DoesNotContain("\"Historico\"", json);
+        Assert.DoesNotContain("\"Alta\"", json);
     }
 
     [Fact]
@@ -149,7 +158,14 @@ public sealed class AppleWalletPassPackageBuilderTests
 
     private static Business CreateBusiness(Guid businessId)
     {
-        return new Business(businessId, "Demo Coffee", "demo@example.test", "hash", "logo.png");
+        return new Business(
+            businessId,
+            "Demo Coffee",
+            "demo@example.test",
+            "hash",
+            "logo.png",
+            programName: "Cafe Rewards",
+            programDescription: "Cafe gratis al completar sellos.");
     }
 
     private static string Sha1Hex(byte[] bytes)

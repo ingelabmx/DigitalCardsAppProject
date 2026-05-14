@@ -16,6 +16,8 @@ public interface ILoyaltyCardRepository
 
     Task<IReadOnlyList<LoyaltyCard>> ListByClientAsync(Guid clientId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<LoyaltyCard>> ListByBusinessAsync(Guid businessId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<LoyaltyCard>> SearchByBusinessAsync(
         Guid businessId,
         string query,

@@ -57,7 +57,7 @@ public sealed class CreateBusinessModel : PageModel
                 Input.InitialPassword,
                 adminUserId,
                 Input.EnablePilot,
-                Input.Notes),
+                Notes: null),
             cancellationToken);
 
         ClearPasswordFields();
@@ -141,8 +141,5 @@ public sealed class CreateBusinessModel : PageModel
         [Display(Name = "Enviar invitacion por correo")]
         public bool SendInvite { get; set; } = true;
 
-        [Display(Name = "Notas")]
-        [StringLength(500, ErrorMessage = "Las notas no pueden exceder 500 caracteres.")]
-        public string? Notes { get; set; }
     }
 }

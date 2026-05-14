@@ -83,11 +83,6 @@
                     <small class="form-text text-muted">Inactivo bloquea el acceso del negocio.</small>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="Input.Notes" class="form-label">Notas operativas</label>
-                    <textarea asp-for="Input.Notes" class="form-control" rows="3" maxlength="500" data-testid="admin-business-profile-notes"></textarea>
-                </div>
-
                 <button class="btn btn-primary" type="submit" data-testid="admin-business-profile-save">Guardar cambios</button>
             </form>
 
@@ -168,7 +163,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="BrandingInput.ProgramDescription" class="form-label">Descripcion</label>
+                    <label asp-for="BrandingInput.ProgramDescription" class="form-label">Recompensa</label>
                     <textarea asp-for="BrandingInput.ProgramDescription" class="form-control" rows="3" maxlength="280" data-testid="admin-business-branding-description"></textarea>
                 </div>
 

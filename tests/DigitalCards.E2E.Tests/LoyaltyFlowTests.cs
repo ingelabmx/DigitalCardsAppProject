@@ -90,7 +90,6 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-create-business-password").FillAsync(businessPassword);
         await page.GetByTestId("admin-create-business-confirm-password").FillAsync(businessPassword);
         await page.GetByTestId("admin-create-business-enable-pilot").CheckAsync();
-        await page.GetByTestId("admin-create-business-notes").FillAsync("creado desde playwright");
         await page.GetByTestId("admin-create-business-submit").ClickAsync();
 
         Assert.Contains("Negocio creado", await page.GetByTestId("admin-create-business-status").InnerTextAsync());
@@ -102,7 +101,6 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-business-profile-name").FillAsync(updatedBusinessName);
         await page.GetByTestId("admin-business-profile-email").FillAsync(updatedBusinessEmail);
         await page.GetByTestId("admin-business-profile-logo").FillAsync("~/Logos/playwright.png");
-        await page.GetByTestId("admin-business-profile-notes").FillAsync("actualizado desde playwright");
         await page.GetByTestId("admin-business-profile-save").ClickAsync();
         Assert.Contains("Negocio actualizado", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
 

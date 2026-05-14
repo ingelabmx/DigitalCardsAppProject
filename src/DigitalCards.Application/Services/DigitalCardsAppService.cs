@@ -583,7 +583,7 @@ public sealed class DigitalCardsAppService
     {
         return _walletBrandingRefresh.RefreshAsync(
             command.BusinessId,
-            command.Limit,
+            limit: 0,
             actorBusinessId: command.BusinessId,
             cancellationToken);
     }

@@ -133,6 +133,32 @@ public sealed class MySqlLoyaltyCardRepository : ILoyaltyCardRepository
         return rows.Select(row => row.ToDomain()).ToArray();
     }
 
+    public async Task<IReadOnlyList<LoyaltyCard>> ListByBusinessAsync(Guid businessId, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select CardID,
+                   CardIDGoogle,
+                   CreationDate,
+                   CheckQTY,
+                   LastCheck,
+                   UserID,
+                   BusinessID,
+                   HistoricCheckQTY
+            from ClientCard
+            where BusinessID = @BusinessId
+            order by LastCheck desc, CreationDate desc;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.QueryAsync<LoyaltyCardRow>(
+            new CommandDefinition(
+                sql,
+                new { BusinessId = LegacyIdMapper.ToInt32(businessId) },
+                cancellationToken: cancellationToken));
+
+        return rows.Select(row => row.ToDomain()).ToArray();
+    }
+
     public async Task<IReadOnlyList<LoyaltyCard>> SearchByBusinessAsync(
         Guid businessId,
         string query,

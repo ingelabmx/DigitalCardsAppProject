@@ -856,6 +856,29 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("admin-enable-client-pilot", searchHtml);
         Assert.DoesNotContain("admin-disable-client-pilot", searchHtml);
         Assert.Contains("admin-client-delete-form", searchHtml);
+        Assert.Contains("limpieza de cuentas de prueba", searchHtml);
+        Assert.Contains("Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.", searchHtml);
+    }
+
+    [Fact]
+    public async Task AdminBusinessPages_HideNotesAndBrandingUsesRewardLabel()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        await LoginAdminAsync(client);
+        var businessesHtml = await client.GetStringAsync("/Admin/Businesses?Query=demo");
+        var createHtml = await client.GetStringAsync("/Admin/CreateBusiness");
+        var profileHtml = await client.GetStringAsync("/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111");
+
+        Assert.DoesNotContain("admin-business-notes", businessesHtml);
+        Assert.DoesNotContain("admin-create-business-notes", createHtml);
+        Assert.DoesNotContain("admin-business-profile-notes", profileHtml);
+        Assert.Contains("Recompensa", profileHtml);
+        Assert.DoesNotContain(">Descripcion<", profileHtml);
     }
 
     [Fact]
@@ -2059,6 +2082,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.OK, stampResponse.StatusCode);
         Assert.Contains("Sello agregado", stampHtml);
         Assert.Contains("data-testid=\"current-stamps\">2</strong>", stampHtml);
+        Assert.Contains("data-testid=\"stamp-username\"", stampHtml);
+        Assert.DoesNotContain($"value=\"{userName}\"", stampHtml, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -2637,11 +2662,15 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         await LoginBusinessAsync(client);
         var getHtml = await client.GetStringAsync("/Business/Branding");
         var token = ExtractAntiforgeryToken(getHtml);
+
+        Assert.Contains("Recompensa", getHtml);
+        Assert.DoesNotContain(">Descripcion<", getHtml);
+        Assert.DoesNotContain("business-wallet-branding-refresh-limit", getHtml);
+
         var response = await client.PostAsync(
             "/Business/Branding?handler=RefreshWallets",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["RefreshLimit"] = "10",
                 ["__RequestVerificationToken"] = token
             }));
         var html = await response.Content.ReadAsStringAsync();
