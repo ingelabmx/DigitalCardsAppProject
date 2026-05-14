@@ -1887,21 +1887,25 @@ form.is-submitting input[type="submit"] {
   background: #fff;
   border: 1px solid #d9e2ec;
   border-radius: 8px;
+  aspect-ratio: 1;
+  box-sizing: border-box;
   display: grid;
-  min-height: 136px;
+  height: auto;
+  min-height: 0;
   max-width: 100%;
   overflow: hidden;
   padding: 10px;
   place-items: center;
-  width: min(136px, 100%);
+  width: clamp(108px, 20vw, 136px);
 }
 
 .client-qr-card svg {
+  box-sizing: border-box;
   display: block;
-  height: 112px;
+  height: auto;
   max-height: 100%;
   max-width: 100%;
-  width: 112px;
+  width: 100%;
 }
 
 .client-cards-qr-panel {
@@ -2532,6 +2536,7 @@ body.public-shell {
   .business-profile-grid,
   .branding-color-row,
   .client-dashboard-grid,
+  .client-identity-panel,
   .client-card-main,
   .client-card-preview-grid,
   .client-profile-panel dl,
