@@ -574,6 +574,42 @@ h1 {
   display: block;
 }
 
+.business-checkin-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.business-checkin-search {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.business-checkin-scanner {
+  max-width: 520px;
+}
+
+.business-checkin-result,
+.business-checkin-card {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.business-checkin-card {
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.business-checkin-stamp-form {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .business-card-grid {
   display: grid;
   gap: 1rem;

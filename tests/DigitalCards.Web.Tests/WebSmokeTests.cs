@@ -1435,7 +1435,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
         await LoginBusinessAsync(client);
 
-        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
+        foreach (var path in new[] { "/Business/Dashboard", "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/CheckIn", "/Business/Branding" })
         {
             var response = await client.GetAsync(path);
 
@@ -2061,7 +2061,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("data-testid=\"enroll-link\"", html);
         Assert.DoesNotContain("data-testid=\"cards-link\"", html);
 
-        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/Branding" })
+        foreach (var path in new[] { "/Business/Enroll", "/Business/Stamp", "/Business/Cards", "/Business/CheckIn", "/Business/Branding" })
         {
             var blockedPage = await client.GetStringAsync(path);
 
@@ -2070,6 +2070,49 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             Assert.DoesNotContain("data-testid=\"stamp-form\"", blockedPage);
             Assert.DoesNotContain("data-testid=\"business-card-search-form\"", blockedPage);
         }
+    }
+
+    [Fact]
+    public async Task BusinessCheckIn_LooksUpQrPayloadAndAddsStamp()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("ci");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        var lookupToken = await GetAntiforgeryTokenAsync(client, "/Business/CheckIn");
+
+        var lookupResponse = await client.PostAsync(
+            "/Business/CheckIn?handler=Lookup",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Query"] = userName,
+                ["__RequestVerificationToken"] = lookupToken
+            }));
+        var lookupHtml = await lookupResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, lookupResponse.StatusCode);
+        Assert.Contains("business-checkin-card", lookupHtml);
+        Assert.Contains(userName, lookupHtml);
+        Assert.Contains("business-checkin-stamp-submit", lookupHtml);
+
+        var stampToken = ExtractAntiforgeryToken(lookupHtml);
+        var stampResponse = await client.PostAsync(
+            $"/Business/CheckIn?handler=Stamp&cardId={enrollment.Card.Id}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Query"] = userName,
+                ["__RequestVerificationToken"] = stampToken
+            }));
+        var stampHtml = await stampResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, stampResponse.StatusCode);
+        Assert.Contains("Sello agregado", stampHtml);
+        Assert.Contains("data-testid=\"business-checkin-current-stamps\">2</strong>", stampHtml);
+        Assert.Equal(2, FindInMemoryCard(fake.Factory, enrollment.Card.Id).CurrentStamps);
     }
 
     [Fact]
