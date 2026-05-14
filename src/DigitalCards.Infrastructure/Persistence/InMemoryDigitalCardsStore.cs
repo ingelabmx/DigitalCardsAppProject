@@ -62,4 +62,6 @@ public sealed class InMemoryDigitalCardsStore
     public List<OperationalAuditEvent> AuditEvents { get; } = [];
 
     public List<ClientConsent> ClientConsents { get; } = [];
+
+    public List<CutoverSmokeEvidence> CutoverSmokeEvidence { get; } = [];
 }

@@ -14,5 +14,6 @@ public enum OperationalAuditEventType
     SupportExported = 10,
     WalletRetryRequested = 11,
     BusinessEnrollmentLinkGenerated = 12,
-    WalletBrandingRefreshRequested = 13
+    WalletBrandingRefreshRequested = 13,
+    CutoverSmokeEvidenceRecorded = 14
 }
