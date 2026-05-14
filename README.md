@@ -405,6 +405,13 @@ En las pantallas del cliente, Wallet se presenta como una sola tarjeta digital.
 Apple y Google se mantienen separados solo en la pantalla publica de instalacion,
 donde el cliente elige la plataforma de su telefono.
 
+## Administracion de clientes
+
+`/Admin/Clients` permite buscar clientes y eliminar permanentemente cuentas de
+prueba o cuentas que deban retirarse. La eliminacion borra la cuenta global del
+cliente, sus tarjetas, links Wallet y datos operativos relacionados; los negocios
+se conservan. Requiere confirmacion escribiendo el usuario o correo del cliente.
+
 ## Operacion de tarjetas y checadas
 
 `/Business/Cards` concentra la busqueda por QR, username o correo, la

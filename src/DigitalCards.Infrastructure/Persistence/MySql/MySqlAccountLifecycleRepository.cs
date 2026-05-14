@@ -167,6 +167,48 @@ public sealed class MySqlAccountLifecycleRepository : IAccountLifecycleRepositor
         return removed;
     }
 
+    public async Task<bool> DeleteClientAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = _connectionFactory.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var legacyClientId = LegacyIdMapper.ToInt32(clientId);
+
+        var cards = (await connection.QueryAsync<ClientCardKey>(
+            new CommandDefinition(
+                "select CardID, BusinessID from ClientCard where UserID = @ClientId;",
+                new { ClientId = legacyClientId },
+                transaction,
+                cancellationToken: cancellationToken))).ToArray();
+
+        foreach (var card in cards)
+        {
+            await DeleteBusinessCardCoreAsync(
+                connection,
+                transaction,
+                card.BusinessID,
+                card.CardID,
+                cancellationToken);
+        }
+
+        await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernClientCredential where UserID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
+        await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernPilotClient where UserID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
+        await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernPasswordResetToken where AccountType = 'Client' and AccountID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
+        await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernClientConsent where UserID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
+
+        var removed = await connection.ExecuteAsync(
+            new CommandDefinition(
+                "delete from UserClient where UserID = @ClientId and RoleID = 2;",
+                new { ClientId = legacyClientId },
+                transaction,
+                cancellationToken: cancellationToken)) > 0;
+
+        await transaction.CommitAsync(cancellationToken);
+        return removed;
+    }
+
     private static async Task<bool> DeleteBusinessCardCoreAsync(
         MySqlConnection connection,
         MySqlTransaction transaction,
@@ -263,6 +305,8 @@ public sealed class MySqlAccountLifecycleRepository : IAccountLifecycleRepositor
     }
 
     private sealed record ApplePassKey(string PassTypeIdentifier, string SerialNumber);
+
+    private sealed record ClientCardKey(int CardID, int BusinessID);
 
     private sealed record ClientCardStatusRow(
         int CardID,

@@ -19,5 +19,6 @@ public enum OperationalAuditEventType
     BusinessDeleted = 15,
     BusinessCardDeactivated = 16,
     BusinessCardReactivated = 17,
-    BusinessCardDeleted = 18
+    BusinessCardDeleted = 18,
+    ClientDeleted = 19
 }

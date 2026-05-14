@@ -20,4 +20,8 @@ public interface IAccountLifecycleRepository
     Task<bool> DeleteBusinessAsync(
         Guid businessId,
         CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteClientAsync(
+        Guid clientId,
+        CancellationToken cancellationToken = default);
 }

@@ -58,6 +58,25 @@
                         }
                     </div>
                     <p class="text-muted mb-0">Para permitir operacion, activa el negocio desde <a asp-page="/Admin/Businesses">Negocios</a>.</p>
+                    <form method="post"
+                          asp-page-handler="Delete"
+                          asp-route-clientId="@client.ClientId"
+                          class="danger-action-panel admin-client-delete-form"
+                          data-testid="admin-client-delete-form">
+                        <div>
+                            <strong>Eliminar permanentemente</strong>
+                            <p>Elimina la cuenta global del cliente, sus tarjetas, links Wallet y datos relacionados. Los negocios se conservan.</p>
+                        </div>
+                        <div class="danger-action-controls">
+                            <input class="form-control form-control-sm"
+                                   name="confirmation"
+                                   placeholder="Escribe @client.UserName"
+                                   data-testid="admin-client-delete-confirmation" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit" data-testid="admin-client-delete-submit">
+                                Eliminar cliente
+                            </button>
+                        </div>
+                    </form>
                 </article>
             }
         </div>
