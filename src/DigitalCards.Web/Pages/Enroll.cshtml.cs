@@ -17,20 +17,24 @@ public sealed class EnrollModel : PageModel
     private const string ConsentPolicyVersion = "privacy-2026-05";
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly IBusinessRepository _businesses;
+    private readonly IBusinessBrandingRepository _businessBranding;
     private readonly DigitalCardsAppService _appService;
     private readonly PilotAccessService _pilotAccess;
     private readonly IConfiguration _configuration;
     private BusinessEntity? _business;
+    private DigitalCards.Domain.BusinessBranding? _branding;
 
     public EnrollModel(
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
         IBusinessRepository businesses,
+        IBusinessBrandingRepository businessBranding,
         DigitalCardsAppService appService,
         PilotAccessService pilotAccess,
         IConfiguration configuration)
     {
         _businessEnrollmentLinks = businessEnrollmentLinks;
         _businesses = businesses;
+        _businessBranding = businessBranding;
         _appService = appService;
         _pilotAccess = pilotAccess;
         _configuration = configuration;
@@ -42,7 +46,37 @@ public sealed class EnrollModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public string BusinessName => _business?.DisplayName ?? "Programa";
+    public string BusinessName => !string.IsNullOrWhiteSpace(_branding?.PublicName)
+        ? _branding.PublicName
+        : _business?.DisplayName ?? "Programa";
+
+    public string ProgramName => !string.IsNullOrWhiteSpace(_branding?.ProgramName)
+        ? _branding.ProgramName
+        : "Tarjeta de lealtad";
+
+    public string ProgramDescription => !string.IsNullOrWhiteSpace(_branding?.ProgramDescription)
+        ? _branding.ProgramDescription
+        : "Registra tus datos para recibir tu link Wallet y empezar a acumular sellos.";
+
+    public string? LogoPath => !string.IsNullOrWhiteSpace(_branding?.LogoPath)
+        ? _branding.LogoPath
+        : _business?.LogoPath;
+
+    public string PrimaryColor => !string.IsNullOrWhiteSpace(_branding?.PrimaryColor)
+        ? _branding.PrimaryColor
+        : "#2a3547";
+
+    public string SecondaryColor => !string.IsNullOrWhiteSpace(_branding?.SecondaryColor)
+        ? _branding.SecondaryColor
+        : "#5d87ff";
+
+    public string BusinessEmail => _business?.Email ?? string.Empty;
+
+    public string BusinessInitials => new string(BusinessName
+        .Where(char.IsLetterOrDigit)
+        .Take(2)
+        .DefaultIfEmpty('P')
+        .ToArray()).ToUpperInvariant();
 
     public bool IsUnavailable { get; private set; }
 
@@ -136,6 +170,7 @@ public sealed class EnrollModel : PageModel
             return false;
         }
 
+        _branding = await _businessBranding.FindByBusinessIdAsync(_business.Id, cancellationToken);
         return true;
     }
 
