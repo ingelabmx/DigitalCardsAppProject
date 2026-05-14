@@ -1017,3 +1017,11 @@ negocio:
 ```text
 docs/migration-context/89-webforms-parity-final-check-v1.md
 ```
+
+La decision inicial de hosting mantiene `app.puntelio.com` sobre un host Windows
+controlado con Cloudflare Tunnel, Data Protection persistente, backups externos
+y Web Forms como fallback por negocio:
+
+```text
+docs/migration-context/90-production-hosting-decision-v1.md
+```
