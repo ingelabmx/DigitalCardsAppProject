@@ -1071,3 +1071,10 @@ el acceso admin no se publica en navegacion y se conserva como URL directa:
 ```text
 docs/migration-context/99-public-home-auth-cleanup-v2.md
 ```
+
+En las pantallas autenticadas, Wallet se presenta como una sola tarjeta digital.
+Apple y Google quedan visibles solo en el flujo publico de instalacion:
+
+```text
+docs/migration-context/100-wallet-language-unification-v1.md
+```

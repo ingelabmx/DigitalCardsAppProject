@@ -190,17 +190,9 @@
 
                                 <div class="metric-row">
                                     <div class="metric">
-                                        <span>Google Wallet</span>
-                                        <strong data-testid="admin-support-google-state">@(card.GoogleIssued ? "Emitida" : "Pendiente")</strong>
-                                        @if (!string.IsNullOrWhiteSpace(card.GoogleObjectSuffix))
-                                        {
-                                            <small>obj ...@card.GoogleObjectSuffix</small>
-                                        }
-                                    </div>
-                                    <div class="metric">
-                                        <span>Apple Wallet</span>
-                                        <strong data-testid="admin-support-apple-state">@(card.AppleTracked ? "Instalada" : "Pendiente")</strong>
-                                        <small>@card.AppleRegisteredDeviceCount dispositivo(s)</small>
+                                        <span>Tarjeta digital</span>
+                                        <strong data-testid="admin-support-wallet-state">@(card.GoogleIssued || card.AppleTracked ? "Emitida" : "Pendiente")</strong>
+                                        <small>@card.AppleRegisteredDeviceCount dispositivo(s) registrados</small>
                                     </div>
                                     <div class="metric">
                                         <span>Ultimo sello</span>
@@ -211,15 +203,6 @@
                                         <strong data-testid="admin-support-wallet-issues">@card.WalletIssueCount</strong>
                                     </div>
                                 </div>
-
-                                @if (card.AppleTracked)
-                                {
-                                    <p class="text-muted" data-testid="admin-support-apple-detail">
-                                        Apple serial ...@card.AppleSerialSuffix &middot;
-                                        update tag @card.AppleUpdateTag &middot;
-                                        actualizado @card.AppleUpdatedAt?.ToLocalTime().ToString("g")
-                                    </p>
-                                }
 
                                 <div class="support-operational-state" data-testid="admin-support-operational-state">
                                     <span>Activacion negocio: @ActivationLabel(card.Business.ActivationStatus)</span>
@@ -276,7 +259,7 @@
                                                     <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                                 </div>
                                                 <p>Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY &middot; Historicos: @item.PreviousHistoricCheckQTY -> @item.NewHistoricCheckQTY</p>
-                                                <p>Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded) &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
+                                                <p>Tarjeta: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
                                                 @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                                 {
                                                     <p class="text-danger">Error: @item.ErrorSummary</p>
@@ -295,14 +278,20 @@
 </section>
 
 @functions {
-    private static string WalletStatus(bool attempted, bool succeeded)
+    private static string WalletStatus(
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded)
     {
-        if (!attempted)
+        if (!googleAttempted && !appleAttempted)
         {
             return "No aplica";
         }
 
-        return succeeded ? "OK" : "Fallo";
+        return (googleAttempted && !googleSucceeded) || (appleAttempted && !appleSucceeded)
+            ? "Con alerta"
+            : "Actualizada";
     }
 
     private static string ActivationLabel(DigitalCards.Domain.BusinessActivationStatus status)

@@ -40,7 +40,7 @@
                   class="business-profile-panel business-branding-panel"
                   data-testid="business-branding-form">
                 <h2>Perfil publico</h2>
-                <p class="text-muted">Estos datos aparecen en correos, landing Wallet, Apple Wallet, Google Wallet y dashboard cliente.</p>
+                <p class="text-muted">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
 
                 <div class="mb-3">
                     <label asp-for="Input.PublicName" class="form-label">Nombre publico</label>
@@ -66,7 +66,7 @@
                 <div class="mb-3">
                     <label asp-for="Input.LogoUpload" class="form-label">Subir logo</label>
                     <input asp-for="Input.LogoUpload" class="form-control" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-testid="business-branding-logo-upload" />
-                    <small class="form-text text-muted">PNG recomendado para Apple Wallet. Maximo 2 MB.</small>
+                    <small class="form-text text-muted">PNG recomendado para Wallet. Maximo 2 MB.</small>
                 </div>
 
                 <div class="branding-color-row">
@@ -106,8 +106,7 @@
                 {
                     <div class="wallet-refresh-summary" data-testid="business-wallet-branding-refresh-result">
                         <span>Tarjetas Wallet: @Model.RefreshResult.CardsWithTrackedWallets</span>
-                        <span>Google: @Model.RefreshResult.GoogleWalletSucceeded / @Model.RefreshResult.GoogleWalletAttempted</span>
-                        <span>Apple: @Model.RefreshResult.AppleWalletSucceeded / @Model.RefreshResult.AppleWalletAttempted</span>
+                        <span>Actualizaciones: @(Model.RefreshResult.GoogleWalletSucceeded + Model.RefreshResult.AppleWalletSucceeded) / @(Model.RefreshResult.GoogleWalletAttempted + Model.RefreshResult.AppleWalletAttempted)</span>
                     </div>
                 }
 

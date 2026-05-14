@@ -177,7 +177,9 @@ public sealed class BrandingModel : PageModel
 
     private static string ToRefreshStatus(WalletBrandingRefreshResult result)
     {
-        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, Google {result.GoogleWalletSucceeded}/{result.GoogleWalletAttempted}, Apple {result.AppleWalletSucceeded}/{result.AppleWalletAttempted}.";
+        var attempted = result.GoogleWalletAttempted + result.AppleWalletAttempted;
+        var succeeded = result.GoogleWalletSucceeded + result.AppleWalletSucceeded;
+        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, {succeeded}/{attempted} actualizaciones completadas.";
         return result.HasWarnings
             ? $"{status} Hubo alertas seguras: {string.Join(", ", result.SafeErrors)}."
             : status;

@@ -181,6 +181,8 @@ public sealed record BusinessReportsDto(
     int CurrentStampTotal,
     int LifetimeStampTotal,
     int StampsLast30Days,
+    int WalletReadyCount,
+    int WalletPendingCount,
     int GoogleIssuedCount,
     int GooglePendingCount,
     int AppleTrackedCount,

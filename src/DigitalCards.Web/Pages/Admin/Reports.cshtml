@@ -38,8 +38,8 @@
                 <strong data-testid="admin-report-current-stamps">@Model.Reports.CurrentStampTotal</strong>
             </div>
             <div class="metric">
-                <span>Google Wallet</span>
-                <strong data-testid="admin-report-google-count">@Model.Reports.GoogleIssuedCount</strong>
+                <span>Tarjeta digital</span>
+                <strong data-testid="admin-report-wallet-ready-count">@Model.Reports.WalletReadyCount</strong>
             </div>
             <div class="metric">
                 <span>Alertas Wallet</span>
@@ -66,7 +66,7 @@
                             <span>sellos actuales / historicos</span>
                         </div>
                         <div>
-                            <strong>@business.GoogleIssuedCount Google &middot; @business.AppleTrackedCount Apple</strong>
+                            <strong>@business.WalletReadyCount tarjetas Wallet</strong>
                             <span>@business.WalletIssueCount alerta(s)</span>
                         </div>
                     </div>
@@ -95,8 +95,8 @@
                                 <span>@card.LifetimeStamps historicos</span>
                             </div>
                             <div>
-                                <strong>@(card.GoogleIssued ? "Google OK" : "Google pendiente")</strong>
-                                <span>@(card.AppleTracked ? "Apple activa" : "Apple pendiente")</span>
+                                <strong>@(card.GoogleIssued || card.AppleTracked ? "Tarjeta lista" : "Tarjeta pendiente")</strong>
+                                <span>Wallet</span>
                             </div>
                             <div>
                                 <strong>@card.LastStampedAt.ToLocalTime().ToString("g")</strong>

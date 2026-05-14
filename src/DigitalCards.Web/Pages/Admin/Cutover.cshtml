@@ -78,7 +78,7 @@
                                 @(business.IsEnabled ? "activo" : "inactivo")
                             </span>
                             <span class="badge @(item.ReadinessScore >= 5 ? "text-bg-success" : "text-bg-warning")" data-testid="admin-cutover-readiness">
-                                @item.ReadinessScore/6 readiness
+                                @item.ReadinessScore/5 readiness
                             </span>
                         </div>
                     </div>
@@ -93,12 +93,8 @@
                             <strong>@(report?.ClientCount ?? 0)</strong>
                         </div>
                         <div class="metric">
-                            <span>Google</span>
-                            <strong>@(report?.GoogleIssuedCount ?? 0)</strong>
-                        </div>
-                        <div class="metric">
-                            <span>Apple</span>
-                            <strong>@(report?.AppleTrackedCount ?? 0)</strong>
+                            <span>Tarjetas Wallet</span>
+                            <strong>@(report?.WalletReadyCount ?? 0)</strong>
                         </div>
                         <div class="metric">
                             <span>Errores</span>
@@ -140,8 +136,8 @@
                                 <span class="badge @(smoke.HealthOk ? "text-bg-success" : "text-bg-warning")">Health</span>
                                 <span class="badge @(smoke.ReadyOk ? "text-bg-success" : "text-bg-warning")">Ready</span>
                                 <span class="badge @(smoke.EmailOk ? "text-bg-success" : "text-bg-warning")">Correo</span>
-                                <span class="badge @(smoke.AppleWalletOk ? "text-bg-success" : "text-bg-warning")">Apple</span>
-                                <span class="badge @(smoke.GoogleWalletOk ? "text-bg-success" : "text-bg-warning")">Google</span>
+                                <span class="badge @(smoke.AppleWalletOk ? "text-bg-success" : "text-bg-warning")">Wallet movil</span>
+                                <span class="badge @(smoke.GoogleWalletOk ? "text-bg-success" : "text-bg-warning")">Wallet guardada</span>
                                 <span class="badge @(smoke.ModernStampOk ? "text-bg-success" : "text-bg-warning")">Sello</span>
                                 <span class="badge @(smoke.SupportReviewed ? "text-bg-success" : "text-bg-warning")">Soporte</span>
                             </div>
@@ -205,11 +201,11 @@
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.AppleWalletOk" value="true" checked="@(item.LatestSmoke?.AppleWalletOk == true)" />
-                                <span class="form-check-label">Apple Wallet actualizado</span>
+                                <span class="form-check-label">Wallet movil actualizada</span>
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.GoogleWalletOk" value="true" checked="@(item.LatestSmoke?.GoogleWalletOk == true)" />
-                                <span class="form-check-label">Google Wallet actualizado</span>
+                                <span class="form-check-label">Wallet guardada actualizada</span>
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="SmokeInput.ModernStampOk" value="true" checked="@(item.LatestSmoke?.ModernStampOk == true)" />
