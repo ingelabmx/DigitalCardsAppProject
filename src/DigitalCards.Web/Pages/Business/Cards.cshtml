@@ -55,6 +55,25 @@
             </div>
         }
 
+        <div class="business-card-quick-summary" data-testid="business-card-quick-summary">
+            <div>
+                <span>Resultados</span>
+                <strong>@Model.Results.Count</strong>
+            </div>
+            <div>
+                <span>Seleccionada</span>
+                <strong>@(Model.Detail is null ? "No" : "Si")</strong>
+            </div>
+            <div>
+                <span>Google emitidas</span>
+                <strong>@Model.Results.Count(card => card.GoogleIssued)</strong>
+            </div>
+            <div>
+                <span>Apple activas</span>
+                <strong>@Model.Results.Count(card => card.AppleTracked)</strong>
+            </div>
+        </div>
+
         <div class="business-card-grid">
             <div class="business-card-list">
                 <h2>Resultados</h2>
@@ -72,16 +91,20 @@
                     <div class="list-group" data-testid="business-card-results">
                         @foreach (var card in Model.Results)
                         {
-                            <a class="list-group-item list-group-item-action"
+                            <a class="list-group-item list-group-item-action business-card-result-row"
                                asp-page="/Business/Cards"
                                asp-route-query="@Model.Query"
                                asp-route-cardId="@card.Id"
                                data-testid="business-card-result">
-                                <div class="d-flex justify-content-between gap-3">
+                                <div>
                                     <strong>@card.Client.UserName</strong>
-                                    <span>@card.CurrentStamps sellos</span>
+                                    <small>@card.Client.Email</small>
                                 </div>
-                                <small>@card.Client.Email</small>
+                                <div class="business-card-result-state">
+                                    <span>@card.CurrentStamps sellos</span>
+                                    <span class="@(card.GoogleIssued ? "wallet-status-ok" : "wallet-status-pending")">G</span>
+                                    <span class="@(card.AppleTracked ? "wallet-status-ok" : "wallet-status-pending")">A</span>
+                                </div>
                             </a>
                         }
                     </div>
@@ -96,12 +119,37 @@
                 }
                 else
                 {
+                    var stampsToGoal = Math.Max(0, 10 - Math.Min(Model.Detail.CurrentStamps, 10));
+
                     <div class="detail-heading">
                         <div>
                             <h2>@Model.Detail.Client.UserName</h2>
                             <p>@Model.Detail.Client.FirstName @Model.Detail.Client.LastName · @Model.Detail.Client.Email</p>
                         </div>
                         <span class="badge text-bg-light">@Model.Detail.BusinessName</span>
+                    </div>
+
+                    <div class="business-card-action-strip" data-testid="business-card-action-strip">
+                        <div>
+                            <span>Siguiente accion</span>
+                            <strong>
+                                @(stampsToGoal == 0
+                                    ? "Recompensa lista o nuevo ciclo"
+                                    : $"Faltan {stampsToGoal} sello(s)")
+                            </strong>
+                        </div>
+                        <div class="business-card-action-buttons">
+                            <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit">
+                                    Reenviar Wallet
+                                </button>
+                            </form>
+                            <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit">
+                                    Agregar sello
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="business-detail-card-face" data-testid="business-detail-card-face">
@@ -152,19 +200,6 @@
                         <span class="@(Model.Detail.AppleTracked ? "wallet-status-ok" : "wallet-status-pending")">
                             Apple @(Model.Detail.AppleTracked ? "activa" : "pendiente")
                         </span>
-                    </div>
-
-                    <div class="form-actions">
-                        <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                            <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit">
-                                Reenviar link Wallet
-                            </button>
-                        </form>
-                        <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
-                            <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit">
-                                Agregar sello
-                            </button>
-                        </form>
                     </div>
 
                     <div class="stamp-ledger" data-testid="stamp-ledger-list">

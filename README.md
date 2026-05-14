@@ -952,3 +952,11 @@ progreso de sellos y botones diferenciados para iPhone/Android:
 ```text
 docs/migration-context/76-wallet-landing-visual-v2.md
 ```
+
+El flujo operativo de `/Business/Cards` incluye resumen visual de resultados,
+estado Wallet por tarjeta y una franja de acciones principales para reenviar
+Wallet o agregar sello:
+
+```text
+docs/migration-context/77-business-cards-visual-v2.md
+```
