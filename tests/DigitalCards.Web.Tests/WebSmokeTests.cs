@@ -1131,6 +1131,23 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminCreateBusiness_DefaultsInviteEmailChecked()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginAdminAsync(client);
+
+        var html = await client.GetStringAsync("/Admin/CreateBusiness");
+
+        Assert.Matches(
+            new Regex("data-testid=\"admin-create-business-send-invite\"[^>]*checked", RegexOptions.IgnoreCase),
+            html);
+    }
+
+    [Fact]
     public async Task AdminCreateBusiness_CreatesBusinessWithModernCredentialAndPilotAccess()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
@@ -1492,6 +1509,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Activo", saveHtml);
         Assert.DoesNotContain("Legacy retirado", saveHtml);
         Assert.DoesNotContain("admin-business-legacy-retired-warning", saveHtml);
+        Assert.DoesNotContain("ModernPrimary", saveHtml);
+        Assert.DoesNotContain("PilotModern", saveHtml);
+        Assert.DoesNotContain("LegacyOnly", saveHtml);
+        Assert.DoesNotContain("LegacyRetired", saveHtml);
 
         var supportHtml = await client.GetStringAsync("/Admin/Support?BusinessFilter=Demo");
 
@@ -1627,6 +1648,35 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             var logoResponse = await client.GetAsync(logoPath);
             Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
             Assert.Equal(TinyPng(), await logoResponse.Content.ReadAsByteArrayAsync());
+
+            var firstLogoPath = logoPath;
+            var secondToken = await GetAntiforgeryTokenAsync(client, profilePath);
+            using var secondForm = new MultipartFormDataContent
+            {
+                { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
+                { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
+                { new StringContent("Logo replacement test."), "BrandingInput.ProgramDescription" },
+                { new StringContent(firstLogoPath), "BrandingInput.LogoPath" },
+                { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
+                { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
+                { new StringContent(secondToken), "__RequestVerificationToken" }
+            };
+            var secondFile = new ByteArrayContent(TinyPng());
+            secondFile.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            secondForm.Add(secondFile, "BrandingInput.LogoUpload", "logo-2.png");
+
+            var secondResponse = await client.PostAsync($"{profilePath}?handler=Branding", secondForm);
+
+            Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+            using (var scope = fake.Factory.Services.CreateScope())
+            {
+                var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+                logoPath = store.BusinessBranding.Single(
+                    branding => branding.BusinessId == Guid.Parse("11111111-1111-1111-1111-111111111111")).LogoPath;
+            }
+
+            Assert.NotEqual(firstLogoPath, logoPath);
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(firstLogoPath)).StatusCode);
         }
         finally
         {

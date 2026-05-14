@@ -65,6 +65,7 @@ public sealed class BrandingModel : PageModel
             return Page();
         }
 
+        var previousLogoPath = Settings!.Branding.LogoPath;
         var logoPath = Input.LogoPath;
         if (Input.LogoUpload is { Length: > 0 })
         {
@@ -98,6 +99,11 @@ public sealed class BrandingModel : PageModel
         Settings = result.Settings!;
         SetInputFromSettings(Settings);
         StatusMessage = "Branding actualizado.";
+        if (!string.IsNullOrWhiteSpace(logoPath) &&
+            !string.Equals(previousLogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            _logoUploads.DeleteIfOwned(previousLogoPath);
+        }
 
         _logger.LogInformation(
             "Business {BusinessId} updated self-service branding.",

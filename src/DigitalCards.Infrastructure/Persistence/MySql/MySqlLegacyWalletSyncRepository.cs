@@ -88,6 +88,10 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
 
     private sealed class LegacyWalletSyncRow
     {
+        public LegacyWalletSyncRow()
+        {
+        }
+
         public int CardID { get; set; }
 
         public string? CardIDGoogle { get; set; }
