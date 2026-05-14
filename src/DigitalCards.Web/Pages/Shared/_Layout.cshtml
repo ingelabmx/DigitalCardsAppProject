@@ -42,7 +42,7 @@
     @if (useLegacyShell)
     {
         <div class="legacy-page-wrapper" data-testid="legacy-shell">
-            <aside class="legacy-left-sidebar" data-testid="legacy-sidebar">
+            <aside class="legacy-left-sidebar" id="legacy-sidebar" data-testid="legacy-sidebar">
                 <div class="legacy-brand">
                     <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link">
                         <span class="legacy-brand-mark">DC</span>
@@ -105,15 +105,24 @@
             </aside>
 
             <div class="legacy-body-wrapper">
+                <div class="legacy-sidebar-backdrop" data-legacy-sidebar-backdrop></div>
                 <header class="legacy-app-header" data-testid="legacy-header">
                     <div>
-                        <button class="legacy-menu-button" type="button" aria-label="Abrir navegacion" disabled>
+                        <button class="legacy-menu-button"
+                                type="button"
+                                aria-label="Abrir navegacion"
+                                aria-controls="legacy-sidebar"
+                                aria-expanded="false"
+                                data-legacy-menu-button>
                             <span></span>
                             <span></span>
                             <span></span>
                         </button>
                     </div>
-                    <h5>Bienvenido, @shellName</h5>
+                    <div class="legacy-header-user">
+                        <span>@shellRole</span>
+                        <h5>Bienvenido, @shellName</h5>
+                    </div>
                 </header>
 
                 <main role="main" class="legacy-container-fluid">

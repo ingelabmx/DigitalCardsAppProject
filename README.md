@@ -932,3 +932,16 @@ docs/migration-context/74-final-production-readiness-v1.md
 Ese checklist consolida SQL aplicado, secretos fuera del repo, health/ready,
 Data Protection, dominio `app.puntelio.com`, Wallets, SMTP, evidencia de smoke,
 rollback por negocio y criterios para marcar `LegacyRetired`.
+
+## Pulido visual del shell moderno
+
+Las paginas autenticadas de admin, negocio y cliente usan un shell inspirado en
+Web Forms: sidebar izquierdo, header superior, cards, metricas y footer
+`Propiedad de IngeLabs`. En mobile, el sidebar se abre con el boton del header y
+se cierra con overlay o tecla `Escape`.
+
+Guia de esta capa visual:
+
+```text
+docs/migration-context/75-interactive-ui-polish-v1.md
+```

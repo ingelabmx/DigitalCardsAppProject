@@ -134,6 +134,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("data-testid=\"legacy-shell\"", adminHtml);
         Assert.Contains("Administradores", adminHtml);
         Assert.Contains("Propiedad de IngeLabs", adminHtml);
+        Assert.Contains("data-legacy-menu-button", adminHtml);
+        Assert.Contains("data-legacy-sidebar-backdrop", adminHtml);
+        Assert.DoesNotContain("data-legacy-menu-button disabled", adminHtml, StringComparison.OrdinalIgnoreCase);
 
         await LoginBusinessAsync(businessClient);
         var businessHtml = await businessClient.GetStringAsync("/Business/Dashboard");
