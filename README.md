@@ -565,8 +565,11 @@ Este flujo inserta en la tabla legacy `Business`, respeta los limites actuales
 mismo tiempo. Si marcas `Habilitar piloto`, tambien crea/actualiza
 `ModernPilotBusiness`.
 
-No hay email automatico al negocio en esta version. El admin define y comunica
-el password inicial manualmente; la app no lo muestra despues del submit.
+El admin puede marcar `Enviar invitacion por correo` para que el negocio reciba
+un link seguro de configuracion de acceso. Ese correo reutiliza el flujo de
+reset de contrasena de negocio, con token one-time guardado por hash. La app no
+muestra el password inicial despues del submit y no envia passwords planos por
+correo.
 
 ## Administracion admin de negocios
 
@@ -580,6 +583,7 @@ El admin puede:
 - ajustar `BusinessLogo` como ruta manual compatible con `varchar(100)`;
 - habilitar/deshabilitar piloto y editar notas;
 - resetear contrasena del negocio.
+- reenviar invitacion de acceso por correo usando el flujo seguro de reset.
 
 Tambien puede ajustar el estado formal de activacion del negocio:
 

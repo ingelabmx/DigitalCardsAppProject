@@ -125,6 +125,22 @@
             </form>
 
             <form method="post"
+                  asp-page-handler="SendInvite"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel"
+                  data-testid="admin-business-invite-form">
+                <h2>Invitacion de acceso</h2>
+                <p class="text-muted">Envia un correo al negocio con un link seguro para configurar su contrasena. No se muestra ni se envia password plano.</p>
+
+                <div class="business-profile-meta">
+                    <span>Destino</span>
+                    <strong data-testid="admin-business-invite-email">@Model.Profile.BusinessEmail</strong>
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-invite">Enviar invitacion</button>
+            </form>
+
+            <form method="post"
                   asp-page-handler="Branding"
                   asp-route-businessId="@Model.Profile.BusinessId"
                   enctype="multipart/form-data"

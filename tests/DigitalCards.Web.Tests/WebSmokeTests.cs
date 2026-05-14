@@ -1010,6 +1010,52 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminCreateBusiness_WithInviteSendsBusinessPasswordSetupEmail()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PublicBaseUrl"] = "https://app.puntelio.com"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("ib");
+        var businessName = $"Inv {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        const string password = "StartPass123!";
+
+        await LoginAdminAsync(client);
+        var token = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
+        var response = await client.PostAsync(
+            "/Admin/CreateBusiness",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.BusinessName"] = businessName,
+                ["Input.BusinessEmail"] = businessEmail,
+                ["Input.InitialPassword"] = password,
+                ["Input.ConfirmPassword"] = password,
+                ["Input.EnablePilot"] = "true",
+                ["Input.SendInvite"] = "true",
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Invitacion enviada", html);
+        Assert.DoesNotContain(password, html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Business/ResetPassword/", html, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = fake.Factory.Services.CreateScope();
+        var outbox = scope.ServiceProvider.GetRequiredService<IPasswordResetEmailOutbox>();
+        var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+        Assert.Equal(businessEmail, message.To);
+        Assert.Equal(businessName, message.RecipientName);
+        Assert.Equal("negocio", message.AccountType);
+        Assert.StartsWith("https://app.puntelio.com/Business/ResetPassword/", message.ResetUrl);
+    }
+
+    [Fact]
     public async Task AdminBusinessProfile_UpdatesBusinessAndResetsPassword()
     {
         using var fake = WithFakeIntegrations(new Dictionary<string, string?>
@@ -1120,6 +1166,43 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains(updatedName, dashboardHtml);
         Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_SendInviteSendsBusinessPasswordSetupEmail()
+    {
+        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
+        {
+            ["DigitalCards:PublicBaseUrl"] = "https://app.puntelio.com"
+        });
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginAdminAsync(client);
+
+        var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
+        var token = await GetAntiforgeryTokenAsync(client, profilePath);
+        var response = await client.PostAsync(
+            $"{profilePath}?handler=SendInvite",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Invitacion enviada", html);
+        Assert.DoesNotContain("/Business/ResetPassword/", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", html, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = fake.Factory.Services.CreateScope();
+        var outbox = scope.ServiceProvider.GetRequiredService<IPasswordResetEmailOutbox>();
+        var message = Assert.Single(await outbox.ListPasswordResetsAsync());
+        Assert.Equal("demo@digitalcards.test", message.To);
+        Assert.Equal("Demo Coffee", message.RecipientName);
+        Assert.Equal("negocio", message.AccountType);
+        Assert.StartsWith("https://app.puntelio.com/Business/ResetPassword/", message.ResetUrl);
     }
 
     [Fact]
