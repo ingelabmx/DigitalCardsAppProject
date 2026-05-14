@@ -86,6 +86,27 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task AdminPages_RenderFinalParityVisualShell()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+        await LoginAdminAsync(client);
+
+        var dashboardHtml = await client.GetStringAsync("/Admin/Dashboard");
+        var businessesHtml = await client.GetStringAsync("/Admin/Businesses");
+        var supportHtml = await client.GetStringAsync("/Admin/Support");
+        var cutoverHtml = await client.GetStringAsync("/Admin/Cutover");
+
+        Assert.Contains("admin-dashboard-command-strip", dashboardHtml);
+        Assert.Contains("admin-businesses-panel", businessesHtml);
+        Assert.Contains("admin-filter-card", businessesHtml);
+        Assert.Contains("support-filter-panel", supportHtml);
+        Assert.Contains("admin-cutover-sync-status", cutoverHtml);
+        Assert.DoesNotContain("PasswordHash", supportHtml);
+        Assert.DoesNotContain("connection string", supportHtml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
     {
         using var fake = WithFakeIntegrations(environmentName: "Production");

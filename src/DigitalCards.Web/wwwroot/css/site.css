@@ -290,6 +290,14 @@ body.legacy-shell {
   grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
 }
 
+.admin-command-hero {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(42 53 71 / 6%);
+  padding: 1.25rem;
+}
+
 .legacy-shell .admin-action-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -302,6 +310,73 @@ body.legacy-shell {
 
 .legacy-admin-list {
   gap: 0.75rem;
+}
+
+.admin-command-strip {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.admin-command-card {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
+  color: #2a3547;
+  display: grid;
+  gap: 0.4rem;
+  min-height: 138px;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.admin-command-card:hover {
+  border-color: #5d87ff;
+  color: #2a3547;
+  transform: translateY(-1px);
+}
+
+.admin-command-card span {
+  color: #5d87ff;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.admin-command-card strong {
+  align-self: end;
+  font-size: 1.1rem;
+}
+
+.admin-command-card small {
+  color: #7c8fac;
+}
+
+.admin-list-panel .page-heading,
+.support-results .business-dashboard-panel,
+.cutover-business-row,
+.business-profile-panel {
+  position: relative;
+}
+
+.admin-filter-card,
+.support-filter-panel,
+.admin-filter-bar {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.admin-status-stack {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .legacy-admin-row {
@@ -324,6 +399,53 @@ body.legacy-shell {
 .legacy-admin-row .pilot-business-actions {
   align-items: center;
   display: flex;
+}
+
+.support-sync-status,
+.cutover-smoke-evidence {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-left: 4px solid #5d87ff;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1rem 0;
+  padding: 0.9rem;
+}
+
+.support-sync-status span,
+.cutover-smoke-evidence span {
+  color: #5a6a85;
+}
+
+.cutover-business-row {
+  border-left: 5px solid #5d87ff;
+  gap: 1rem;
+}
+
+.cutover-signal-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cutover-signal-grid > div {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  padding: 0.8rem;
+}
+
+.cutover-signal-grid h3,
+.cutover-smoke-evidence h3 {
+  color: #2a3547;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.business-profile-panel {
+  border-left: 4px solid #5d87ff;
 }
 
 .btn:focus,
@@ -2014,6 +2136,8 @@ form.is-submitting input[type="submit"] {
   .legacy-shell .admin-dashboard-hero,
   .legacy-shell .client-legacy-hero,
   .legacy-shell .admin-action-grid,
+  .admin-command-strip,
+  .cutover-signal-grid,
   .legacy-admin-row,
   .admin-report-metrics,
   .admin-report-business-row,
