@@ -1064,3 +1064,10 @@ reservados para compatibilidad interna y documentacion tecnica:
 ```text
 docs/migration-context/98-admin-activation-simplification-v2.md
 ```
+
+La entrada publica de `app.puntelio.com` queda enfocada en clientes y negocios;
+el acceso admin no se publica en navegacion y se conserva como URL directa:
+
+```text
+docs/migration-context/99-public-home-auth-cleanup-v2.md
+```
