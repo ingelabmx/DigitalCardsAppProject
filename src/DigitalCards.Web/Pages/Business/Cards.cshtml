@@ -181,7 +181,7 @@
                                 </form>
                             }
                         </div>
-                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel">
+                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel danger-zone-card">
                             <div>
                                 <strong>Eliminar permanentemente</strong>
                                 <p>Esta accion elimina la tarjeta, sus links Wallet y sus datos asociados para este negocio. Escribe <b>@Model.Detail.Client.UserName</b> para confirmar.</p>

@@ -66,6 +66,34 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task FinalVisualPolish_RendersSharedDepthAndDangerZones()
+    {
+        using var fake = WithFakeIntegrations();
+        var adminClient = fake.Factory.CreateClient();
+        var clientUserName = NewLegacySafeUserName("ui");
+        const string clientPassword = "ClientPass123!";
+
+        var css = await adminClient.GetStringAsync("/css/site.css");
+        var homeHtml = await adminClient.GetStringAsync("/");
+
+        await LoginAdminAsync(adminClient);
+        var businessProfileHtml = await adminClient.GetStringAsync("/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111");
+
+        await RegisterClientAsync(fake.Factory, clientUserName, password: clientPassword);
+        var client = fake.Factory.CreateClient();
+        await LoginClientAsync(client, clientUserName, clientPassword);
+        var clientDashboardHtml = await client.GetStringAsync("/Client/Dashboard");
+
+        Assert.Contains("--dc-shadow-card", css);
+        Assert.Contains(".danger-zone-card", css);
+        Assert.Contains("home-wallet-preview", homeHtml);
+        Assert.Contains("danger-zone-card", businessProfileHtml);
+        Assert.Contains("client-qr-card", clientDashboardHtml);
+        Assert.DoesNotContain("PasswordHash", businessProfileHtml);
+        Assert.DoesNotContain("WalletSelectToken", clientDashboardHtml);
+    }
+
+    [Fact]
     public async Task LoginPages_ReturnSharedVisualAuthShell()
     {
         using var fake = WithFakeIntegrations();
