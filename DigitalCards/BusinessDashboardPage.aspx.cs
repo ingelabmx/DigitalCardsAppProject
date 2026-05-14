@@ -56,6 +56,7 @@ namespace DigitalCardsApp
                 int BusinessId = (int)Session["BusinessID"];
                 string BusinessName = Session["BusinessName"].ToString();
                 string BusinessLogo = Session["BusinessLogo"].ToString();
+                LegacyCutoverConnector.EnforceBusinessPage(this, BusinessId);
             }
             else
             {

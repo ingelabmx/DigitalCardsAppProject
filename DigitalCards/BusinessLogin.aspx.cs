@@ -53,6 +53,16 @@ namespace DigitalCardsApp
 
                 if (authenticatedClient != null)
                 {
+                    string activationStatus = LegacyCutoverConnector.GetActivationStatus(authenticatedClient.BusID);
+                    if (LegacyCutoverConnector.IsLegacyRetired(activationStatus))
+                    {
+                        Session.Clear();
+                        failAlert.Visible = true;
+                        successAlert.Visible = false;
+                        failAlert.InnerText = "Este negocio ya opera en app.puntelio.com. Web Forms fue retirado para este negocio.";
+                        return;
+                    }
+
                     // Reset failed attempts on successful login
                     Session["BusinessFailedAttempts"] = 0;
 
@@ -62,6 +72,7 @@ namespace DigitalCardsApp
                     Session["BusinessPassword"] = authenticatedClient.BusPassword;
                     Session["BusinessEmail"] = authenticatedClient.BusEmail;
                     Session["BusinessLogo"] = authenticatedClient.BusLogo;
+                    Session["BusinessActivationStatus"] = activationStatus;
 
                     Response.Redirect("BusinessDashboardPage.aspx");
                 }

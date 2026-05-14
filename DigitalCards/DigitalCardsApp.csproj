@@ -864,6 +864,7 @@
     <Compile Include="Connectors\AdminConnector.cs" />
     <Compile Include="Connectors\BusinessConnector.cs" />
     <Compile Include="Connectors\ClientConnector.cs" />
+    <Compile Include="Connectors\LegacyCutoverConnector.cs" />
     <Compile Include="GW-Methods\REST-API_Loyalty.cs" />
     <Compile Include="Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>
