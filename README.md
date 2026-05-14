@@ -995,3 +995,10 @@ mostrador:
 ```text
 docs/migration-context/86-client-experience-final-v1.md
 ```
+
+Las pantallas publicas de Wallet ahora muestran guia de instalacion por
+plataforma y resaltan Apple Wallet o Google Wallet segun el dispositivo:
+
+```text
+docs/migration-context/87-wallet-install-guidance-v1.md
+```
