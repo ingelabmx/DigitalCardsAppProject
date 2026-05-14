@@ -1345,6 +1345,10 @@ form.is-submitting input[type="submit"] {
   box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
 }
 
+.business-card-detail-empty-panel {
+  min-height: 164px;
+}
+
 .business-card-result-row {
   align-items: center;
   display: grid;
@@ -1900,18 +1904,19 @@ form.is-submitting input[type="submit"] {
   box-sizing: border-box;
   display: grid;
   height: auto;
+  line-height: 0;
   min-height: 0;
   max-width: 100%;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
   place-items: center;
-  width: clamp(88px, 16vw, 112px);
+  width: clamp(96px, 13vw, 112px);
 }
 
 .client-qr-card svg {
   box-sizing: border-box;
   display: block;
-  height: auto;
+  height: 100%;
   max-height: 100%;
   max-width: 100%;
   width: 100%;
@@ -1922,7 +1927,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .client-cards-qr-panel .client-qr-card {
-  width: clamp(88px, 14vw, 108px);
+  width: clamp(96px, 12vw, 108px);
 }
 
 .client-profile-list {
@@ -1949,7 +1954,7 @@ form.is-submitting input[type="submit"] {
 .client-dashboard-metrics {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .client-profile-panel {
@@ -2506,6 +2511,10 @@ body.public-shell {
 .business-card-delete-form .form-control,
 .admin-client-delete-form .form-control {
   max-width: 320px;
+}
+
+.admin-client-cleanup-note {
+  margin-bottom: 1rem;
 }
 
 .auth-copy-panel {

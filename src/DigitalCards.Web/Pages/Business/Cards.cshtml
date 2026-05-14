@@ -106,9 +106,10 @@
             <div class="business-card-detail" data-testid="business-card-detail">
                 @if (Model.Detail is null)
                 {
-                    <div class="dashboard-empty-state compact" data-testid="business-card-detail-empty">
-                        <p class="eyebrow">Detalle</p>
-                        <h2>Selecciona una tarjeta para operar</h2>
+                    <h2>Detalle</h2>
+                    <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-detail-empty">
+                        <p class="eyebrow">Selecciona una tarjeta</p>
+                        <h3>Opera desde el detalle validado</h3>
                         <p>El detalle muestra sellos, estado Wallet, auditoria y acciones seguras del negocio autenticado.</p>
                     </div>
                 }

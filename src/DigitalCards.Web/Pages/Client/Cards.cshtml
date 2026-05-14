@@ -28,7 +28,6 @@
 @if (Model.Cards.Count > 0)
 {
     var totalCurrentStamps = Model.Cards.Sum(card => card.CurrentStamps);
-    var totalLifetimeStamps = Model.Cards.Sum(card => card.LifetimeStamps);
     var walletReady = Model.Cards.Count(card => card.GoogleIssued || card.AppleTracked);
 
     <section class="result-panel mt-3" data-testid="client-card-results">
@@ -48,10 +47,6 @@
             <div>
                 <span>Sellos actuales</span>
                 <strong>@totalCurrentStamps</strong>
-            </div>
-            <div>
-                <span>Sellos historicos</span>
-                <strong>@totalLifetimeStamps</strong>
             </div>
             <div>
                 <span>Tarjetas listas</span>
@@ -103,10 +98,6 @@
                                 <div class="metric">
                                     <span>Sellos actuales</span>
                                     <strong data-testid="client-card-current-stamps">@card.CurrentStamps</strong>
-                                </div>
-                                <div class="metric">
-                                    <span>Sellos historicos</span>
-                                    <strong data-testid="client-card-lifetime-stamps">@card.LifetimeStamps</strong>
                                 </div>
                                 <div class="metric">
                                     <span>Tarjeta</span>

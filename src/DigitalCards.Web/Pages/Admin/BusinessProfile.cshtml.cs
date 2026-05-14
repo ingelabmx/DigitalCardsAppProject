@@ -45,9 +45,6 @@ public sealed class BusinessProfileModel : PageModel
     [BindProperty]
     public BrandingInputModel BrandingInput { get; set; } = new();
 
-    [BindProperty]
-    public int RefreshLimit { get; set; } = 25;
-
     public BusinessProfileDto? Profile { get; private set; }
 
     public string? StatusMessage { get; private set; }
@@ -164,6 +161,19 @@ public sealed class BusinessProfileModel : PageModel
 
     public async Task<IActionResult> OnPostBrandingAsync(Guid businessId, CancellationToken cancellationToken)
     {
+        return await SaveBrandingAsync(businessId, refreshAfterSave: false, cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostSaveAndRefreshAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        return await SaveBrandingAsync(businessId, refreshAfterSave: true, cancellationToken);
+    }
+
+    private async Task<IActionResult> SaveBrandingAsync(
+        Guid businessId,
+        bool refreshAfterSave,
+        CancellationToken cancellationToken)
+    {
         var previousProfile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
         var logoPath = BrandingInput.LogoPath;
         if (BrandingInput.LogoUpload is { Length: > 0 })
@@ -215,6 +225,16 @@ public sealed class BusinessProfileModel : PageModel
             AdminAuth.GetAdminUserId(User),
             Profile.BusinessId);
 
+        if (!refreshAfterSave)
+        {
+            return Page();
+        }
+
+        if (await RefreshWalletBrandingAsync(businessId, cancellationToken))
+        {
+            StatusMessage = $"Branding del negocio actualizado. {ToRefreshStatus(RefreshResult!)}";
+        }
+
         return Page();
     }
 
@@ -256,26 +276,10 @@ public sealed class BusinessProfileModel : PageModel
             return NotFound();
         }
 
-        var result = await _adminApp.RefreshBusinessWalletBrandingAsync(
-            new AdminWalletBrandingRefreshCommand(
-                businessId,
-                AdminAuth.GetAdminUserId(User),
-                RefreshLimit),
-            cancellationToken);
-
-        if (!result.Succeeded || result.Refresh is null)
+        if (await RefreshWalletBrandingAsync(businessId, cancellationToken))
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo refrescar el branding Wallet.");
-            return Page();
+            StatusMessage = ToRefreshStatus(RefreshResult!);
         }
-
-        RefreshResult = result.Refresh;
-        StatusMessage = ToRefreshStatus(RefreshResult);
-
-        _logger.LogInformation(
-            "Admin {AdminUserId} refreshed wallet branding for business {BusinessId}.",
-            AdminAuth.GetAdminUserId(User),
-            businessId);
 
         return Page();
     }
@@ -348,11 +352,36 @@ public sealed class BusinessProfileModel : PageModel
         PasswordInput.ConfirmPassword = string.Empty;
     }
 
+    private async Task<bool> RefreshWalletBrandingAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        var result = await _adminApp.RefreshBusinessWalletBrandingAsync(
+            new AdminWalletBrandingRefreshCommand(
+                businessId,
+                AdminAuth.GetAdminUserId(User),
+                Limit: 0),
+            cancellationToken);
+
+        if (!result.Succeeded || result.Refresh is null)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo actualizar tarjetas.");
+            return false;
+        }
+
+        RefreshResult = result.Refresh;
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} refreshed wallet branding for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        return true;
+    }
+
     private static string ToRefreshStatus(WalletBrandingRefreshResult result)
     {
         var attempted = result.GoogleWalletAttempted + result.AppleWalletAttempted;
         var succeeded = result.GoogleWalletSucceeded + result.AppleWalletSucceeded;
-        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, {succeeded}/{attempted} actualizaciones completadas.";
+        var status = $"Actualizacion ejecutada: {result.CardsWithTrackedWallets} tarjetas digitales, {succeeded}/{attempted} actualizaciones completadas.";
         return result.HasWarnings
             ? $"{status} Hubo alertas seguras: {string.Join(", ", result.SafeErrors)}."
             : status;

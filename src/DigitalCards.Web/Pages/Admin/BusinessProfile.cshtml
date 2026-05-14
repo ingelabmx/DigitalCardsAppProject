@@ -149,8 +149,8 @@
                   enctype="multipart/form-data"
                   class="business-profile-panel business-branding-panel"
                   data-testid="admin-business-branding-form">
-                <h2>Branding Wallet</h2>
-                <p class="text-muted">Nombre publico, logo y colores usados en correos, Wallet y dashboard cliente.</p>
+                <h2>Perfil publico</h2>
+                <p class="text-muted">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
 
                 <div class="mb-3">
                     <label asp-for="BrandingInput.PublicName" class="form-label">Nombre publico</label>
@@ -197,7 +197,15 @@
                     <strong>@Model.BrandingInput.PublicName</strong>
                 </div>
 
-                <button class="btn btn-primary" type="submit" data-testid="admin-business-branding-submit">Guardar branding</button>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit" data-testid="admin-business-branding-submit">Guardar</button>
+                    <button class="btn btn-outline-primary"
+                            type="submit"
+                            asp-page-handler="SaveAndRefresh"
+                            data-testid="admin-business-branding-save-refresh-submit">
+                        Guardar y actualizar
+                    </button>
+                </div>
             </form>
 
             <form method="post"
@@ -205,13 +213,8 @@
                   asp-route-businessId="@Model.Profile.BusinessId"
                   class="business-profile-panel"
                   data-testid="admin-business-wallet-branding-refresh-form">
-                <h2>Refrescar Wallets</h2>
-                <p class="text-muted">Actualiza logo, colores y texto en Wallets ya emitidas para tarjetas recientes. No cambia sellos ni tokens.</p>
-
-                <div class="mb-3">
-                    <label asp-for="RefreshLimit" class="form-label">Limite de tarjetas recientes</label>
-                    <input asp-for="RefreshLimit" class="form-control" type="number" min="1" max="100" data-testid="admin-business-wallet-branding-refresh-limit" />
-                </div>
+                <h2>Actualizar Tarjetas</h2>
+                <p class="text-muted">Aplica el branding actual a todas las tarjetas digitales ya emitidas de este negocio. No modifica sellos ni datos del cliente.</p>
 
                 @if (Model.RefreshResult is not null)
                 {
@@ -221,7 +224,7 @@
                     </div>
                 }
 
-                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-wallet-branding-refresh-submit">Refrescar Wallets recientes</button>
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-wallet-branding-refresh-submit">Actualizar</button>
             </form>
         </div>
     }
