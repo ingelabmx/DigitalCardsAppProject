@@ -1,3 +1,21 @@
+:root {
+  --dc-primary: #5d87ff;
+  --dc-primary-dark: #4a6ccc;
+  --dc-accent: #49beff;
+  --dc-ink: #2a3547;
+  --dc-body: #1f2933;
+  --dc-muted: #5a6a85;
+  --dc-muted-light: #7c8fac;
+  --dc-surface: #fff;
+  --dc-soft: #f6f9fc;
+  --dc-page: #f6f7f9;
+  --dc-border: #e5eaef;
+  --dc-border-strong: #dde3ea;
+  --dc-brand-soft: #ecf2ff;
+  --dc-warning: #ffcf70;
+  --dc-radius: 8px;
+}
+
 html {
   font-size: 14px;
   min-height: 100%;
@@ -11,16 +29,60 @@ html {
 }
 
 body {
-  background: #f6f7f9;
-  color: #1f2933;
+  background: var(--dc-page);
+  color: var(--dc-body);
   margin-bottom: 60px;
 }
 
 body.legacy-shell {
-  background: #f6f9fc;
-  color: #2a3547;
+  background: var(--dc-soft);
+  color: var(--dc-ink);
   font-family: "Plus Jakarta Sans", "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   margin-bottom: 0;
+}
+
+.brand-lockup {
+  align-items: center;
+  color: var(--dc-ink);
+  display: inline-flex;
+  gap: 0.55rem;
+}
+
+.brand-mark {
+  align-items: center;
+  background: var(--dc-brand-soft);
+  border-radius: var(--dc-radius);
+  color: var(--dc-primary);
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.brand-mark-sm {
+  height: 34px;
+  width: 38px;
+}
+
+.btn-primary {
+  background: var(--dc-primary);
+  border-color: var(--dc-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--dc-primary-dark);
+  border-color: var(--dc-primary-dark);
+}
+
+.btn-outline-primary {
+  border-color: var(--dc-primary);
+  color: var(--dc-primary);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  background: var(--dc-primary);
+  border-color: var(--dc-primary);
 }
 
 .legacy-page-wrapper {
@@ -29,8 +91,8 @@ body.legacy-shell {
 }
 
 .legacy-left-sidebar {
-  background: #fff;
-  border-right: 1px solid #e5eaef;
+  background: var(--dc-surface);
+  border-right: 1px solid var(--dc-border);
   bottom: 0;
   left: 0;
   overflow-y: auto;
@@ -60,21 +122,21 @@ body.legacy-shell {
 
 .legacy-brand-link {
   align-items: center;
-  color: #2a3547;
+  color: var(--dc-ink);
   display: flex;
   gap: 0.75rem;
   text-decoration: none;
 }
 
 .legacy-brand-link:hover {
-  color: #5d87ff;
+  color: var(--dc-primary);
 }
 
 .legacy-brand-mark {
   align-items: center;
-  background: #ecf2ff;
-  border-radius: 8px;
-  color: #5d87ff;
+  background: var(--dc-brand-soft);
+  border-radius: var(--dc-radius);
+  color: var(--dc-primary);
   display: inline-flex;
   font-weight: 800;
   height: 46px;
@@ -88,7 +150,7 @@ body.legacy-shell {
 }
 
 .legacy-brand small {
-  color: #7c8fac;
+  color: var(--dc-muted-light);
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -105,7 +167,7 @@ body.legacy-shell {
 }
 
 .legacy-nav-caption {
-  color: #2a3547;
+  color: var(--dc-ink);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.6;
@@ -116,8 +178,8 @@ body.legacy-shell {
 
 .legacy-sidebar-link {
   align-items: center;
-  border-radius: 8px;
-  color: #2a3547;
+  border-radius: var(--dc-radius);
+  color: var(--dc-ink);
   display: flex;
   font-size: 0.9rem;
   gap: 0.9rem;
@@ -129,9 +191,9 @@ body.legacy-shell {
 
 .legacy-sidebar-link span {
   align-items: center;
-  background: #f6f9fc;
-  border-radius: 8px;
-  color: #5a6a85;
+  background: var(--dc-soft);
+  border-radius: var(--dc-radius);
+  color: var(--dc-muted);
   display: inline-flex;
   flex: 0 0 34px;
   font-size: 0.72rem;
@@ -142,13 +204,13 @@ body.legacy-shell {
 
 .legacy-sidebar-link:hover,
 .legacy-sidebar-link.active {
-  background: #ecf2ff;
-  color: #5d87ff;
+  background: var(--dc-brand-soft);
+  color: var(--dc-primary);
   transform: translateX(2px);
 }
 
 .legacy-sidebar-link.active span {
-  background: #5d87ff;
+  background: var(--dc-primary);
   color: #fff;
 }
 
@@ -159,8 +221,8 @@ body.legacy-shell {
 
 .legacy-app-header {
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #e5eaef;
+  background: var(--dc-surface);
+  border-bottom: 1px solid var(--dc-border);
   display: flex;
   justify-content: space-between;
   min-height: 70px;
@@ -171,7 +233,7 @@ body.legacy-shell {
 }
 
 .legacy-app-header h5 {
-  color: #2a3547;
+  color: var(--dc-ink);
   font-size: 1.05rem;
   margin: 0;
 }
@@ -184,7 +246,7 @@ body.legacy-shell {
 }
 
 .legacy-header-user span {
-  color: #7c8fac;
+  color: var(--dc-muted-light);
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -192,9 +254,9 @@ body.legacy-shell {
 
 .legacy-menu-button {
   align-items: center;
-  background: #f6f9fc;
-  border: 1px solid #e5eaef;
-  border-radius: 8px;
+  background: var(--dc-soft);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
   display: none;
   flex-direction: column;
   gap: 4px;
@@ -204,7 +266,7 @@ body.legacy-shell {
 }
 
 .legacy-menu-button span {
-  background: #2a3547;
+  background: var(--dc-ink);
   border-radius: 999px;
   display: block;
   height: 2px;
@@ -218,7 +280,7 @@ body.legacy-shell {
 }
 
 .legacy-footer {
-  color: #5a6a85;
+  color: var(--dc-muted);
   font-size: 0.9rem;
   padding: 1.5rem;
   text-align: center;
@@ -234,11 +296,11 @@ body.legacy-shell {
 .legacy-shell .business-card-detail,
 .legacy-shell .client-profile-panel,
 .legacy-shell .client-card-preview,
-.legacy-shell .client-card-row,
-.legacy-shell .support-card {
-  background: #fff;
-  border-color: #e5eaef;
-  border-radius: 8px;
+  .legacy-shell .client-card-row,
+  .legacy-shell .support-card {
+  background: var(--dc-surface);
+  border-color: var(--dc-border);
+  border-radius: var(--dc-radius);
   box-shadow: 0 6px 18px rgb(0 0 0 / 5%);
 }
 
@@ -246,8 +308,8 @@ body.legacy-shell {
 .legacy-shell .dashboard-card-row,
 .legacy-shell .pilot-business-item,
 .legacy-shell .stamp-ledger-item,
-.legacy-shell .metric {
-  border-radius: 8px;
+  .legacy-shell .metric {
+  border-radius: var(--dc-radius);
 }
 
 .legacy-shell .action-card,
@@ -265,25 +327,25 @@ body.legacy-shell {
 }
 
 .legacy-shell .metric {
-  border: 1px solid #e5eaef;
-  border-left: 4px solid #5d87ff;
+  border: 1px solid var(--dc-border);
+  border-left: 4px solid var(--dc-primary);
 }
 
 .legacy-shell .btn-primary {
-  background: #5d87ff;
-  border-color: #5d87ff;
+  background: var(--dc-primary);
+  border-color: var(--dc-primary);
 }
 
 .legacy-shell .btn-primary:hover {
-  background: #4a6ccc;
-  border-color: #4a6ccc;
+  background: var(--dc-primary-dark);
+  border-color: var(--dc-primary-dark);
 }
 
 .legacy-shell .eyebrow,
 .legacy-shell .navbar-brand,
 .legacy-shell .action-card:hover,
 .legacy-shell .dashboard-card-row:hover {
-  color: #5d87ff;
+  color: var(--dc-primary);
 }
 
 .legacy-shell .admin-dashboard-hero {

@@ -39,6 +39,26 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BrandConsistency_RendersSharedBrandTokensAndFooters()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var homeHtml = await client.GetStringAsync("/");
+        var css = await client.GetStringAsync("/css/site.css");
+
+        await LoginAdminAsync(client);
+        var adminHtml = await client.GetStringAsync("/Admin/Dashboard");
+
+        Assert.Contains("public-brand-lockup", homeHtml);
+        Assert.Contains("Propiedad de IngeLabs", homeHtml);
+        Assert.Contains("--dc-primary", css);
+        Assert.Contains("--dc-radius", css);
+        Assert.Contains("legacy-brand-mark brand-mark", adminHtml);
+        Assert.Contains("Propiedad de IngeLabs", adminHtml);
+    }
+
+    [Fact]
     public async Task LoginPages_ReturnSharedVisualAuthShell()
     {
         using var fake = WithFakeIntegrations();

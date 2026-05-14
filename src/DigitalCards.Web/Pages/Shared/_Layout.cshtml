@@ -45,7 +45,7 @@
             <aside class="legacy-left-sidebar" id="legacy-sidebar" data-testid="legacy-sidebar">
                 <div class="legacy-brand">
                     <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link">
-                        <span class="legacy-brand-mark">DC</span>
+                        <span class="legacy-brand-mark brand-mark">DC</span>
                         <span>
                             <strong>DigitalCards</strong>
                             <small>@shellRole</small>
@@ -140,7 +140,10 @@
         <header>
             <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
                 <div class="container">
-                    <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">Puntelio</a>
+                    <a class="navbar-brand fw-semibold brand-lockup" asp-area="" asp-page="/Index" data-testid="public-brand-lockup">
+                        <span class="brand-mark brand-mark-sm">P</span>
+                        <span>Puntelio</span>
+                    </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                             aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
