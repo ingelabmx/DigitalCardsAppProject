@@ -16,13 +16,9 @@
             <span>Mis tarjetas</span>
             <small>Sellos actuales, historicos y estado Wallet.</small>
         </a>
-        <a class="action-card" asp-page="/Client/ChangePassword" data-testid="client-dashboard-change-password-link">
-            <span>Contrasena</span>
-            <small>Actualiza tu acceso al dashboard cliente.</small>
-        </a>
         <a class="action-card" asp-page="/Client/Profile" data-testid="client-dashboard-profile-link">
             <span>Perfil</span>
-            <small>Edita nombre, apellido y correo.</small>
+            <small>Edita tus datos y modifica tu contrasena.</small>
         </a>
         <a class="action-card" asp-page="/Client/Logout" data-testid="client-logout-link">
             <span>Salir cliente</span>
@@ -47,7 +43,7 @@
         <div>
             <span>03</span>
             <strong>Abre Wallet</strong>
-            <small>Apple Wallet o Google Wallet.</small>
+            <small>Instala o consulta tu tarjeta digital.</small>
         </div>
     </section>
 
@@ -85,14 +81,6 @@
                 <div class="metric">
                     <span>Sellos historicos</span>
                     <strong data-testid="client-dashboard-lifetime-stamps">@Model.Dashboard.TotalLifetimeStamps</strong>
-                </div>
-                <div class="metric">
-                    <span>Google Wallet</span>
-                    <strong data-testid="client-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
-                </div>
-                <div class="metric">
-                    <span>Apple Wallet</span>
-                    <strong data-testid="client-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
                 </div>
             </div>
         </div>

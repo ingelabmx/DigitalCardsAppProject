@@ -16,6 +16,13 @@
         </div>
     }
 
+    @if (!string.IsNullOrWhiteSpace(Model.PasswordStatusMessage))
+    {
+        <div class="alert alert-success" role="status" data-testid="client-change-password-status">
+            @Model.PasswordStatusMessage
+        </div>
+    }
+
     @if (Model.Client is not null)
     {
         <div class="client-profile-helper" data-testid="client-profile-helper">
@@ -57,6 +64,38 @@
             <a class="btn btn-outline-secondary" asp-page="/Client/Dashboard">Volver</a>
         </div>
     </form>
+
+    <hr class="section-divider" id="password" />
+
+    <section class="client-password-panel" data-testid="client-profile-password-panel">
+        <p class="eyebrow">Seguridad</p>
+        <h2>Modificar contrasena</h2>
+        <p class="text-muted">Cambia tu contrasena desde tu perfil. No se muestra ni se guarda texto plano.</p>
+
+        <form method="post" asp-page-handler="ChangePassword" data-testid="client-change-password-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="PasswordInput.CurrentPassword" class="form-label"></label>
+                <input asp-for="PasswordInput.CurrentPassword" class="form-control" data-testid="client-current-password" />
+                <span asp-validation-for="PasswordInput.CurrentPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PasswordInput.NewPassword" class="form-label"></label>
+                <input asp-for="PasswordInput.NewPassword" class="form-control" data-testid="client-new-password" />
+                <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PasswordInput.ConfirmPassword" class="form-label"></label>
+                <input asp-for="PasswordInput.ConfirmPassword" class="form-control" data-testid="client-confirm-password" />
+                <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary" type="submit" data-testid="client-change-password-submit">Actualizar contrasena</button>
+        </form>
+    </section>
 </section>
 
 @section Scripts {

@@ -29,8 +29,7 @@
 {
     var totalCurrentStamps = Model.Cards.Sum(card => card.CurrentStamps);
     var totalLifetimeStamps = Model.Cards.Sum(card => card.LifetimeStamps);
-    var googleIssued = Model.Cards.Count(card => card.GoogleIssued);
-    var appleTracked = Model.Cards.Count(card => card.AppleTracked);
+    var walletReady = Model.Cards.Count(card => card.GoogleIssued || card.AppleTracked);
 
     <section class="result-panel mt-3" data-testid="client-card-results">
         <div class="page-heading">
@@ -55,8 +54,8 @@
                 <strong>@totalLifetimeStamps</strong>
             </div>
             <div>
-                <span>Wallets</span>
-                <strong>@googleIssued G / @appleTracked A</strong>
+                <span>Tarjetas listas</span>
+                <strong>@walletReady</strong>
             </div>
         </div>
 
@@ -83,8 +82,9 @@
                         <div class="client-card-state">
                             <div class="client-wallet-badges" data-testid="client-wallet-badges">
                                 <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
-                                <span class="badge @(card.GoogleIssued ? "text-bg-success" : "text-bg-secondary")">Google @(card.GoogleIssued ? "lista" : "pendiente")</span>
-                                <span class="badge @(card.AppleTracked ? "text-bg-success" : "text-bg-secondary")">Apple @(card.AppleTracked ? "activa" : "pendiente")</span>
+                                <span class="badge @(card.GoogleIssued || card.AppleTracked ? "text-bg-success" : "text-bg-secondary")">
+                                    @(card.GoogleIssued || card.AppleTracked ? "Tarjeta lista" : "Tarjeta pendiente")
+                                </span>
                             </div>
                             <div class="client-card-progress-panel" data-testid="client-card-progress-panel">
                                 <div>
@@ -109,20 +109,8 @@
                                     <strong data-testid="client-card-lifetime-stamps">@card.LifetimeStamps</strong>
                                 </div>
                                 <div class="metric">
-                                    <span>Google Wallet</span>
-                                    <strong data-testid="client-card-google-status">@(card.GoogleIssued ? "Google emitida" : "Pendiente")</strong>
-                                </div>
-                                <div class="metric">
-                                    <span>Apple Wallet</span>
-                                    <strong data-testid="client-card-apple-status">@(card.AppleTracked ? "Apple activa" : "Pendiente")</strong>
-                                </div>
-                                <div class="metric">
-                                    <span>Dispositivos Apple</span>
-                                    <strong data-testid="client-card-apple-devices">@card.AppleRegisteredDeviceCount</strong>
-                                </div>
-                                <div class="metric">
-                                    <span>Ultimo update Apple</span>
-                                    <strong data-testid="client-card-apple-updated">@(card.AppleUpdatedAt?.ToLocalTime().ToString("g") ?? "Pendiente")</strong>
+                                    <span>Tarjeta</span>
+                                    <strong data-testid="client-card-wallet-status">@(card.GoogleIssued || card.AppleTracked ? "Lista" : "Pendiente")</strong>
                                 </div>
                             </div>
                         </div>
@@ -130,10 +118,6 @@
 
                     <div class="form-actions">
                         <a class="btn btn-primary btn-sm" asp-page="/Wallet/Select" asp-route-token="@card.WalletSelectToken" data-testid="client-card-wallet-link">Abrir Wallet</a>
-                        @if (card.GoogleIssued && !string.IsNullOrWhiteSpace(card.GoogleSaveUrl))
-                        {
-                            <a class="btn btn-outline-secondary btn-sm" href="@card.GoogleSaveUrl" data-testid="client-card-google-save-link">Abrir Google Wallet</a>
-                        }
                     </div>
                 </article>
             }

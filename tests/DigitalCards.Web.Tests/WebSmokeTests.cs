@@ -1977,8 +1977,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Demo Coffee", html);
         Assert.DoesNotContain(secondUserName, html);
         Assert.DoesNotContain("client-cards-username", html);
-        Assert.Contains("client-card-google-status", html);
-        Assert.Contains("client-card-apple-status", html);
+        Assert.Contains("client-card-wallet-status", html);
+        Assert.DoesNotContain("client-card-google-status", html);
+        Assert.DoesNotContain("client-card-apple-status", html);
         Assert.Contains("client-card-wallet-link", html);
         Assert.Contains("client-cards-qr-card", html);
         Assert.Contains("client-cards-summary", html);
@@ -2011,6 +2012,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-dashboard-current-stamps", html);
         Assert.Contains("client-dashboard-wallet-link", html);
         Assert.Contains("client-dashboard-profile-link", html);
+        Assert.DoesNotContain("client-dashboard-change-password-link", html);
+        Assert.DoesNotContain("client-dashboard-google-count", html);
+        Assert.DoesNotContain("client-dashboard-apple-count", html);
         Assert.Contains("client-qr-card", html);
         Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("00000000-0000-0000", html);
@@ -3262,14 +3266,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         string currentPassword,
         string newPassword)
     {
-        var token = await GetAntiforgeryTokenAsync(client, "/Client/ChangePassword");
+        var token = await GetAntiforgeryTokenAsync(client, "/Client/Profile");
         return await client.PostAsync(
-            "/Client/ChangePassword",
+            "/Client/Profile?handler=ChangePassword",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["Input.CurrentPassword"] = currentPassword,
-                ["Input.NewPassword"] = newPassword,
-                ["Input.ConfirmPassword"] = newPassword,
+                ["PasswordInput.CurrentPassword"] = currentPassword,
+                ["PasswordInput.NewPassword"] = newPassword,
+                ["PasswordInput.ConfirmPassword"] = newPassword,
                 ["__RequestVerificationToken"] = token
             }));
     }
