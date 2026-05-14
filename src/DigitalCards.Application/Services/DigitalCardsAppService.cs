@@ -31,6 +31,7 @@ public sealed class DigitalCardsAppService
     private readonly IGoogleWalletService _googleWallet;
     private readonly IAppleWalletService _appleWallet;
     private readonly IAppleWalletPassRepository _appleWalletPasses;
+    private readonly IAccountLifecycleRepository _accountLifecycle;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordResetTokenRepository _passwordResetTokens;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
@@ -50,6 +51,7 @@ public sealed class DigitalCardsAppService
         IGoogleWalletService googleWallet,
         IAppleWalletService appleWallet,
         IAppleWalletPassRepository appleWalletPasses,
+        IAccountLifecycleRepository accountLifecycle,
         IEmailSender emailSender,
         IClock clock,
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
@@ -70,6 +72,7 @@ public sealed class DigitalCardsAppService
         _googleWallet = googleWallet;
         _appleWallet = appleWallet;
         _appleWalletPasses = appleWalletPasses;
+        _accountLifecycle = accountLifecycle;
         _emailSender = emailSender;
         _clock = clock;
         _passwordHasher = passwordHasher;
@@ -922,6 +925,11 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
+        if (!await IsCardActiveAsync(card.Id, cancellationToken))
+        {
+            return null;
+        }
+
         await AddStampAndNotifyWalletsAsync(
             card,
             client,
@@ -946,6 +954,11 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
+        if (!await IsCardActiveAsync(card.Id, cancellationToken))
+        {
+            return null;
+        }
+
         var publicToken = await _walletLinkTokens.CreateTokenAsync(
             card.Id,
             WalletLinkPurposes.WalletSelect,
@@ -959,6 +972,55 @@ public sealed class DigitalCardsAppService
         return new ResendWalletEmailResult(
             await ToBusinessCardDtoAsync(card, client, displayBusiness, cancellationToken),
             enrollmentUrl);
+    }
+
+    public async Task<BusinessCardLifecycleResult> SetBusinessCardActiveAsync(
+        Guid businessId,
+        Guid cardId,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return new BusinessCardLifecycleResult(false, null, "La tarjeta no existe para este negocio.");
+        }
+
+        var (card, client, business) = context.Value;
+        await _accountLifecycle.SetCardActiveAsync(
+            new ClientCardLifecycleRecord(
+                card.Id,
+                business.Id,
+                isActive,
+                _clock.UtcNow,
+                business.Id),
+            cancellationToken);
+
+        return new BusinessCardLifecycleResult(
+            true,
+            await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
+            ErrorMessage: null);
+    }
+
+    public async Task<BusinessCardLifecycleResult> DeleteBusinessCardAsync(
+        Guid businessId,
+        Guid cardId,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return new BusinessCardLifecycleResult(false, null, "La tarjeta no existe para este negocio.");
+        }
+
+        var deleted = await _accountLifecycle.DeleteBusinessCardAsync(
+            businessId,
+            cardId,
+            cancellationToken);
+
+        return deleted
+            ? new BusinessCardLifecycleResult(true, null, ErrorMessage: null)
+            : new BusinessCardLifecycleResult(false, null, "No se pudo eliminar la tarjeta.");
     }
 
     public async Task<IReadOnlyList<LoyaltyCardDto>> GetClientCardsAsync(string userNameOrEmail, CancellationToken cancellationToken = default)
@@ -1389,6 +1451,7 @@ public sealed class DigitalCardsAppService
         }
 
         var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
+        var isActive = await IsCardActiveAsync(card.Id, cancellationToken);
 
         return new BusinessCardDto(
             card.Id,
@@ -1402,7 +1465,14 @@ public sealed class DigitalCardsAppService
             applePass is not null,
             appleDeviceCount,
             applePass?.UpdatedAt,
+            isActive,
             recentEvents.Select(ToStampLedgerEventDto).ToArray());
+    }
+
+    private async Task<bool> IsCardActiveAsync(Guid cardId, CancellationToken cancellationToken)
+    {
+        var status = await _accountLifecycle.FindCardLifecycleAsync(cardId, cancellationToken);
+        return status?.IsActive ?? true;
     }
 
     private async Task AddStampAndNotifyWalletsAsync(

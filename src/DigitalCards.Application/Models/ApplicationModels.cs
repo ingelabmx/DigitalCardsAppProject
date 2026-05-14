@@ -130,9 +130,22 @@ public sealed record BusinessCardDto(
     bool AppleTracked,
     int AppleRegisteredDeviceCount,
     DateTimeOffset? AppleUpdatedAt,
+    bool IsActive,
     IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
 
 public sealed record ResendWalletEmailResult(BusinessCardDto Card, string EnrollmentUrl);
+
+public sealed record ClientCardLifecycleRecord(
+    Guid CardId,
+    Guid BusinessId,
+    bool IsActive,
+    DateTimeOffset UpdatedAt,
+    Guid? UpdatedByBusinessId);
+
+public sealed record BusinessCardLifecycleResult(
+    bool Succeeded,
+    BusinessCardDto? Card,
+    string? ErrorMessage);
 
 public sealed record BusinessDashboardDto(
     BusinessDto Business,

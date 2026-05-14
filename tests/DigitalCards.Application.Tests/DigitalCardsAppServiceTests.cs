@@ -360,13 +360,13 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.NotNull(enabled);
         Assert.True(enabled!.IsEnabled);
-        Assert.Equal(BusinessActivationStatus.PilotModern, enabled.ActivationStatus);
+        Assert.Equal(BusinessActivationStatus.ModernPrimary, enabled.ActivationStatus);
         Assert.NotNull(disabled);
         Assert.False(disabled!.IsEnabled);
-        Assert.Equal(BusinessActivationStatus.LegacyOnly, disabled.ActivationStatus);
+        Assert.Equal(BusinessActivationStatus.Inactive, disabled.ActivationStatus);
         var listed = Assert.Single(businesses);
         Assert.False(listed.IsEnabled);
-        Assert.Equal(BusinessActivationStatus.LegacyOnly, listed.ActivationStatus);
+        Assert.Equal(BusinessActivationStatus.Inactive, listed.ActivationStatus);
         Assert.Equal("pausado", listed.Notes);
     }
 
@@ -779,6 +779,7 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.True(result.Succeeded);
         Assert.False(result.Business!.IsEnabled);
+        Assert.Equal(BusinessActivationStatus.Inactive, result.Business.ActivationStatus);
         Assert.Null(await pilotBusinesses.FindByBusinessIdAsync(result.Business.BusinessId));
     }
 

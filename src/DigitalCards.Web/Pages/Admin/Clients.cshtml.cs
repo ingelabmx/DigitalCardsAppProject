@@ -52,7 +52,7 @@ public sealed class ClientsModel : PageModel
         _logger.LogInformation(
             "Admin {AdminUserId} attempted to change retired client pilot allowlist.",
             AdminAuth.GetAdminUserId(User));
-        StatusMessage = "La allowlist de clientes ya no se usa. Habilita el negocio desde Admin > Negocios.";
+        StatusMessage = "La allowlist de clientes ya no se usa. Activa el negocio desde Admin > Negocios.";
         await LoadAsync(cancellationToken);
         return Page();
     }

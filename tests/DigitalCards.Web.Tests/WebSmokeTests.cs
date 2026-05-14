@@ -334,7 +334,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("admin-cutover-status-message", updatedHtml);
-        Assert.Contains("Moderno principal", updatedHtml);
+        Assert.Contains("Activo", updatedHtml);
         Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
     }
@@ -736,7 +736,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var enableHtml = await enableResponse.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
-        Assert.Contains("Piloto habilitado", enableHtml);
+        Assert.Contains("Negocio activado", enableHtml);
 
         var allowedHtml = await client.GetStringAsync("/Business/Dashboard");
         Assert.DoesNotContain("pilot-business-blocked", allowedHtml);
@@ -753,7 +753,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var disableHtml = await disableResponse.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
-        Assert.Contains("Piloto deshabilitado", disableHtml);
+        Assert.Contains("Negocio desactivado", disableHtml);
 
         var blockedAgainHtml = await client.GetStringAsync("/Business/Dashboard");
         Assert.Contains("pilot-business-blocked", blockedAgainHtml);
@@ -1100,7 +1100,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("admin-create-business-status", html);
-        Assert.Contains("Piloto habilitado", html);
+        Assert.Contains("Activo", html);
         Assert.Contains(businessName, html);
         Assert.DoesNotContain(password, html, StringComparison.Ordinal);
 
@@ -1155,7 +1155,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Negocio creado", html);
-        Assert.Contains("Piloto deshabilitado", html);
+        Assert.Contains("Inactivo", html);
         Assert.DoesNotContain(password, html, StringComparison.Ordinal);
 
         var loginResponse = await LoginBusinessAsync(client, businessEmail, password);
@@ -1163,7 +1163,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
 
         Assert.Contains("pilot-business-blocked", dashboardHtml);
-        Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", dashboardHtml);
+        Assert.Contains("Este negocio no esta activo en Puntelio.", dashboardHtml);
     }
 
     [Fact]
@@ -1275,10 +1275,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Negocio actualizado", saveHtml);
         Assert.Contains(updatedName, saveHtml);
         Assert.Contains("~/Logos/updated.png", saveHtml);
-        Assert.Contains("Moderno principal", saveHtml);
+        Assert.Contains("Activo", saveHtml);
 
         var updatedListHtml = await client.GetStringAsync($"/Admin/Businesses?Query={updatedEmail}");
-        Assert.Contains("Moderno principal", updatedListHtml);
+        Assert.Contains("Activo", updatedListHtml);
 
         var brandingToken = ExtractAntiforgeryToken(saveHtml);
         var brandingResponse = await client.PostAsync(
@@ -1395,12 +1395,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var loginHtml = await login.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        Assert.Contains("desactivado para el flujo moderno", loginHtml);
+        Assert.Contains("inactivo en Puntelio", loginHtml);
         Assert.False(HasBusinessCookie(login));
     }
 
     [Fact]
-    public async Task AdminBusinessProfile_LegacyRetiredShowsGuardrailsInAdminAndSupport()
+    public async Task AdminBusinessProfile_NormalizesLegacyStatusToActiveInactiveLabels()
     {
         using var fake = WithFakeIntegrations();
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -1419,20 +1419,96 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["Input.BusinessLogo"] = "/img/demo-coffee.svg",
                 ["Input.IsPilotEnabled"] = "true",
                 ["Input.ActivationStatus"] = "LegacyRetired",
-                ["Input.Notes"] = "legacy retirado por test",
+                ["Input.Notes"] = "estado anterior normalizado por test",
                 ["__RequestVerificationToken"] = token
             }));
         var saveHtml = await saveResponse.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, saveResponse.StatusCode);
-        Assert.Contains("admin-business-legacy-retired-warning", saveHtml);
-        Assert.Contains("Legacy retirado", saveHtml);
+        Assert.Contains("Activo", saveHtml);
+        Assert.DoesNotContain("Legacy retirado", saveHtml);
+        Assert.DoesNotContain("admin-business-legacy-retired-warning", saveHtml);
 
         var supportHtml = await client.GetStringAsync("/Admin/Support?BusinessFilter=Demo");
 
         Assert.Contains("admin-support-businesses", supportHtml);
-        Assert.Contains("admin-support-legacy-retired", supportHtml);
-        Assert.Contains("confirmar bloqueo manual", supportHtml);
+        Assert.Contains("Activo", supportHtml);
+        Assert.DoesNotContain("admin-support-legacy-retired", supportHtml);
+        Assert.DoesNotContain("confirmar bloqueo manual", supportHtml);
+    }
+
+    [Fact]
+    public async Task AdminBusinessProfile_CanPermanentlyDeleteBusinessCardsAndWalletData()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var suffix = NewLegacySafeUserName("bdl");
+        var businessName = $"Del {suffix[..8]}";
+        var businessEmail = $"{suffix}@biz.test";
+        var userName = NewLegacySafeUserName("cdl");
+        const string password = "StartPass123!";
+
+        Guid businessId;
+        Guid clientId;
+        Guid cardId;
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var adminApp = scope.ServiceProvider.GetRequiredService<AdminAppService>();
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand("DCAdmin", "admin123"));
+            var created = await adminApp.CreateBusinessAsync(new CreateBusinessCommand(
+                businessName,
+                businessEmail,
+                password,
+                admin!.Id,
+                EnablePilot: true,
+                Notes: "delete web test"));
+            var registeredClient = await app.RegisterClientAsync(new RegisterClientCommand(
+                userName,
+                "Delete",
+                "Client",
+                $"{userName}@example.test"));
+            var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+                created.Business!.BusinessId,
+                registeredClient.UserName,
+                "http://localhost"));
+
+            businessId = created.Business.BusinessId;
+            clientId = registeredClient.Id;
+            cardId = enrollment.Card.Id;
+        }
+
+        await LoginAdminAsync(client);
+        var profilePath = $"/Admin/BusinessProfile/{businessId}";
+        var token = await GetAntiforgeryTokenAsync(client, profilePath);
+        var response = await client.PostAsync(
+            $"{profilePath}?handler=DeleteBusiness",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["confirmation"] = businessName,
+                ["__RequestVerificationToken"] = token
+            }));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Admin/Businesses", response.Headers.Location?.OriginalString);
+
+        using var verifyScope = fake.Factory.Services.CreateScope();
+        var store = verifyScope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        lock (store.Sync)
+        {
+            Assert.DoesNotContain(store.Businesses, business => business.Id == businessId);
+            Assert.DoesNotContain(store.LoyaltyCards, card => card.Id == cardId);
+            Assert.Contains(store.Clients, existingClient => existingClient.Id == clientId);
+            Assert.DoesNotContain(store.BusinessCredentials, credential => credential.BusinessId == businessId);
+            Assert.DoesNotContain(store.PilotBusinesses, access => access.BusinessId == businessId);
+            Assert.DoesNotContain(store.WalletLinkTokens, tokenRecord => tokenRecord.CardId == cardId);
+            Assert.Contains(store.AuditEvents, audit =>
+                audit.EventType == OperationalAuditEventType.BusinessDeleted &&
+                audit.BusinessId == businessId);
+        }
     }
 
     [Fact]
@@ -2411,7 +2487,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var html = await client.GetStringAsync("/Business/Dashboard");
 
         Assert.Contains("pilot-business-blocked", html);
-        Assert.Contains("Este negocio no esta habilitado para el piloto moderno.", html);
+        Assert.Contains("Este negocio no esta activo en Puntelio.", html);
         Assert.DoesNotContain("business-dashboard-summary", html);
         Assert.DoesNotContain("business-public-enrollment-panel", html);
 
@@ -2468,6 +2544,96 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-wallet-status-row", html);
         Assert.DoesNotContain("othercard1", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BusinessCards_CanDeactivateReactivateAndDeleteOwnCardOnly()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        var userName = NewLegacySafeUserName("lc");
+        var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
+        var walletToken = ExtractWalletToken(enrollment.EnrollmentUrl);
+
+        var detailPath = $"/Business/Cards?Query={userName}&CardId={enrollment.Card.Id}";
+        var detailHtml = await client.GetStringAsync(detailPath);
+        var deactivateResponse = await client.PostAsync(
+            $"/Business/Cards?handler=Deactivate&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = ExtractAntiforgeryToken(detailHtml)
+            }));
+        var inactiveHtml = await deactivateResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, deactivateResponse.StatusCode);
+        Assert.Contains("Tarjeta desactivada", inactiveHtml);
+        Assert.Contains("Inactiva", inactiveHtml);
+        Assert.Contains("business-card-reactivate-submit", inactiveHtml);
+
+        var blockedStamp = await client.PostAsync(
+            $"/Business/Cards?handler=Stamp&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = ExtractAntiforgeryToken(inactiveHtml)
+            }));
+        var blockedStampHtml = await blockedStamp.Content.ReadAsStringAsync();
+        Assert.Contains("La tarjeta esta desactivada para este negocio.", blockedStampHtml);
+        Assert.Equal(1, FindInMemoryCard(fake.Factory, enrollment.Card.Id).CurrentStamps);
+
+        var reactivateResponse = await client.PostAsync(
+            $"/Business/Cards?handler=Reactivate&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = ExtractAntiforgeryToken(blockedStampHtml)
+            }));
+        var activeHtml = await reactivateResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+        Assert.Contains("Tarjeta reactivada", activeHtml);
+        Assert.Contains("Activa", activeHtml);
+        var activeToken = ExtractAntiforgeryToken(activeHtml);
+
+        var otherCardId = SeedOtherBusinessCard(fake.Factory, "otherdel1");
+        var wrongDeleteResponse = await client.PostAsync(
+            $"/Business/Cards?handler=Delete&cardId={otherCardId}&query=otherdel1",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["confirmation"] = "otherdel1",
+                ["__RequestVerificationToken"] = activeToken
+            }));
+        var wrongDeleteHtml = await wrongDeleteResponse.Content.ReadAsStringAsync();
+        Assert.Contains("La tarjeta no existe para este negocio.", wrongDeleteHtml);
+        Assert.NotNull(FindInMemoryCardOrNull(fake.Factory, otherCardId));
+
+        var deleteResponse = await client.PostAsync(
+            $"/Business/Cards?handler=Delete&cardId={enrollment.Card.Id}&query={userName}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["confirmation"] = userName,
+                ["__RequestVerificationToken"] = activeToken
+            }));
+        var deletedHtml = await deleteResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
+        Assert.Contains("Tarjeta eliminada", deletedHtml);
+        Assert.Null(FindInMemoryCardOrNull(fake.Factory, enrollment.Card.Id));
+
+        using (var verifyScope = fake.Factory.Services.CreateScope())
+        {
+            var store = verifyScope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+            lock (store.Sync)
+            {
+                Assert.Contains(store.Clients, existingClient => existingClient.UserName == userName);
+                Assert.DoesNotContain(store.WalletLinkTokens, token => token.CardId == enrollment.Card.Id);
+            }
+        }
+
+        var walletHtml = await client.GetStringAsync($"/Wallet/Select/{walletToken}");
+        Assert.Contains("wallet-not-found", walletHtml);
     }
 
     [Fact]
@@ -2999,6 +3165,18 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         lock (store.Sync)
         {
             return store.LoyaltyCards.Single(card => card.Id == cardId);
+        }
+    }
+
+    private static LoyaltyCard? FindInMemoryCardOrNull(
+        WebApplicationFactory<Program> factory,
+        Guid cardId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<InMemoryDigitalCardsStore>();
+        lock (store.Sync)
+        {
+            return store.LoyaltyCards.SingleOrDefault(card => card.Id == cardId);
         }
     }
 
