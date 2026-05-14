@@ -62,6 +62,19 @@ public sealed class InMemoryLoyaltyCardRepository : ILoyaltyCardRepository
             _store.LoyaltyCards.Where(card => card.ClientId == clientId).ToArray());
     }
 
+    public Task<IReadOnlyList<LoyaltyCard>> ListByBusinessAsync(Guid businessId, CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            return Task.FromResult<IReadOnlyList<LoyaltyCard>>(
+                _store.LoyaltyCards
+                    .Where(card => card.BusinessId == businessId)
+                    .OrderByDescending(card => card.LastStampedAt)
+                    .ThenByDescending(card => card.CreatedAt)
+                    .ToArray());
+        }
+    }
+
     public Task<IReadOnlyList<LoyaltyCard>> SearchByBusinessAsync(
         Guid businessId,
         string query,

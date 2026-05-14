@@ -70,6 +70,7 @@ public sealed class StampModel : PageModel
                 Result.CurrentStamps,
                 Result.LifetimeStamps);
             Input = new InputModel();
+            ModelState.Clear();
             return Page();
         }
         catch (InvalidOperationException ex)

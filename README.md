@@ -35,6 +35,9 @@ tarjeta y agregar sello desde `Tarjetas` o el acceso rapido `Checadas`.
 La capa visual final refuerza sombras, espaciado, formularios, tarjetas,
 responsive y zonas de peligro para borrados permanentes sin cambiar reglas de
 negocio ni integraciones.
+El branding de negocio usa `Programa` y `Recompensa`; el pase Apple muestra esos
+datos, embebe el logo PNG del negocio cuando existe y mantiene el mismo
+`serialNumber` para no romper tarjetas instaladas.
 
 Si hay una instancia previa corriendo:
 

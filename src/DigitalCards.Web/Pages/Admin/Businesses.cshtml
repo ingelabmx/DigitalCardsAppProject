@@ -72,13 +72,10 @@
                     </div>
                     <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-form">
                         <input type="hidden" name="businessId" value="@business.BusinessId" />
-                        <label class="form-label" for="enable-notes-@business.BusinessId">Notas</label>
-                        <textarea id="enable-notes-@business.BusinessId" name="notes" class="form-control" rows="2" data-testid="admin-business-notes">@business.Notes</textarea>
                         <button class="btn btn-primary" type="submit" data-testid="admin-enable-pilot">Activar</button>
                     </form>
                     <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form">
                         <input type="hidden" name="businessId" value="@business.BusinessId" />
-                        <input type="hidden" name="notes" value="@business.Notes" />
                         <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-pilot">Desactivar</button>
                     </form>
                 </article>

@@ -34,34 +34,26 @@ public sealed class BusinessesModel : PageModel
 
     public async Task<IActionResult> OnPostEnableAsync(
         Guid businessId,
-        string? notes,
         CancellationToken cancellationToken)
     {
-        return await SetPilotAsync(businessId, notes, isEnabled: true, cancellationToken);
+        return await SetPilotAsync(businessId, isEnabled: true, cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDisableAsync(
         Guid businessId,
-        string? notes,
         CancellationToken cancellationToken)
     {
-        return await SetPilotAsync(businessId, notes, isEnabled: false, cancellationToken);
+        return await SetPilotAsync(businessId, isEnabled: false, cancellationToken);
     }
 
     private async Task<IActionResult> SetPilotAsync(
         Guid businessId,
-        string? notes,
         bool isEnabled,
         CancellationToken cancellationToken)
     {
         if (businessId == Guid.Empty)
         {
             ModelState.AddModelError(string.Empty, "El negocio no existe.");
-        }
-
-        if (notes?.Length > 500)
-        {
-            ModelState.AddModelError(string.Empty, "Las notas no pueden exceder 500 caracteres.");
         }
 
         if (!ModelState.IsValid)
@@ -75,7 +67,7 @@ public sealed class BusinessesModel : PageModel
                 businessId,
                 AdminAuth.GetAdminUserId(User),
                 isEnabled,
-                notes,
+                Notes: null,
                 isEnabled ? DigitalCards.Domain.BusinessActivationStatus.ModernPrimary : DigitalCards.Domain.BusinessActivationStatus.Inactive),
             cancellationToken);
 

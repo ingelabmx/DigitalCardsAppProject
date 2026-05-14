@@ -77,7 +77,7 @@ public sealed class BusinessProfileModel : PageModel
                 Input.BusinessEmail,
                 Input.BusinessLogo,
                 isActive,
-                Input.Notes,
+                Notes: null,
                 activationStatus),
             cancellationToken);
 
@@ -328,8 +328,7 @@ public sealed class BusinessProfileModel : PageModel
             IsPilotEnabled = profile.IsPilotEnabled,
             ActivationStatus = !profile.IsPilotEnabled || profile.ActivationStatus == BusinessActivationStatus.Inactive
                 ? BusinessActivationStatus.Inactive
-                : BusinessActivationStatus.ModernPrimary,
-            Notes = profile.Notes
+                : BusinessActivationStatus.ModernPrimary
         };
 
         BrandingInput = new BrandingInputModel
@@ -379,7 +378,6 @@ public sealed class BusinessProfileModel : PageModel
 
         public BusinessActivationStatus? ActivationStatus { get; set; }
 
-        public string? Notes { get; set; }
     }
 
     public sealed class PasswordInputModel

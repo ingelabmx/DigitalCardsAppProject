@@ -59,11 +59,13 @@ public sealed class WalletBrandingRefreshService
         }
 
         var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
-        var cards = await _loyaltyCards.SearchByBusinessAsync(
-            businessId,
-            query: string.Empty,
-            limit: NormalizeLimit(limit),
-            cancellationToken);
+        var cards = limit <= 0
+            ? await _loyaltyCards.ListByBusinessAsync(businessId, cancellationToken)
+            : await _loyaltyCards.SearchByBusinessAsync(
+                businessId,
+                query: string.Empty,
+                limit: NormalizeLimit(limit),
+                cancellationToken);
 
         var cardsWithTrackedWallets = 0;
         var googleAttemptedTotal = 0;

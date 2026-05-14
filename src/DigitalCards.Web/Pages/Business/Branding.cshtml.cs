@@ -125,7 +125,7 @@ public sealed class BrandingModel : PageModel
         }
 
         RefreshResult = await _appService.RefreshBusinessWalletBrandingAsync(
-            new WalletBrandingRefreshCommand(BusinessAuth.GetBusinessId(User), RefreshLimit),
+            new WalletBrandingRefreshCommand(BusinessAuth.GetBusinessId(User), Limit: 0),
             cancellationToken);
 
         if (RefreshResult.ErrorMessage is not null)

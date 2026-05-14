@@ -104,22 +104,20 @@ public sealed class AppleWalletPassPackageBuilder
                 {
                     message = client.UserName,
                     format = "PKBarcodeFormatQR",
-                    messageEncoding = "iso-8859-1",
-                    altText = client.UserName
+                    messageEncoding = "iso-8859-1"
                 }
             },
             barcode = new
             {
                 message = client.UserName,
                 format = "PKBarcodeFormatQR",
-                messageEncoding = "iso-8859-1",
-                altText = client.UserName
+                messageEncoding = "iso-8859-1"
             },
             storeCard = new
             {
                 primaryFields = new[]
                 {
-                    Field("business", "Negocio", business.DisplayName)
+                    Field("program", "Programa", business.ProgramName ?? business.DisplayName)
                 },
                 secondaryFields = new[]
                 {
@@ -132,12 +130,7 @@ public sealed class AppleWalletPassPackageBuilder
                 },
                 auxiliaryFields = new[]
                 {
-                    Field(
-                        "lifetimeStamps",
-                        "Historico",
-                        card.LifetimeStamps.ToString(CultureInfo.InvariantCulture),
-                        "Historico actualizado: %@"),
-                    Field("createdAt", "Alta", card.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
+                    Field("reward", "Recompensa", business.ProgramDescription ?? options.Description ?? string.Empty)
                 },
                 backFields = new[]
                 {
