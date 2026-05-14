@@ -25,6 +25,8 @@ Los tres logins usan un shell visual comun con link de regreso a `/`, manteniend
 El registro general `/Register` y el registro por negocio `/Enroll/{businessToken}`
 usan una experiencia publica guiada; el enrolamiento por negocio muestra branding
 cuando el negocio ya tiene nombre publico, logo o colores configurados.
+Los dashboards incluyen estados vacios accionables para guiar al admin, negocio
+o cliente cuando todavia no hay datos operativos.
 
 Si hay una instancia previa corriendo:
 

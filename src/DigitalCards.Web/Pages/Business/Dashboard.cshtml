@@ -145,7 +145,12 @@
                 <h2>Tarjetas recientes</h2>
                 @if (Model.Dashboard.RecentCards.Count == 0)
                 {
-                    <p class="text-muted" data-testid="business-dashboard-no-cards">Aun no hay tarjetas asociadas.</p>
+                    <div class="dashboard-empty-state compact" data-testid="business-dashboard-no-cards">
+                        <p class="eyebrow">Sin tarjetas todavia</p>
+                        <h3>Asocia tu primer cliente</h3>
+                        <p>Cuando agregues una tarjeta, aqui veras sellos, Wallets y actividad reciente.</p>
+                        <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
+                    </div>
                 }
                 else
                 {
@@ -175,7 +180,12 @@
                 <h2>Ultimos sellos</h2>
                 @if (Model.Dashboard.RecentStampEvents.Count == 0)
                 {
-                    <p class="text-muted" data-testid="business-dashboard-no-ledger">Aun no hay eventos de sellos.</p>
+                    <div class="dashboard-empty-state compact" data-testid="business-dashboard-no-ledger">
+                        <p class="eyebrow">Sin checadas recientes</p>
+                        <h3>Agrega sellos desde tarjetas</h3>
+                        <p>Los eventos apareceran aqui con resultado de Apple Wallet, Google Wallet y auditoria.</p>
+                        <a class="btn btn-outline-primary btn-sm" asp-page="/Business/Cards">Abrir tarjetas</a>
+                    </div>
                 }
                 else
                 {

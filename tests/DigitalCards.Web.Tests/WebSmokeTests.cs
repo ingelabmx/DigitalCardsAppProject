@@ -61,6 +61,31 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task Dashboards_RenderActionableEmptyStateGuidance()
+    {
+        using var fake = WithFakeIntegrations();
+
+        var adminClient = fake.Factory.CreateClient();
+        await LoginAdminAsync(adminClient);
+        var adminHtml = await adminClient.GetStringAsync("/Admin/Dashboard");
+
+        var businessClient = fake.Factory.CreateClient();
+        await LoginBusinessAsync(businessClient);
+        var businessHtml = await businessClient.GetStringAsync("/Business/Dashboard");
+
+        var userName = NewLegacySafeUserName("empty");
+        var password = "ClientPass123!";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", password);
+        var client = fake.Factory.CreateClient();
+        await LoginClientAsync(client, userName, password);
+        var clientHtml = await client.GetStringAsync("/Client/Dashboard");
+
+        Assert.Contains("admin-dashboard-next-steps", adminHtml);
+        Assert.Contains("business-dashboard-no-cards", businessHtml);
+        Assert.Contains("client-dashboard-empty-cards", clientHtml);
+    }
+
+    [Fact]
     public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
     {
         using var fake = WithFakeIntegrations(environmentName: "Production");
