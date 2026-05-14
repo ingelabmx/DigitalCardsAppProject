@@ -1002,3 +1002,10 @@ plataforma y resaltan Apple Wallet o Google Wallet segun el dispositivo:
 ```text
 docs/migration-context/87-wallet-install-guidance-v1.md
 ```
+
+La guia visual de marca centraliza tokens CSS para colores, cards, botones,
+footer y lockups Puntelio/DigitalCards:
+
+```text
+docs/migration-context/88-brand-consistency-v1.md
+```
