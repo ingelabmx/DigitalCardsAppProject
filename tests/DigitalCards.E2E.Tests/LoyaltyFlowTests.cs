@@ -294,6 +294,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
             await page.SetViewportSizeAsync(viewport.Width, viewport.Height);
             await page.GotoAsync(enrollmentUrl!);
 
+            Assert.True(await page.GetByTestId("wallet-visual-card").IsVisibleAsync());
             Assert.True(await page.GetByTestId("apple-wallet-button").IsVisibleAsync());
             Assert.True(await page.GetByTestId("google-wallet-button").IsVisibleAsync());
 

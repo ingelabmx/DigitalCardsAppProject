@@ -2114,7 +2114,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("ModernBusiness", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("jwt", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("authorization", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("push token", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
