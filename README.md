@@ -29,6 +29,8 @@ Los dashboards incluyen estados vacios accionables para guiar al admin, negocio
 o cliente cuando todavia no hay datos operativos.
 Los formularios POST aplican UX compartida de validacion/envio para evitar
 doble-submit y enfocar errores visibles.
+El panel admin mantiene paridad visual incremental con Web Forms mediante
+comandos principales, filtros en paneles y estados operativos mas escaneables.
 
 Si hay una instancia previa corriendo:
 

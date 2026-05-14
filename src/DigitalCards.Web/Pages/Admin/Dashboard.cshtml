@@ -4,7 +4,7 @@
     ViewData["Title"] = "Dashboard admin";
 }
 
-<section class="app-surface admin-dashboard-hero">
+<section class="app-surface admin-dashboard-hero admin-command-hero">
     <div>
         <p class="eyebrow">Admin</p>
         <h1 data-testid="admin-dashboard-title">@Model.AdminName</h1>
@@ -45,6 +45,29 @@
             <small>Cierra la sesion de administrador.</small>
         </a>
     </div>
+</section>
+
+<section class="admin-command-strip" data-testid="admin-dashboard-command-strip">
+    <a class="admin-command-card" asp-page="/Admin/Businesses">
+        <span>01</span>
+        <strong>Negocios</strong>
+        <small>Alta, piloto, activacion y perfil.</small>
+    </a>
+    <a class="admin-command-card" asp-page="/Admin/Support">
+        <span>02</span>
+        <strong>Soporte</strong>
+        <small>Diagnostico seguro por tarjeta.</small>
+    </a>
+    <a class="admin-command-card" asp-page="/Admin/Cutover">
+        <span>03</span>
+        <strong>Cutover</strong>
+        <small>Readiness y smoke real.</small>
+    </a>
+    <a class="admin-command-card" asp-page="/Admin/Audit">
+        <span>04</span>
+        <strong>Auditoria</strong>
+        <small>Eventos sensibles trazables.</small>
+    </a>
 </section>
 
 <section class="result-panel dashboard-empty-state" data-testid="admin-dashboard-next-steps">

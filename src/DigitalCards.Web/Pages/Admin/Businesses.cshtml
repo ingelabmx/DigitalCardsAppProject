@@ -4,7 +4,7 @@
     ViewData["Title"] = "Negocios piloto";
 }
 
-<section class="result-panel">
+<section class="result-panel admin-list-panel" data-testid="admin-businesses-panel">
     <div class="page-heading">
         <div>
             <p class="eyebrow">Admin</p>
@@ -17,11 +17,13 @@
         </div>
     </div>
 
-    <form method="get" class="search-row" data-testid="admin-business-search-form">
-        <label asp-for="Query" class="form-label visually-hidden"></label>
-        <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-business-search-input" />
-        <button class="btn btn-primary" type="submit" data-testid="admin-business-search-submit">Buscar</button>
-    </form>
+    <div class="admin-filter-card">
+        <form method="get" class="search-row" data-testid="admin-business-search-form">
+            <label asp-for="Query" class="form-label visually-hidden"></label>
+            <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-business-search-input" />
+            <button class="btn btn-primary" type="submit" data-testid="admin-business-search-submit">Buscar</button>
+        </form>
+    </div>
 
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -34,7 +36,12 @@
 
     @if (Model.Businesses.Count == 0)
     {
-        <p class="text-muted" data-testid="admin-business-no-results">No se encontraron negocios.</p>
+        <div class="dashboard-empty-state compact" data-testid="admin-business-no-results">
+            <p class="eyebrow">Sin resultados</p>
+            <h3>No se encontraron negocios</h3>
+            <p>Prueba con otro nombre o correo, o crea un negocio nuevo desde el panel admin.</p>
+            <a class="btn btn-primary btn-sm" asp-page="/Admin/CreateBusiness">Crear negocio</a>
+        </div>
     }
     else
     {
@@ -46,7 +53,7 @@
                         <h2>@business.BusinessName</h2>
                         <p>@business.BusinessEmail</p>
                     </div>
-                    <div>
+                    <div class="admin-status-stack">
                         <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-pilot-status">
                             @(business.IsEnabled ? "Piloto habilitado" : "Piloto deshabilitado")
                         </span>
