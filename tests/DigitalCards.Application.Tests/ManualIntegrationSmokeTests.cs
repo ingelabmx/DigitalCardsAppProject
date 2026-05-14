@@ -189,7 +189,8 @@ public sealed class ManualIntegrationSmokeTests
         Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:PassTypeIdentifier"), root.GetProperty("passTypeIdentifier").GetString());
         Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:TeamIdentifier"), root.GetProperty("teamIdentifier").GetString());
         Assert.Equal(GetRequired(configuration, "DigitalCards:AppleWallet:OrganizationName"), root.GetProperty("organizationName").GetString());
-        Assert.True(root.TryGetProperty("storeCard", out _));
+        Assert.True(root.TryGetProperty("generic", out _));
+        Assert.False(root.TryGetProperty("storeCard", out _));
 
         using var manifestJson = JsonDocument.Parse(ReadEntryText(archive, "manifest.json"));
         var manifest = manifestJson.RootElement;
