@@ -22,6 +22,9 @@ La pagina principal `/` es la puerta de entrada publica de Puntelio:
 - si una cookie de cliente, negocio o admin ya existe, la home muestra una accion para continuar a su dashboard.
 
 Los tres logins usan un shell visual comun con link de regreso a `/`, manteniendo cookies separadas para admin, negocio y cliente.
+El registro general `/Register` y el registro por negocio `/Enroll/{businessToken}`
+usan una experiencia publica guiada; el enrolamiento por negocio muestra branding
+cuando el negocio ya tiene nombre publico, logo o colores configurados.
 
 Si hay una instancia previa corriendo:
 

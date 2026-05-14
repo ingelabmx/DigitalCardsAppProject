@@ -556,6 +556,146 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
+.public-registration-grid,
+.public-enrollment-shell {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1fr);
+  margin: 1.5rem auto;
+  max-width: 1100px;
+}
+
+.public-registration-copy,
+.public-business-preview,
+.public-form-panel {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgb(42 53 71 / 8%);
+}
+
+.public-registration-copy {
+  background: #2a3547;
+  color: #fff;
+  display: grid;
+  gap: 1rem;
+  min-height: 460px;
+  padding: 1.5rem;
+}
+
+.public-registration-copy .eyebrow {
+  color: #9bb6ff;
+}
+
+.public-registration-copy h1 {
+  align-self: end;
+  color: #fff;
+}
+
+.public-registration-copy p {
+  color: #d6e3ff;
+}
+
+.public-step-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.public-step-list span {
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.75rem;
+}
+
+.public-form-panel {
+  padding: 1.35rem;
+}
+
+.public-consent-box {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  padding: 0.9rem 0.9rem 0.9rem 2.75rem;
+}
+
+.public-enrollment-shell {
+  --enroll-primary: #2a3547;
+  --enroll-secondary: #5d87ff;
+}
+
+.public-business-preview {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+}
+
+.public-business-brand {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.public-business-brand img,
+.public-business-brand > span {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-radius: 8px;
+  height: 72px;
+  object-fit: contain;
+  width: 88px;
+}
+
+.public-business-brand > span {
+  align-items: center;
+  color: var(--enroll-secondary);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.public-business-brand .eyebrow {
+  color: var(--enroll-secondary);
+}
+
+.public-business-brand h1 {
+  color: var(--enroll-primary);
+  font-size: 2rem;
+}
+
+.public-business-brand p {
+  color: #5a6a85;
+}
+
+.public-wallet-mini-card {
+  background: var(--enroll-primary);
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  min-height: 220px;
+  padding: 1.2rem;
+}
+
+.public-wallet-mini-card span,
+.public-wallet-mini-card p {
+  color: #d6e3ff;
+}
+
+.public-wallet-mini-card strong {
+  align-self: end;
+  font-size: 1.75rem;
+  line-height: 1.08;
+}
+
+.public-enrollment-shell .btn-primary {
+  background: var(--enroll-secondary);
+  border-color: var(--enroll-secondary);
+}
+
 .business-hero-grid {
   align-items: stretch;
   display: grid;
@@ -1732,6 +1872,9 @@ h1 {
   .gateway-grid,
   .home-gateway,
   .home-info-band,
+  .public-business-brand,
+  .public-enrollment-shell,
+  .public-registration-grid,
   .wallet-actions,
   .metric-row {
     grid-template-columns: 1fr;

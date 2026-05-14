@@ -4,80 +4,110 @@
     ViewData["Title"] = "Registro de lealtad";
 }
 
-<section class="form-panel" data-testid="public-business-enrollment-page">
+<section class="public-enrollment-shell"
+         style="--enroll-primary:@Model.PrimaryColor;--enroll-secondary:@Model.SecondaryColor;"
+         data-testid="public-business-enrollment-page">
     @if (Model.IsUnavailable)
     {
-        <h1>Registro no disponible</h1>
-        <p class="text-muted" data-testid="public-business-enrollment-unavailable">
-            El link no es valido o el negocio no esta habilitado para registro moderno.
-        </p>
+        <div class="form-panel public-form-panel">
+            <h1>Registro no disponible</h1>
+            <p class="text-muted" data-testid="public-business-enrollment-unavailable">
+                El link no es valido o el negocio no esta habilitado para registro moderno.
+            </p>
+            <a class="btn btn-outline-primary" asp-page="/Index">Volver al inicio</a>
+        </div>
     }
     else
     {
-        <p class="eyebrow">Tarjeta de lealtad</p>
-        <h1 data-testid="public-business-enrollment-business">@Model.BusinessName</h1>
-        <p class="lead">Registra tus datos para recibir el link de Wallet de este negocio.</p>
-
-        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-        {
-            <div class="alert alert-success" role="status" data-testid="public-business-enrollment-success">
-                @Model.StatusMessage
-                @if (!string.IsNullOrWhiteSpace(Model.WalletLink))
+        <div class="public-business-preview">
+            <div class="public-business-brand">
+                @if (!string.IsNullOrWhiteSpace(Model.LogoPath))
                 {
-                    <div>
-                        <a href="@Model.WalletLink" data-testid="public-business-enrollment-wallet-link">Abrir Wallet</a>
-                    </div>
+                    <img src="@Model.LogoPath" alt="" />
                 }
-            </div>
-        }
-
-        <form method="post" data-testid="public-business-enrollment-form">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="mb-3">
-                <label asp-for="Input.UserName" class="form-label"></label>
-                <input asp-for="Input.UserName" class="form-control" data-testid="public-enroll-username" />
-                <span asp-validation-for="Input.UserName" class="text-danger"></span>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.FirstName" class="form-label"></label>
-                    <input asp-for="Input.FirstName" class="form-control" data-testid="public-enroll-first-name" />
-                    <span asp-validation-for="Input.FirstName" class="text-danger"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.LastName" class="form-label"></label>
-                    <input asp-for="Input.LastName" class="form-control" data-testid="public-enroll-last-name" />
-                    <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                else
+                {
+                    <span>@Model.BusinessInitials</span>
+                }
+                <div>
+                    <p class="eyebrow">@Model.ProgramName</p>
+                    <h1 data-testid="public-business-enrollment-business">@Model.BusinessName</h1>
+                    <p>@Model.ProgramDescription</p>
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Input.Email" class="form-label"></label>
-                <input asp-for="Input.Email" class="form-control" data-testid="public-enroll-email" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            <div class="public-wallet-mini-card">
+                <span>@Model.BusinessName</span>
+                <strong>Tu tarjeta digital</strong>
+                <p>Instala en Apple Wallet o Google Wallet despues del registro.</p>
             </div>
+        </div>
 
-            <div class="mb-3">
-                <label asp-for="Input.Password" class="form-label"></label>
-                <input asp-for="Input.Password" class="form-control" data-testid="public-enroll-password" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
+        <div class="form-panel public-form-panel">
+            <p class="eyebrow">Registro de lealtad</p>
+            <h2>Recibe tu link Wallet</h2>
+            <p class="lead">Registra tus datos para quedar asociado a este negocio.</p>
 
-            <div class="form-check mb-3">
-                <input asp-for="Input.AcceptTerms" class="form-check-input" data-testid="public-enroll-accept-terms" />
-                <label asp-for="Input.AcceptTerms" class="form-check-label">
-                    Acepto los <a asp-page="/Privacy" target="_blank" rel="noopener">terminos y privacidad</a>.
-                </label>
-                <span asp-validation-for="Input.AcceptTerms" class="text-danger"></span>
-            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+            {
+                <div class="alert alert-success" role="status" data-testid="public-business-enrollment-success">
+                    @Model.StatusMessage
+                    @if (!string.IsNullOrWhiteSpace(Model.WalletLink))
+                    {
+                        <div class="mt-2">
+                            <a class="btn btn-primary btn-sm" href="@Model.WalletLink" data-testid="public-business-enrollment-wallet-link">Abrir Wallet</a>
+                        </div>
+                    }
+                </div>
+            }
 
-            <button class="btn btn-primary" type="submit" data-testid="public-enroll-submit">Registrarme</button>
-        </form>
+            <form method="post" data-testid="public-business-enrollment-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.UserName" class="form-label"></label>
+                    <input asp-for="Input.UserName" class="form-control form-control-lg" data-testid="public-enroll-username" />
+                    <span asp-validation-for="Input.UserName" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Input.FirstName" class="form-label"></label>
+                        <input asp-for="Input.FirstName" class="form-control form-control-lg" data-testid="public-enroll-first-name" />
+                        <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Input.LastName" class="form-label"></label>
+                        <input asp-for="Input.LastName" class="form-control form-control-lg" data-testid="public-enroll-last-name" />
+                        <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control form-control-lg" data-testid="public-enroll-email" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Password" class="form-label"></label>
+                    <input asp-for="Input.Password" class="form-control form-control-lg" data-testid="public-enroll-password" />
+                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3 public-consent-box">
+                    <input asp-for="Input.AcceptTerms" class="form-check-input" data-testid="public-enroll-accept-terms" />
+                    <label asp-for="Input.AcceptTerms" class="form-check-label">
+                        Acepto los <a asp-page="/Privacy" target="_blank" rel="noopener">terminos y privacidad</a>.
+                    </label>
+                    <span asp-validation-for="Input.AcceptTerms" class="text-danger"></span>
+                </div>
+
+                <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="public-enroll-submit">Registrarme</button>
+            </form>
+        </div>
     }
 </section>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
