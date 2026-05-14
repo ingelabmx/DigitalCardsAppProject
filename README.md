@@ -383,6 +383,13 @@ del cliente. El negocio puede escanearlo para buscar/asociar la tarjeta en el
 flujo moderno. El QR no contiene tokens Wallet, passwords, CardID ni datos
 secretos.
 
+## Modo mostrador
+
+`/Business/CheckIn` permite al negocio escanear el QR real del cliente o
+capturar username/correo, validar la tarjeta asociada al negocio autenticado y
+agregar sello desde una pantalla rapida. Usa la misma logica de sellos que
+`/Business/Cards`, por lo que conserva updates Apple/Google y `StampLedger`.
+
 ## Soporte admin
 
 `/Admin/Support` permite buscar por cliente, negocio o tarjeta para revisar:
