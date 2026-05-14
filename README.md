@@ -31,7 +31,7 @@ doble-submit y enfocar errores visibles.
 El panel admin mantiene paridad visual incremental con Web Forms mediante
 comandos principales, filtros en paneles y estados operativos mas escaneables.
 El negocio tiene una ruta visual diaria: buscar o escanear cliente, validar la
-tarjeta y agregar sello desde herramientas optimizadas para mostrador.
+tarjeta y agregar sello desde `Tarjetas` o el acceso rapido `Checadas`.
 
 Si hay una instancia previa corriendo:
 
@@ -402,12 +402,12 @@ del cliente. El negocio puede escanearlo para buscar/asociar la tarjeta en el
 flujo moderno. El QR no contiene tokens Wallet, passwords, CardID ni datos
 secretos.
 
-## Modo mostrador
+## Operacion de tarjetas y checadas
 
-`/Business/CheckIn` permite al negocio escanear el QR real del cliente o
-capturar username/correo, validar la tarjeta asociada al negocio autenticado y
-agregar sello desde una pantalla rapida. Usa la misma logica de sellos que
-`/Business/Cards`, por lo que conserva updates Apple/Google y `StampLedger`.
+`/Business/Cards` concentra la busqueda por QR, username o correo, la
+validacion de tarjeta, el reenvio de Wallet y el agregado de sello. `Checadas`
+se conserva como acceso rapido para aplicar sellos. `/Business/CheckIn`
+redirige a `Tarjetas`.
 
 ## Consentimiento de cliente
 
@@ -986,7 +986,7 @@ docs/migration-context/78-client-cards-visual-v2.md
 
 La experiencia cliente final agrega guia QR/Wallet en el dashboard, estados
 Wallet mas claros por tarjeta y una explicacion del username fijo usado en QR y
-mostrador:
+busqueda operativa:
 
 ```text
 docs/migration-context/86-client-experience-final-v1.md
