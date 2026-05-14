@@ -738,6 +738,29 @@ h1 {
   justify-content: flex-end;
 }
 
+form.is-submitting {
+  cursor: progress;
+}
+
+form.is-submitting button[type="submit"],
+form.is-submitting input[type="submit"] {
+  opacity: 0.72;
+}
+
+.validation-summary-errors,
+.field-validation-error {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.validation-summary-errors {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+}
+
 .business-hero-grid {
   align-items: stretch;
   display: grid;
