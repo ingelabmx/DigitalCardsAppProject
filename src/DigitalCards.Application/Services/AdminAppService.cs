@@ -1146,6 +1146,7 @@ public sealed class AdminAppService
                 cards.Select(card => card.ClientId).Distinct().Count(),
                 cards.Sum(card => card.CurrentStamps),
                 cards.Sum(card => card.LifetimeStamps),
+                supportCards.Count(card => card.GoogleIssued || card.AppleTracked),
                 supportCards.Count(card => card.GoogleIssued),
                 supportCards.Count(card => card.AppleTracked),
                 supportCards.Sum(card => card.WalletIssueCount),
@@ -1165,6 +1166,7 @@ public sealed class AdminAppService
             clientIds.Count,
             businessReports.Sum(item => item.CurrentStampTotal),
             businessReports.Sum(item => item.LifetimeStampTotal),
+            businessReports.Sum(item => item.WalletReadyCount),
             businessReports.Sum(item => item.GoogleIssuedCount),
             businessReports.Sum(item => item.AppleTrackedCount),
             businessReports.Sum(item => item.WalletIssueCount),
@@ -1290,18 +1292,13 @@ public sealed class AdminAppService
                 : item.ErrorSummary[..160];
         }
 
-        var failed = new List<string>(capacity: 2);
-        if (item.GoogleWalletAttempted && !item.GoogleWalletSucceeded)
+        if ((item.GoogleWalletAttempted && !item.GoogleWalletSucceeded) ||
+            (item.AppleWalletAttempted && !item.AppleWalletSucceeded))
         {
-            failed.Add("Google Wallet fallo");
+            return "Tarjeta digital con alerta";
         }
 
-        if (item.AppleWalletAttempted && !item.AppleWalletSucceeded)
-        {
-            failed.Add("Apple Wallet fallo");
-        }
-
-        return string.Join(", ", failed);
+        return string.Empty;
     }
 
     private static bool HasWalletIssue(StampLedgerRecord item)

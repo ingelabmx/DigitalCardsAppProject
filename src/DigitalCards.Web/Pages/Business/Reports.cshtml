@@ -46,14 +46,9 @@
                 <small>@Model.Reports.StampsLast30Days eventos en 30 dias</small>
             </div>
             <div class="metric">
-                <span>Google Wallet</span>
-                <strong data-testid="business-report-google-count">@Model.Reports.GoogleIssuedCount emitidas</strong>
-                <small>@Model.Reports.GooglePendingCount pendientes</small>
-            </div>
-            <div class="metric">
-                <span>Apple Wallet</span>
-                <strong data-testid="business-report-apple-count">@Model.Reports.AppleTrackedCount activas</strong>
-                <small>@Model.Reports.ApplePendingCount pendientes</small>
+                <span>Tarjeta digital</span>
+                <strong data-testid="business-report-wallet-ready-count">@Model.Reports.WalletReadyCount listas</strong>
+                <small>@Model.Reports.WalletPendingCount pendientes</small>
             </div>
             <div class="metric">
                 <span>Alertas Wallet</span>
@@ -139,10 +134,7 @@
                                 <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                             </div>
                             <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
-                            <p>
-                                Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
-                                &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
-                            </p>
+                            <p>Tarjeta: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
                             @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                             {
                                 <p class="text-danger">Error: @item.ErrorSummary</p>
@@ -156,13 +148,19 @@
 </section>
 
 @functions {
-    private static string WalletStatus(bool attempted, bool succeeded)
+    private static string WalletStatus(
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded)
     {
-        if (!attempted)
+        if (!googleAttempted && !appleAttempted)
         {
             return "No aplica";
         }
 
-        return succeeded ? "OK" : "Fallo";
+        return (googleAttempted && !googleSucceeded) || (appleAttempted && !appleSucceeded)
+            ? "Con alerta"
+            : "Actualizada";
     }
 }

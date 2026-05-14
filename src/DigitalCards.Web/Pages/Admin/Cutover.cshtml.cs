@@ -249,8 +249,7 @@ public sealed record CutoverBusinessViewModel(
         AddSignal(hasBranding, "Branding configurado", "Branding pendiente", ready, missing);
         AddSignal(report?.CardCount > 0, "Tarjetas asociadas", "Sin tarjetas asociadas", ready, missing);
         AddSignal(report?.LastStampedAt is not null, "Sellos recientes", "Sin sellos recientes", ready, missing);
-        AddSignal((report?.GoogleIssuedCount ?? 0) > 0, "Google Wallet emitida", "Google Wallet pendiente", ready, missing);
-        AddSignal((report?.AppleTrackedCount ?? 0) > 0, "Apple Wallet tracked", "Apple Wallet pendiente", ready, missing);
+        AddSignal((report?.WalletReadyCount ?? 0) > 0, "Tarjeta digital emitida", "Tarjeta digital pendiente", ready, missing);
         AddSignal((report?.WalletIssueCount ?? 0) == 0, "Sin errores Wallet", "Errores Wallet recientes", ready, missing);
 
         return new CutoverBusinessViewModel(

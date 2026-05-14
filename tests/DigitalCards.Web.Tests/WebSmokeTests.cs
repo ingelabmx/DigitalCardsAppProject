@@ -897,7 +897,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 GoogleWalletSucceeded: false,
                 AppleWalletAttempted: false,
                 AppleWalletSucceeded: false,
-                "Google Wallet fallo seguro",
+                "Tarjeta digital fallo seguro",
                 DateTimeOffset.UtcNow));
         }
 
@@ -914,7 +914,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Emitida", html);
         Assert.Contains("admin-support-operational-state", html);
         Assert.Contains("Errores recientes seguros", html);
-        Assert.Contains("Google Wallet fallo seguro", html);
+        Assert.Contains("Tarjeta digital fallo seguro", html);
         Assert.Contains("LegacySync", html);
         Assert.Contains("ModernBusiness", html);
         Assert.Contains("Sellos:", html);
@@ -958,7 +958,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("admin-support-status-message", html);
         Assert.Contains("AdminRetry", html);
-        Assert.Contains("Google: OK", html);
+        Assert.Contains("Tarjeta: Actualizada", html);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("auth-token", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("push-token", html, StringComparison.OrdinalIgnoreCase);
@@ -1046,7 +1046,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 GoogleWalletSucceeded: false,
                 AppleWalletAttempted: false,
                 AppleWalletSucceeded: false,
-                "Google Wallet fallo seguro",
+                "Tarjeta digital fallo seguro",
                 DateTimeOffset.UtcNow));
         }
 
@@ -2469,7 +2469,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-reports", html);
         Assert.Contains("business-report-card-count", html);
         Assert.Contains("business-report-client-count", html);
-        Assert.Contains("business-report-google-count", html);
+        Assert.Contains("business-report-wallet-ready-count", html);
         Assert.Contains("business-report-period", html);
         Assert.Contains("business-report-recent-client", html);
         Assert.Contains(userName, html);

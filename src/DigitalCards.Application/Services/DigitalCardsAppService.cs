@@ -887,6 +887,8 @@ public sealed class DigitalCardsAppService
             reportCards.Sum(card => card.CurrentStamps),
             reportCards.Sum(card => card.LifetimeStamps),
             events.Count(item => item.CreatedAt >= since30Days),
+            reportCards.Count(card => card.GoogleIssued || card.AppleTracked),
+            reportCards.Count(card => !card.GoogleIssued && !card.AppleTracked),
             reportCards.Count(card => card.GoogleIssued),
             reportCards.Count(card => !card.GoogleIssued),
             reportCards.Count(card => card.AppleTracked),
