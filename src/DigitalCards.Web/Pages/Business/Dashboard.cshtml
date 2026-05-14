@@ -82,18 +82,6 @@
                 <span>Sellos historicos</span>
                 <strong data-testid="business-dashboard-lifetime-stamps">@Model.Dashboard.LifetimeStampTotal</strong>
             </div>
-            <div class="metric">
-                <span>Google Wallet</span>
-                <strong data-testid="business-dashboard-google-count">@Model.Dashboard.GoogleIssuedCount</strong>
-            </div>
-            <div class="metric">
-                <span>Apple Wallet</span>
-                <strong data-testid="business-dashboard-apple-count">@Model.Dashboard.AppleTrackedCount</strong>
-            </div>
-            <div class="metric">
-                <span>Alertas Wallet</span>
-                <strong data-testid="business-dashboard-wallet-issues">@Model.Dashboard.WalletIssueCount</strong>
-            </div>
         </div>
 
         <div class="business-dashboard-grid">
@@ -144,7 +132,7 @@
                     <div class="dashboard-empty-state compact" data-testid="business-dashboard-no-ledger">
                         <p class="eyebrow">Sin checadas recientes</p>
                         <h3>Agrega sellos desde tarjetas</h3>
-                        <p>Los eventos apareceran aqui con resultado de Apple Wallet, Google Wallet y auditoria.</p>
+                        <p>Los eventos apareceran aqui con el resultado de la tarjeta digital y auditoria.</p>
                         <a class="btn btn-outline-primary btn-sm" asp-page="/Business/Cards">Abrir tarjetas</a>
                     </div>
                 }
@@ -158,11 +146,8 @@
                                     <strong>@item.ClientName</strong>
                                     <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                 </div>
-                                <p>@item.Source &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
-                                <p>
-                                    Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
-                                    &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
-                                </p>
+                                <p>Sellos actuales @item.NewCheckQTY</p>
+                                <p>Estado: @CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
                                 @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                 {
                                     <p class="text-danger">Error: @item.ErrorSummary</p>
@@ -177,13 +162,19 @@
 }
 
 @functions {
-    private static string WalletStatus(bool attempted, bool succeeded)
+    private static string CardStatus(
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded)
     {
-        if (!attempted)
+        var hasGoogleAlert = googleAttempted && !googleSucceeded;
+        var hasAppleAlert = appleAttempted && !appleSucceeded;
+        if (hasGoogleAlert || hasAppleAlert)
         {
-            return "No aplica";
+            return "Con alerta";
         }
 
-        return succeeded ? "OK" : "Fallo";
+        return "Actualizado";
     }
 }

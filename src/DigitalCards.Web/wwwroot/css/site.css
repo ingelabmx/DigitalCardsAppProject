@@ -1227,6 +1227,21 @@ form.is-submitting input[type="submit"] {
   margin: 0;
 }
 
+.business-card-search-row {
+  align-items: center;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(140px, 0.28fr);
+}
+
+.business-card-search-row .form-control {
+  min-height: 40px;
+  padding-bottom: 0.48rem;
+  padding-top: 0.48rem;
+}
+
+.business-card-search-row .btn {
+  min-width: 150px;
+}
+
 .qr-scanner-panel {
   background: #f6f9fc;
   border: 1px solid #dde3ea;
@@ -1276,7 +1291,7 @@ form.is-submitting input[type="submit"] {
 .business-card-quick-summary {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 1rem 0;
 }
 
@@ -1345,10 +1360,11 @@ form.is-submitting input[type="submit"] {
 .business-card-result-state .wallet-status-pending {
   align-items: center;
   display: inline-flex;
-  height: 26px;
+  height: auto;
   justify-content: center;
-  padding: 0;
-  width: 26px;
+  min-height: 26px;
+  padding: 0.25rem 0.55rem;
+  width: auto;
 }
 
 .detail-heading {
@@ -1403,14 +1419,34 @@ form.is-submitting input[type="submit"] {
 }
 
 .business-card-delete-form {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
+  align-items: stretch;
+  display: grid;
   gap: 0.5rem;
 }
 
 .business-card-delete-form .form-control {
   max-width: 220px;
+}
+
+.danger-action-panel {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  margin-top: 0.85rem;
+  padding: 0.85rem;
+}
+
+.danger-action-panel p {
+  color: #9a3412;
+  margin-bottom: 0;
+}
+
+.danger-action-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .business-detail-card-face {
@@ -1657,12 +1693,12 @@ form.is-submitting input[type="submit"] {
 
 .business-dashboard-summary {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .business-dashboard-grid {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 

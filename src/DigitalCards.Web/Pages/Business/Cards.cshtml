@@ -1,4 +1,5 @@
 @page
+@using DigitalCards.Application.Models
 @model DigitalCards.Web.Pages.Business.CardsModel
 @{
     ViewData["Title"] = "Tarjetas de negocio";
@@ -23,7 +24,7 @@
     else
     {
         <div class="business-card-toolbar">
-            <form method="get" class="search-row" data-testid="business-card-search-form">
+            <form method="get" class="search-row business-card-search-row" data-testid="business-card-search-form">
                 <label asp-for="Query" class="form-label visually-hidden"></label>
                 <input asp-for="Query" class="form-control" placeholder="username, correo o QR" data-testid="business-card-search-input" />
                 <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
@@ -64,14 +65,6 @@
                 <span>Seleccionada</span>
                 <strong>@(Model.Detail is null ? "No" : "Si")</strong>
             </div>
-            <div>
-                <span>Google emitidas</span>
-                <strong>@Model.Results.Count(card => card.GoogleIssued)</strong>
-            </div>
-            <div>
-                <span>Apple activas</span>
-                <strong>@Model.Results.Count(card => card.AppleTracked)</strong>
-            </div>
         </div>
 
         <div class="business-card-grid">
@@ -106,13 +99,14 @@
                                asp-route-cardId="@card.Id"
                                data-testid="business-card-result">
                                 <div>
-                                    <strong>@card.Client.UserName</strong>
+                                    <strong>@FullClientName(card.Client)</strong>
                                     <small>@card.Client.Email</small>
                                 </div>
                                 <div class="business-card-result-state">
                                     <span>@card.CurrentStamps sellos</span>
-                                    <span class="@(card.GoogleIssued ? "wallet-status-ok" : "wallet-status-pending")">G</span>
-                                    <span class="@(card.AppleTracked ? "wallet-status-ok" : "wallet-status-pending")">A</span>
+                                    <span class="@(IsCardReady(card) ? "wallet-status-ok" : "wallet-status-pending")">
+                                        @(IsCardReady(card) ? "Tarjeta lista" : "Tarjeta pendiente")
+                                    </span>
                                 </div>
                             </a>
                         }
@@ -153,11 +147,6 @@
                             </strong>
                         </div>
                         <div class="business-card-action-buttons">
-                            <a class="btn btn-outline-secondary"
-                               href="#business-card-management-panel"
-                               data-testid="business-card-manage-link">
-                                Administrar
-                            </a>
                             <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
                                 <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit" disabled="@(!Model.Detail.IsActive)">
                                     Reenviar Wallet
@@ -173,7 +162,7 @@
 
                     <div class="business-management-note" id="business-card-management-panel" data-testid="business-card-management-panel">
                         <strong>Administracion de tarjeta</strong>
-                        <p>Estas acciones afectan solo la relacion del cliente con este negocio. No borran la cuenta global del cliente.</p>
+                        <p>Desactivar pausa la operacion de esta tarjeta. Eliminar borra permanentemente la relacion del cliente con este negocio, sin borrar su cuenta global.</p>
                         <div class="business-card-action-buttons">
                             @if (Model.Detail.IsActive)
                             {
@@ -191,16 +180,22 @@
                                     </button>
                                 </form>
                             }
-                            <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form">
+                        </div>
+                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel">
+                            <div>
+                                <strong>Eliminar permanentemente</strong>
+                                <p>Esta accion elimina la tarjeta, sus links Wallet y sus datos asociados para este negocio. Escribe <b>@Model.Detail.Client.UserName</b> para confirmar.</p>
+                            </div>
+                            <div class="danger-action-controls">
                                 <input class="form-control form-control-sm"
                                        name="confirmation"
                                        placeholder="Escribe @Model.Detail.Client.UserName"
                                        data-testid="business-card-delete-confirmation" />
                                 <button class="btn btn-outline-danger" type="submit" data-testid="business-card-delete-submit">
-                                    Eliminar permanentemente
+                                    Eliminar
                                 </button>
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="business-detail-card-face" data-testid="business-detail-card-face">
@@ -227,16 +222,8 @@
                             <strong data-testid="business-card-lifetime-stamps">@Model.Detail.LifetimeStamps</strong>
                         </div>
                         <div class="metric">
-                            <span>Google Wallet</span>
-                            <strong data-testid="business-card-google-status">@(Model.Detail.GoogleIssued ? "Emitida" : "Pendiente")</strong>
-                        </div>
-                        <div class="metric">
-                            <span>Apple Wallet</span>
-                            <strong data-testid="business-card-apple-status">@(Model.Detail.AppleTracked ? "Tracked" : "Pendiente")</strong>
-                        </div>
-                        <div class="metric">
-                            <span>Dispositivos Apple</span>
-                            <strong data-testid="business-card-apple-devices">@Model.Detail.AppleRegisteredDeviceCount</strong>
+                            <span>Tarjeta</span>
+                            <strong data-testid="business-card-wallet-status">@(IsCardReady(Model.Detail) ? "Lista" : "Pendiente")</strong>
                         </div>
                         <div class="metric">
                             <span>Ultimo update</span>
@@ -245,11 +232,8 @@
                     </div>
 
                     <div class="business-wallet-status-row" data-testid="business-wallet-status-row">
-                        <span class="@(Model.Detail.GoogleIssued ? "wallet-status-ok" : "wallet-status-pending")">
-                            Google @(Model.Detail.GoogleIssued ? "emitida" : "pendiente")
-                        </span>
-                        <span class="@(Model.Detail.AppleTracked ? "wallet-status-ok" : "wallet-status-pending")">
-                            Apple @(Model.Detail.AppleTracked ? "activa" : "pendiente")
+                        <span class="@(IsCardReady(Model.Detail) ? "wallet-status-ok" : "wallet-status-pending")">
+                            @(IsCardReady(Model.Detail) ? "Tarjeta lista" : "Tarjeta pendiente")
                         </span>
                     </div>
 
@@ -266,16 +250,12 @@
                                 {
                                     <div class="stamp-ledger-item" data-testid="stamp-ledger-event">
                                         <div>
-                                            <strong>@item.Source</strong>
+                                            <strong>@CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</strong>
                                             <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                         </div>
                                         <p>
-                                            Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY
-                                            &middot; Historicos: @item.PreviousHistoricCheckQTY -> @item.NewHistoricCheckQTY
-                                        </p>
-                                        <p>
-                                            Google: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded)
-                                            &middot; Apple: @WalletStatus(item.AppleWalletAttempted, item.AppleWalletSucceeded)
+                                            Sellos actuales @item.NewCheckQTY
+                                            &middot; Historicos @item.NewHistoricCheckQTY
                                         </p>
                                         @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                         {
@@ -293,14 +273,29 @@
 </section>
 
 @functions {
-    private static string WalletStatus(bool attempted, bool succeeded)
+    private static string FullClientName(ClientDto client)
     {
-        if (!attempted)
+        var fullName = $"{client.FirstName} {client.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? client.UserName : fullName;
+    }
+
+    private static bool IsCardReady(BusinessCardDto card)
+    {
+        return card.GoogleIssued || card.AppleTracked;
+    }
+
+    private static string CardStatus(
+        bool googleAttempted,
+        bool googleSucceeded,
+        bool appleAttempted,
+        bool appleSucceeded)
+    {
+        if ((googleAttempted && !googleSucceeded) || (appleAttempted && !appleSucceeded))
         {
-            return "No aplica";
+            return "Con alerta";
         }
 
-        return succeeded ? "OK" : "Fallo";
+        return "Actualizado";
     }
 }
 

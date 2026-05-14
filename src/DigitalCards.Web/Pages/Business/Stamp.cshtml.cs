@@ -69,6 +69,7 @@ public sealed class StampModel : PageModel
                 Result.Id,
                 Result.CurrentStamps,
                 Result.LifetimeStamps);
+            Input = new InputModel();
             return Page();
         }
         catch (InvalidOperationException ex)

@@ -2302,12 +2302,17 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-dashboard-summary", html);
         Assert.Contains("business-dashboard-card-count", html);
         Assert.Contains("business-dashboard-current-stamps", html);
-        Assert.Contains("business-dashboard-google-count", html);
+        Assert.DoesNotContain("business-dashboard-google-count", html);
+        Assert.DoesNotContain("business-dashboard-apple-count", html);
+        Assert.DoesNotContain("business-dashboard-wallet-issues", html);
         Assert.DoesNotContain("business-reports-link", html);
         Assert.Contains("business-dashboard-recent-card", html);
         Assert.Contains("business-dashboard-ledger-event", html);
         Assert.Contains(userName, html);
-        Assert.Contains("ModernBusiness", html);
+        Assert.Contains("Actualizado", html);
+        Assert.DoesNotContain("LegacySync", html);
+        Assert.DoesNotContain("Google:", html);
+        Assert.DoesNotContain("Apple:", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("authorization", html, StringComparison.OrdinalIgnoreCase);
@@ -2542,6 +2547,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-card-result-state", html);
         Assert.Contains("business-detail-card-face", html);
         Assert.Contains("business-wallet-status-row", html);
+        Assert.Contains("business-card-wallet-status", html);
+        Assert.DoesNotContain("business-card-google-status", html);
+        Assert.DoesNotContain("business-card-apple-status", html);
+        Assert.DoesNotContain("business-card-apple-devices", html);
+        Assert.DoesNotContain("business-card-manage-link", html);
         Assert.DoesNotContain("othercard1", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
     }
@@ -2742,8 +2752,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("stamp-ledger-event", html);
-        Assert.Contains("ModernBusiness", text);
-        Assert.Contains("Sellos: 1 -> 2", text);
+        Assert.Contains("Actualizado", text);
+        Assert.Contains("Sellos actuales 2", text);
+        Assert.DoesNotContain("ModernBusiness", text);
+        Assert.DoesNotContain("Sellos: 1 -> 2", text);
         Assert.DoesNotContain("secret", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("jwt", html, StringComparison.OrdinalIgnoreCase);
     }

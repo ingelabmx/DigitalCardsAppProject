@@ -36,8 +36,8 @@
                 <strong data-testid="lifetime-stamps">@Model.Result.LifetimeStamps</strong>
             </div>
             <div class="metric">
-                <span>Google Wallet</span>
-                <strong data-testid="google-status">@(Model.Result.GoogleObjectId is null ? "Pendiente" : "Actualizada")</strong>
+                <span>Tarjeta</span>
+                <strong data-testid="card-status">@(Model.Result.GoogleObjectId is null ? "Pendiente" : "Actualizada")</strong>
             </div>
         </div>
     }
