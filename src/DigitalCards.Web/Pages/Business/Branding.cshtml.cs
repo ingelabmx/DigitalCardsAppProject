@@ -32,9 +32,6 @@ public sealed class BrandingModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    [BindProperty]
-    public int RefreshLimit { get; set; } = 25;
-
     public BusinessBrandingSettingsDto? Settings { get; private set; }
 
     public string? StatusMessage { get; private set; }
@@ -53,6 +50,37 @@ public sealed class BrandingModel : PageModel
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
+    {
+        return await SaveAsync(refreshAfterSave: false, cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostSaveAndRefreshAsync(CancellationToken cancellationToken)
+    {
+        return await SaveAsync(refreshAfterSave: true, cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostRefreshWalletsAsync(CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(cancellationToken, populateInput: true))
+        {
+            return RedirectToPage("/Business/Logout");
+        }
+
+        if (IsPilotBlocked)
+        {
+            ModelState.AddModelError(string.Empty, PilotBlockMessage!);
+            return Page();
+        }
+
+        if (await RefreshWalletsAsync(cancellationToken))
+        {
+            StatusMessage = ToRefreshStatus(RefreshResult!);
+        }
+
+        return Page();
+    }
+
+    private async Task<IActionResult> SaveAsync(bool refreshAfterSave, CancellationToken cancellationToken)
     {
         if (!await LoadAsync(cancellationToken, populateInput: false))
         {
@@ -108,22 +136,22 @@ public sealed class BrandingModel : PageModel
         _logger.LogInformation(
             "Business {BusinessId} updated self-service branding.",
             Settings.BusinessId);
-        return Page();
-    }
 
-    public async Task<IActionResult> OnPostRefreshWalletsAsync(CancellationToken cancellationToken)
-    {
-        if (!await LoadAsync(cancellationToken, populateInput: true))
+        if (!refreshAfterSave)
         {
-            return RedirectToPage("/Business/Logout");
-        }
-
-        if (IsPilotBlocked)
-        {
-            ModelState.AddModelError(string.Empty, PilotBlockMessage!);
             return Page();
         }
 
+        if (await RefreshWalletsAsync(cancellationToken))
+        {
+            StatusMessage = $"Branding actualizado. {ToRefreshStatus(RefreshResult!)}";
+        }
+
+        return Page();
+    }
+
+    private async Task<bool> RefreshWalletsAsync(CancellationToken cancellationToken)
+    {
         RefreshResult = await _appService.RefreshBusinessWalletBrandingAsync(
             new WalletBrandingRefreshCommand(BusinessAuth.GetBusinessId(User), Limit: 0),
             cancellationToken);
@@ -131,16 +159,14 @@ public sealed class BrandingModel : PageModel
         if (RefreshResult.ErrorMessage is not null)
         {
             ModelState.AddModelError(string.Empty, RefreshResult.ErrorMessage);
-            return Page();
+            return false;
         }
-
-        StatusMessage = ToRefreshStatus(RefreshResult);
 
         _logger.LogInformation(
             "Business {BusinessId} refreshed wallet branding.",
             Settings!.BusinessId);
 
-        return Page();
+        return true;
     }
 
     private async Task<bool> LoadAsync(CancellationToken cancellationToken, bool populateInput)
@@ -179,7 +205,7 @@ public sealed class BrandingModel : PageModel
     {
         var attempted = result.GoogleWalletAttempted + result.AppleWalletAttempted;
         var succeeded = result.GoogleWalletSucceeded + result.AppleWalletSucceeded;
-        var status = $"Refresh Wallet ejecutado: {result.CardsWithTrackedWallets} tarjetas con Wallet, {succeeded}/{attempted} actualizaciones completadas.";
+        var status = $"Actualizacion ejecutada: {result.CardsWithTrackedWallets} tarjetas digitales, {succeeded}/{attempted} actualizaciones completadas.";
         return result.HasWarnings
             ? $"{status} Hubo alertas seguras: {string.Join(", ", result.SafeErrors)}."
             : status;

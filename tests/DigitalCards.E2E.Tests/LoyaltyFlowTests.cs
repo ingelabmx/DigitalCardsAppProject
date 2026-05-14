@@ -214,10 +214,12 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GotoAsync(new Uri(_fixture.BaseAddress, cardsUrl!).ToString());
         await page.GetByTestId("business-card-search-input").FillAsync(userName);
         await page.GetByTestId("business-card-search-submit").ClickAsync();
-        Assert.True(await page.GetByTestId("business-card-quick-summary").IsVisibleAsync());
+        Assert.Equal(0, await page.GetByTestId("business-card-quick-summary").CountAsync());
+        Assert.True(await page.GetByTestId("business-qr-scanner").IsVisibleAsync());
         await page.GetByTestId("business-card-result").First.ClickAsync();
         Assert.Contains(userName, await page.GetByTestId("business-card-detail").InnerTextAsync());
         Assert.True(await page.GetByTestId("business-card-action-strip").IsVisibleAsync());
+        Assert.True(await BusinessCardManagementIsAtBottomAsync(page));
         await page.GetByTestId("business-card-resend-submit").ClickAsync();
         Assert.Contains("Correo reenviado", await page.GetByTestId("business-card-status").InnerTextAsync());
         await page.GetByTestId("business-card-stamp-submit").ClickAsync();
@@ -226,6 +228,13 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var ledgerText = await page.GetByTestId("stamp-ledger-list").InnerTextAsync();
         Assert.Contains("Actualizado", ledgerText);
         Assert.Contains("Sellos actuales 2", ledgerText);
+
+        await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Branding").ToString());
+        await page.GetByTestId("business-branding-program-name").FillAsync("Playwright Rewards");
+        await page.GetByTestId("business-branding-description").FillAsync("Recompensa Playwright");
+        await page.GetByTestId("business-branding-save-refresh-submit").ClickAsync();
+        Assert.Contains("Branding actualizado. Actualizacion ejecutada", await page.GetByTestId("business-branding-status").InnerTextAsync());
+        Assert.True(await page.GetByTestId("business-wallet-branding-refresh-result").IsVisibleAsync());
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Business/Dashboard").ToString());
         Assert.True(await page.GetByTestId("business-dashboard-summary").IsVisibleAsync());
@@ -368,6 +377,20 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
             }");
 
         Assert.True(fits);
+    }
+
+    private static async Task<bool> BusinessCardManagementIsAtBottomAsync(IPage page)
+    {
+        return await page.GetByTestId("business-card-detail").EvaluateAsync<bool>(
+            @"element => {
+                const ledger = element.querySelector('[data-testid=""stamp-ledger-list""]');
+                const management = element.querySelector('[data-testid=""business-card-management-panel""]');
+                const deactivate = element.querySelector('[data-testid=""business-card-deactivate-submit""], [data-testid=""business-card-reactivate-submit""]');
+                const deleteButton = element.querySelector('[data-testid=""business-card-delete-submit""]');
+                if (!ledger || !management || !deactivate || !deleteButton) return false;
+                return Boolean(ledger.compareDocumentPosition(management) & Node.DOCUMENT_POSITION_FOLLOWING)
+                    && Boolean(deactivate.compareDocumentPosition(deleteButton) & Node.DOCUMENT_POSITION_FOLLOWING);
+            }");
     }
 
     private static string NewLegacySafeUserName(string prefix)
