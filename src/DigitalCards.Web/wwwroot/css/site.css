@@ -1322,6 +1322,37 @@ h1 {
   margin-top: 1rem;
 }
 
+.client-cards-summary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.client-cards-summary div,
+.client-card-progress-panel {
+  background: #f6f9fc;
+  border: 1px solid #e5eaef;
+  border-left: 4px solid #5d87ff;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.client-cards-summary span,
+.client-card-progress-panel span {
+  color: #7c8fac;
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.client-cards-summary strong,
+.client-card-progress-panel strong {
+  color: #2a3547;
+  display: block;
+}
+
 .client-card-row {
   display: grid;
   gap: 1rem;
@@ -1360,6 +1391,24 @@ h1 {
 .client-card-state {
   display: grid;
   gap: 0.75rem;
+}
+
+.client-card-progress-panel {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.client-card-progress-bar {
+  background: #e5eaef;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.client-card-progress-bar div {
+  background: #5d87ff;
+  border-radius: inherit;
+  height: 100%;
 }
 
 .client-stamp-track {
@@ -1492,6 +1541,7 @@ h1 {
   }
 
   .client-dashboard-metrics,
+  .client-cards-summary,
   .client-identity-panel,
   .business-action-grid {
     grid-template-columns: 1fr;

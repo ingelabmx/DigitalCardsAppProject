@@ -1787,6 +1787,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("client-card-apple-status", html);
         Assert.Contains("client-card-wallet-link", html);
         Assert.Contains("client-cards-qr-card", html);
+        Assert.Contains("client-cards-summary", html);
+        Assert.Contains("client-card-progress-panel", html);
         Assert.Contains("<svg", html, StringComparison.OrdinalIgnoreCase);
     }
 

@@ -27,6 +27,11 @@
 
 @if (Model.Cards.Count > 0)
 {
+    var totalCurrentStamps = Model.Cards.Sum(card => card.CurrentStamps);
+    var totalLifetimeStamps = Model.Cards.Sum(card => card.LifetimeStamps);
+    var googleIssued = Model.Cards.Count(card => card.GoogleIssued);
+    var appleTracked = Model.Cards.Count(card => card.AppleTracked);
+
     <section class="result-panel mt-3" data-testid="client-card-results">
         <div class="page-heading">
             <div>
@@ -36,9 +41,31 @@
             <span class="badge text-bg-light">@Model.Cards.Count tarjeta(s)</span>
         </div>
 
+        <div class="client-cards-summary" data-testid="client-cards-summary">
+            <div>
+                <span>Tarjetas</span>
+                <strong>@Model.Cards.Count</strong>
+            </div>
+            <div>
+                <span>Sellos actuales</span>
+                <strong>@totalCurrentStamps</strong>
+            </div>
+            <div>
+                <span>Sellos historicos</span>
+                <strong>@totalLifetimeStamps</strong>
+            </div>
+            <div>
+                <span>Wallets</span>
+                <strong>@googleIssued G / @appleTracked A</strong>
+            </div>
+        </div>
+
         <div class="client-card-list">
             @foreach (var card in Model.Cards)
             {
+                var stampsToGoal = Math.Max(0, 10 - Math.Min(card.CurrentStamps, 10));
+                var stampProgress = Math.Min(card.CurrentStamps, 10) * 10;
+
                 <article class="client-card-row" data-testid="client-card">
                     <div class="client-card-main">
                         <div class="client-card-face">
@@ -55,6 +82,19 @@
 
                         <div class="client-card-state">
                             <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                            <div class="client-card-progress-panel" data-testid="client-card-progress-panel">
+                                <div>
+                                    <span>Progreso</span>
+                                    <strong>
+                                        @(stampsToGoal == 0
+                                            ? "Tarjeta completa"
+                                            : $"Faltan {stampsToGoal} sello(s)")
+                                    </strong>
+                                </div>
+                                <div class="client-card-progress-bar" aria-label="Progreso de sellos">
+                                    <div style="width:@stampProgress%"></div>
+                                </div>
+                            </div>
                             <div class="metric-row metric-row-wide">
                                 <div class="metric">
                                     <span>Sellos actuales</span>
