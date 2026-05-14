@@ -16,10 +16,9 @@ http://localhost:5031
 
 La pagina principal `/` es la puerta de entrada publica de Puntelio:
 
-- clientes entran a `/Client/Login` o crean cuenta desde `/Register`;
+- clientes entran a `/Client/Login`;
 - negocios entran a `/Business/Login`;
-- admins entran a `/Admin/Login`;
-- si una cookie de cliente, negocio o admin ya existe, la home muestra una accion para continuar a su dashboard.
+- el acceso admin queda oculto y se abre directo desde `/Admin/Login`.
 
 Los tres logins usan un shell visual comun con link de regreso a `/`, manteniendo cookies separadas para admin, negocio y cliente.
 El registro general `/Register` y el registro por negocio `/Enroll/{businessToken}`
@@ -748,8 +747,8 @@ Flujos modernos:
 - Cliente: `/Client/ForgotPassword` y `/Client/ResetPassword/{token}`.
 - Negocio: `/Business/ForgotPassword` y `/Business/ResetPassword/{token}`.
 
-El reset envia correo por SMTP real o queda visible en `/Dev/Outbox` cuando el
-provider de email es fake. El token publico del link se guarda solo como
+El reset envia correo por SMTP real o se captura internamente con el provider
+fake durante pruebas. El token publico del link se guarda solo como
 `SHA-256` en `ModernPasswordResetToken`, vence en una hora y se marca como
 usado despues del cambio exitoso. La tabla legacy `PasswordResetToken` de Web
 Forms no se modifica.
@@ -799,7 +798,6 @@ Google Wallet y push Apple Wallet. Los diagnosticos seguros se activan con:
 {
   "DigitalCards": {
     "Diagnostics": {
-      "EnableDevOutbox": false,
       "EnableWalletDiagnostics": true
     }
   }
@@ -812,10 +810,8 @@ Endpoint:
 /internal/wallet-diagnostics/{CardID-or-enrollment-token}
 ```
 
-En `Development`, `/Dev/Outbox` sigue disponible para Playwright y fakes. En
-un ambiente real, Outbox queda apagado por default; si se necesita soporte
-temporal, activa `DigitalCards:Diagnostics:EnableDevOutbox=true` y entra con
-cookie admin. Al terminar, vuelve a `false`.
+La pagina web de Outbox fue retirada. Playwright y las pruebas automatizadas
+usan los enlaces que el flujo ya devuelve o leen los servicios fake internamente.
 
 ## Smoke real minimo
 

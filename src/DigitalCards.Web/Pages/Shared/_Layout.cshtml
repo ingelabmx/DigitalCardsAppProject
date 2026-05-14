@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-@inject IWebHostEnvironment HostEnvironment
-@inject IConfiguration Configuration
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DigitalCards</title>
+    <title>@ViewData["Title"] - Puntelio</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DigitalCards.Web.styles.css" asp-append-version="true" />
@@ -24,10 +22,6 @@
         requestPath.Value?.EndsWith("/ForgotPassword", StringComparison.OrdinalIgnoreCase) == true ||
         requestPath.Value?.EndsWith("/ResetPassword", StringComparison.OrdinalIgnoreCase) == true;
     var useLegacyShell = isAuthenticatedArea && !isAuthPage && (isAdmin || isBusiness || isClient);
-    var showDevOutboxLink = DigitalCards.Web.Diagnostics.DevToolAccess.ShouldRenderDevOutboxLink(
-        HostEnvironment,
-        Configuration,
-        User);
     var shellRole = isAdmin ? "Administradores" : isBusiness ? "Duenos de negocios" : "Cliente";
     var shellName = isAdmin
         ? User.FindFirst(AdminAuth.AdminNameClaim)?.Value ?? "Admin"
@@ -45,9 +39,9 @@
             <aside class="legacy-left-sidebar" id="legacy-sidebar" data-testid="legacy-sidebar">
                 <div class="legacy-brand">
                     <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link">
-                        <span class="legacy-brand-mark brand-mark">DC</span>
+                        <span class="legacy-brand-mark brand-mark">P</span>
                         <span>
-                            <strong>DigitalCards</strong>
+                            <strong>Puntelio</strong>
                             <small>@shellRole</small>
                         </span>
                     </a>
@@ -156,18 +150,6 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Business/Login">Negocios</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Register">Registro cliente</a>
-                            </li>
-                            @if (showDevOutboxLink)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-page="/Dev/Outbox">Outbox fake</a>
-                                </li>
-                            }
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Admin/Login">Admin</a>
-                            </li>
                         </ul>
                     </div>
                 </div>
@@ -181,7 +163,7 @@
 
         <footer class="border-top footer text-muted">
             <div class="container">
-                &copy; 2026 - Puntelio DigitalCards. Propiedad de IngeLabs.
+                &copy; 2026 - Puntelio. Propiedad de IngeLabs.
             </div>
         </footer>
     }

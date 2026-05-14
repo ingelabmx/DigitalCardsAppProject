@@ -1,7 +1,6 @@
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
-using DigitalCards.Web.Diagnostics;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -16,20 +15,17 @@ public sealed class DashboardModel : PageModel
     private readonly DigitalCardsAppService _appService;
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly PilotAccessService _pilotAccess;
-    private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
 
     public DashboardModel(
         DigitalCardsAppService appService,
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
         PilotAccessService pilotAccess,
-        IWebHostEnvironment environment,
         IConfiguration configuration)
     {
         _appService = appService;
         _businessEnrollmentLinks = businessEnrollmentLinks;
         _pilotAccess = pilotAccess;
-        _environment = environment;
         _configuration = configuration;
     }
 
@@ -40,11 +36,6 @@ public sealed class DashboardModel : PageModel
     public string? PilotBlockMessage { get; private set; }
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
-
-    public bool ShowDevOutboxLink => DevToolAccess.ShouldRenderDevOutboxLink(
-        _environment,
-        _configuration,
-        User);
 
     public string? GeneratedEnrollmentUrl { get; private set; }
 
