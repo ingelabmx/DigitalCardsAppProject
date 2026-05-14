@@ -40,6 +40,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("/Admin/Login", html);
         Assert.DoesNotContain("home-outbox-link", html);
         Assert.DoesNotContain("Outbox fake", html);
+        Assert.DoesNotContain("Apple Wallet", html);
+        Assert.DoesNotContain("Google Wallet", html);
         Assert.DoesNotContain("data-testid=\"legacy-shell\"", html);
     }
 
@@ -80,6 +82,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-login-form", businessHtml);
         Assert.Contains("client-login-form", clientHtml);
         Assert.DoesNotContain("demo@digitalcards.test", businessHtml);
+        Assert.DoesNotContain("auth-role-mark", businessHtml);
+        Assert.DoesNotContain("auth-role-mark", clientHtml);
+        Assert.DoesNotContain("Entrar como negocio", businessHtml);
+        Assert.DoesNotContain("Entrar como cliente", clientHtml);
         Assert.Contains("Volver al inicio", adminHtml);
         Assert.Contains("Volver al inicio", businessHtml);
         Assert.Contains("Volver al inicio", clientHtml);
