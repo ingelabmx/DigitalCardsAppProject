@@ -21,6 +21,8 @@ La pagina principal `/` es la puerta de entrada publica de Puntelio:
 - admins entran a `/Admin/Login`;
 - si una cookie de cliente, negocio o admin ya existe, la home muestra una accion para continuar a su dashboard.
 
+Los tres logins usan un shell visual comun con link de regreso a `/`, manteniendo cookies separadas para admin, negocio y cliente.
+
 Si hay una instancia previa corriendo:
 
 ```powershell

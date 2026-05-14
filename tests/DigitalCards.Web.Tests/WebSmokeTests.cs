@@ -39,6 +39,28 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task LoginPages_ReturnSharedVisualAuthShell()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient();
+
+        var adminHtml = await client.GetStringAsync("/Admin/Login");
+        var businessHtml = await client.GetStringAsync("/Business/Login");
+        var clientHtml = await client.GetStringAsync("/Client/Login");
+
+        Assert.Contains("auth-gateway", adminHtml);
+        Assert.Contains("auth-gateway", businessHtml);
+        Assert.Contains("auth-gateway", clientHtml);
+        Assert.Contains("admin-login-form", adminHtml);
+        Assert.Contains("business-login-form", businessHtml);
+        Assert.Contains("client-login-form", clientHtml);
+        Assert.DoesNotContain("demo@digitalcards.test", businessHtml);
+        Assert.Contains("Volver al inicio", adminHtml);
+        Assert.Contains("Volver al inicio", businessHtml);
+        Assert.Contains("Volver al inicio", clientHtml);
+    }
+
+    [Fact]
     public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
     {
         using var fake = WithFakeIntegrations(environmentName: "Production");
