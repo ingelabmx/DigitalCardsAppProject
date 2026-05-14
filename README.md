@@ -987,3 +987,11 @@ Wallets y progreso por tarjeta:
 ```text
 docs/migration-context/78-client-cards-visual-v2.md
 ```
+
+La experiencia cliente final agrega guia QR/Wallet en el dashboard, estados
+Wallet mas claros por tarjeta y una explicacion del username fijo usado en QR y
+mostrador:
+
+```text
+docs/migration-context/86-client-experience-final-v1.md
+```

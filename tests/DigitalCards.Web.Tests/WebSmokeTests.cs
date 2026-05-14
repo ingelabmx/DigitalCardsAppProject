@@ -124,6 +124,28 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task ClientPages_RenderFinalExperienceUx()
+    {
+        using var fake = WithFakeIntegrations();
+        var userName = NewLegacySafeUserName("cux");
+        const string password = "ClientPass123!";
+        await RegisterClientAsync(fake.Factory, userName, $"{userName}@example.test", password);
+
+        var client = fake.Factory.CreateClient();
+        await LoginClientAsync(client, userName, password);
+
+        var dashboardHtml = await client.GetStringAsync("/Client/Dashboard");
+        var cardsHtml = await client.GetStringAsync("/Client/Cards");
+        var profileHtml = await client.GetStringAsync("/Client/Profile");
+
+        Assert.Contains("client-wallet-guide", dashboardHtml);
+        Assert.Contains("client-cards-empty-state", cardsHtml);
+        Assert.Contains("client-profile-helper", profileHtml);
+        Assert.DoesNotContain("PasswordHash", dashboardHtml);
+        Assert.DoesNotContain("WalletSelectToken", cardsHtml);
+    }
+
+    [Fact]
     public async Task DevOutbox_InProductionWithoutFlag_IsNotAvailableAndLinksAreHidden()
     {
         using var fake = WithFakeIntegrations(environmentName: "Production");

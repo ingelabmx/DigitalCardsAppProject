@@ -81,7 +81,11 @@
                         </div>
 
                         <div class="client-card-state">
-                            <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                            <div class="client-wallet-badges" data-testid="client-wallet-badges">
+                                <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                                <span class="badge @(card.GoogleIssued ? "text-bg-success" : "text-bg-secondary")">Google @(card.GoogleIssued ? "lista" : "pendiente")</span>
+                                <span class="badge @(card.AppleTracked ? "text-bg-success" : "text-bg-secondary")">Apple @(card.AppleTracked ? "activa" : "pendiente")</span>
+                            </div>
                             <div class="client-card-progress-panel" data-testid="client-card-progress-panel">
                                 <div>
                                     <span>Progreso</span>
@@ -139,6 +143,16 @@
 else
 {
     <section class="result-panel mt-3" data-testid="client-card-results">
-        <p class="text-muted">Todavia no tienes tarjetas asociadas.</p>
+        <div class="dashboard-empty-state" data-testid="client-cards-empty-state">
+            <div>
+                <p class="eyebrow">Sin tarjetas asociadas</p>
+                <h2>Visita un negocio participante</h2>
+                <p>Escanea el QR del negocio o pide que te asocien desde el mostrador para recibir tu link Wallet.</p>
+            </div>
+            <div class="dashboard-empty-actions">
+                <a class="btn btn-primary" asp-page="/Client/Dashboard">Ver mi QR</a>
+                <a class="btn btn-outline-primary" asp-page="/Client/Profile">Revisar perfil</a>
+            </div>
+        </div>
     </section>
 }
