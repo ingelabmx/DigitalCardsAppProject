@@ -60,8 +60,8 @@ body.legacy-shell {
 
 .brand-wordmark-public {
   display: block;
-  height: 38px;
-  max-width: 170px;
+  height: clamp(52px, 7vw, 64px);
+  max-width: min(48vw, 290px);
   object-fit: contain;
   width: auto;
 }
@@ -2397,7 +2397,7 @@ body.public-shell {
 }
 
 .public-shell .navbar {
-  min-height: 68px;
+  min-height: 88px;
 }
 
 .public-shell .navbar.bg-white {
@@ -2760,8 +2760,8 @@ body.public-shell {
   }
 
   .brand-wordmark-public {
-    height: 34px;
-    max-width: 148px;
+    height: clamp(44px, 12vw, 52px);
+    max-width: min(58vw, 220px);
   }
 
   .brand-wordmark-shell img {

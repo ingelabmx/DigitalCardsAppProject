@@ -67,6 +67,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Propiedad de IngeLabs", homeHtml);
         Assert.Contains("--dc-primary", css);
         Assert.Contains("--dc-radius", css);
+        Assert.Contains("height: clamp(52px, 7vw, 64px);", css);
+        Assert.Contains("max-width: min(48vw, 290px);", css);
+        Assert.Contains("min-height: 88px;", css);
         Assert.Contains("puntelio-brand-mark", adminHtml);
         Assert.Contains("/img/puntelio-branding.svg", adminHtml);
         Assert.DoesNotContain("brand-logo-letter", adminHtml);
