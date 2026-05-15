@@ -38,9 +38,9 @@ public sealed class CutoverModel : PageModel
 
     public string? StatusMessage { get; private set; }
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public IActionResult OnGet()
     {
-        await LoadAsync(cancellationToken);
+        return RedirectToPage("/Admin/Businesses");
     }
 
     public async Task<IActionResult> OnPostStatusAsync(CancellationToken cancellationToken)

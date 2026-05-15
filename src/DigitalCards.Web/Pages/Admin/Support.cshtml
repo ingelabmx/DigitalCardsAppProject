@@ -1,5 +1,6 @@
 @page
 @model DigitalCards.Web.Pages.Admin.SupportModel
+@using DigitalCards.Domain
 @{
     ViewData["Title"] = "Soporte admin";
 }
@@ -246,6 +247,77 @@
     }
 </section>
 
+<section class="result-panel" data-testid="admin-support-audit-events">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Soporte</p>
+            <h2>Eventos operativos</h2>
+            <p class="lead">Auditoria segura de cambios sensibles, exportaciones y acciones de soporte.</p>
+        </div>
+    </div>
+
+    <form method="get" class="admin-filter-bar" data-testid="admin-support-audit-filter-form">
+        <input type="hidden" asp-for="Query" />
+        <input type="hidden" asp-for="BusinessFilter" />
+        <input type="hidden" asp-for="ClientFilter" />
+        <input type="hidden" asp-for="WalletIssuesOnly" />
+        <input type="hidden" asp-for="From" />
+        <input type="hidden" asp-for="To" />
+        <div>
+            <label asp-for="AuditSearch" class="form-label">Buscar evento</label>
+            <input asp-for="AuditSearch" class="form-control" data-testid="admin-support-audit-search" />
+        </div>
+        <div>
+            <label asp-for="AuditEventType" class="form-label">Evento</label>
+            <select asp-for="AuditEventType" class="form-select" asp-items="Html.GetEnumSelectList<OperationalAuditEventType>()" data-testid="admin-support-audit-event-type">
+                <option value="">Todos</option>
+            </select>
+        </div>
+        <div>
+            <label asp-for="AuditFrom" class="form-label">Desde</label>
+            <input asp-for="AuditFrom" class="form-control" type="datetime-local" data-testid="admin-support-audit-from" />
+        </div>
+        <div>
+            <label asp-for="AuditTo" class="form-label">Hasta</label>
+            <input asp-for="AuditTo" class="form-control" type="datetime-local" data-testid="admin-support-audit-to" />
+        </div>
+        <button class="btn btn-primary" type="submit" data-testid="admin-support-audit-submit">Filtrar eventos</button>
+    </form>
+
+    @if (Model.AuditEvents.Count == 0)
+    {
+        <p class="text-muted" data-testid="admin-support-audit-empty">No hay eventos operativos para los filtros actuales.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle legacy-table" data-testid="admin-support-audit-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Evento</th>
+                        <th>Actor</th>
+                        <th>Objetivo</th>
+                        <th>Resumen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.AuditEvents)
+                {
+                    <tr data-testid="admin-support-audit-row">
+                        <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
+                        <td><span class="badge text-bg-secondary">@item.EventType</span></td>
+                        <td>@item.ActorAdminLabel</td>
+                        <td>@AuditTarget(item)</td>
+                        <td>@item.Summary</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
 @functions {
     private static string WalletStatus(
         bool googleAttempted,
@@ -277,5 +349,30 @@
         return source == DigitalCards.Application.Models.StampLedgerSource.LegacySync
             ? "Operacion externa"
             : source.ToString();
+    }
+
+    private static string AuditTarget(DigitalCards.Application.Models.AdminAuditEventDto item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.BusinessLabel))
+        {
+            return $"Negocio: {item.BusinessLabel}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.ClientLabel))
+        {
+            return $"Cliente: {item.ClientLabel}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.TargetAdminLabel))
+        {
+            return $"Admin: {item.TargetAdminLabel}";
+        }
+
+        if (item.CardId is not null)
+        {
+            return $"Tarjeta: {SupportModel.Suffix(item.CardId.Value)}";
+        }
+
+        return "-";
     }
 }

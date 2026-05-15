@@ -17,6 +17,7 @@ public sealed class DigitalCardsAppService
     private const int ClientEmailMaxLength = 30;
     private const string DefaultPrimaryColor = "#111827";
     private const string DefaultSecondaryColor = "#2563eb";
+    private const string DefaultCustomFieldColor = "#FFFFFF";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
 
@@ -458,7 +459,8 @@ public sealed class DigitalCardsAppService
                 business.PrimaryColor,
                 business.SecondaryColor,
                 business.ProgramName,
-                business.ProgramDescription),
+                business.ProgramDescription,
+                business.CustomFieldColor),
             cancellationToken);
 
         var now = _clock.UtcNow;
@@ -544,8 +546,9 @@ public sealed class DigitalCardsAppService
 
         var publicName = NormalizeBrandingValue(command.PublicName, business.Name);
         var logoPath = NormalizeBrandingValue(command.LogoPath, business.LogoPath);
-        var primaryColor = NormalizeBrandingValue(command.PrimaryColor, DefaultPrimaryColor);
-        var secondaryColor = NormalizeBrandingValue(command.SecondaryColor, DefaultSecondaryColor);
+        var primaryColor = NormalizeBrandingColor(command.PrimaryColor, DefaultPrimaryColor);
+        var secondaryColor = NormalizeBrandingColor(command.SecondaryColor, DefaultSecondaryColor);
+        var customFieldColor = NormalizeBrandingColor(command.CustomFieldColor, DefaultCustomFieldColor);
         var programName = NormalizeBrandingValue(command.ProgramName, DefaultProgramName);
         var programDescription = NormalizeBrandingValue(command.ProgramDescription, DefaultProgramDescription);
         var validationError = ValidateBusinessBranding(
@@ -553,6 +556,7 @@ public sealed class DigitalCardsAppService
             logoPath,
             primaryColor,
             secondaryColor,
+            customFieldColor,
             programName,
             programDescription);
         if (validationError is not null)
@@ -566,12 +570,13 @@ public sealed class DigitalCardsAppService
                 publicName,
                 logoPath,
                 primaryColor,
-              secondaryColor,
-              programName,
-              programDescription,
-              _clock.UtcNow,
-              updatedByAdminUserId: null),
-          cancellationToken);
+                secondaryColor,
+                customFieldColor,
+                programName,
+                programDescription,
+                _clock.UtcNow,
+                updatedByAdminUserId: null),
+            cancellationToken);
 
         var settings = await ToBusinessBrandingSettingsAsync(business, cancellationToken);
         return new BusinessSelfServiceBrandingResult(settings, ErrorMessage: null);
@@ -632,7 +637,8 @@ public sealed class DigitalCardsAppService
             card.GoogleObjectId is not null,
             displayBusiness.LogoPath,
             displayBusiness.PrimaryColor,
-            displayBusiness.SecondaryColor);
+            displayBusiness.SecondaryColor,
+            displayBusiness.CustomFieldColor);
     }
 
     public async Task<GoogleWalletIssueResult?> SelectGoogleWalletAsync(string token, CancellationToken cancellationToken = default)
@@ -1347,7 +1353,8 @@ public sealed class DigitalCardsAppService
             branding.PrimaryColor,
             branding.SecondaryColor,
             branding.ProgramName,
-            branding.ProgramDescription);
+            branding.ProgramDescription,
+            branding.CustomFieldColor);
     }
 
     private async Task<BusinessBrandingSettingsDto> ToBusinessBrandingSettingsAsync(
@@ -1369,6 +1376,7 @@ public sealed class DigitalCardsAppService
             branding?.LogoPath ?? business.LogoPath,
             branding?.PrimaryColor ?? DefaultPrimaryColor,
             branding?.SecondaryColor ?? DefaultSecondaryColor,
+            branding?.CustomFieldColor ?? DefaultCustomFieldColor,
             branding?.ProgramName ?? DefaultProgramName,
             branding?.ProgramDescription ?? DefaultProgramDescription,
             branding?.UpdatedAt);
@@ -1649,6 +1657,7 @@ public sealed class DigitalCardsAppService
         string logoPath,
         string primaryColor,
         string secondaryColor,
+        string customFieldColor,
         string programName,
         string programDescription)
     {
@@ -1677,6 +1686,11 @@ public sealed class DigitalCardsAppService
             return "El color secundario debe usar formato #RRGGBB.";
         }
 
+        if (!IsHexColor(customFieldColor))
+        {
+            return "El color de campos personalizados debe usar formato #RRGGBB.";
+        }
+
         if (string.IsNullOrWhiteSpace(programName))
         {
             return "El nombre del programa es requerido.";
@@ -1698,6 +1712,14 @@ public sealed class DigitalCardsAppService
     private static string NormalizeBrandingValue(string value, string fallback)
     {
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string NormalizeBrandingColor(string value, string fallback)
+    {
+        var normalized = NormalizeBrandingValue(value, fallback);
+        return normalized.Length == 6 && normalized[0] != '#'
+            ? $"#{normalized}"
+            : normalized;
     }
 
     private static string NormalizeConsentValue(string value, string fallback)

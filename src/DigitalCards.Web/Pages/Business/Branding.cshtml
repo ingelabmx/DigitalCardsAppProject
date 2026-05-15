@@ -83,19 +83,24 @@
                 <div class="branding-color-row">
                     <div class="mb-3">
                         <label asp-for="Input.PrimaryColor" class="form-label">Color primario</label>
-                        <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" />
+                        <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" data-branding-color-input="primary" />
                     </div>
                     <div class="mb-3">
                         <label asp-for="Input.SecondaryColor" class="form-label">Color secundario</label>
-                        <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" />
+                        <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" data-branding-color-input="secondary" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.CustomFieldColor" class="form-label">Color de campos personalizados</label>
+                        <input asp-for="Input.CustomFieldColor" class="form-control" maxlength="7" data-testid="business-branding-custom-field-color" data-branding-color-input="custom" />
                     </div>
                 </div>
 
                 <div class="branding-preview"
-                     style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;"
+                     style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;--brand-custom:@Model.Input.CustomFieldColor;"
                      data-testid="business-branding-preview">
                     <span>@Model.Input.ProgramName</span>
                     <strong>@Model.Input.PublicName</strong>
+                    <small>@Model.Input.ProgramDescription</small>
                 </div>
 
                 <div class="form-actions">

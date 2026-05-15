@@ -12,21 +12,13 @@
     </div>
 
     <div class="action-grid admin-action-grid" data-testid="admin-action-grid">
-        <a class="action-card" asp-page="/Admin/CreateBusiness" data-testid="admin-create-business-link">
-            <span>Crear negocio</span>
-            <small>Registra un negocio y envia invitacion de acceso.</small>
-        </a>
         <a class="action-card" asp-page="/Admin/Businesses" data-testid="admin-businesses-link">
             <span>Negocios</span>
-            <small>Activa, desactiva o administra perfiles.</small>
+            <small>Registra, activa, desactiva o administra perfiles.</small>
         </a>
         <a class="action-card" asp-page="/Admin/Clients" data-testid="admin-clients-link">
             <span>Clientes</span>
             <small>Consulta clientes y limpia cuentas de prueba con borrado seguro.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Cutover" data-testid="admin-cutover-link">
-            <span>Activacion</span>
-            <small>Revisa readiness y cambia negocios entre activo e inactivo.</small>
         </a>
         <a class="action-card" asp-page="/Admin/AdminUsers" data-testid="admin-users-link">
             <span>Administradores</span>
@@ -38,11 +30,7 @@
         </a>
         <a class="action-card" asp-page="/Admin/Support" data-testid="admin-support-link">
             <span>Soporte</span>
-            <small>Diagnostico seguro de tarjetas, Wallets y sellos.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Audit" data-testid="admin-audit-link">
-            <span>Auditoria</span>
-            <small>Revisa eventos sensibles sin exponer secretos.</small>
+            <small>Diagnostico seguro, eventos operativos y soporte.</small>
         </a>
         <a class="action-card" asp-page="/Admin/Logout" data-testid="admin-logout-link">
             <span>Salir admin</span>
@@ -55,27 +43,17 @@
     <a class="admin-command-card" asp-page="/Admin/Businesses">
         <span>01</span>
         <strong>Negocios</strong>
-        <small>Alta, activacion y perfil.</small>
+        <small>Alta, estado y perfil.</small>
     </a>
     <a class="admin-command-card" asp-page="/Admin/Support">
         <span>02</span>
         <strong>Soporte</strong>
-        <small>Diagnostico seguro por tarjeta.</small>
+        <small>Diagnostico y eventos operativos.</small>
     </a>
     <a class="admin-command-card" asp-page="/Admin/Clients">
         <span>03</span>
         <strong>Clientes</strong>
         <small>Consulta y limpieza de pruebas.</small>
-    </a>
-    <a class="admin-command-card" asp-page="/Admin/Cutover">
-        <span>04</span>
-        <strong>Activacion</strong>
-        <small>Readiness y smoke real.</small>
-    </a>
-    <a class="admin-command-card" asp-page="/Admin/Audit">
-        <span>05</span>
-        <strong>Auditoria</strong>
-        <small>Eventos sensibles trazables.</small>
     </a>
 </section>
 
@@ -88,8 +66,7 @@
         </p>
     </div>
     <div class="dashboard-empty-actions">
-        <a class="btn btn-primary" asp-page="/Admin/CreateBusiness">Crear negocio</a>
-        <a class="btn btn-outline-primary" asp-page="/Admin/Businesses">Activar negocio</a>
-        <a class="btn btn-outline-secondary" asp-page="/Admin/Cutover">Revisar activacion</a>
+        <a class="btn btn-primary" asp-page="/Admin/Businesses">Administrar negocios</a>
+        <a class="btn btn-outline-primary" asp-page="/Admin/Support">Revisar soporte</a>
     </div>
 </section>

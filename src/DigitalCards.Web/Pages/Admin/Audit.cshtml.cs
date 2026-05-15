@@ -11,13 +11,6 @@ namespace DigitalCards.Web.Pages.Admin;
 [Authorize(Policy = AdminAuth.Policy)]
 public sealed class AuditModel : PageModel
 {
-    private readonly AdminAppService _adminApp;
-
-    public AuditModel(AdminAppService adminApp)
-    {
-        _adminApp = adminApp;
-    }
-
     [BindProperty(SupportsGet = true)]
     public OperationalAuditEventType? EventType { get; set; }
 
@@ -30,13 +23,15 @@ public sealed class AuditModel : PageModel
     [BindProperty(SupportsGet = true)]
     public DateTimeOffset? To { get; set; }
 
-    public IReadOnlyList<AdminAuditEventDto> Events { get; private set; } = [];
-
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public IActionResult OnGet()
     {
-        Events = await _adminApp.SearchAuditAsync(
-            new AdminAuditQuery(EventType, Search, From, To, Limit: 100),
-            cancellationToken);
+        return RedirectToPage("/Admin/Support", new
+        {
+            AuditEventType = EventType,
+            AuditSearch = Search,
+            AuditFrom = From,
+            AuditTo = To
+        });
     }
 
     public static string Suffix(Guid? id)

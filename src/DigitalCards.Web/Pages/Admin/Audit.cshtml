@@ -1,95 +1,9 @@
 @page
-@using DigitalCards.Domain
 @model DigitalCards.Web.Pages.Admin.AuditModel
 @{
-    ViewData["Title"] = "Auditoria operativa";
+    ViewData["Title"] = "Soporte";
 }
 
-<section class="app-surface">
-    <div class="section-header">
-        <div>
-            <p class="eyebrow">Admin</p>
-            <h1>Auditoria operativa</h1>
-            <p class="lead">Eventos sensibles de administracion, soporte y cambios de activacion.</p>
-        </div>
-        <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-audit-back-link">Dashboard</a>
-    </div>
-
-    <form method="get" class="admin-filter-bar" data-testid="admin-audit-filter-form">
-        <div>
-            <label asp-for="Search" class="form-label">Buscar</label>
-            <input asp-for="Search" class="form-control" data-testid="admin-audit-search" />
-        </div>
-        <div>
-            <label asp-for="EventType" class="form-label">Evento</label>
-            <select asp-for="EventType" class="form-select" asp-items="Html.GetEnumSelectList<OperationalAuditEventType>()" data-testid="admin-audit-event-type">
-                <option value="">Todos</option>
-            </select>
-        </div>
-        <div>
-            <label asp-for="From" class="form-label">Desde</label>
-            <input asp-for="From" class="form-control" type="datetime-local" data-testid="admin-audit-from" />
-        </div>
-        <div>
-            <label asp-for="To" class="form-label">Hasta</label>
-            <input asp-for="To" class="form-control" type="datetime-local" data-testid="admin-audit-to" />
-        </div>
-        <button class="btn btn-primary" type="submit" data-testid="admin-audit-submit">Filtrar</button>
-    </form>
-</section>
-
-<section class="app-surface">
-    @if (Model.Events.Count == 0)
-    {
-        <p class="text-muted" data-testid="admin-audit-empty">No hay eventos de auditoria para los filtros actuales.</p>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table align-middle legacy-table" data-testid="admin-audit-table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Evento</th>
-                        <th>Actor</th>
-                        <th>Objetivo</th>
-                        <th>Resumen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var item in Model.Events)
-                {
-                    <tr data-testid="admin-audit-row">
-                        <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
-                        <td><span class="badge text-bg-secondary">@item.EventType</span></td>
-                        <td>@item.ActorAdminLabel</td>
-                        <td>
-                            @if (!string.IsNullOrWhiteSpace(item.BusinessLabel))
-                            {
-                                <span>Negocio: @item.BusinessLabel</span>
-                            }
-                            else if (!string.IsNullOrWhiteSpace(item.ClientLabel))
-                            {
-                                <span>Cliente: @item.ClientLabel</span>
-                            }
-                            else if (!string.IsNullOrWhiteSpace(item.TargetAdminLabel))
-                            {
-                                <span>Admin: @item.TargetAdminLabel</span>
-                            }
-                            else if (item.CardId is not null)
-                            {
-                                <span>Tarjeta: @AuditModel.Suffix(item.CardId)</span>
-                            }
-                            else
-                            {
-                                <span>-</span>
-                            }
-                        </td>
-                        <td>@item.Summary</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    }
+<section class="result-panel">
+    <p class="text-muted">Redirigiendo a Soporte.</p>
 </section>

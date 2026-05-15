@@ -26,6 +26,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                    LogoPath,
                    PrimaryColor,
                    SecondaryColor,
+                   CustomFieldColor,
                    ProgramName,
                    ProgramDescription,
                    UpdatedAt,
@@ -60,6 +61,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 LogoPath,
                 PrimaryColor,
                 SecondaryColor,
+                CustomFieldColor,
                 ProgramName,
                 ProgramDescription,
                 UpdatedAt,
@@ -70,6 +72,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 @LogoPath,
                 @PrimaryColor,
                 @SecondaryColor,
+                @CustomFieldColor,
                 @ProgramName,
                 @ProgramDescription,
                 @UpdatedAt,
@@ -79,6 +82,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 LogoPath = values(LogoPath),
                 PrimaryColor = values(PrimaryColor),
                 SecondaryColor = values(SecondaryColor),
+                CustomFieldColor = values(CustomFieldColor),
                 ProgramName = values(ProgramName),
                 ProgramDescription = values(ProgramDescription),
                 UpdatedAt = values(UpdatedAt),
@@ -98,6 +102,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                         branding.LogoPath,
                         branding.PrimaryColor,
                         branding.SecondaryColor,
+                        branding.CustomFieldColor,
                         branding.ProgramName,
                         branding.ProgramDescription,
                         UpdatedAt = branding.UpdatedAt.UtcDateTime,
@@ -115,17 +120,28 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
         }
     }
 
-    private sealed record BusinessBrandingRow(
-        int BusinessID,
-        string PublicName,
-        string LogoPath,
-        string PrimaryColor,
-        string SecondaryColor,
-        string ProgramName,
-        string ProgramDescription,
-        DateTime UpdatedAt,
-        int? UpdatedByAdminUserID)
+    private sealed class BusinessBrandingRow
     {
+        public int BusinessID { get; init; }
+
+        public string PublicName { get; init; } = string.Empty;
+
+        public string LogoPath { get; init; } = string.Empty;
+
+        public string PrimaryColor { get; init; } = string.Empty;
+
+        public string SecondaryColor { get; init; } = string.Empty;
+
+        public string CustomFieldColor { get; init; } = "#FFFFFF";
+
+        public string ProgramName { get; init; } = string.Empty;
+
+        public string ProgramDescription { get; init; } = string.Empty;
+
+        public DateTime UpdatedAt { get; init; }
+
+        public int? UpdatedByAdminUserID { get; init; }
+
         public BusinessBranding ToDomain()
         {
             return new BusinessBranding(
@@ -134,6 +150,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 LogoPath,
                 PrimaryColor,
                 SecondaryColor,
+                CustomFieldColor,
                 ProgramName,
                 ProgramDescription,
                 new DateTimeOffset(DateTime.SpecifyKind(UpdatedAt, DateTimeKind.Utc)),

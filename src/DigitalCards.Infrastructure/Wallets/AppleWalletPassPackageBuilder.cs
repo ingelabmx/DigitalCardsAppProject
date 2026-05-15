@@ -95,7 +95,7 @@ public sealed class AppleWalletPassPackageBuilder
             webServiceURL = settings?.WebServiceUrl,
             authenticationToken = settings?.AuthenticationToken,
             logoText = business.ProgramName ?? business.DisplayName,
-            foregroundColor = options.ForegroundColor,
+            foregroundColor = business.CustomFieldColor ?? options.ForegroundColor,
             backgroundColor = business.PrimaryColor ?? options.BackgroundColor,
             labelColor = business.SecondaryColor ?? options.LabelColor,
             barcodes = new[]

@@ -12,7 +12,8 @@ public sealed class Business
         string? primaryColor = null,
         string? secondaryColor = null,
         string? programName = null,
-        string? programDescription = null)
+        string? programDescription = null,
+        string? customFieldColor = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -32,6 +33,7 @@ public sealed class Business
         PublicName = NormalizeOptional(publicName);
         PrimaryColor = NormalizeOptional(primaryColor);
         SecondaryColor = NormalizeOptional(secondaryColor);
+        CustomFieldColor = NormalizeOptional(customFieldColor);
         ProgramName = NormalizeOptional(programName);
         ProgramDescription = NormalizeOptional(programDescription);
         GoogleClassSuffix = Slugify(Name);
@@ -52,6 +54,8 @@ public sealed class Business
     public string? PrimaryColor { get; }
 
     public string? SecondaryColor { get; }
+
+    public string? CustomFieldColor { get; }
 
     public string? ProgramName { get; }
 

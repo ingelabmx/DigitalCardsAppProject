@@ -194,7 +194,8 @@ public sealed class WalletBrandingRefreshService
             branding.PrimaryColor,
             branding.SecondaryColor,
             branding.ProgramName,
-            branding.ProgramDescription);
+            branding.ProgramDescription,
+            branding.CustomFieldColor);
     }
 
     private static int NormalizeLimit(int limit)
