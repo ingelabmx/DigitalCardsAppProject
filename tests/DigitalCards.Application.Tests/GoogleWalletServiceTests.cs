@@ -16,7 +16,8 @@ public sealed class GoogleWalletServiceTests
         var service = new GoogleWalletService(
             Options.Create(new GoogleWalletOptions
             {
-                LogoImageUri = "https://fallback.example.test/logo.png"
+                LogoImageUri = "https://fallback.example.test/logo.png",
+                HeroImageUri = "https://fallback.example.test/hero.png"
             }),
             Options.Create(new DigitalCardsInfrastructureOptions
             {
@@ -32,6 +33,7 @@ public sealed class GoogleWalletServiceTests
             "hash",
             "/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             publicName: "Runni Cafe",
+            primaryColor: "#112233",
             programName: "Runni Rewards",
             programDescription: "Cafe gratis al completar sellos.");
 
@@ -40,10 +42,13 @@ public sealed class GoogleWalletServiceTests
         Assert.Equal(
             "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             genericObject.Logo.SourceUri.Uri);
-        Assert.Equal("Runni Cafe", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Runni Rewards", genericObject.CardTitle.DefaultValue.Value);
         Assert.Equal("Runni Cafe", genericObject.Header.DefaultValue.Value);
-        Assert.Equal("Runni Rewards", genericObject.Subheader.DefaultValue.Value);
+        Assert.Null(genericObject.Subheader);
+        Assert.Null(genericObject.HeroImage);
+        Assert.Equal("#112233", genericObject.HexBackgroundColor);
         Assert.Equal("maria-test", genericObject.Barcode.Value);
+        Assert.Equal("maria-test", genericObject.Barcode.AlternateText);
 
         Assert.Collection(
             genericObject.TextModulesData,
@@ -65,6 +70,8 @@ public sealed class GoogleWalletServiceTests
                 Assert.Equal("Recompensa", module.Header);
                 Assert.Equal("Cafe gratis al completar sellos.", module.Body);
             });
+        Assert.NotEqual("Balboa Water", genericObject.CardTitle.DefaultValue.Value);
+        Assert.NotEqual("Balboa Water", genericObject.Header.DefaultValue.Value);
         Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Sellos historicos");
         Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Fecha de alta");
     }
