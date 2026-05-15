@@ -665,7 +665,8 @@ public sealed class DigitalCardsAppService
         return new WalletLandingDto(
             token,
             displayBusiness.DisplayName,
-            client.FullName,
+            ShortClientName(client),
+            client.UserName,
             card.CurrentStamps,
             displayBusiness.StampGoal,
             card.LifetimeStamps,
@@ -673,7 +674,9 @@ public sealed class DigitalCardsAppService
             displayBusiness.LogoPath,
             displayBusiness.PrimaryColor,
             displayBusiness.SecondaryColor,
-            displayBusiness.CustomFieldColor);
+            displayBusiness.CustomFieldColor,
+            displayBusiness.ProgramName,
+            RewardText(displayBusiness));
     }
 
     public async Task<GoogleWalletIssueResult?> SelectGoogleWalletAsync(string token, CancellationToken cancellationToken = default)
@@ -1851,6 +1854,19 @@ public sealed class DigitalCardsAppService
         return string.IsNullOrWhiteSpace(business.ProgramDescription)
             ? NormalizeBrandingValue(business.ProgramName ?? DefaultProgramName, DefaultProgramName)
             : business.ProgramDescription;
+    }
+
+    private static string ShortClientName(Client client)
+    {
+        var firstName = FirstToken(client.FirstName);
+        var lastName = FirstToken(client.LastName);
+        var displayName = $"{firstName} {lastName}".Trim();
+        return string.IsNullOrWhiteSpace(displayName) ? client.UserName : displayName;
+    }
+
+    private static string FirstToken(string value)
+    {
+        return value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
     }
 
     private static string SafeErrorSummary(Exception exception)

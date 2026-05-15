@@ -30,7 +30,9 @@ else
                     <li>Manten este dominio abierto durante la instalacion para que las actualizaciones funcionen.</li>
                 </ul>
             </div>
-            <a class="btn btn-dark" href="@Model.Result.DownloadUrl" data-testid="apple-wallet-download-link">Descargar Apple Wallet</a>
+            <a class="wallet-store-badge-link wallet-store-badge-link-single" href="@Model.Result.DownloadUrl" data-testid="apple-wallet-download-link">
+                <img src="/img/add_to_apple_wallet.svg" alt="Add to Apple Wallet" />
+            </a>
         </section>
     }
     else

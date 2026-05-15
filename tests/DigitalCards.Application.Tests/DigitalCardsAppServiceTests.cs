@@ -1992,6 +1992,10 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Contains("Puntelio Rewards", rendered.HtmlBody);
         Assert.Contains("#123456", rendered.HtmlBody);
         Assert.Contains("https://app.puntelio.com/img/logo.png", rendered.HtmlBody);
+        Assert.Contains("https://app.puntelio.com/img/add_to_apple_wallet.svg", rendered.HtmlBody);
+        Assert.Contains("https://app.puntelio.com/img/add_to_google_wallet.svg", rendered.HtmlBody);
+        Assert.Contains("https://app.puntelio.com/Wallet/Apple/token-123", rendered.HtmlBody);
+        Assert.Contains("https://app.puntelio.com/Wallet/Google/token-123", rendered.HtmlBody);
         Assert.Contains("Maria &lt;script&gt;", rendered.HtmlBody);
         Assert.Contains("Puntelio &lt;Cafe&gt;", rendered.HtmlBody);
         Assert.DoesNotContain("<script>", rendered.HtmlBody, StringComparison.OrdinalIgnoreCase);

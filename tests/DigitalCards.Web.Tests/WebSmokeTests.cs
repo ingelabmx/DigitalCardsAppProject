@@ -3535,8 +3535,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var html = await client.GetStringAsync($"/Wallet/Select/{token}");
 
         Assert.Contains("wallet-select", html);
-        Assert.Contains("Apple Wallet", html);
-        Assert.Contains("Google Wallet", html);
+        Assert.Contains("/img/add_to_apple_wallet.svg", html);
+        Assert.Contains("/img/add_to_google_wallet.svg", html);
     }
 
     [Fact]
@@ -3554,6 +3554,13 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("wallet-visual-card", landingHtml);
         Assert.Contains("apple-wallet-button", landingHtml);
         Assert.Contains("google-wallet-button", landingHtml);
+        Assert.Contains("wallet-store-badge-link", landingHtml);
+        Assert.Contains("/img/add_to_apple_wallet.svg", landingHtml);
+        Assert.Contains("/img/add_to_google_wallet.svg", landingHtml);
+        Assert.Contains("Cliente", landingHtml);
+        Assert.Contains("Sellos", landingHtml);
+        Assert.Contains("Recompensa", landingHtml);
+        Assert.Contains("de 10", landingHtml);
         Assert.Contains("--wallet-primary:", landingHtml);
         Assert.Contains("--wallet-secondary:", landingHtml);
         Assert.Contains("--wallet-custom:", landingHtml);
@@ -3566,6 +3573,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("data-wallet-recommendation", landingHtml);
         Assert.Contains("apple-wallet-install-help", appleHtml);
         Assert.Contains("google-wallet-install-help", googleHtml);
+        Assert.Contains("/img/add_to_google_wallet.svg", googleHtml);
         Assert.DoesNotContain("Authorization", landingHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ApplePass", appleHtml, StringComparison.OrdinalIgnoreCase);
     }

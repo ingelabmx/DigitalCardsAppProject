@@ -1073,21 +1073,58 @@ form.is-submitting input[type="submit"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.wallet-button {
+.wallet-store-badge-link {
+  align-items: center;
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid rgb(255 255 255 / 36%);
   border-radius: 8px;
-  flex-direction: column;
-  font-weight: 700;
-  min-height: 3.5rem;
+  display: flex;
+  justify-content: center;
+  min-height: 72px;
+  padding: 0.45rem;
+  position: relative;
+  text-decoration: none;
+  transition: box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.wallet-button small {
-  font-size: 0.78rem;
-  font-weight: 700;
-  opacity: 0.72;
+.wallet-store-badge-link:hover,
+.wallet-store-badge-link:focus-visible {
+  box-shadow: 0 12px 28px rgb(15 23 42 / 18%);
+  transform: translateY(-1px);
 }
 
-.wallet-button.is-recommended {
+.wallet-store-badge-link img {
+  display: block;
+  height: 55px;
+  max-width: 100%;
+  object-fit: contain;
+  width: 199px;
+}
+
+.wallet-store-badge-link small {
+  background: var(--wallet-secondary, #5d87ff);
+  border-radius: 999px;
+  bottom: -0.55rem;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  left: 50%;
+  padding: 0.18rem 0.55rem;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.wallet-store-badge-link.is-recommended {
   box-shadow: 0 0 0 3px rgb(73 190 255 / 28%);
+}
+
+.wallet-store-badge-link-single {
+  background: transparent;
+  border-color: transparent;
+  display: inline-flex;
+  min-height: auto;
+  padding: 0;
 }
 
 .wallet-public-panel {
@@ -1178,6 +1215,14 @@ form.is-submitting input[type="submit"] {
   padding: 1rem;
 }
 
+.wallet-pass-preview {
+  background:
+    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
+    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  color: var(--wallet-custom, #fff);
+  gap: 1rem;
+}
+
 .wallet-visual-card span {
   color: var(--wallet-secondary, #5d87ff);
   display: block;
@@ -1192,7 +1237,7 @@ form.is-submitting input[type="submit"] {
   overflow-wrap: anywhere;
 }
 
-.wallet-visual-card div:nth-of-type(2) strong {
+.wallet-pass-primary strong {
   font-size: 2.3rem;
   line-height: 1.05;
 }
@@ -1202,14 +1247,73 @@ form.is-submitting input[type="submit"] {
   margin: 0;
 }
 
-.wallet-public-panel .btn-primary {
-  background: var(--wallet-secondary, #5d87ff);
-  border-color: var(--wallet-secondary, #5d87ff);
+.wallet-pass-preview .wallet-pass-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
 }
 
-.wallet-public-panel [data-wallet-button="apple"] {
-  background: var(--wallet-primary, #111827);
-  border-color: rgb(255 255 255 / 32%);
+.wallet-pass-header img,
+.wallet-pass-header > span {
+  align-items: center;
+  background: rgb(255 255 255 / 94%);
+  border-radius: 8px;
+  color: var(--wallet-primary, #111827);
+  display: inline-flex;
+  font-weight: 900;
+  height: 54px;
+  justify-content: center;
+  object-fit: contain;
+  padding: 0.4rem;
+  width: 54px;
+}
+
+.wallet-pass-header strong {
+  color: var(--wallet-custom, #fff);
+  font-size: 1.2rem;
+}
+
+.wallet-pass-preview .wallet-pass-primary span,
+.wallet-pass-preview .wallet-pass-fields span {
+  color: rgb(255 255 255 / 76%);
+}
+
+.wallet-pass-preview .wallet-pass-primary strong,
+.wallet-pass-preview .wallet-pass-fields strong {
+  color: var(--wallet-custom, #fff);
+}
+
+.wallet-pass-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wallet-pass-qr {
+  align-items: center;
+  background: rgb(255 255 255 / 94%);
+  border-radius: 8px;
+  color: #2a3547;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  justify-self: start;
+  padding: 0.55rem;
+  width: 148px;
+}
+
+.wallet-pass-qr svg {
+  aspect-ratio: 1;
+  display: block;
+  max-width: 100%;
+  width: 100%;
+}
+
+.wallet-pass-qr small {
+  color: #2a3547;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .metric-row {
@@ -2666,6 +2770,7 @@ body.public-shell {
   .public-enrollment-shell,
   .public-registration-grid,
   .wallet-actions,
+  .wallet-pass-fields,
   .metric-row {
     grid-template-columns: 1fr;
   }
