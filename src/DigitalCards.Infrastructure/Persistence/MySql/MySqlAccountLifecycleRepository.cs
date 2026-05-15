@@ -175,6 +175,12 @@ public sealed class MySqlAccountLifecycleRepository : IAccountLifecycleRepositor
         await connection.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var legacyClientId = LegacyIdMapper.ToInt32(clientId);
+        var clientEmail = await connection.QuerySingleOrDefaultAsync<string>(
+            new CommandDefinition(
+                "select UserEmail from UserClient where UserID = @ClientId and RoleID = 2;",
+                new { ClientId = legacyClientId },
+                transaction,
+                cancellationToken: cancellationToken));
 
         var cards = (await connection.QueryAsync<ClientCardKey>(
             new CommandDefinition(
@@ -197,6 +203,15 @@ public sealed class MySqlAccountLifecycleRepository : IAccountLifecycleRepositor
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernPilotClient where UserID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernPasswordResetToken where AccountType = 'Client' and AccountID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernClientConsent where UserID = @ClientId;", new { ClientId = legacyClientId }, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(clientEmail))
+        {
+            await ExecuteIgnoreMissingAsync(
+                connection,
+                transaction,
+                "delete from PasswordResetToken where UserEmail = @UserEmail;",
+                new { UserEmail = clientEmail },
+                cancellationToken);
+        }
 
         var removed = await connection.ExecuteAsync(
             new CommandDefinition(
