@@ -1993,6 +1993,9 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Contains("Puntelio Rewards", rendered.HtmlBody);
         Assert.Contains("#123456", rendered.HtmlBody);
         Assert.Contains("https://app.puntelio.com/img/logo.png", rendered.HtmlBody);
+        Assert.Contains("<td width=\"86\" valign=\"middle\"", rendered.HtmlBody);
+        Assert.Contains("alt=\"Puntelio &lt;Cafe&gt;\"", rendered.HtmlBody);
+        Assert.Contains("font-size:20px;font-weight:bold;line-height:1.2;\">Puntelio &lt;Cafe&gt;</p>", rendered.HtmlBody);
         Assert.Contains("https://app.puntelio.com/img/add_to_apple_wallet.svg", rendered.HtmlBody);
         Assert.Contains("https://app.puntelio.com/img/add_to_google_wallet.svg", rendered.HtmlBody);
         Assert.Contains("https://app.puntelio.com/Wallet/Apple/token-123", rendered.HtmlBody);
@@ -2001,6 +2004,20 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Contains("Puntelio &lt;Cafe&gt;", rendered.HtmlBody);
         Assert.DoesNotContain("<script>", rendered.HtmlBody, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("https://app.puntelio.com/Wallet/Select/token-123", rendered.TextBody);
+
+        var noLogoRendered = renderer.RenderWalletEnrollment(new WalletEnrollmentEmail(
+            "maria@example.test",
+            "Maria",
+            "Runni Cafe",
+            "https://app.puntelio.com/Wallet/Select/token-456",
+            DateTimeOffset.UtcNow,
+            null,
+            "#123456",
+            "Runni Rewards"));
+
+        Assert.Contains("font-size:20px;font-weight:bold;line-height:1.2;\">Runni Cafe</p>", noLogoRendered.HtmlBody);
+        Assert.Contains("Runni Rewards", noLogoRendered.HtmlBody);
+        Assert.DoesNotContain("<td width=\"86\" valign=\"middle\"", noLogoRendered.HtmlBody);
     }
 
     [Fact]
