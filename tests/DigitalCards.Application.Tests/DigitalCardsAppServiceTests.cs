@@ -1396,6 +1396,7 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.Equal("Runni Cafe", google.PatchedBusinessName);
         Assert.Equal("Runni Rewards", google.PatchedProgramName);
+        Assert.Equal("#112233", google.PatchedPrimaryColor);
     }
 
     [Fact]
@@ -2637,6 +2638,8 @@ public sealed class DigitalCardsAppServiceTests
 
         public string? PatchedProgramName { get; private set; }
 
+        public string? PatchedPrimaryColor { get; private set; }
+
         public int? PatchedCurrentStamps { get; private set; }
 
         public Task<GoogleWalletIssueResult> IssueSaveLinkAsync(
@@ -2658,6 +2661,7 @@ public sealed class DigitalCardsAppServiceTests
         {
             PatchedBusinessName = business.DisplayName;
             PatchedProgramName = business.ProgramName;
+            PatchedPrimaryColor = business.PrimaryColor;
             PatchedCurrentStamps = card.CurrentStamps;
             return Task.CompletedTask;
         }

@@ -205,6 +205,10 @@ public sealed class GoogleWalletService : IGoogleWalletService
         Client client,
         Business business)
     {
+        var programName = string.IsNullOrWhiteSpace(business.ProgramName)
+            ? business.DisplayName
+            : business.ProgramName;
+
         var genericObject = new GenericObject
         {
             Id = objectId,
@@ -214,20 +218,13 @@ public sealed class GoogleWalletService : IGoogleWalletService
             Barcode = new Barcode
             {
                 Type = "QR_CODE",
-                Value = client.UserName
+                Value = client.UserName,
+                AlternateText = client.UserName
             },
-            CardTitle = Localized(business.DisplayName),
+            CardTitle = Localized(programName),
             Header = Localized(business.DisplayName),
-            Subheader = string.IsNullOrWhiteSpace(business.ProgramName)
-                ? null
-                : Localized(business.ProgramName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
-
-        if (!string.IsNullOrWhiteSpace(_options.HeroImageUri))
-        {
-            genericObject.HeroImage = Image(_options.HeroImageUri, "Hero image");
-        }
 
         var logoImage = BuildLogoImage(business);
         if (logoImage is not null)
