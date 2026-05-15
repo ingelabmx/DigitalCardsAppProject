@@ -327,7 +327,8 @@ public sealed class AppleWalletService : IAppleWalletService
             branding.SecondaryColor,
             branding.ProgramName,
             branding.ProgramDescription,
-            branding.CustomFieldColor);
+            branding.CustomFieldColor,
+            branding.StampGoal);
     }
 
     private string BuildWebServiceUrl()

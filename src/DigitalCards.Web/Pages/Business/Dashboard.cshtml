@@ -106,6 +106,8 @@
                             {
                                 clientName = card.Client.UserName;
                             }
+                            var stampGoal = Math.Max(1, card.StampGoal);
+                            var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
                             <a class="dashboard-card-row"
                                asp-page="/Business/Cards"
                                asp-route-query="@card.Client.UserName"
@@ -116,7 +118,7 @@
                                     <span>@card.Client.Email</span>
                                 </div>
                                 <div>
-                                    <strong>@card.CurrentStamps</strong>
+                                    <strong>@visibleStamps de @stampGoal</strong>
                                     <span>sellos</span>
                                 </div>
                             </a>

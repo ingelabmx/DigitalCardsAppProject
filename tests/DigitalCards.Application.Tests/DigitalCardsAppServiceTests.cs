@@ -1003,6 +1003,7 @@ public sealed class DigitalCardsAppServiceTests
             "#123456",
             "#abcdef",
             "#fedcba",
+            12,
             "Puntelio Rewards",
             "Sellos digitales de Puntelio."));
 
@@ -1010,6 +1011,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal("Puntelio Cafe", result.Business!.Branding.PublicName);
         Assert.Equal("#123456", result.Business.Branding.PrimaryColor);
         Assert.Equal("#fedcba", result.Business.Branding.CustomFieldColor);
+        Assert.Equal(12, result.Business.Branding.StampGoal);
 
         var stored = await brandingRepository.FindByBusinessIdAsync(business.Id);
         Assert.NotNull(stored);
@@ -1040,6 +1042,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal("/img/puntelio.svg", landing.LogoPath);
         Assert.Equal("#123456", landing.PrimaryColor);
         Assert.Equal("#abcdef", landing.SecondaryColor);
+        Assert.Equal(12, landing.StampGoal);
 
         var dashboard = await app.GetClientDashboardAsync(client.Id);
         var card = Assert.Single(dashboard.Cards);
@@ -1064,6 +1067,7 @@ public sealed class DigitalCardsAppServiceTests
             "#112233",
             "#445566",
             "#778899",
+            8,
             "Self Rewards",
             "Sellos desde autoservicio."));
 
@@ -1071,6 +1075,7 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal("Self Service Cafe", result.Settings!.Branding.PublicName);
         Assert.Equal("#112233", result.Settings.Branding.PrimaryColor);
         Assert.Equal("#778899", result.Settings.Branding.CustomFieldColor);
+        Assert.Equal(8, result.Settings.Branding.StampGoal);
 
         var client = await app.RegisterClientAsync(new RegisterClientCommand(
             "selfbrand",
@@ -1089,6 +1094,48 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal("/uploads/business-logos/demo/logo.png", landing.LogoPath);
         Assert.Equal("#112233", landing.PrimaryColor);
         Assert.Equal("#445566", landing.SecondaryColor);
+        Assert.Equal(8, landing.StampGoal);
+    }
+
+    [Fact]
+    public async Task AddStampAsync_UsesBusinessStampGoal()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business!.Id,
+            "Goal Cafe",
+            "/img/demo-coffee.svg",
+            "#112233",
+            "#445566",
+            "#ffffff",
+            2,
+            "Goal Rewards",
+            "Recompensa al completar dos sellos."));
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "goaluser",
+            "Goal",
+            "User",
+            "goaluser@example.test",
+            "ClientPass123!"));
+        await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+
+        var secondStamp = await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+        var nextCycle = await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+
+        Assert.Equal(2, secondStamp.CurrentStamps);
+        Assert.Equal(2, secondStamp.StampGoal);
+        Assert.Equal(0, nextCycle.CurrentStamps);
+        Assert.Equal(2, nextCycle.StampGoal);
     }
 
     [Fact]

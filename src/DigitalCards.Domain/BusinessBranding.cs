@@ -9,6 +9,7 @@ public sealed class BusinessBranding
         string primaryColor,
         string secondaryColor,
         string customFieldColor,
+        int stampGoal,
         string programName,
         string programDescription,
         DateTimeOffset updatedAt,
@@ -25,6 +26,7 @@ public sealed class BusinessBranding
         PrimaryColor = primaryColor.Trim();
         SecondaryColor = secondaryColor.Trim();
         CustomFieldColor = customFieldColor.Trim();
+        StampGoal = stampGoal > 0 ? stampGoal : throw new ArgumentOutOfRangeException(nameof(stampGoal), "Stamp goal must be greater than zero.");
         ProgramName = programName.Trim();
         ProgramDescription = programDescription.Trim();
         UpdatedAt = updatedAt;
@@ -42,6 +44,8 @@ public sealed class BusinessBranding
     public string SecondaryColor { get; }
 
     public string CustomFieldColor { get; }
+
+    public int StampGoal { get; }
 
     public string ProgramName { get; }
 

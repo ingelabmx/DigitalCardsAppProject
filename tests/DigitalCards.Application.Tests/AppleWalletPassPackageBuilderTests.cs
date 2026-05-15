@@ -40,18 +40,18 @@ public sealed class AppleWalletPassPackageBuilderTests
         Assert.Equal("Cafe Rewards", root.GetProperty("logoText").GetString());
         Assert.True(root.TryGetProperty("generic", out var generic));
         Assert.False(root.TryGetProperty("storeCard", out _));
-        Assert.Equal("Nombre publico", generic.GetProperty("primaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Nombre del negocio", generic.GetProperty("primaryFields")[0].GetProperty("label").GetString());
         Assert.Equal("Demo Coffee", generic.GetProperty("primaryFields")[0].GetProperty("value").GetString());
         Assert.Equal("Cliente", generic.GetProperty("secondaryFields")[0].GetProperty("label").GetString());
         Assert.Equal("Maria Lopez", generic.GetProperty("secondaryFields")[0].GetProperty("value").GetString());
         Assert.Equal("Sellos", generic.GetProperty("secondaryFields")[1].GetProperty("label").GetString());
-        Assert.Equal("2", generic.GetProperty("secondaryFields")[1].GetProperty("value").GetString());
+        Assert.Equal("2 de 10", generic.GetProperty("secondaryFields")[1].GetProperty("value").GetString());
         Assert.Equal("Recompensa", generic.GetProperty("secondaryFields")[2].GetProperty("label").GetString());
         Assert.Equal("Cafe gratis al completar sellos.", generic.GetProperty("secondaryFields")[2].GetProperty("value").GetString());
         Assert.False(generic.TryGetProperty("auxiliaryFields", out _));
         Assert.Equal("maria-test", root.GetProperty("barcodes")[0].GetProperty("message").GetString());
-        Assert.False(root.GetProperty("barcodes")[0].TryGetProperty("altText", out _));
-        Assert.False(root.GetProperty("barcode").TryGetProperty("altText", out _));
+        Assert.Equal("maria-test", root.GetProperty("barcodes")[0].GetProperty("altText").GetString());
+        Assert.Equal("maria-test", root.GetProperty("barcode").GetProperty("altText").GetString());
         var json = Encoding.UTF8.GetString(bytes);
         Assert.DoesNotContain("\"Negocio\"", json);
         Assert.DoesNotContain("\"Historico\"", json);
@@ -209,7 +209,7 @@ public sealed class AppleWalletPassPackageBuilderTests
 
     private static Client CreateClient(Guid clientId)
     {
-        return new Client(clientId, "maria-test", "Maria", "Lopez", "maria@example.test");
+        return new Client(clientId, "maria-test", "Maria Fernanda", "Lopez Perez", "maria@example.test");
     }
 
     private static Business CreateBusiness(Guid businessId)

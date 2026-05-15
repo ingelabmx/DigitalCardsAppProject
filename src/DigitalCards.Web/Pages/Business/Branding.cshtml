@@ -43,7 +43,7 @@
                 <p class="text-muted">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
 
                 <div class="mb-3">
-                    <label asp-for="Input.PublicName" class="form-label">Nombre publico</label>
+                    <label asp-for="Input.PublicName" class="form-label">Nombre del negocio</label>
                     <input asp-for="Input.PublicName" class="form-control" maxlength="80" data-testid="business-branding-public-name" />
                 </div>
 
@@ -55,6 +55,11 @@
                 <div class="mb-3">
                     <label asp-for="Input.ProgramDescription" class="form-label">Recompensa</label>
                     <input asp-for="Input.ProgramDescription" class="form-control" maxlength="280" data-testid="business-branding-description" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.StampGoal" class="form-label">Numero de sellos</label>
+                    <input asp-for="Input.StampGoal" class="form-control" type="number" min="1" max="1000" data-testid="business-branding-stamp-goal" />
                 </div>
 
                 <div class="mb-3">
@@ -86,11 +91,11 @@
                         <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" data-branding-color-input="primary" />
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Input.SecondaryColor" class="form-label">Color secundario</label>
+                        <label asp-for="Input.SecondaryColor" class="form-label">Color secundario 1</label>
                         <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" data-branding-color-input="secondary" />
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Input.CustomFieldColor" class="form-label">Color de campos personalizados</label>
+                        <label asp-for="Input.CustomFieldColor" class="form-label">Color secundario 2</label>
                         <input asp-for="Input.CustomFieldColor" class="form-control" maxlength="7" data-testid="business-branding-custom-field-color" data-branding-color-input="custom" />
                     </div>
                 </div>

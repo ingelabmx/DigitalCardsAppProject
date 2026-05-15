@@ -23,6 +23,7 @@ public sealed class AdminAppService
     private const string DefaultCustomFieldColor = "#FFFFFF";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
+    private const int MaxStampGoal = 1000;
     private const string DuplicateAdminMessage = "An admin user with the same username or email already exists.";
     private const string DuplicateBusinessMessage = "A business with the same name or email already exists.";
 
@@ -577,6 +578,7 @@ public sealed class AdminAppService
         var primaryColor = NormalizeBrandingColor(command.PrimaryColor, DefaultPrimaryColor);
         var secondaryColor = NormalizeBrandingColor(command.SecondaryColor, DefaultSecondaryColor);
         var customFieldColor = NormalizeBrandingColor(command.CustomFieldColor, DefaultCustomFieldColor);
+        var stampGoal = NormalizeStampGoal(command.StampGoal);
         var programName = NormalizeBrandingValue(command.ProgramName, DefaultProgramName);
         var programDescription = NormalizeBrandingValue(command.ProgramDescription, DefaultProgramDescription);
 
@@ -587,6 +589,7 @@ public sealed class AdminAppService
             primaryColor,
             secondaryColor,
             customFieldColor,
+            stampGoal,
             programName,
             programDescription);
         if (validationError is not null)
@@ -602,6 +605,7 @@ public sealed class AdminAppService
                 primaryColor,
                 secondaryColor,
                 customFieldColor,
+                stampGoal,
                 programName,
                 programDescription,
                 _clock.UtcNow,
@@ -1276,7 +1280,8 @@ public sealed class AdminAppService
             branding.SecondaryColor,
             branding.ProgramName,
             branding.ProgramDescription,
-            branding.CustomFieldColor);
+            branding.CustomFieldColor,
+            branding.StampGoal);
     }
 
     private static bool IsWithinSupportRange(
@@ -1686,6 +1691,7 @@ public sealed class AdminAppService
         string primaryColor,
         string secondaryColor,
         string customFieldColor,
+        int stampGoal,
         string programName,
         string programDescription)
     {
@@ -1696,12 +1702,12 @@ public sealed class AdminAppService
 
         if (string.IsNullOrWhiteSpace(publicName))
         {
-            return "El nombre publico es requerido.";
+            return "El nombre del negocio es requerido.";
         }
 
         if (publicName.Length > BrandingNameMaxLength)
         {
-            return $"El nombre publico no puede exceder {BrandingNameMaxLength} caracteres.";
+            return $"El nombre del negocio no puede exceder {BrandingNameMaxLength} caracteres.";
         }
 
         if (logoPath.Length > BrandingLogoMaxLength)
@@ -1722,6 +1728,11 @@ public sealed class AdminAppService
         if (!IsHexColor(customFieldColor))
         {
             return "El color de campos personalizados debe usar formato #RRGGBB.";
+        }
+
+        if (stampGoal <= 0 || stampGoal > MaxStampGoal)
+        {
+            return $"El numero de sellos debe ser entre 1 y {MaxStampGoal}.";
         }
 
         if (string.IsNullOrWhiteSpace(programName))
@@ -1780,6 +1791,11 @@ public sealed class AdminAppService
         return normalized.Length == 6 && normalized[0] != '#'
             ? $"#{normalized}"
             : normalized;
+    }
+
+    private static int NormalizeStampGoal(int stampGoal)
+    {
+        return stampGoal <= 0 ? Business.DefaultStampGoal : stampGoal;
     }
 
     private static bool IsHexColor(string value)
@@ -1864,6 +1880,7 @@ public sealed class AdminAppService
             branding?.PrimaryColor ?? DefaultPrimaryColor,
             branding?.SecondaryColor ?? DefaultSecondaryColor,
             branding?.CustomFieldColor ?? DefaultCustomFieldColor,
+            branding?.StampGoal ?? Business.DefaultStampGoal,
             branding?.ProgramName ?? DefaultProgramName,
             branding?.ProgramDescription ?? DefaultProgramDescription,
             branding?.UpdatedAt);

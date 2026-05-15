@@ -2,6 +2,8 @@ namespace DigitalCards.Domain;
 
 public sealed class Business
 {
+    public const int DefaultStampGoal = 10;
+
     public Business(
         Guid id,
         string name,
@@ -13,7 +15,8 @@ public sealed class Business
         string? secondaryColor = null,
         string? programName = null,
         string? programDescription = null,
-        string? customFieldColor = null)
+        string? customFieldColor = null,
+        int stampGoal = DefaultStampGoal)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -34,6 +37,7 @@ public sealed class Business
         PrimaryColor = NormalizeOptional(primaryColor);
         SecondaryColor = NormalizeOptional(secondaryColor);
         CustomFieldColor = NormalizeOptional(customFieldColor);
+        StampGoal = stampGoal > 0 ? stampGoal : DefaultStampGoal;
         ProgramName = NormalizeOptional(programName);
         ProgramDescription = NormalizeOptional(programDescription);
         GoogleClassSuffix = Slugify(Name);
@@ -56,6 +60,8 @@ public sealed class Business
     public string? SecondaryColor { get; }
 
     public string? CustomFieldColor { get; }
+
+    public int StampGoal { get; }
 
     public string? ProgramName { get; }
 

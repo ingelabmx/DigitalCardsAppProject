@@ -250,13 +250,13 @@ public sealed class GoogleWalletService : IGoogleWalletService
             {
                 Id = "client",
                 Header = "Cliente",
-                Body = client.FullName
+                Body = ShortClientName(client)
             },
             new TextModuleData
             {
                 Id = "checks",
                 Header = "Sellos",
-                Body = card.CurrentStamps.ToString(CultureInfo.InvariantCulture)
+                Body = FormatStampProgress(card.CurrentStamps, business.StampGoal)
             },
             new TextModuleData
             {
@@ -292,6 +292,26 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 }
             }
         };
+    }
+
+    private static string FormatStampProgress(int currentStamps, int stampGoal)
+    {
+        var goal = stampGoal > 0 ? stampGoal : Business.DefaultStampGoal;
+        var current = Math.Min(Math.Max(currentStamps, 0), goal);
+        return $"{current.ToString(CultureInfo.InvariantCulture)} de {goal.ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    private static string ShortClientName(Client client)
+    {
+        var firstName = FirstToken(client.FirstName);
+        var lastName = FirstToken(client.LastName);
+        var displayName = $"{firstName} {lastName}".Trim();
+        return string.IsNullOrWhiteSpace(displayName) ? client.UserName : displayName;
+    }
+
+    private static string FirstToken(string value)
+    {
+        return value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
     }
 
     private static TemplateItem TemplateItem(string fieldPath)
