@@ -1075,30 +1075,30 @@ form.is-submitting input[type="submit"] {
 
 .wallet-store-badge-link {
   align-items: center;
-  background: rgb(255 255 255 / 94%);
-  border: 1px solid rgb(255 255 255 / 36%);
-  border-radius: 8px;
-  display: flex;
+  background: transparent;
+  border: 0;
+  display: inline-flex;
   justify-content: center;
-  min-height: 72px;
-  padding: 0.45rem;
+  justify-self: center;
+  padding: 0;
   position: relative;
   text-decoration: none;
-  transition: box-shadow 0.16s ease, transform 0.16s ease;
+  transition: filter 0.16s ease, transform 0.16s ease;
+  width: fit-content;
 }
 
 .wallet-store-badge-link:hover,
 .wallet-store-badge-link:focus-visible {
-  box-shadow: 0 12px 28px rgb(15 23 42 / 18%);
+  filter: drop-shadow(0 12px 16px rgb(15 23 42 / 18%));
   transform: translateY(-1px);
 }
 
 .wallet-store-badge-link img {
   display: block;
   height: 55px;
-  max-width: 100%;
+  max-width: min(100%, 199px);
   object-fit: contain;
-  width: 199px;
+  width: auto;
 }
 
 .wallet-store-badge-link small {
@@ -1116,7 +1116,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-store-badge-link.is-recommended {
-  box-shadow: 0 0 0 3px rgb(73 190 255 / 28%);
+  filter: drop-shadow(0 0 8px rgb(73 190 255 / 38%));
 }
 
 .wallet-store-badge-link-single {
@@ -1153,33 +1153,6 @@ form.is-submitting input[type="submit"] {
 .wallet-public-panel .lead {
   color: rgb(255 255 255 / 82%);
   margin-bottom: 0;
-}
-
-.wallet-public-brand {
-  align-items: center;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.wallet-public-brand img,
-.wallet-public-brand > span {
-  align-items: center;
-  background: rgb(255 255 255 / 92%);
-  border: 1px solid rgb(255 255 255 / 45%);
-  border-radius: 8px;
-  display: inline-flex;
-  font-weight: 800;
-  height: 76px;
-  justify-content: center;
-  object-fit: contain;
-  padding: 0.5rem;
-  width: 92px;
-}
-
-.wallet-public-brand > span {
-  color: var(--wallet-primary, #111827);
-  font-size: 1.3rem;
 }
 
 .wallet-install-help {
@@ -2781,7 +2754,6 @@ body.public-shell {
 
   .page-heading,
   .search-row,
-  .wallet-public-brand,
   .pilot-business-item,
   .business-card-action-strip,
   .business-card-result-row,
