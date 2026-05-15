@@ -86,6 +86,7 @@ public static class DependencyInjection
             services.AddScoped<IBusinessEnrollmentLinkRepository, MySqlBusinessEnrollmentLinkRepository>();
             services.AddScoped<IPasswordResetTokenRepository, MySqlPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, MySqlStampLedgerRepository>();
+            services.AddScoped<IRewardRedemptionRepository, MySqlRewardRedemptionRepository>();
             services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, MySqlPilotClientRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
@@ -110,6 +111,7 @@ public static class DependencyInjection
             services.AddScoped<IBusinessEnrollmentLinkRepository, InMemoryBusinessEnrollmentLinkRepository>();
             services.AddScoped<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
             services.AddScoped<IStampLedgerRepository, InMemoryStampLedgerRepository>();
+            services.AddScoped<IRewardRedemptionRepository, InMemoryRewardRedemptionRepository>();
             services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, InMemoryPilotClientRepository>();
         }

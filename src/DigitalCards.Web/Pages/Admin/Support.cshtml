@@ -238,6 +238,31 @@
                                         }
                                     </div>
                                 }
+
+                                <h4>Recompensas canjeadas</h4>
+                                @if (card.RecentRewardRedemptions.Count == 0)
+                                {
+                                    <p class="text-muted" data-testid="admin-support-no-redemptions">Sin canjes registrados.</p>
+                                }
+                                else
+                                {
+                                    <div class="stamp-ledger-items" data-testid="admin-support-redemptions">
+                                        @foreach (var item in card.RecentRewardRedemptions)
+                                        {
+                                            <div class="stamp-ledger-item" data-testid="admin-support-redemption-event">
+                                                <div>
+                                                    <strong>@(string.IsNullOrWhiteSpace(item.ErrorSummary) ? "Canje registrado" : "Con alerta")</strong>
+                                                    <span>@item.RedeemedAt.ToLocalTime().ToString("g")</span>
+                                                </div>
+                                                <p>@item.RedeemedCheckQTY de @item.StampGoal sellos &middot; @item.RewardText</p>
+                                                @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                                                {
+                                                    <p class="text-danger">Error: @item.ErrorSummary</p>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </article>
                         }
                     </div>

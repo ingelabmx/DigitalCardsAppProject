@@ -85,6 +85,10 @@
                             }
                         </div>
                         <p>@visibleStamps de @stampGoal sellos</p>
+                        @if (card.RecentRewardRedemptions.Count > 0)
+                        {
+                            <small data-testid="client-dashboard-redemption">Ultimo canje @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</small>
+                        }
                         <a class="btn btn-outline-primary btn-sm"
                            asp-page="/Wallet/Select"
                            asp-route-token="@card.WalletSelectToken"

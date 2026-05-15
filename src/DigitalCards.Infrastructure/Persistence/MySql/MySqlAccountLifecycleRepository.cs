@@ -257,6 +257,7 @@ public sealed class MySqlAccountLifecycleRepository : IAccountLifecycleRepositor
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from AppleWalletPass where CardID = @CardId;", new { CardId = cardId }, cancellationToken);
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from WalletLinkToken where CardID = @CardId;", new { CardId = cardId }, cancellationToken);
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from StampLedger where CardID = @CardId;", new { CardId = cardId }, cancellationToken);
+        await ExecuteIgnoreMissingAsync(connection, transaction, "delete from RewardRedemption where CardID = @CardId;", new { CardId = cardId }, cancellationToken);
         await ExecuteIgnoreMissingAsync(connection, transaction, "delete from ModernClientCardStatus where CardID = @CardId;", new { CardId = cardId }, cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(

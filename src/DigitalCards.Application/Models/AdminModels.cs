@@ -231,7 +231,8 @@ public sealed record AdminSupportCardDto(
     int LegacySyncEventCount,
     DateTimeOffset? LastLegacySyncAt,
     IReadOnlyList<string> RecentSafeErrors,
-    IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
+    IReadOnlyList<StampLedgerEventDto> RecentStampEvents,
+    IReadOnlyList<RewardRedemptionDto> RecentRewardRedemptions);
 
 public sealed record AdminWalletRetryCommand(
     Guid CardId,

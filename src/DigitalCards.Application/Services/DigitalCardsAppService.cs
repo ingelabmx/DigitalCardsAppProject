@@ -38,6 +38,7 @@ public sealed class DigitalCardsAppService
     private readonly IPasswordResetTokenRepository _passwordResetTokens;
     private readonly IPasswordHasher<BusinessPasswordHashSubject> _passwordHasher;
     private readonly IPasswordHasher<ClientPasswordHashSubject> _clientPasswordHasher;
+    private readonly IRewardRedemptionRepository _rewardRedemptions;
     private readonly IStampLedgerRepository _stampLedger;
     private readonly WalletBrandingRefreshService _walletBrandingRefresh;
     private readonly IWalletLinkTokenService _walletLinkTokens;
@@ -58,6 +59,7 @@ public sealed class DigitalCardsAppService
         IClock clock,
         IPasswordHasher<BusinessPasswordHashSubject> passwordHasher,
         IPasswordHasher<ClientPasswordHashSubject> clientPasswordHasher,
+        IRewardRedemptionRepository rewardRedemptions,
         IStampLedgerRepository stampLedger,
         WalletBrandingRefreshService walletBrandingRefresh,
         IWalletLinkTokenService walletLinkTokens,
@@ -79,6 +81,7 @@ public sealed class DigitalCardsAppService
         _clock = clock;
         _passwordHasher = passwordHasher;
         _clientPasswordHasher = clientPasswordHasher;
+        _rewardRedemptions = rewardRedemptions;
         _stampLedger = stampLedger;
         _walletBrandingRefresh = walletBrandingRefresh;
         _walletLinkTokens = walletLinkTokens;
@@ -734,13 +737,18 @@ public sealed class DigitalCardsAppService
             throw new InvalidOperationException("Client is not enrolled with this business.");
         }
 
-        await AddStampAndNotifyWalletsAsync(
+        var stamped = await AddStampAndNotifyWalletsAsync(
             card,
             client,
             business,
             StampLedgerSource.ModernBusiness,
             actorBusinessId: business.Id,
             cancellationToken);
+
+        if (!stamped)
+        {
+            throw new InvalidOperationException("La tarjeta ya esta completa. Confirma el canje de recompensa.");
+        }
 
         return ToDto(card, client, await ApplyBrandingAsync(business, cancellationToken));
     }
@@ -945,6 +953,19 @@ public sealed class DigitalCardsAppService
         return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
     }
 
+    public async Task<BusinessCardDto?> GetBusinessCardForClientAsync(
+        Guid businessId,
+        string userNameOrEmail,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await RequireBusinessAsync(businessId, cancellationToken);
+        var client = await RequireClientAsync(userNameOrEmail, cancellationToken);
+        var card = await _loyaltyCards.FindByClientAndBusinessAsync(client.Id, business.Id, cancellationToken);
+        return card is null
+            ? null
+            : await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
+    }
+
     public async Task<BusinessCardDto?> AddStampToCardAsync(
         Guid businessId,
         Guid cardId,
@@ -962,7 +983,7 @@ public sealed class DigitalCardsAppService
             return null;
         }
 
-        await AddStampAndNotifyWalletsAsync(
+        var stamped = await AddStampAndNotifyWalletsAsync(
             card,
             client,
             business,
@@ -970,7 +991,106 @@ public sealed class DigitalCardsAppService
             actorBusinessId: business.Id,
             cancellationToken);
 
+        if (!stamped)
+        {
+            return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
+        }
+
         return await ToBusinessCardDtoAsync(card, client, business, cancellationToken);
+    }
+
+    public async Task<RewardRedemptionResult> RedeemRewardAsync(
+        Guid businessId,
+        Guid cardId,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await FindBusinessCardContextAsync(businessId, cardId, cancellationToken);
+        if (context is null)
+        {
+            return new RewardRedemptionResult(false, null, null, "La tarjeta no existe para este negocio.", false);
+        }
+
+        var (card, client, business) = context.Value;
+        if (!await IsCardActiveAsync(card.Id, cancellationToken))
+        {
+            return new RewardRedemptionResult(false, null, null, "La tarjeta esta desactivada para este negocio.", false);
+        }
+
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+        if (!IsRewardReady(card, displayBusiness))
+        {
+            return new RewardRedemptionResult(false, await ToBusinessCardDtoAsync(card, client, business, cancellationToken), null, "La tarjeta aun no esta completa.", false);
+        }
+
+        var previousCheckQty = card.CurrentStamps;
+        var previousHistoricCheckQty = card.LifetimeStamps;
+        var redeemedAt = _clock.UtcNow;
+        card.RedeemReward(redeemedAt, displayBusiness.StampGoal);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
+
+        var googleAttempted = false;
+        var googleSucceeded = false;
+        var appleAttempted = false;
+        var appleSucceeded = false;
+        string? errorSummary = null;
+
+        try
+        {
+            if (card.GoogleObjectId is not null)
+            {
+                googleAttempted = true;
+                await _googleWallet.PatchStampStateAsync(card, client, displayBusiness, cancellationToken);
+                googleSucceeded = true;
+            }
+
+            appleAttempted = true;
+            await _appleWallet.NotifyPassUpdatedAsync(card, client, displayBusiness, cancellationToken);
+            appleSucceeded = true;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            errorSummary = SafeErrorSummary(exception);
+        }
+
+        var redemption = new RewardRedemptionRecord(
+            0,
+            card.Id,
+            card.BusinessId,
+            card.ClientId,
+            business.Id,
+            displayBusiness.StampGoal,
+            previousCheckQty,
+            previousHistoricCheckQty,
+            RewardText(displayBusiness),
+            googleAttempted,
+            googleSucceeded,
+            appleAttempted,
+            appleSucceeded,
+            errorSummary,
+            redeemedAt,
+            _clock.UtcNow);
+
+        await _rewardRedemptions.AddAsync(redemption, cancellationToken);
+        await RecordStampLedgerAsync(
+            card,
+            StampLedgerSource.RewardRedeemed,
+            business.Id,
+            previousCheckQty,
+            previousHistoricCheckQty,
+            googleAttempted,
+            googleSucceeded,
+            appleAttempted,
+            appleSucceeded,
+            errorSummary,
+            cancellationToken);
+
+        var dto = ToRewardRedemptionDto(redemption);
+        return new RewardRedemptionResult(
+            true,
+            await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
+            dto,
+            errorSummary is null ? null : "Recompensa canjeada, pero la tarjeta digital quedo con alerta de actualizacion.",
+            errorSummary is not null);
     }
 
     public async Task<ResendWalletEmailResult?> ResendWalletEmailAsync(
@@ -1096,6 +1216,7 @@ public sealed class DigitalCardsAppService
                 cancellationToken);
             var business = businesses.Single(existing => existing.Id == card.BusinessId);
             business = await ApplyBrandingAsync(business, cancellationToken);
+            var recentRedemptions = await _rewardRedemptions.ListRecentByCardIdAsync(card.Id, 3, cancellationToken);
             results.Add(new ClientLoyaltyCardDto(
                 card.Id,
                 token,
@@ -1109,7 +1230,8 @@ public sealed class DigitalCardsAppService
                 card.GoogleSaveUrl,
                 AppleTracked: false,
                 AppleRegisteredDeviceCount: 0,
-                AppleUpdatedAt: null));
+                AppleUpdatedAt: null,
+                recentRedemptions.Select(ToRewardRedemptionDto).ToArray()));
         }
 
         for (var index = 0; index < results.Count; index++)
@@ -1492,6 +1614,7 @@ public sealed class DigitalCardsAppService
         }
 
         var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
+        var recentRedemptions = await _rewardRedemptions.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
         var isActive = await IsCardActiveAsync(card.Id, cancellationToken);
 
         return new BusinessCardDto(
@@ -1508,7 +1631,8 @@ public sealed class DigitalCardsAppService
             appleDeviceCount,
             applePass?.UpdatedAt,
             isActive,
-            recentEvents.Select(ToStampLedgerEventDto).ToArray());
+            recentEvents.Select(ToStampLedgerEventDto).ToArray(),
+            recentRedemptions.Select(ToRewardRedemptionDto).ToArray());
     }
 
     private async Task<bool> IsCardActiveAsync(Guid cardId, CancellationToken cancellationToken)
@@ -1517,7 +1641,7 @@ public sealed class DigitalCardsAppService
         return status?.IsActive ?? true;
     }
 
-    private async Task AddStampAndNotifyWalletsAsync(
+    private async Task<bool> AddStampAndNotifyWalletsAsync(
         LoyaltyCard card,
         Client client,
         Business business,
@@ -1528,6 +1652,11 @@ public sealed class DigitalCardsAppService
         var previousCheckQty = card.CurrentStamps;
         var previousHistoricCheckQty = card.LifetimeStamps;
         var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+        if (IsRewardReady(card, displayBusiness))
+        {
+            return false;
+        }
+
         card.AddStamp(_clock.UtcNow, displayBusiness.StampGoal);
         await _loyaltyCards.UpdateAsync(card, cancellationToken);
 
@@ -1561,6 +1690,7 @@ public sealed class DigitalCardsAppService
                 appleSucceeded,
                 errorSummary: null,
                 cancellationToken);
+            return true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -1630,6 +1760,34 @@ public sealed class DigitalCardsAppService
             record.AppleWalletAttempted,
             record.AppleWalletSucceeded,
             record.ErrorSummary);
+    }
+
+    private static RewardRedemptionDto ToRewardRedemptionDto(RewardRedemptionRecord record)
+    {
+        return new RewardRedemptionDto(
+            record.CardId,
+            record.StampGoal,
+            record.RedeemedCheckQTY,
+            record.HistoricCheckQTY,
+            record.RewardText,
+            record.GoogleWalletAttempted,
+            record.GoogleWalletSucceeded,
+            record.AppleWalletAttempted,
+            record.AppleWalletSucceeded,
+            record.ErrorSummary,
+            record.RedeemedAt);
+    }
+
+    private static bool IsRewardReady(LoyaltyCard card, Business business)
+    {
+        return card.CurrentStamps >= NormalizeStampGoal(business.StampGoal);
+    }
+
+    private static string RewardText(Business business)
+    {
+        return string.IsNullOrWhiteSpace(business.ProgramDescription)
+            ? NormalizeBrandingValue(business.ProgramName ?? DefaultProgramName, DefaultProgramName)
+            : business.ProgramDescription;
     }
 
     private static string SafeErrorSummary(Exception exception)

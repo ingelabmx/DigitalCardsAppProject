@@ -1103,3 +1103,13 @@ moderna se protege con pruebas para no reintroducir lenguaje operativo legacy:
 ```text
 docs/migration-context/102-legacy-removal-phase-2-v1.md
 ```
+
+El flujo de recompensas ahora conserva una tarjeta completa hasta que el negocio
+confirma el canje. El canje reinicia el mismo `ClientCard` a 0 sellos, registra
+historial en `RewardRedemption` y actualiza Wallet sin crear cliente ni tarjeta
+nueva:
+
+```text
+docs/migration-context/118-reward-redemption-cycles-v1.md
+docs/migration-context/118-reward-redemption-cycles-hostgator.sql
+```

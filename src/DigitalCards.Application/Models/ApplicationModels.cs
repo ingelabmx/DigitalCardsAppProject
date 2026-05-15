@@ -110,7 +110,8 @@ public sealed record ClientLoyaltyCardDto(
     string? GoogleSaveUrl,
     bool AppleTracked,
     int AppleRegisteredDeviceCount,
-    DateTimeOffset? AppleUpdatedAt);
+    DateTimeOffset? AppleUpdatedAt,
+    IReadOnlyList<RewardRedemptionDto> RecentRewardRedemptions);
 
 public sealed record ClientDashboardDto(
     ClientDto Client,
@@ -136,9 +137,17 @@ public sealed record BusinessCardDto(
     int AppleRegisteredDeviceCount,
     DateTimeOffset? AppleUpdatedAt,
     bool IsActive,
-    IReadOnlyList<StampLedgerEventDto> RecentStampEvents);
+    IReadOnlyList<StampLedgerEventDto> RecentStampEvents,
+    IReadOnlyList<RewardRedemptionDto> RecentRewardRedemptions);
 
 public sealed record ResendWalletEmailResult(BusinessCardDto Card, string EnrollmentUrl);
+
+public sealed record RewardRedemptionResult(
+    bool Succeeded,
+    BusinessCardDto? Card,
+    RewardRedemptionDto? Redemption,
+    string? ErrorMessage,
+    bool HasWalletWarning);
 
 public sealed record ClientCardLifecycleRecord(
     Guid CardId,

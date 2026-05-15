@@ -45,6 +45,7 @@ public sealed class AdminAppService
     private readonly ICutoverSmokeRepository _cutoverSmoke;
     private readonly IPilotBusinessRepository _pilotBusinesses;
     private readonly IPilotClientRepository _pilotClients;
+    private readonly IRewardRedemptionRepository _rewardRedemptions;
     private readonly IStampLedgerRepository _stampLedger;
     private readonly WalletBrandingRefreshService _walletBrandingRefresh;
 
@@ -60,6 +61,7 @@ public sealed class AdminAppService
         IAppleWalletService appleWallet,
         IGoogleWalletService googleWallet,
         IAccountLifecycleRepository accountLifecycle,
+        IRewardRedemptionRepository rewardRedemptions,
         IStampLedgerRepository stampLedger,
         WalletBrandingRefreshService walletBrandingRefresh,
         IAuditEventRepository auditEvents,
@@ -81,6 +83,7 @@ public sealed class AdminAppService
         _appleWallet = appleWallet;
         _googleWallet = googleWallet;
         _accountLifecycle = accountLifecycle;
+        _rewardRedemptions = rewardRedemptions;
         _stampLedger = stampLedger;
         _walletBrandingRefresh = walletBrandingRefresh;
         _auditEvents = auditEvents;
@@ -1281,6 +1284,7 @@ public sealed class AdminAppService
         }
 
         var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 8, cancellationToken);
+        var recentRedemptions = await _rewardRedemptions.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
         var issueCount = recentEvents.Count(HasWalletIssue);
         var legacyEvents = recentEvents
             .Where(item => item.Source == StampLedgerSource.LegacySync)
@@ -1314,7 +1318,8 @@ public sealed class AdminAppService
             legacyEvents.Length,
             legacyEvents.FirstOrDefault()?.CreatedAt,
             safeErrors,
-            recentEvents.Select(ToStampLedgerEventDto).ToArray());
+            recentEvents.Select(ToStampLedgerEventDto).ToArray(),
+            recentRedemptions.Select(ToRewardRedemptionDto).ToArray());
     }
 
     private async Task<Business> ApplyBrandingAsync(Business business, CancellationToken cancellationToken)
@@ -1993,6 +1998,22 @@ public sealed class AdminAppService
             record.AppleWalletAttempted,
             record.AppleWalletSucceeded,
             record.ErrorSummary);
+    }
+
+    private static RewardRedemptionDto ToRewardRedemptionDto(RewardRedemptionRecord record)
+    {
+        return new RewardRedemptionDto(
+            record.CardId,
+            record.StampGoal,
+            record.RedeemedCheckQTY,
+            record.HistoricCheckQTY,
+            record.RewardText,
+            record.GoogleWalletAttempted,
+            record.GoogleWalletSucceeded,
+            record.AppleWalletAttempted,
+            record.AppleWalletSucceeded,
+            record.ErrorSummary,
+            record.RedeemedAt);
     }
 
     private static string NormalizeSupportQuery(string query)
