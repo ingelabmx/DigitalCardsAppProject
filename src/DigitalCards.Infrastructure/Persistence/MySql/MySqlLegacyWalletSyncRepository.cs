@@ -2,11 +2,14 @@ using Dapper;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Domain;
+using MySqlConnector;
 
 namespace DigitalCards.Infrastructure.Persistence.MySql;
 
 public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepository
 {
+    private const int MissingTableErrorNumber = 1146;
+
     private readonly MySqlConnectionFactory _connectionFactory;
 
     public MySqlLegacyWalletSyncRepository(MySqlConnectionFactory connectionFactory)
@@ -19,7 +22,65 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
         int batchSize,
         CancellationToken cancellationToken = default)
     {
-        const string sql = """
+        const string brandedSql = """
+            select cc.CardID,
+                   cc.CardIDGoogle,
+                   cc.CreationDate,
+                   cc.CheckQTY,
+                   cc.LastCheck,
+                   cc.UserID,
+                   cc.BusinessID,
+                   cc.HistoricCheckQTY,
+                   uc.UserName,
+                   uc.FirstName,
+                   uc.Lastname,
+                   uc.UserEmail,
+                   b.BusinessName,
+                   b.BusinessEmail,
+                   b.BusinessPassword,
+                   b.BusinessLogo,
+                   mb.PublicName as BrandingPublicName,
+                   mb.LogoPath as BrandingLogoPath,
+                   mb.PrimaryColor as BrandingPrimaryColor,
+                   mb.SecondaryColor as BrandingSecondaryColor,
+                   mb.CustomFieldColor as BrandingCustomFieldColor,
+                   mb.StampGoal as BrandingStampGoal,
+                   mb.ProgramName as BrandingProgramName,
+                   mb.ProgramDescription as BrandingProgramDescription,
+                   exists (
+                       select 1
+                       from AppleWalletPass awp
+                       inner join AppleWalletRegistration awr
+                           on awr.PassTypeIdentifier = awp.PassTypeIdentifier
+                          and awr.SerialNumber = awp.SerialNumber
+                       where awp.CardID = cc.CardID
+                       limit 1
+                   ) as HasRegisteredAppleDevices
+            from ClientCard cc
+            inner join UserClient uc
+                on uc.UserID = cc.UserID
+            inner join Business b
+                on b.BusinessID = cc.BusinessID
+            left join ModernBusinessBranding mb
+                on mb.BusinessID = b.BusinessID
+            where coalesce(cc.LastCheck, cc.CreationDate) >= @ChangedSince
+              and (
+                  nullif(cc.CardIDGoogle, '') is not null
+                  or exists (
+                      select 1
+                      from AppleWalletPass awp
+                      inner join AppleWalletRegistration awr
+                          on awr.PassTypeIdentifier = awp.PassTypeIdentifier
+                         and awr.SerialNumber = awp.SerialNumber
+                      where awp.CardID = cc.CardID
+                      limit 1
+                  )
+              )
+            order by coalesce(cc.LastCheck, cc.CreationDate), cc.CardID
+            limit @BatchSize;
+            """;
+
+        const string legacySql = """
             select cc.CardID,
                    cc.CardIDGoogle,
                    cc.CreationDate,
@@ -68,12 +129,23 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
             """;
 
         await using var connection = _connectionFactory.Create();
-        var rows = await connection.QueryAsync<LegacyWalletSyncRow>(
-            new CommandDefinition(sql, new
-            {
-                ChangedSince = changedSince.UtcDateTime,
-                BatchSize = Math.Max(1, batchSize)
-            }, cancellationToken: cancellationToken));
+        var parameters = new
+        {
+            ChangedSince = changedSince.UtcDateTime,
+            BatchSize = Math.Max(1, batchSize)
+        };
+
+        IEnumerable<LegacyWalletSyncRow> rows;
+        try
+        {
+            rows = await connection.QueryAsync<LegacyWalletSyncRow>(
+                new CommandDefinition(brandedSql, parameters, cancellationToken: cancellationToken));
+        }
+        catch (MySqlException exception) when (exception.Number == MissingTableErrorNumber)
+        {
+            rows = await connection.QueryAsync<LegacyWalletSyncRow>(
+                new CommandDefinition(legacySql, parameters, cancellationToken: cancellationToken));
+        }
 
         return rows.Select(row => row.ToCandidate()).ToArray();
     }
@@ -124,6 +196,22 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
 
         public string? BusinessLogo { get; set; }
 
+        public string? BrandingPublicName { get; set; }
+
+        public string? BrandingLogoPath { get; set; }
+
+        public string? BrandingPrimaryColor { get; set; }
+
+        public string? BrandingSecondaryColor { get; set; }
+
+        public string? BrandingCustomFieldColor { get; set; }
+
+        public int? BrandingStampGoal { get; set; }
+
+        public string? BrandingProgramName { get; set; }
+
+        public string? BrandingProgramDescription { get; set; }
+
         public int HasRegisteredAppleDevices { get; set; }
 
         public LegacyWalletSyncCandidate ToCandidate()
@@ -156,9 +244,21 @@ public sealed class MySqlLegacyWalletSyncRepository : ILegacyWalletSyncRepositor
                 BusinessName,
                 BusinessEmail,
                 BusinessPassword,
-                string.IsNullOrWhiteSpace(BusinessLogo) ? "/img/demo-coffee.svg" : BusinessLogo);
+                FirstNonEmpty(BrandingLogoPath, BusinessLogo, "/img/demo-coffee.svg"),
+                publicName: BrandingPublicName,
+                primaryColor: BrandingPrimaryColor,
+                secondaryColor: BrandingSecondaryColor,
+                programName: BrandingProgramName,
+                programDescription: BrandingProgramDescription,
+                customFieldColor: BrandingCustomFieldColor,
+                stampGoal: BrandingStampGoal ?? Business.DefaultStampGoal);
 
             return new LegacyWalletSyncCandidate(card, client, business, HasRegisteredAppleDevices != 0);
+        }
+
+        private static string FirstNonEmpty(params string?[] values)
+        {
+            return values.First(value => !string.IsNullOrWhiteSpace(value))!;
         }
     }
 }
