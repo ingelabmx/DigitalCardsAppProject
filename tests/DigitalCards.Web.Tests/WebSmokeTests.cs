@@ -936,6 +936,16 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 var businessId = store.Businesses.Single(business => business.Name == "Demo Coffee").Id;
                 store.ClientCredentials.Add(new ClientCredential(clientId, "modern-client-hash", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
                 store.ClientConsents.Add(new ClientConsent(1, clientId, businessId, "privacy-test", "Web", DateTimeOffset.UtcNow));
+                store.PasswordResetTokens.Add(new PasswordResetTokenRecord(
+                    1,
+                    PasswordResetAccountType.Client,
+                    clientId,
+                    "modern-reset-token-hash",
+                    "suffix",
+                    DateTimeOffset.UtcNow,
+                    DateTimeOffset.UtcNow.AddHours(1),
+                    UsedAt: null,
+                    RevokedAt: null));
             }
         }
 
@@ -966,6 +976,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 Assert.DoesNotContain(store.WalletLinkTokens, tokenRecord => tokenRecord.CardId == enrollment.Card.Id);
                 Assert.DoesNotContain(store.ClientCredentials, credential => credential.ClientId == clientId);
                 Assert.DoesNotContain(store.ClientConsents, consent => consent.ClientId == clientId);
+                Assert.DoesNotContain(store.PasswordResetTokens, resetToken => resetToken.AccountId == clientId);
                 Assert.Contains(store.Businesses, business => business.Name == "Demo Coffee");
                 Assert.Contains(store.AuditEvents, audit =>
                     audit.EventType == OperationalAuditEventType.ClientDeleted &&
