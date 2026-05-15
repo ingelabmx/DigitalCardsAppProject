@@ -69,6 +69,23 @@ body.legacy-shell {
   width: 38px;
 }
 
+.brand-logo-mark {
+  overflow: hidden;
+}
+
+.brand-logo-mark img {
+  display: block;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.brand-logo-mark img + .brand-logo-letter {
+    display: none;
+}
+
 .btn-primary {
   background: var(--dc-primary);
   border-color: var(--dc-primary);
@@ -1815,7 +1832,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .admin-report-metrics {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .admin-report-business-row {
@@ -2775,7 +2792,18 @@ body.public-shell {
   }
 
   .auth-copy-panel {
-    min-height: 300px;
+    min-height: 180px;
+    order: 2;
+    padding: 1.25rem;
+  }
+
+  .auth-copy-panel h1 {
+    font-size: 1.65rem;
+  }
+
+  .auth-form-card {
+    min-height: auto;
+    order: 1;
   }
 
   .dashboard-empty-actions,

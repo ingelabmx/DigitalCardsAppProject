@@ -59,10 +59,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var adminHtml = await client.GetStringAsync("/Admin/Dashboard");
 
         Assert.Contains("public-brand-lockup", homeHtml);
+        Assert.Contains("puntelio-public-brand-mark", homeHtml);
         Assert.Contains("Propiedad de IngeLabs", homeHtml);
         Assert.Contains("--dc-primary", css);
         Assert.Contains("--dc-radius", css);
-        Assert.Contains("legacy-brand-mark brand-mark", adminHtml);
+        Assert.Contains("puntelio-brand-mark", adminHtml);
+        Assert.Contains("brand-logo-letter", adminHtml);
         Assert.Contains("Propiedad de IngeLabs", adminHtml);
     }
 
@@ -103,6 +105,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var adminHtml = await client.GetStringAsync("/Admin/Login");
         var businessHtml = await client.GetStringAsync("/Business/Login");
         var clientHtml = await client.GetStringAsync("/Client/Login");
+        var css = await client.GetStringAsync("/css/site.css");
 
         Assert.Contains("auth-gateway", adminHtml);
         Assert.Contains("auth-gateway", businessHtml);
@@ -119,6 +122,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Volver al inicio", adminHtml);
         Assert.Contains("Volver al inicio", businessHtml);
         Assert.Contains("Volver al inicio", clientHtml);
+        Assert.Contains(".auth-form-card", css);
+        Assert.Contains("order: 1;", css);
+        Assert.Contains(".auth-copy-panel", css);
+        Assert.Contains("order: 2;", css);
     }
 
     [Fact]
@@ -144,6 +151,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-dashboard-next-steps", adminHtml);
         Assert.Contains("business-dashboard-no-cards", businessHtml);
         Assert.Contains("client-dashboard-empty-cards", clientHtml);
+        Assert.Contains("Cerrar sesion", adminHtml);
+        Assert.Contains("Cerrar sesion", businessHtml);
+        Assert.Contains("Cerrar sesion", clientHtml);
+        Assert.DoesNotContain("Salir admin", adminHtml);
+        Assert.DoesNotContain("Salir cliente", clientHtml);
     }
 
     [Fact]
@@ -1260,6 +1272,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-reports", html);
         Assert.Contains("admin-report-business-count", html);
         Assert.Contains("admin-report-recent-card", html);
+        Assert.DoesNotContain("admin-report-wallet-ready-count", html);
+        Assert.DoesNotContain("<span>Tarjeta digital</span>", html);
         Assert.Contains(userName, html);
         Assert.Contains("Demo Coffee", html);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,9 +29,22 @@
         : isBusiness
             ? User.FindFirst(BusinessAuth.BusinessNameClaim)?.Value ?? "Negocio"
             : User.FindFirst(ClientAuth.ClientNameClaim)?.Value ?? "Cliente";
+    var puntelioLogoPath = ResolvePuntelioLogoPath();
     string SidebarClass(string path) => requestPath.StartsWithSegments(path)
         ? "legacy-sidebar-link active"
         : "legacy-sidebar-link";
+    string? ResolvePuntelioLogoPath()
+    {
+        foreach (var path in new[] { "/img/puntelio-logo.svg", "/img/puntelio-logo.png" })
+        {
+            if (WebHostEnvironment.WebRootFileProvider.GetFileInfo(path.TrimStart('/')).Exists)
+            {
+                return path;
+            }
+        }
+
+        return null;
+    }
 }
 @functions {
     private static Microsoft.AspNetCore.Html.IHtmlContent SidebarIcon(string name)
@@ -62,7 +76,13 @@
             <aside class="legacy-left-sidebar" id="legacy-sidebar" data-testid="legacy-sidebar">
                 <div class="legacy-brand">
                     <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link">
-                        <span class="legacy-brand-mark brand-mark">P</span>
+                        <span class="legacy-brand-mark brand-mark brand-logo-mark" data-testid="puntelio-brand-mark">
+                            @if (puntelioLogoPath is not null)
+                            {
+                                <img src="@puntelioLogoPath" asp-append-version="true" alt="Puntelio" />
+                            }
+                            <span class="brand-logo-letter">P</span>
+                        </span>
                         <span>
                             <strong>Puntelio</strong>
                             <small>@shellRole</small>
@@ -103,7 +123,7 @@
                     <ul>
                         @if (isAdmin)
                         {
-                            <li><a class="legacy-sidebar-link" asp-page="/Admin/Logout" data-testid="admin-layout-logout-link">@SidebarIcon("logout")Salir admin</a></li>
+                            <li><a class="legacy-sidebar-link" asp-page="/Admin/Logout" data-testid="admin-layout-logout-link">@SidebarIcon("logout")Cerrar sesion</a></li>
                         }
                         else if (isBusiness)
                         {
@@ -111,7 +131,7 @@
                         }
                         else if (isClient)
                         {
-                            <li><a class="legacy-sidebar-link" asp-page="/Client/Logout" data-testid="client-layout-logout-link">@SidebarIcon("logout")Salir cliente</a></li>
+                            <li><a class="legacy-sidebar-link" asp-page="/Client/Logout" data-testid="client-layout-logout-link">@SidebarIcon("logout")Cerrar sesion</a></li>
                         }
                     </ul>
                 </nav>
@@ -154,7 +174,13 @@
             <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
                 <div class="container">
                     <a class="navbar-brand fw-semibold brand-lockup" asp-area="" asp-page="/Index" data-testid="public-brand-lockup">
-                        <span class="brand-mark brand-mark-sm">P</span>
+                        <span class="brand-mark brand-mark-sm brand-logo-mark" data-testid="puntelio-public-brand-mark">
+                            @if (puntelioLogoPath is not null)
+                            {
+                                <img src="@puntelioLogoPath" asp-append-version="true" alt="Puntelio" />
+                            }
+                            <span class="brand-logo-letter">P</span>
+                        </span>
                         <span>Puntelio</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
