@@ -19,6 +19,8 @@ namespace DigitalCards.Infrastructure.Wallets;
 
 public sealed class GoogleWalletService : IGoogleWalletService
 {
+    private const string DefaultProgramName = "Tarjeta de lealtad";
+
     private static readonly JsonSerializerSettings ExcludeNulls = new()
     {
         NullValueHandling = NullValueHandling.Ignore
@@ -218,9 +220,9 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 AlternateText = client.UserName
             },
             CardTitle = Localized(business.DisplayName),
-            Header = string.IsNullOrWhiteSpace(business.ProgramName)
-                ? null
-                : Localized(business.ProgramName),
+            Header = Localized(string.IsNullOrWhiteSpace(business.ProgramName)
+                ? DefaultProgramName
+                : business.ProgramName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
 

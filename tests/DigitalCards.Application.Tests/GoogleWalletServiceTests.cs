@@ -87,6 +87,42 @@ public sealed class GoogleWalletServiceTests
     }
 
     [Fact]
+    public void BuildObject_UsesDefaultHeaderWhenProgramNameIsMissing()
+    {
+        var service = new GoogleWalletService(
+            Options.Create(new GoogleWalletOptions
+            {
+                LogoImageUri = "https://fallback.example.test/logo.png",
+                HexBackgroundColor = "#445566"
+            }),
+            Options.Create(new DigitalCardsInfrastructureOptions
+            {
+                PublicBaseUrl = "https://app.puntelio.com"
+            }),
+            NullLogger<GoogleWalletService>.Instance);
+        var card = CreateCard();
+        var client = CreateClient(card.ClientId);
+        var business = new Business(
+            card.BusinessId,
+            "Legacy Cafe",
+            "legacy@example.test",
+            "hash",
+            "/img/demo-coffee.svg",
+            primaryColor: "#223344",
+            programName: null);
+
+        var genericObject = BuildObject(service, card, client, business);
+
+        Assert.Equal("Legacy Cafe", genericObject.CardTitle.DefaultValue.Value);
+        Assert.NotNull(genericObject.Header);
+        Assert.Equal("Tarjeta de lealtad", genericObject.Header.DefaultValue.Value);
+        Assert.Equal("#223344", genericObject.HexBackgroundColor);
+        Assert.Null(genericObject.HeroImage);
+        Assert.Equal("maria-test", genericObject.Barcode.Value);
+        Assert.Equal("maria-test", genericObject.Barcode.AlternateText);
+    }
+
+    [Fact]
     public void BuildClass_UsesClientChecksRewardTemplate()
     {
         var genericClass = BuildClass();
