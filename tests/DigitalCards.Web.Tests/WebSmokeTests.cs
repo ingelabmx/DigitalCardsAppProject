@@ -2290,6 +2290,23 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, enrollResponse.StatusCode);
         Assert.Contains("Correo generado", enrollHtml);
+        Assert.Contains("data-testid=\"enroll-username\"", enrollHtml);
+        Assert.DoesNotContain($"value=\"{userName}\"", enrollHtml, StringComparison.OrdinalIgnoreCase);
+
+        var missingUserName = NewLegacySafeUserName("missing");
+        var failedEnrollToken = ExtractAntiforgeryToken(enrollHtml);
+        var failedEnrollResponse = await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = missingUserName,
+                ["__RequestVerificationToken"] = failedEnrollToken
+            }));
+        var failedEnrollHtml = await failedEnrollResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, failedEnrollResponse.StatusCode);
+        Assert.Contains("Client was not found.", failedEnrollHtml);
+        Assert.Contains($"value=\"{missingUserName}\"", failedEnrollHtml, StringComparison.OrdinalIgnoreCase);
 
         var stampToken = await GetAntiforgeryTokenAsync(client, $"/Business/Stamp?businessId={tamperedBusinessId}");
         var stampResponse = await client.PostAsync(
