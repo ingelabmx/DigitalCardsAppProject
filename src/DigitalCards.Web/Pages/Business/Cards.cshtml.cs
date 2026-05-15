@@ -67,7 +67,7 @@ public sealed class CardsModel : PageModel
         }
 
         var businessId = BusinessAuth.GetBusinessId(User);
-        if (IsRewardReady(Detail!))
+        if (Detail!.RewardReady)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta ya esta completa. Confirma el canje de recompensa.");
             await LoadSearchResultsAsync(cancellationToken);
@@ -308,8 +308,4 @@ public sealed class CardsModel : PageModel
             Request.Host);
     }
 
-    private static bool IsRewardReady(BusinessCardDto card)
-    {
-        return Math.Min(Math.Max(card.CurrentStamps, 0), Math.Max(1, card.StampGoal)) >= Math.Max(1, card.StampGoal);
-    }
 }

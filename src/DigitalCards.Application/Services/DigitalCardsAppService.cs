@@ -672,6 +672,15 @@ public sealed class DigitalCardsAppService
         var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         if (card.GoogleObjectId is not null && card.GoogleSaveUrl is not null)
         {
+            try
+            {
+                await _googleWallet.PatchStampStateAsync(card, client, displayBusiness, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                // Keep the existing save URL usable; explicit refresh and stamp flows surface wallet update warnings.
+            }
+
             return new GoogleWalletIssueResult(card.GoogleObjectId, card.GoogleSaveUrl);
         }
 
@@ -1583,14 +1592,18 @@ public sealed class DigitalCardsAppService
 
     private static LoyaltyCardDto ToDto(LoyaltyCard card, Client client, Business business)
     {
+        var progress = CalculateStampProgress(card.CurrentStamps, business.StampGoal);
         return new LoyaltyCardDto(
             card.Id,
             card.EnrollmentToken,
             business.DisplayName,
             client.UserName,
             card.CurrentStamps,
-            business.StampGoal,
+            progress.StampGoal,
             card.LifetimeStamps,
+            progress.VisibleStamps,
+            progress.RewardReady,
+            progress.StampsRemaining,
             card.GoogleObjectId,
             card.GoogleSaveUrl);
     }
@@ -1616,6 +1629,7 @@ public sealed class DigitalCardsAppService
         var recentEvents = await _stampLedger.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
         var recentRedemptions = await _rewardRedemptions.ListRecentByCardIdAsync(card.Id, 5, cancellationToken);
         var isActive = await IsCardActiveAsync(card.Id, cancellationToken);
+        var progress = CalculateStampProgress(card.CurrentStamps, displayBusiness.StampGoal);
 
         return new BusinessCardDto(
             card.Id,
@@ -1623,8 +1637,11 @@ public sealed class DigitalCardsAppService
             ToDto(client),
             displayBusiness.DisplayName,
             card.CurrentStamps,
-            displayBusiness.StampGoal,
+            progress.StampGoal,
             card.LifetimeStamps,
+            progress.VisibleStamps,
+            progress.RewardReady,
+            progress.StampsRemaining,
             card.LastStampedAt,
             !string.IsNullOrWhiteSpace(card.GoogleObjectId),
             applePass is not null,
@@ -1780,8 +1797,22 @@ public sealed class DigitalCardsAppService
 
     private static bool IsRewardReady(LoyaltyCard card, Business business)
     {
-        return card.CurrentStamps >= NormalizeStampGoal(business.StampGoal);
+        return CalculateStampProgress(card.CurrentStamps, business.StampGoal).RewardReady;
     }
+
+    private static StampProgress CalculateStampProgress(int currentStamps, int stampGoal)
+    {
+        var goal = NormalizeStampGoal(stampGoal);
+        var visibleStamps = Math.Min(Math.Max(currentStamps, 0), goal);
+        var rewardReady = visibleStamps >= goal;
+        return new StampProgress(
+            goal,
+            visibleStamps,
+            rewardReady,
+            Math.Max(0, goal - visibleStamps));
+    }
+
+    private sealed record StampProgress(int StampGoal, int VisibleStamps, bool RewardReady, int StampsRemaining);
 
     private static string RewardText(Business business)
     {

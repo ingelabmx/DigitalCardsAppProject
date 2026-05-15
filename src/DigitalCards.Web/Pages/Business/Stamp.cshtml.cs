@@ -67,7 +67,7 @@ public sealed class StampModel : PageModel
                 businessId,
                 Input.UserNameOrEmail,
                 cancellationToken);
-            if (RewardCandidate is not null && IsRewardReady(RewardCandidate))
+            if (RewardCandidate is not null && RewardCandidate.RewardReady)
             {
                 return Page();
             }
@@ -82,6 +82,14 @@ public sealed class StampModel : PageModel
                 Result.Id,
                 Result.CurrentStamps,
                 Result.LifetimeStamps);
+            if (Result.RewardReady)
+            {
+                RewardCandidate = await _appService.GetBusinessCardForClientAsync(
+                    businessId,
+                    Result.ClientUserName,
+                    cancellationToken);
+            }
+
             Input = new InputModel();
             ModelState.Clear();
             return Page();
@@ -142,8 +150,4 @@ public sealed class StampModel : PageModel
         public string UserNameOrEmail { get; set; } = string.Empty;
     }
 
-    private static bool IsRewardReady(BusinessCardDto card)
-    {
-        return Math.Min(Math.Max(card.CurrentStamps, 0), Math.Max(1, card.StampGoal)) >= Math.Max(1, card.StampGoal);
-    }
 }

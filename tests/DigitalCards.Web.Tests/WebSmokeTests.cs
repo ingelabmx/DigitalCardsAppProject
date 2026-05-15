@@ -1772,6 +1772,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             var getHtml = await client.GetStringAsync(profilePath);
         Assert.DoesNotContain("data-testid=\"admin-business-branding-logo\"", getHtml);
         Assert.Contains("data-testid=\"admin-business-branding-logo-preview\"", getHtml);
+        Assert.Contains("data-branding-logo-preview-container", getHtml);
+        Assert.Contains("data-branding-logo-preview-image", getHtml);
+        Assert.Contains("data-branding-logo-upload", getHtml);
         Assert.Contains("Nombre del negocio", getHtml);
         Assert.Contains("Numero de sellos", getHtml);
         Assert.Contains("Color secundario 1", getHtml);
@@ -1808,6 +1811,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
             Assert.EndsWith("/logo.png", logoPath, StringComparison.Ordinal);
+            Assert.Contains($"{logoPath}?v=", html);
             var logoResponse = await client.GetAsync(logoPath);
             Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
             Assert.Equal((512, 512), ReadPngDimensions(await logoResponse.Content.ReadAsByteArrayAsync()));
@@ -2258,6 +2262,59 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("data-testid=\"current-stamps\">2 de 10</strong>", stampHtml);
         Assert.Contains("data-testid=\"stamp-username\"", stampHtml);
         Assert.DoesNotContain($"value=\"{userName}\"", stampHtml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BusinessStamp_ShowsRewardReadyOnlyAfterStampCompletesGoal()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        await LoginBusinessAsync(client);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+                Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                "Demo Coffee",
+                "/img/demo-coffee.svg",
+                "#111827",
+                "#2563eb",
+                "#ffffff",
+                2,
+                "Demo Rewards",
+                "Recompensa al completar dos sellos."));
+        }
+
+        var userName = NewLegacySafeUserName("rw");
+        await RegisterClientAsync(fake.Factory, userName);
+        var enrollToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
+        await client.PostAsync(
+            "/Business/Enroll",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = enrollToken
+            }));
+
+        var stampToken = await GetAntiforgeryTokenAsync(client, "/Business/Stamp");
+        var response = await client.PostAsync(
+            "/Business/Stamp",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = stampToken
+            }));
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("data-testid=\"current-stamps\">2 de 2</strong>", html);
+        Assert.Contains("data-testid=\"stamp-reward-candidate\"", html);
+        Assert.Contains("Recompensa lista", html);
+        Assert.Contains("Esta tarjeta ya tiene 2 de 2 sellos", html);
     }
 
     [Fact]
@@ -2792,6 +2849,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             Assert.Contains("business-branding-form", getHtml);
             Assert.Contains("Demo Coffee", getHtml);
             Assert.DoesNotContain("data-testid=\"business-branding-logo\"", getHtml);
+            Assert.Contains("data-branding-logo-preview-container", getHtml);
+            Assert.Contains("data-branding-logo-preview-image", getHtml);
+            Assert.Contains("data-branding-logo-upload", getHtml);
 
             var token = ExtractAntiforgeryToken(getHtml);
             using var form = new MultipartFormDataContent
@@ -2832,6 +2892,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
             Assert.EndsWith("/logo.png", logoPath, StringComparison.Ordinal);
+            Assert.Contains($"{logoPath}?v=", html);
             var logoResponse = await client.GetAsync(logoPath);
             Assert.Equal(HttpStatusCode.OK, logoResponse.StatusCode);
             Assert.Equal((512, 512), ReadPngDimensions(await logoResponse.Content.ReadAsByteArrayAsync()));
@@ -2882,6 +2943,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Color secundario 1", getHtml);
         Assert.Contains("Color secundario 2", getHtml);
         Assert.Contains("business-branding-custom-field-color", getHtml);
+        Assert.Contains("data-branding-logo-preview-container", getHtml);
+        Assert.Contains("data-branding-logo-preview-image", getHtml);
+        Assert.Contains("data-branding-logo-upload", getHtml);
         Assert.Contains("type=\"text\"", getHtml);
         Assert.DoesNotContain("<textarea", getHtml);
         Assert.DoesNotContain("business-wallet-branding-refresh-limit", getHtml);

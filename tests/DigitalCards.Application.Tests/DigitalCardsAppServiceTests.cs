@@ -1175,15 +1175,68 @@ public sealed class DigitalCardsAppServiceTests
 
         Assert.Equal(2, secondStamp.CurrentStamps);
         Assert.Equal(2, secondStamp.StampGoal);
+        Assert.Equal(2, secondStamp.VisibleStamps);
+        Assert.True(secondStamp.RewardReady);
+        Assert.Equal(0, secondStamp.StampsRemaining);
         Assert.Contains("canje", completeException.Message);
         Assert.True(redemption.Succeeded);
         Assert.Equal(0, redemption.Card!.CurrentStamps);
         Assert.Equal(2, redemption.Card.StampGoal);
+        Assert.Equal(0, redemption.Card.VisibleStamps);
+        Assert.False(redemption.Card.RewardReady);
+        Assert.Equal(2, redemption.Card.StampsRemaining);
         Assert.Equal(2, redemption.Redemption!.RedeemedCheckQTY);
         Assert.Equal(2, redemption.Redemption.StampGoal);
         Assert.Contains("dos sellos", redemption.Redemption.RewardText);
         Assert.Contains(redemption.Card.RecentStampEvents, item => item.Source == StampLedgerSource.RewardRedeemed);
         Assert.Single(redemption.Card.RecentRewardRedemptions);
+    }
+
+    [Fact]
+    public async Task SelectGoogleWalletAsync_PatchesExistingObjectWithCurrentBranding()
+    {
+        var services = CreateDefaultServices();
+        var google = new RecordingGoogleWalletService();
+        foreach (var descriptor in services.Where(descriptor => descriptor.ServiceType == typeof(IGoogleWalletService)).ToArray())
+        {
+            services.Remove(descriptor);
+        }
+
+        services.AddSingleton<IGoogleWalletService>(google);
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "runnigoogle",
+            "Runni",
+            "User",
+            "runnigoogle@example.test",
+            "ClientPass123!"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        var token = ExtractWalletToken(enrollment.EnrollmentUrl);
+
+        await app.SelectGoogleWalletAsync(token);
+        await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business.Id,
+            "Runni Cafe",
+            "/img/runni.png",
+            "#112233",
+            "#445566",
+            "#ffffff",
+            10,
+            "Runni Rewards",
+            "Cafe gratis."));
+        await app.SelectGoogleWalletAsync(token);
+
+        Assert.Equal("Runni Cafe", google.PatchedBusinessName);
+        Assert.Equal("Runni Rewards", google.PatchedProgramName);
     }
 
     [Fact]
@@ -2383,6 +2436,35 @@ public sealed class DigitalCardsAppServiceTests
         services.AddDigitalCardsApplication();
         services.AddDigitalCardsInfrastructure(configuration);
         return services;
+    }
+
+    private sealed class RecordingGoogleWalletService : IGoogleWalletService
+    {
+        public string? PatchedBusinessName { get; private set; }
+
+        public string? PatchedProgramName { get; private set; }
+
+        public Task<GoogleWalletIssueResult> IssueSaveLinkAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new GoogleWalletIssueResult(
+                $"recording-google-{card.Id:N}",
+                $"https://pay.google.com/gp/v/save/recording-{card.Id:N}"));
+        }
+
+        public Task PatchStampStateAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            PatchedBusinessName = business.DisplayName;
+            PatchedProgramName = business.ProgramName;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class ThrowingAppleWalletService : IAppleWalletService

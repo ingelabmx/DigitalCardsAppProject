@@ -92,7 +92,7 @@
                                     <small>@card.Client.Email</small>
                                 </div>
                                 <div class="business-card-result-state">
-                                    <span>@VisibleStamps(card.CurrentStamps, card.StampGoal) de @NormalizedStampGoal(card.StampGoal) sellos</span>
+                                    <span>@card.VisibleStamps de @card.StampGoal sellos</span>
                                     <span class="@(IsCardReady(card) ? "wallet-status-ok" : "wallet-status-pending")">
                                         @(IsCardReady(card) ? "Tarjeta lista" : "Tarjeta pendiente")
                                     </span>
@@ -115,10 +115,6 @@
                 }
                 else
                 {
-                    var stampGoal = NormalizedStampGoal(Model.Detail.StampGoal);
-                    var visibleStamps = VisibleStamps(Model.Detail.CurrentStamps, stampGoal);
-                    var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
-
                     <div class="detail-heading">
                         <div>
                             <h2>@Model.Detail.Client.UserName</h2>
@@ -132,9 +128,9 @@
                             <span>Estado de tarjeta</span>
                             <strong>
                                 @(Model.Detail.IsActive
-                                    ? IsRewardReady(Model.Detail)
+                                    ? Model.Detail.RewardReady
                                         ? "Activa - Recompensa lista"
-                                        : $"Activa - Faltan {stampsToGoal} sello(s)"
+                                        : $"Activa - Faltan {Model.Detail.StampsRemaining} sello(s)"
                                     : "Inactiva")
                             </strong>
                         </div>
@@ -144,7 +140,7 @@
                                     Reenviar Wallet
                                 </button>
                             </form>
-                            @if (IsRewardReady(Model.Detail))
+                            @if (Model.Detail.RewardReady)
                             {
                                 <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
                                     <button class="btn btn-success" type="submit" data-testid="business-card-redeem-submit" disabled="@(!Model.Detail.IsActive)" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
@@ -170,9 +166,9 @@
                             <small>@Model.Detail.Client.UserName</small>
                         </div>
                         <div class="business-stamp-track" aria-label="Sellos actuales">
-                            @for (var stamp = 1; stamp <= stampGoal; stamp++)
+                            @for (var stamp = 1; stamp <= Model.Detail.StampGoal; stamp++)
                             {
-                                <span class="@(stamp <= visibleStamps ? "filled" : null)"></span>
+                                <span class="@(stamp <= Model.Detail.VisibleStamps ? "filled" : null)"></span>
                             }
                         </div>
                     </div>
@@ -180,7 +176,7 @@
                     <div class="metric-row metric-row-wide">
                         <div class="metric">
                             <span>Sellos actuales</span>
-                            <strong data-testid="business-card-current-stamps">@visibleStamps de @stampGoal</strong>
+                            <strong data-testid="business-card-current-stamps">@Model.Detail.VisibleStamps de @Model.Detail.StampGoal</strong>
                         </div>
                         <div class="metric">
                             <span>Sellos historicos</span>
@@ -312,21 +308,6 @@
     private static bool IsCardReady(BusinessCardDto card)
     {
         return card.GoogleIssued || card.AppleTracked;
-    }
-
-    private static int NormalizedStampGoal(int stampGoal)
-    {
-        return Math.Max(1, stampGoal);
-    }
-
-    private static int VisibleStamps(int currentStamps, int stampGoal)
-    {
-        return Math.Min(Math.Max(currentStamps, 0), NormalizedStampGoal(stampGoal));
-    }
-
-    private static bool IsRewardReady(BusinessCardDto card)
-    {
-        return VisibleStamps(card.CurrentStamps, card.StampGoal) >= NormalizedStampGoal(card.StampGoal);
     }
 
     private static string CardStatus(

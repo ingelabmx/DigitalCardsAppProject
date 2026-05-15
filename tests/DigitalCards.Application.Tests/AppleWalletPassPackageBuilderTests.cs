@@ -80,6 +80,33 @@ public sealed class AppleWalletPassPackageBuilderTests
     }
 
     [Fact]
+    public void BuildPassJson_UsesBrandingPublicNameAsBusinessName()
+    {
+        var builder = new AppleWalletPassPackageBuilder();
+        var card = CreateCard();
+        var client = CreateClient(card.ClientId);
+        var business = new Business(
+            card.BusinessId,
+            "Balboa Water",
+            "balboa@example.test",
+            "hash",
+            "logo.png",
+            publicName: "Runni Cafe",
+            programName: "Runni Rewards",
+            programDescription: "Cafe de recompensa.");
+
+        using var document = JsonDocument.Parse(builder.BuildPassJson(card, client, business, CreateOptions()));
+        var root = document.RootElement;
+        var generic = root.GetProperty("generic");
+
+        Assert.Equal("Runni Cafe", root.GetProperty("description").GetString());
+        Assert.Equal("Runni Rewards", root.GetProperty("logoText").GetString());
+        Assert.Equal("Nombre del negocio", generic.GetProperty("primaryFields")[0].GetProperty("label").GetString());
+        Assert.Equal("Runni Cafe", generic.GetProperty("primaryFields")[0].GetProperty("value").GetString());
+        Assert.DoesNotContain("Balboa Water", Encoding.UTF8.GetString(builder.BuildPassJson(card, client, business, CreateOptions())));
+    }
+
+    [Fact]
     public void BuildUnsignedFiles_EmbedsUploadedPngBusinessLogo()
     {
         var uploadRoot = Path.Combine(Path.GetTempPath(), $"digitalcards-logo-{Guid.NewGuid():N}");
