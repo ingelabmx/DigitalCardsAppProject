@@ -140,8 +140,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
     {
         var brand = NormalizeBrand(branding);
         var primaryColor = NormalizeColor(brand.PrimaryColor);
-        var logoHtml = BuildLogoHtml(brand);
-        var programName = Html(brand.ProgramName ?? brand.DisplayName);
+        var brandHeaderHtml = BuildBrandHeaderHtml(brand, primaryColor);
 
         return $"""
             <!doctype html>
@@ -157,8 +156,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
                     <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:8px;padding:24px;">
                       <tr>
                         <td>
-                          {logoHtml}
-                          <p style="margin:0 0 8px;color:{primaryColor};font-weight:bold;text-transform:uppercase;font-size:13px;">{programName}</p>
+                          {brandHeaderHtml}
                           {bodyHtml}
                         </td>
                       </tr>
@@ -263,14 +261,36 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             """;
     }
 
-    private static string BuildLogoHtml(EmailBranding brand)
+    private static string BuildBrandHeaderHtml(EmailBranding brand, string primaryColor)
     {
+        var displayName = Html(brand.DisplayName);
+        var programLine = string.IsNullOrWhiteSpace(brand.ProgramName)
+            ? string.Empty
+            : $"""<p style="margin:4px 0 0;color:{primaryColor};font-weight:bold;text-transform:uppercase;font-size:13px;">{Html(brand.ProgramName!)}</p>""";
+
         if (!IsSafePublicUrl(brand.LogoUrl))
         {
-            return string.Empty;
+            return $"""
+                <div style="margin:0 0 18px;">
+                  <p style="margin:0;color:#111827;font-size:20px;font-weight:bold;line-height:1.2;">{displayName}</p>
+                  {programLine}
+                </div>
+                """;
         }
 
-        return $"""<img src="{SafeHref(brand.LogoUrl!)}" alt="{Html(brand.DisplayName)}" width="72" style="display:block;margin:0 0 16px;max-width:72px;height:auto;" />""";
+        return $"""
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 18px;">
+              <tr>
+                <td width="86" valign="middle" style="padding:0 14px 0 0;">
+                  <img src="{SafeHref(brand.LogoUrl!)}" alt="{displayName}" width="72" style="display:block;border:0;max-width:72px;height:auto;" />
+                </td>
+                <td valign="middle" style="padding:0;">
+                  <p style="margin:0;color:#111827;font-size:20px;font-weight:bold;line-height:1.2;">{displayName}</p>
+                  {programLine}
+                </td>
+              </tr>
+            </table>
+            """;
     }
 
     private static string NormalizeColor(string? value)

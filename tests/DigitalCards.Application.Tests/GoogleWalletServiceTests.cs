@@ -42,13 +42,20 @@ public sealed class GoogleWalletServiceTests
         Assert.Equal(
             "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             genericObject.Logo.SourceUri.Uri);
-        Assert.Equal("Runni Rewards", genericObject.CardTitle.DefaultValue.Value);
-        Assert.Equal("Runni Cafe", genericObject.Header.DefaultValue.Value);
+        Assert.Equal("Runni Cafe", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Runni Rewards", genericObject.Header.DefaultValue.Value);
         Assert.Null(genericObject.Subheader);
         Assert.Null(genericObject.HeroImage);
         Assert.Equal("#112233", genericObject.HexBackgroundColor);
         Assert.Equal("maria-test", genericObject.Barcode.Value);
         Assert.Equal("maria-test", genericObject.Barcode.AlternateText);
+        var visiblePayload = string.Join(
+            "|",
+            genericObject.CardTitle.DefaultValue.Value,
+            genericObject.Header.DefaultValue.Value,
+            genericObject.Barcode.Value,
+            genericObject.Barcode.AlternateText,
+            string.Join("|", genericObject.TextModulesData.Select(module => $"{module.Header}:{module.Body}")));
 
         Assert.Collection(
             genericObject.TextModulesData,
@@ -72,6 +79,9 @@ public sealed class GoogleWalletServiceTests
             });
         Assert.NotEqual("Balboa Water", genericObject.CardTitle.DefaultValue.Value);
         Assert.NotEqual("Balboa Water", genericObject.Header.DefaultValue.Value);
+        Assert.DoesNotContain("Balboa Water", visiblePayload);
+        Assert.DoesNotContain("[SOLO PARA PRUEBAS]", visiblePayload);
+        Assert.DoesNotContain("[TEST ONLY]", visiblePayload);
         Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Sellos historicos");
         Assert.DoesNotContain(genericObject.TextModulesData, module => module.Header == "Fecha de alta");
     }

@@ -205,10 +205,6 @@ public sealed class GoogleWalletService : IGoogleWalletService
         Client client,
         Business business)
     {
-        var programName = string.IsNullOrWhiteSpace(business.ProgramName)
-            ? business.DisplayName
-            : business.ProgramName;
-
         var genericObject = new GenericObject
         {
             Id = objectId,
@@ -221,8 +217,10 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 Value = client.UserName,
                 AlternateText = client.UserName
             },
-            CardTitle = Localized(programName),
-            Header = Localized(business.DisplayName),
+            CardTitle = Localized(business.DisplayName),
+            Header = string.IsNullOrWhiteSpace(business.ProgramName)
+                ? null
+                : Localized(business.ProgramName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
 
