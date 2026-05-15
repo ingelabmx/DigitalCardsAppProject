@@ -479,7 +479,7 @@ public sealed class DigitalCardsAppServiceTests
         var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
             "DCAdmin",
             "admin123"));
-        var enrollment = await CreateEnrollmentAsync(app, "retry-ok");
+        var enrollment = await CreateEnrollmentAsync(app, "retryok");
         await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
         await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
             "pass.com.puntelio.loyalty",
@@ -520,7 +520,7 @@ public sealed class DigitalCardsAppServiceTests
         var admin = await adminApp.LoginAdminAsync(new AdminLoginCommand(
             "DCAdmin",
             "admin123"));
-        var enrollment = await CreateEnrollmentAsync(app, "retry-fail");
+        var enrollment = await CreateEnrollmentAsync(app, "retryfail");
         await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
             "pass.com.puntelio.loyalty",
             $"serial-{enrollment.Card.Id:N}",
@@ -555,7 +555,7 @@ public sealed class DigitalCardsAppServiceTests
         var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
             "demo@digitalcards.test",
             "business123"));
-        var enrollment = await CreateEnrollmentAsync(app, "brand-refresh");
+        var enrollment = await CreateEnrollmentAsync(app, "brandrefresh");
         await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
         await applePasses.UpsertPassAsync(new AppleWalletPassRecord(
             "pass.com.puntelio.loyalty",
@@ -600,7 +600,7 @@ public sealed class DigitalCardsAppServiceTests
 
         for (var index = 0; index < 105; index++)
         {
-            var enrollment = await CreateEnrollmentAsync(app, $"refresh-all-{index:D3}");
+            var enrollment = await CreateEnrollmentAsync(app, $"refreshall{index:D3}");
             await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
         }
 
@@ -629,7 +629,7 @@ public sealed class DigitalCardsAppServiceTests
         var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
             "demo@digitalcards.test",
             "business123"));
-        var enrollment = await CreateEnrollmentAsync(app, "admin-brand-refresh");
+        var enrollment = await CreateEnrollmentAsync(app, "adminbrandrefresh");
         await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
 
         var result = await adminApp.RefreshBusinessWalletBrandingAsync(
@@ -1321,6 +1321,31 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RegisterClientAsync_NormalizesUserNameAndRejectsInvalidCharacters()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+
+        var registered = await app.RegisterClientAsync(new RegisterClientCommand(
+            "ClientABC123",
+            "Client",
+            "Normalized",
+            "clientabc123@example.test",
+            "clientpass1"));
+        var invalid = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            app.RegisterClientAsync(new RegisterClientCommand(
+                "bad user",
+                "Bad",
+                "User",
+                "baduser@example.test",
+                "clientpass1")));
+
+        Assert.Equal("clientabc123", registered.UserName);
+        Assert.Equal("El usuario solo puede usar letras y numeros, sin espacios.", invalid.Message);
+        Assert.NotNull(await app.LoginClientAsync(new ClientLoginCommand("CLIENTABC123", "clientpass1")));
+    }
+
+    [Fact]
     public async Task RecordClientConsentAsync_StoresConsentWithoutSecrets()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();
@@ -1898,7 +1923,7 @@ public sealed class DigitalCardsAppServiceTests
         var app = provider.GetRequiredService<DigitalCardsAppService>();
 
         var client = await app.RegisterClientAsync(new RegisterClientCommand(
-            "maria-test",
+            "mariatest",
             "Maria",
             "Lopez",
             "maria@example.test"));
@@ -2092,7 +2117,7 @@ public sealed class DigitalCardsAppServiceTests
         var app = provider.GetRequiredService<DigitalCardsAppService>();
 
         var client = await app.RegisterClientAsync(new RegisterClientCommand(
-            "apple-test",
+            "appletest",
             "Ana",
             "Lopez",
             "ana@example.test"));
@@ -2121,7 +2146,7 @@ public sealed class DigitalCardsAppServiceTests
     {
         var hardenedProvider = CreateDefaultServices().BuildServiceProvider();
         var hardenedApp = hardenedProvider.GetRequiredService<DigitalCardsAppService>();
-        var hardenedEnrollment = await CreateEnrollmentAsync(hardenedApp, "blocked-token");
+        var hardenedEnrollment = await CreateEnrollmentAsync(hardenedApp, "blockedtoken");
         var publicToken = ExtractWalletToken(hardenedEnrollment.EnrollmentUrl);
 
         Assert.Null(await hardenedApp.GetWalletLandingAsync(hardenedEnrollment.Card.EnrollmentToken));
@@ -2133,7 +2158,7 @@ public sealed class DigitalCardsAppServiceTests
         });
         var compatibleProvider = compatibleServices.BuildServiceProvider();
         var compatibleApp = compatibleProvider.GetRequiredService<DigitalCardsAppService>();
-        var compatibleEnrollment = await CreateEnrollmentAsync(compatibleApp, "compat-token");
+        var compatibleEnrollment = await CreateEnrollmentAsync(compatibleApp, "compattoken");
 
         var legacyLanding = await compatibleApp.GetWalletLandingAsync(compatibleEnrollment.Card.EnrollmentToken);
 
@@ -2148,7 +2173,7 @@ public sealed class DigitalCardsAppServiceTests
         var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
             "demo@digitalcards.test",
             "business123"));
-        var enrollment = await CreateEnrollmentAsync(app, "ledger-ok");
+        var enrollment = await CreateEnrollmentAsync(app, "ledgerok");
 
         var detail = await app.AddStampToCardAsync(business!.Id, enrollment.Card.Id);
 
@@ -2179,7 +2204,7 @@ public sealed class DigitalCardsAppServiceTests
         var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
             "demo@digitalcards.test",
             "business123"));
-        var enrollment = await CreateEnrollmentAsync(app, "ledger-fail");
+        var enrollment = await CreateEnrollmentAsync(app, "ledgerfail");
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             app.AddStampToCardAsync(business!.Id, enrollment.Card.Id));
