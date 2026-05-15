@@ -3540,7 +3540,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task WalletInstallGuidance_RendersPlatformHintsAndTroubleshooting()
+    public async Task WalletLanding_IsSimplifiedAndWalletPagesKeepTroubleshooting()
     {
         using var fake = WithFakeIntegrations();
         var client = fake.Factory.CreateClient();
@@ -3550,9 +3550,19 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var appleHtml = await client.GetStringAsync($"/Wallet/Apple/{token}");
         var googleHtml = await client.GetStringAsync($"/Wallet/Google/{token}");
 
-        Assert.Contains("wallet-device-guidance", landingHtml);
-        Assert.Contains("data-wallet-platform=\"apple\"", landingHtml);
-        Assert.Contains("data-wallet-platform=\"google\"", landingHtml);
+        Assert.Contains("wallet-select", landingHtml);
+        Assert.Contains("wallet-visual-card", landingHtml);
+        Assert.Contains("apple-wallet-button", landingHtml);
+        Assert.Contains("google-wallet-button", landingHtml);
+        Assert.Contains("--wallet-primary:", landingHtml);
+        Assert.Contains("--wallet-secondary:", landingHtml);
+        Assert.Contains("--wallet-custom:", landingHtml);
+        Assert.DoesNotContain("wallet-device-guidance", landingHtml);
+        Assert.DoesNotContain("wallet-guidance-card", landingHtml);
+        Assert.DoesNotContain("data-wallet-platform=", landingHtml);
+        Assert.DoesNotContain("Sellos actuales", landingHtml);
+        Assert.DoesNotContain("Sellos historicos", landingHtml);
+        Assert.DoesNotContain("wallet-public-stamps", landingHtml);
         Assert.Contains("data-wallet-recommendation", landingHtml);
         Assert.Contains("apple-wallet-install-help", appleHtml);
         Assert.Contains("google-wallet-install-help", googleHtml);

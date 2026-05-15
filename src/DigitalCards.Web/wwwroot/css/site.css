@@ -1091,22 +1091,31 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-panel {
-  border-top: 5px solid var(--wallet-secondary, #5d87ff);
+  background:
+    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
+    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  border: 0;
+  color: #fff;
   display: grid;
-  gap: 1rem;
+  gap: 1.15rem;
   margin: 0 auto;
   max-width: 760px;
 }
 
 .wallet-public-panel .eyebrow {
-  color: var(--wallet-secondary, #5d87ff);
+  color: rgb(255 255 255 / 72%);
 }
 
 .wallet-public-panel h1 {
-  color: var(--wallet-primary, #111827);
+  color: var(--wallet-custom, #fff);
   font-size: clamp(2rem, 5vw, 3.35rem);
   line-height: 1.05;
   margin-bottom: 0.35rem;
+}
+
+.wallet-public-panel .lead {
+  color: rgb(255 255 255 / 82%);
+  margin-bottom: 0;
 }
 
 .wallet-public-brand {
@@ -1119,8 +1128,8 @@ form.is-submitting input[type="submit"] {
 .wallet-public-brand img,
 .wallet-public-brand > span {
   align-items: center;
-  background: #f6f9fc;
-  border: 1px solid #e5eaef;
+  background: rgb(255 255 255 / 92%);
+  border: 1px solid rgb(255 255 255 / 45%);
   border-radius: 8px;
   display: inline-flex;
   font-weight: 800;
@@ -1132,17 +1141,10 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-brand > span {
-  color: var(--wallet-secondary, #5d87ff);
+  color: var(--wallet-primary, #111827);
   font-size: 1.3rem;
 }
 
-.wallet-device-guidance {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.wallet-guidance-card,
 .wallet-install-help {
   background: #f6f9fc;
   border: 1px solid #dde3ea;
@@ -1150,30 +1152,10 @@ form.is-submitting input[type="submit"] {
   padding: 0.95rem;
 }
 
-.wallet-guidance-card {
-  border-left: 4px solid #d9e2ec;
-  display: grid;
-  gap: 0.25rem;
-}
-
-.wallet-guidance-card.is-recommended {
-  border-left-color: var(--wallet-secondary, #5d87ff);
-  box-shadow: 0 10px 24px rgb(42 53 71 / 8%);
-}
-
-.wallet-guidance-card span {
-  color: var(--wallet-secondary, #5d87ff);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.wallet-guidance-card strong,
 .wallet-install-help strong {
   color: #2a3547;
 }
 
-.wallet-guidance-card small,
 .wallet-install-help p,
 .wallet-install-help li {
   color: #5a6a85;
@@ -1184,37 +1166,20 @@ form.is-submitting input[type="submit"] {
   padding-left: 1.15rem;
 }
 
-.wallet-public-stamps {
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(14px, 1fr));
-}
-
-.wallet-public-stamps span {
-  aspect-ratio: 1;
-  background: #eef2f6;
-  border: 1px solid #d9e2ec;
-  border-radius: 999px;
-}
-
-.wallet-public-stamps span.filled {
-  background: var(--wallet-secondary, #5d87ff);
-  border-color: var(--wallet-secondary, #5d87ff);
-}
-
 .wallet-visual-card {
   background:
-    radial-gradient(circle at top right, rgb(255 255 255 / 20%), transparent 32%),
-    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+    radial-gradient(circle at top right, rgb(255 255 255 / 68%), transparent 34%),
+    rgb(255 255 255 / 92%);
+  border: 1px solid rgb(255 255 255 / 44%);
   border-radius: 8px;
-  color: #fff;
+  color: #2a3547;
   display: grid;
   gap: 0.85rem;
   padding: 1rem;
 }
 
 .wallet-visual-card span {
-  color: rgb(255 255 255 / 74%);
+  color: var(--wallet-secondary, #5d87ff);
   display: block;
   font-size: 0.75rem;
   font-weight: 800;
@@ -1233,26 +1198,18 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-visual-card p {
-  color: rgb(255 255 255 / 84%);
+  color: #5a6a85;
   margin: 0;
-}
-
-.wallet-visual-progress {
-  background: rgb(255 255 255 / 22%);
-  border-radius: 999px;
-  height: 10px;
-  overflow: hidden;
-}
-
-.wallet-visual-progress div {
-  background: #fff;
-  border-radius: inherit;
-  height: 100%;
 }
 
 .wallet-public-panel .btn-primary {
   background: var(--wallet-secondary, #5d87ff);
   border-color: var(--wallet-secondary, #5d87ff);
+}
+
+.wallet-public-panel [data-wallet-button="apple"] {
+  background: var(--wallet-primary, #111827);
+  border-color: rgb(255 255 255 / 32%);
 }
 
 .metric-row {
@@ -2678,7 +2635,6 @@ body.public-shell {
 
 .client-stamp-track span,
 .business-stamp-track span,
-.wallet-public-stamps span,
 .home-stamp-row span {
   min-width: 0;
 }
@@ -2710,7 +2666,6 @@ body.public-shell {
   .public-enrollment-shell,
   .public-registration-grid,
   .wallet-actions,
-  .wallet-device-guidance,
   .metric-row {
     grid-template-columns: 1fr;
   }

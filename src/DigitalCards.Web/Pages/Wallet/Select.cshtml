@@ -15,14 +15,11 @@ else
 {
     var primaryColor = Model.Landing.PrimaryColor ?? "#111827";
     var secondaryColor = Model.Landing.SecondaryColor ?? "#5d87ff";
+    var customFieldColor = Model.Landing.CustomFieldColor ?? "#ffffff";
     var fallbackInitials = Model.Landing.BusinessName[..Math.Min(Model.Landing.BusinessName.Length, 2)].ToUpperInvariant();
-    var stampGoal = Math.Max(1, Model.Landing.StampGoal);
-    var visibleStamps = Math.Min(Model.Landing.CurrentStamps, stampGoal);
-    var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
-    var stampProgress = visibleStamps * 100 / stampGoal;
 
     <section class="wallet-panel wallet-public-panel"
-             style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;"
+             style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;--wallet-custom:@customFieldColor;"
              data-testid="wallet-select">
         <div class="wallet-public-brand">
             @if (!string.IsNullOrWhiteSpace(Model.Landing.LogoPath))
@@ -48,57 +45,10 @@ else
                 <span>Programa</span>
                 <strong>@Model.Landing.BusinessName</strong>
             </div>
-            <div class="wallet-visual-progress" aria-label="Progreso de sellos">
-                <div style="width:@stampProgress%"></div>
-            </div>
-            <p>
-                @if (stampsToGoal == 0)
-                {
-                    <span>Tarjeta lista para recompensa o siguiente ciclo.</span>
-                }
-                else
-                {
-                    <span>Faltan @stampsToGoal sello(s) para completar esta tarjeta.</span>
-                }
-            </p>
+            <p>Guarda esta tarjeta digital para recibir sellos y actualizaciones del negocio.</p>
         </div>
 
-        <p class="lead">Elige el Wallet de tu celular. La tarjeta refleja tus sellos actuales y podra actualizarse cuando el negocio agregue nuevos sellos.</p>
-
-        <div class="wallet-device-guidance" data-testid="wallet-device-guidance">
-            <article class="wallet-guidance-card" data-wallet-platform="apple">
-                <span>iPhone</span>
-                <strong>Apple Wallet</strong>
-                <small>Abre este link desde Safari para instalar el pase en Wallet.</small>
-            </article>
-            <article class="wallet-guidance-card" data-wallet-platform="google">
-                <span>Android</span>
-                <strong>Google Wallet</strong>
-                <small>Usa la cuenta de Google con la que guardaras la tarjeta.</small>
-            </article>
-        </div>
-
-        <div class="metric-row">
-            <div class="metric">
-                <span>Sellos actuales</span>
-                <strong>@visibleStamps de @stampGoal</strong>
-            </div>
-            <div class="metric">
-                <span>Sellos historicos</span>
-                <strong>@Model.Landing.LifetimeStamps</strong>
-            </div>
-            <div class="metric">
-                <span>Google</span>
-                <strong>@(Model.Landing.HasGooglePass ? "Emitida" : "Pendiente")</strong>
-            </div>
-        </div>
-
-        <div class="wallet-public-stamps" aria-label="Sellos actuales">
-            @for (var stamp = 1; stamp <= stampGoal; stamp++)
-            {
-                <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
-            }
-        </div>
+        <p class="lead">Elige donde guardar tu tarjeta. Se actualizara automaticamente cuando el negocio agregue nuevos sellos.</p>
 
         <div class="wallet-actions">
             <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
@@ -142,7 +92,6 @@ else
                 }
 
                 root.dataset.recommendedWallet = recommendedWallet;
-                root.querySelector(`[data-wallet-platform="${recommendedWallet}"]`)?.classList.add("is-recommended");
                 const button = root.querySelector(`[data-wallet-button="${recommendedWallet}"]`);
                 button?.classList.add("is-recommended");
                 button?.querySelector("[data-wallet-recommendation]")?.removeAttribute("hidden");
