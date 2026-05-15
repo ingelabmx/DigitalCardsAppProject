@@ -148,6 +148,26 @@ public sealed record PilotClientDto(
     string? Notes,
     DateTimeOffset? UpdatedAt);
 
+public sealed record AdminClientConsoleDto(
+    Guid ClientId,
+    string UserName,
+    string ClientName,
+    string ClientEmail,
+    int CardCount,
+    int CurrentStamps,
+    int LifetimeStamps,
+    DateTimeOffset? LastActivityAt,
+    IReadOnlyList<AdminClientCardConsoleDto> Cards);
+
+public sealed record AdminClientCardConsoleDto(
+    Guid CardId,
+    Guid BusinessId,
+    string BusinessName,
+    int CurrentStamps,
+    int LifetimeStamps,
+    DateTimeOffset LastActivityAt,
+    string CardStatus);
+
 public sealed record SetPilotClientCommand(
     Guid ClientId,
     Guid AdminUserId,

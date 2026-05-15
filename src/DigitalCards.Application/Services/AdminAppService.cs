@@ -757,6 +757,62 @@ public sealed class AdminAppService
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<AdminClientConsoleDto>> ListClientConsoleAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var clients = await _clients.SearchAsync(query, cancellationToken);
+        var businesses = (await _businesses.ListAsync(cancellationToken))
+            .ToDictionary(business => business.Id);
+        var result = new List<AdminClientConsoleDto>(clients.Count);
+
+        foreach (var client in clients.OrderBy(client => client.UserName, StringComparer.OrdinalIgnoreCase))
+        {
+            var cards = await _loyaltyCards.ListByClientAsync(client.Id, cancellationToken);
+            var summaries = new List<AdminClientCardConsoleDto>(cards.Count);
+
+            foreach (var card in cards.OrderByDescending(card => card.LastStampedAt))
+            {
+                var businessName = "Negocio no disponible";
+                if (businesses.TryGetValue(card.BusinessId, out var business))
+                {
+                    businessName = (await ApplyBrandingAsync(business, cancellationToken)).DisplayName;
+                }
+
+                var lifecycle = await _accountLifecycle.FindCardLifecycleAsync(card.Id, cancellationToken);
+                var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
+                var isActive = lifecycle?.IsActive ?? true;
+                var cardStatus = !isActive
+                    ? "Inactiva"
+                    : !string.IsNullOrWhiteSpace(card.GoogleObjectId) || applePass is not null
+                        ? "Lista"
+                        : "Pendiente";
+
+                summaries.Add(new AdminClientCardConsoleDto(
+                    card.Id,
+                    card.BusinessId,
+                    businessName,
+                    card.CurrentStamps,
+                    card.LifetimeStamps,
+                    card.LastStampedAt,
+                    cardStatus));
+            }
+
+            result.Add(new AdminClientConsoleDto(
+                client.Id,
+                client.UserName,
+                client.FullName,
+                client.Email,
+                summaries.Count,
+                summaries.Sum(card => card.CurrentStamps),
+                summaries.Sum(card => card.LifetimeStamps),
+                summaries.Count == 0 ? null : summaries.Max(card => card.LastActivityAt),
+                summaries));
+        }
+
+        return result;
+    }
+
     public async Task<PilotClientDto?> SetPilotClientAsync(
         SetPilotClientCommand command,
         CancellationToken cancellationToken = default)

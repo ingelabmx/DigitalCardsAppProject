@@ -2533,6 +2533,42 @@ body.public-shell {
   border-color: #fde68a;
 }
 
+.status-pill {
+  background: var(--dc-brand-soft);
+  border-radius: 999px;
+  color: var(--dc-primary-dark);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+}
+
+.admin-client-console-header {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+}
+
+.admin-client-console-stats {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-client-console-stats span {
+  background: #f6f9fc;
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  color: var(--dc-muted);
+  display: grid;
+  font-size: 0.78rem;
+  padding: 0.55rem;
+}
+
+.admin-client-console-stats strong {
+  color: var(--dc-ink);
+}
+
 .danger-action-panel,
 .danger-zone-card,
 .business-profile-panel.border-danger {
@@ -2605,6 +2641,7 @@ body.public-shell {
 
 @media (max-width: 760px) {
   .app-surface,
+  .admin-client-console-header,
   .business-card-grid,
   .business-card-quick-summary,
   .business-card-toolbar,
@@ -2627,6 +2664,10 @@ body.public-shell {
   .wallet-actions,
   .wallet-device-guidance,
   .metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-client-console-stats {
     grid-template-columns: 1fr;
   }
 
