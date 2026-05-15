@@ -272,7 +272,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
         {
             return $"""
                 <div style="margin:0 0 18px;">
-                  <p style="margin:0;color:#111827;font-size:20px;font-weight:bold;line-height:1.2;">{displayName}</p>
+                  <p style="margin:0;color:#111827;font-size:30px;font-weight:bold;line-height:1.2;">{displayName}</p>
                   {programLine}
                 </div>
                 """;
@@ -285,7 +285,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
                   <img src="{SafeHref(brand.LogoUrl!)}" alt="{displayName}" width="72" style="display:block;border:0;max-width:72px;height:auto;" />
                 </td>
                 <td valign="middle" style="padding:0;">
-                  <p style="margin:0;color:#111827;font-size:20px;font-weight:bold;line-height:1.2;">{displayName}</p>
+                  <p style="margin:0;color:#111827;font-size:30px;font-weight:bold;line-height:1.2;">{displayName}</p>
                   {programLine}
                 </td>
               </tr>

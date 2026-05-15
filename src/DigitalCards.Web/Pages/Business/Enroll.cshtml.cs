@@ -72,6 +72,8 @@ public sealed class EnrollModel : PageModel
                 "Modern enroll completed for business {BusinessId} card {CardId}.",
                 businessId,
                 Result.Card.Id);
+            Input.UserNameOrEmail = string.Empty;
+            ModelState.Remove("Input.UserNameOrEmail");
             return Page();
         }
         catch (InvalidOperationException ex)
