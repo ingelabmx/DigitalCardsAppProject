@@ -2221,6 +2221,11 @@ public sealed class DigitalCardsAppServiceTests
         Assert.True(reports.StampPeriods.Count >= 1);
         var client = Assert.Single(reports.RecentClients);
         Assert.Equal("bizreport1", client.UserName);
+        Assert.Equal("Token User", client.ClientName);
+        Assert.Equal(1, client.CardCount);
+        Assert.Equal(2, client.CurrentStamps);
+        Assert.Equal(2, client.LifetimeStamps);
+        Assert.Equal("Lista", client.CardStatus);
         Assert.Equal(0, reports.WalletIssueCount);
         Assert.Empty(reports.RecentWalletIssues);
     }

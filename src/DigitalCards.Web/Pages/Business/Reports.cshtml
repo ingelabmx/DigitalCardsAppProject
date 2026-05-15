@@ -9,7 +9,7 @@
         <div>
             <p class="eyebrow">Negocio</p>
             <h1>Reportes</h1>
-            <p class="lead">Resumen operativo de tarjetas, sellos, clientes y Wallets del negocio autenticado.</p>
+            <p class="lead">Resumen operativo de tarjetas, sellos y clientes del negocio autenticado.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="business-reports-back-link">Dashboard</a>
     </div>
@@ -26,7 +26,7 @@
     }
     else
     {
-        <div class="metric-row business-report-metrics">
+        <div class="metric-row business-report-metrics business-report-metrics-four">
             <div class="metric">
                 <span>Tarjetas</span>
                 <strong data-testid="business-report-card-count">@Model.Reports.CardCount</strong>
@@ -44,15 +44,6 @@
                 <span>Sellos historicos</span>
                 <strong data-testid="business-report-lifetime-stamps">@Model.Reports.LifetimeStampTotal</strong>
                 <small>@Model.Reports.StampsLast30Days eventos en 30 dias</small>
-            </div>
-            <div class="metric">
-                <span>Tarjeta digital</span>
-                <strong data-testid="business-report-wallet-ready-count">@Model.Reports.WalletReadyCount listas</strong>
-                <small>@Model.Reports.WalletPendingCount pendientes</small>
-            </div>
-            <div class="metric">
-                <span>Alertas Wallet</span>
-                <strong data-testid="business-report-wallet-issues">@Model.Reports.WalletIssueCount</strong>
             </div>
         </div>
 
@@ -99,7 +90,7 @@
                                asp-route-query="@client.UserName"
                                data-testid="business-report-recent-client">
                                 <div>
-                                    <strong>@client.UserName</strong>
+                                    <strong>@client.ClientName</strong>
                                     <span>@client.Email</span>
                                 </div>
                                 <div>
@@ -117,57 +108,46 @@
             </section>
         </div>
 
-        <section class="business-dashboard-panel">
-            <h2>Errores Wallet recientes</h2>
-            @if (Model.Reports.RecentWalletIssues.Count == 0)
+        <section class="business-dashboard-panel business-report-client-breakdown">
+            <h2>Clientes del negocio</h2>
+            @if (Model.Reports.RecentClients.Count == 0)
             {
-                <p class="text-muted" data-testid="business-report-no-wallet-issues">No hay alertas Wallet recientes.</p>
+                <p class="text-muted" data-testid="business-report-no-client-breakdown">No hay clientes asociados a este negocio.</p>
             }
             else
             {
-                <div class="stamp-ledger-items" data-testid="business-report-wallet-issues-list">
-                    @foreach (var item in Model.Reports.RecentWalletIssues)
-                    {
-                        <div class="stamp-ledger-item" data-testid="business-report-wallet-issue">
-                            <div>
-                                <strong>@item.ClientUserName</strong>
-                                <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
-                            </div>
-                            <p>@SourceLabel(item.Source) &middot; Sellos: @item.PreviousCheckQTY -> @item.NewCheckQTY</p>
-                            <p>Tarjeta: @WalletStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
-                            @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
+                <div class="table-responsive" data-testid="business-report-client-breakdown">
+                    <table class="table align-middle legacy-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Usuario</th>
+                                <th>Correo</th>
+                                <th>Tarjetas</th>
+                                <th>Sellos actuales</th>
+                                <th>Sellos historicos</th>
+                                <th>Estado</th>
+                                <th>Ultima actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var client in Model.Reports.RecentClients)
                             {
-                                <p class="text-danger">Error: @item.ErrorSummary</p>
+                                <tr data-testid="business-report-client-breakdown-row">
+                                    <td>@client.ClientName</td>
+                                    <td>@client.UserName</td>
+                                    <td>@client.Email</td>
+                                    <td>@client.CardCount</td>
+                                    <td>@client.CurrentStamps</td>
+                                    <td>@client.LifetimeStamps</td>
+                                    <td><span class="status-pill">@client.CardStatus</span></td>
+                                    <td>@client.LastActivityAt.ToLocalTime().ToString("g")</td>
+                                </tr>
                             }
-                        </div>
-                    }
+                        </tbody>
+                    </table>
                 </div>
             }
         </section>
     }
 </section>
-
-@functions {
-    private static string WalletStatus(
-        bool googleAttempted,
-        bool googleSucceeded,
-        bool appleAttempted,
-        bool appleSucceeded)
-    {
-        if (!googleAttempted && !appleAttempted)
-        {
-            return "No aplica";
-        }
-
-        return (googleAttempted && !googleSucceeded) || (appleAttempted && !appleSucceeded)
-            ? "Con alerta"
-            : "Actualizada";
-    }
-
-    private static string SourceLabel(DigitalCards.Application.Models.StampLedgerSource source)
-    {
-        return source == DigitalCards.Application.Models.StampLedgerSource.LegacySync
-            ? "Operacion externa"
-            : source.ToString();
-    }
-}
