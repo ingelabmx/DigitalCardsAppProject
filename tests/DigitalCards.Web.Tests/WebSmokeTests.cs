@@ -329,6 +329,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("data-testid=\"legacy-shell\"", adminHtml);
         Assert.Contains("Administradores", adminHtml);
+        Assert.Contains("/Admin/Clients", adminHtml);
         Assert.Contains("Propiedad de IngeLabs", adminHtml);
         Assert.Contains("data-legacy-menu-button", adminHtml);
         Assert.Contains("data-legacy-sidebar-backdrop", adminHtml);
@@ -859,26 +860,24 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task AdminClients_IsReadOnlyAfterClientAllowlistRetirement()
+    public async Task AdminClients_ShowsClientConsoleAndCleanup()
     {
-        using var fake = WithFakeIntegrations(new Dictionary<string, string?>
-        {
-            ["DigitalCards:Pilot:Enabled"] = "true",
-            ["DigitalCards:Pilot:AllowedBusinessEmails:0"] = "demo@digitalcards.test"
-        });
+        using var fake = WithFakeIntegrations();
         var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
         var userName = NewLegacySafeUserName("pc");
         var email = $"{userName}@blocked.test";
-        await RegisterClientAsync(fake.Factory, userName, email);
+        await CreateEnrollmentAsync(fake.Factory, userName, email);
 
         await LoginAdminAsync(client);
         var searchHtml = await client.GetStringAsync($"/Admin/Clients?Query={userName}");
         Assert.Contains("admin-client-row", searchHtml);
-        Assert.Contains("admin-client-allowlist-retired", searchHtml);
-        Assert.Contains("Operable por negocio habilitado", searchHtml);
+        Assert.Contains("admin-client-card-list", searchHtml);
+        Assert.Contains("admin-client-card-row", searchHtml);
+        Assert.Contains("Demo Coffee", searchHtml);
+        Assert.Contains("Pendiente", searchHtml);
         Assert.Contains(userName, searchHtml);
         Assert.Contains(email, searchHtml);
         Assert.DoesNotContain("password", searchHtml, StringComparison.OrdinalIgnoreCase);
@@ -887,7 +886,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("admin-disable-client-pilot", searchHtml);
         Assert.Contains("admin-client-delete-form", searchHtml);
         Assert.Contains("admin-client-cleanup-note", searchHtml);
-        Assert.Contains("limpiar cuentas de prueba", searchHtml);
+        Assert.Contains("Clientes y limpieza de pruebas", searchHtml);
         Assert.Contains("no borra negocios", searchHtml);
         Assert.Contains("Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.", searchHtml);
     }

@@ -704,6 +704,43 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task ListClientConsoleAsync_ReturnsLinkedBusinessesCardsAndStampData()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var adminApp = provider.GetRequiredService<AdminAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "consoleclient1",
+            "Console",
+            "Client",
+            "consoleclient1@example.test"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        await app.AddStampToCardAsync(business.Id, enrollment.Card.Id);
+
+        var clients = await adminApp.ListClientConsoleAsync("consoleclient1");
+
+        var console = Assert.Single(clients);
+        Assert.Equal("consoleclient1", console.UserName);
+        Assert.Equal("Console Client", console.ClientName);
+        Assert.Equal(1, console.CardCount);
+        Assert.Equal(2, console.CurrentStamps);
+        Assert.Equal(2, console.LifetimeStamps);
+        var card = Assert.Single(console.Cards);
+        Assert.Equal("Demo Coffee", card.BusinessName);
+        Assert.Equal(2, card.CurrentStamps);
+        Assert.Equal(2, card.LifetimeStamps);
+        Assert.Equal("Pendiente", card.CardStatus);
+        Assert.DoesNotContain("password", string.Join(' ', console.UserName, console.ClientName, console.ClientEmail), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("hash", string.Join(' ', console.UserName, console.ClientName, console.ClientEmail), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task CreateBusinessAsync_CreatesLegacyBusinessModernCredentialAndPilotAccess()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();

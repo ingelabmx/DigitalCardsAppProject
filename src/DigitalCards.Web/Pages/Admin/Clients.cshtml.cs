@@ -22,7 +22,7 @@ public sealed class ClientsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Query { get; set; }
 
-    public IReadOnlyList<PilotClientDto> Clients { get; private set; } = [];
+    public IReadOnlyList<AdminClientConsoleDto> Clients { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
 
@@ -87,6 +87,6 @@ public sealed class ClientsModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Clients = await _adminApp.ListPilotClientsAsync(Query ?? string.Empty, cancellationToken);
+        Clients = await _adminApp.ListClientConsoleAsync(Query ?? string.Empty, cancellationToken);
     }
 }

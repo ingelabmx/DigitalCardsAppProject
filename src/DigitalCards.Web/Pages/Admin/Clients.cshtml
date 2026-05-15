@@ -9,18 +9,14 @@
         <div>
             <p class="eyebrow">Admin</p>
             <h1>Clientes</h1>
-            <p class="lead">Consulta clientes y deja que cada negocio administre sus asociaciones desde Tarjetas.</p>
+            <p class="lead">Consulta clientes, tarjetas asociadas, sellos y estado operativo sin exponer datos sensibles.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-clients-back-link">Dashboard</a>
     </div>
 
-    <div class="alert alert-info" role="status" data-testid="admin-client-allowlist-retired">
-        La activacion operativa se controla por negocio. Usa esta vista para consultar clientes y limpiar cuentas de prueba de forma permanente.
-    </div>
-
     <div class="danger-action-panel danger-zone-card admin-client-cleanup-note" data-testid="admin-client-cleanup-note">
         <div>
-            <strong>Limpieza de clientes de prueba</strong>
+            <strong>Clientes y limpieza de pruebas</strong>
             <p>Busca el cliente, confirma con su usuario o correo y elimina su cuenta global, tarjetas, links Wallet y datos relacionados. Esta herramienta sirve para limpiar clientes de prueba y no borra negocios.</p>
         </div>
     </div>
@@ -46,25 +42,59 @@
     }
     else
     {
-        <div class="pilot-business-list legacy-admin-list" data-testid="admin-client-list">
+        <div class="pilot-business-list legacy-admin-list admin-client-console-list" data-testid="admin-client-list">
             @foreach (var client in Model.Clients)
             {
                 <article class="pilot-business-item legacy-admin-row" data-testid="admin-client-row">
-                    <div>
-                        <h2>@client.UserName</h2>
-                        <p>@client.ClientEmail</p>
-                        <small>@client.ClientName</small>
+                    <div class="admin-client-console-header">
+                        <div>
+                            <h2>@client.ClientName</h2>
+                            <p>@client.ClientEmail</p>
+                            <small>@client.UserName</small>
+                        </div>
+                        <div class="admin-client-console-stats">
+                            <span><strong>@client.CardCount</strong> tarjeta(s)</span>
+                            <span><strong>@client.CurrentStamps</strong> sellos actuales</span>
+                            <span><strong>@client.LifetimeStamps</strong> sellos historicos</span>
+                            <span><strong>@(client.LastActivityAt?.ToLocalTime().ToString("g") ?? "Sin actividad")</strong> ultima actividad</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="badge text-bg-info" data-testid="admin-client-pilot-status">
-                            Operable por negocio habilitado
-                        </span>
-                        @if (client.UpdatedAt is not null)
-                        {
-                            <small>Registro operativo actualizado @client.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
-                        }
-                    </div>
-                    <p class="text-muted mb-0">Para permitir operacion, activa el negocio desde <a asp-page="/Admin/Businesses">Negocios</a>.</p>
+
+                    @if (client.Cards.Count == 0)
+                    {
+                        <p class="text-muted mb-0" data-testid="admin-client-no-cards">Este cliente no tiene tarjetas asociadas.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive" data-testid="admin-client-card-list">
+                            <table class="table align-middle legacy-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Negocio</th>
+                                        <th>Sellos</th>
+                                        <th>Historico</th>
+                                        <th>Estado</th>
+                                        <th>Ultima actividad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var card in client.Cards)
+                                    {
+                                        <tr data-testid="admin-client-card-row">
+                                            <td>
+                                                <a asp-page="/Admin/BusinessProfile" asp-route-businessId="@card.BusinessId">@card.BusinessName</a>
+                                            </td>
+                                            <td>@card.CurrentStamps</td>
+                                            <td>@card.LifetimeStamps</td>
+                                            <td><span class="status-pill">@card.CardStatus</span></td>
+                                            <td>@card.LastActivityAt.ToLocalTime().ToString("g")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
                     <form method="post"
                           asp-page-handler="Delete"
                           asp-route-clientId="@client.ClientId"
