@@ -78,20 +78,13 @@ public sealed class GoogleWalletService : IGoogleWalletService
 
         await EnsureClassAsync(walletClient.Service, classId, cancellationToken);
 
-        var patchBody = new GenericObject
-        {
-            TextModulesData = BuildTextModules(card, client, business),
-            CardTitle = Localized(GetCardTitle(business)),
-            Header = Localized(business.DisplayName),
-            HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor,
-            Logo = BuildLogoImage(business)
-        };
+        var updatedObject = BuildObject(objectId, classId, card, client, business);
 
         try
         {
-            await walletClient.Service.Genericobject.Patch(patchBody, objectId).ExecuteAsync(cancellationToken);
+            await walletClient.Service.Genericobject.Update(updatedObject, objectId).ExecuteAsync(cancellationToken);
             _logger.LogInformation(
-                "Patched Google Wallet object {ObjectId} with {CurrentStamps} current stamps.",
+                "Updated Google Wallet object {ObjectId} with {CurrentStamps} current stamps.",
                 objectId,
                 card.CurrentStamps);
         }
@@ -183,6 +176,9 @@ public sealed class GoogleWalletService : IGoogleWalletService
         try
         {
             await service.Genericobject.Get(objectId).ExecuteAsync(cancellationToken);
+            await service.Genericobject.Update(
+                BuildObject(objectId, classId, card, client, business),
+                objectId).ExecuteAsync(cancellationToken);
             return;
         }
         catch (GoogleApiException exception) when (exception.HttpStatusCode == HttpStatusCode.NotFound)
@@ -220,8 +216,11 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 Type = "QR_CODE",
                 Value = client.UserName
             },
-            CardTitle = Localized(GetCardTitle(business)),
+            CardTitle = Localized(business.DisplayName),
             Header = Localized(business.DisplayName),
+            Subheader = string.IsNullOrWhiteSpace(business.ProgramName)
+                ? null
+                : Localized(business.ProgramName),
             HexBackgroundColor = business.PrimaryColor ?? _options.HexBackgroundColor
         };
 
@@ -448,11 +447,6 @@ public sealed class GoogleWalletService : IGoogleWalletService
                 Value = value
             }
         };
-    }
-
-    private static string GetCardTitle(Business business)
-    {
-        return business.ProgramName ?? business.DisplayName;
     }
 
     private sealed record WalletClient(

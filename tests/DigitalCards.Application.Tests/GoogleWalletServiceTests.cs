@@ -40,9 +40,9 @@ public sealed class GoogleWalletServiceTests
         Assert.Equal(
             "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             genericObject.Logo.SourceUri.Uri);
-        Assert.Equal("Runni Rewards", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Runni Cafe", genericObject.CardTitle.DefaultValue.Value);
         Assert.Equal("Runni Cafe", genericObject.Header.DefaultValue.Value);
-        Assert.Null(genericObject.Subheader);
+        Assert.Equal("Runni Rewards", genericObject.Subheader.DefaultValue.Value);
         Assert.Equal("maria-test", genericObject.Barcode.Value);
 
         Assert.Collection(
