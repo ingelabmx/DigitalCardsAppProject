@@ -867,7 +867,7 @@ public sealed class DigitalCardsAppService
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new BusinessReportPeriodDto(group.Key, group.Count()))
             .ToArray();
-        var recentClients = reportCards
+        var businessClients = reportCards
             .GroupBy(card => card.Client.Id)
             .Select(group =>
             {
@@ -877,13 +877,20 @@ public sealed class DigitalCardsAppService
                 return new BusinessReportClientDto(
                     first.Client.Id,
                     first.Client.UserName,
+                    $"{first.Client.FirstName} {first.Client.LastName}".Trim(),
                     first.Client.Email,
                     group.Count(),
+                    group.Sum(card => card.CurrentStamps),
+                    group.Sum(card => card.LifetimeStamps),
+                    group.Any(card => !card.IsActive)
+                        ? "Inactiva"
+                        : group.Any(card => card.GoogleIssued || card.AppleTracked)
+                            ? "Lista"
+                            : "Pendiente",
                     group.Max(card => card.LastStampedAt));
             })
             .OrderByDescending(client => client.LastActivityAt)
             .ThenBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
-            .Take(12)
             .ToArray();
         var walletIssues = events
             .Where(HasWalletIssue)
@@ -908,7 +915,7 @@ public sealed class DigitalCardsAppService
             reportCards.Sum(card => card.AppleRegisteredDeviceCount),
             walletIssues.Length,
             periods,
-            recentClients,
+            businessClients,
             walletIssues);
     }
 

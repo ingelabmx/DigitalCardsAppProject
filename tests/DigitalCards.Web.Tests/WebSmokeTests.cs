@@ -332,6 +332,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Propiedad de IngeLabs", adminHtml);
         Assert.Contains("data-legacy-menu-button", adminHtml);
         Assert.Contains("data-legacy-sidebar-backdrop", adminHtml);
+        Assert.Contains("legacy-sidebar-icon", adminHtml);
         Assert.DoesNotContain("data-legacy-menu-button disabled", adminHtml, StringComparison.OrdinalIgnoreCase);
 
         await LoginBusinessAsync(businessClient);
@@ -2743,7 +2744,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-reports", html);
         Assert.Contains("business-report-card-count", html);
         Assert.Contains("business-report-client-count", html);
-        Assert.Contains("business-report-wallet-ready-count", html);
+        Assert.DoesNotContain("business-report-wallet-ready-count", html);
+        Assert.DoesNotContain("business-report-wallet-issues", html);
+        Assert.DoesNotContain("Errores Wallet recientes", html);
+        Assert.Contains("business-report-client-breakdown", html);
         Assert.Contains("business-report-period", html);
         Assert.Contains("business-report-recent-client", html);
         Assert.Contains(userName, html);

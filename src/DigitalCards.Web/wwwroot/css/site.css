@@ -208,6 +208,16 @@ body.legacy-shell {
   justify-content: center;
 }
 
+.legacy-sidebar-icon svg {
+  fill: none;
+  height: 17px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+  width: 17px;
+}
+
 .legacy-sidebar-link:hover,
 .legacy-sidebar-link.active {
   background: var(--dc-brand-soft);
@@ -1046,6 +1056,8 @@ form.is-submitting input[type="submit"] {
 
 .wallet-public-panel h1 {
   color: var(--wallet-primary, #111827);
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  line-height: 1.05;
   margin-bottom: 0.35rem;
 }
 
@@ -1167,6 +1179,11 @@ form.is-submitting input[type="submit"] {
   overflow-wrap: anywhere;
 }
 
+.wallet-visual-card div:nth-of-type(2) strong {
+  font-size: 2.3rem;
+  line-height: 1.05;
+}
+
 .wallet-visual-card p {
   color: rgb(255 255 255 / 84%);
   margin: 0;
@@ -1195,6 +1212,10 @@ form.is-submitting input[type="submit"] {
   gap: 0.75rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 1rem 0;
+}
+
+.metric-row.business-report-metrics-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .metric {

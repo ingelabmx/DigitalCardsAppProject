@@ -203,8 +203,12 @@ public sealed record BusinessReportPeriodDto(string Period, int StampCount);
 public sealed record BusinessReportClientDto(
     Guid ClientId,
     string UserName,
+    string ClientName,
     string Email,
     int CardCount,
+    int CurrentStamps,
+    int LifetimeStamps,
+    string CardStatus,
     DateTimeOffset LastActivityAt);
 
 public sealed record WalletLandingDto(
