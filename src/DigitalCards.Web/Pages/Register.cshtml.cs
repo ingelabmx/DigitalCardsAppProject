@@ -42,8 +42,9 @@ public sealed class RegisterModel : PageModel
 
         try
         {
+            var userName = ClientUserNameNormalizer.NormalizeUserName(Input.UserName);
             var client = await _appService.RegisterClientAsync(
-                new RegisterClientCommand(Input.UserName, Input.FirstName, Input.LastName, Input.Email, Input.Password),
+                new RegisterClientCommand(userName, Input.FirstName, Input.LastName, Input.Email, Input.Password),
                 cancellationToken);
             await _appService.RecordClientConsentAsync(
                 new RecordClientConsentCommand(
@@ -69,6 +70,7 @@ public sealed class RegisterModel : PageModel
     {
         [Display(Name = "Usuario")]
         [Required]
+        [RegularExpression("^[A-Za-z0-9]+$", ErrorMessage = "El usuario solo puede usar letras y numeros, sin espacios.")]
         public string UserName { get; set; } = string.Empty;
 
         [Display(Name = "Nombre")]

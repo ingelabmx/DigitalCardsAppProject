@@ -3296,6 +3296,56 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task Register_RejectsInvalidUserNameAndStoresLowercase()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var getHtml = await client.GetStringAsync("/Register");
+
+        Assert.Contains("pattern=\"[A-Za-z0-9]+\"", getHtml);
+
+        var invalidToken = ExtractAntiforgeryToken(getHtml);
+        var invalidResponse = await client.PostAsync(
+            "/Register",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserName"] = "Bad User",
+                ["Input.FirstName"] = "Bad",
+                ["Input.LastName"] = "User",
+                ["Input.Email"] = "baduser@example.test",
+                ["Input.Password"] = "ClientPass123!",
+                ["Input.AcceptTerms"] = "true",
+                ["__RequestVerificationToken"] = invalidToken
+            }));
+        var invalidHtml = await invalidResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, invalidResponse.StatusCode);
+        Assert.Contains("El usuario solo puede usar letras y numeros, sin espacios.", invalidHtml);
+
+        var validToken = ExtractAntiforgeryToken(invalidHtml);
+        var validResponse = await client.PostAsync(
+            "/Register",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserName"] = "ClientUpper123",
+                ["Input.FirstName"] = "Client",
+                ["Input.LastName"] = "Upper",
+                ["Input.Email"] = "clientupper123@example.test",
+                ["Input.Password"] = "ClientPass123!",
+                ["Input.AcceptTerms"] = "true",
+                ["__RequestVerificationToken"] = validToken
+            }));
+        var validHtml = await validResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, validResponse.StatusCode);
+        Assert.Contains("Cliente clientupper123 registrado.", validHtml);
+        Assert.DoesNotContain("ClientUpper123 registrado", validHtml);
+    }
+
+    [Fact]
     public async Task AppleWalletPage_WithValidToken_ReturnsPendingState()
     {
         using var fake = WithFakeIntegrations();

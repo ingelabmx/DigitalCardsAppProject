@@ -26,7 +26,12 @@
 
             <div class="mb-3">
                 <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
-                <input asp-for="Input.UserNameOrEmail" class="form-control form-control-lg" data-testid="client-login-username" />
+                <input asp-for="Input.UserNameOrEmail"
+                       class="form-control form-control-lg"
+                       autocomplete="username"
+                       autocapitalize="none"
+                       spellcheck="false"
+                       data-testid="client-login-username" />
                 <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
             </div>
 

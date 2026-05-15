@@ -86,8 +86,15 @@ public sealed class DigitalCardsAppService
 
     public async Task<ClientDto> RegisterClientAsync(RegisterClientCommand command, CancellationToken cancellationToken = default)
     {
-        if (await _clients.UserNameOrEmailExistsAsync(command.UserName, cancellationToken) ||
-            await _clients.UserNameOrEmailExistsAsync(command.Email, cancellationToken))
+        var userName = ClientUserNameNormalizer.NormalizeUserName(command.UserName);
+        if (!ClientUserNameNormalizer.IsValidUserName(command.UserName))
+        {
+            throw new InvalidOperationException("El usuario solo puede usar letras y numeros, sin espacios.");
+        }
+
+        var email = command.Email.Trim().ToLowerInvariant();
+        if (await _clients.UserNameOrEmailExistsAsync(userName, cancellationToken) ||
+            await _clients.UserNameOrEmailExistsAsync(email, cancellationToken))
         {
             throw new InvalidOperationException("Client username or email already exists.");
         }
@@ -97,10 +104,10 @@ public sealed class DigitalCardsAppService
             : LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.Password);
         var client = new Client(
             Guid.NewGuid(),
-            command.UserName,
+            userName,
             command.FirstName,
             command.LastName,
-            command.Email,
+            email,
             legacyPasswordHash);
         await _clients.AddAsync(client, cancellationToken);
         if (!string.IsNullOrWhiteSpace(command.Password))
@@ -153,7 +160,9 @@ public sealed class DigitalCardsAppService
 
     public async Task<ClientDto?> LoginClientAsync(ClientLoginCommand command, CancellationToken cancellationToken = default)
     {
-        var client = await _clients.FindByUserNameOrEmailAsync(command.UserNameOrEmail, cancellationToken);
+        var client = await _clients.FindByUserNameOrEmailAsync(
+            ClientUserNameNormalizer.NormalizeUserNameOrEmail(command.UserNameOrEmail),
+            cancellationToken);
         if (client is null)
         {
             return null;
@@ -320,7 +329,9 @@ public sealed class DigitalCardsAppService
             return new PasswordResetRequestResult(Accepted: true);
         }
 
-        var client = await _clients.FindByUserNameOrEmailAsync(command.UserNameOrEmail, cancellationToken);
+        var client = await _clients.FindByUserNameOrEmailAsync(
+            ClientUserNameNormalizer.NormalizeUserNameOrEmail(command.UserNameOrEmail),
+            cancellationToken);
         if (client is null)
         {
             return new PasswordResetRequestResult(Accepted: true);
@@ -1247,7 +1258,9 @@ public sealed class DigitalCardsAppService
 
     private async Task<Client> RequireClientAsync(string userNameOrEmail, CancellationToken cancellationToken)
     {
-        return await _clients.FindByUserNameOrEmailAsync(userNameOrEmail, cancellationToken)
+        return await _clients.FindByUserNameOrEmailAsync(
+                ClientUserNameNormalizer.NormalizeUserNameOrEmail(userNameOrEmail),
+                cancellationToken)
             ?? throw new InvalidOperationException("Client was not found.");
     }
 

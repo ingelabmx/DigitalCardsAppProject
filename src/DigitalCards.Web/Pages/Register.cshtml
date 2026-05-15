@@ -33,7 +33,13 @@
 
             <div class="mb-3">
                 <label asp-for="Input.UserName" class="form-label"></label>
-                <input asp-for="Input.UserName" class="form-control form-control-lg" data-testid="register-username" />
+                <input asp-for="Input.UserName"
+                       class="form-control form-control-lg"
+                       pattern="[A-Za-z0-9]+"
+                       autocomplete="username"
+                       autocapitalize="none"
+                       spellcheck="false"
+                       data-testid="register-username" />
                 <span asp-validation-for="Input.UserName" class="text-danger"></span>
             </div>
 
