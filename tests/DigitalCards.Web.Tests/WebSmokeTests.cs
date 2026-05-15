@@ -361,6 +361,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("data-testid=\"legacy-shell\"", businessHtml);
         Assert.Contains("Duenos de negocios", businessHtml);
+        Assert.DoesNotContain("<small>Duenos de negocios</small>", businessHtml);
         Assert.Contains("Tarjetas", businessHtml);
         Assert.Contains("Checadas", businessHtml);
         Assert.DoesNotContain("Mostrador", businessHtml);
