@@ -239,6 +239,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("business-primary-workflow", cardsHtml);
         Assert.Contains("business-card-detail-empty", cardsHtml);
         Assert.Contains("business-card-detail-empty-panel", cardsHtml);
+        Assert.DoesNotContain("business-card-list", cardsHtml);
+        Assert.DoesNotContain("business-card-results", cardsHtml);
+        Assert.DoesNotContain(">Resultados<", cardsHtml);
         Assert.Contains("<h2>Detalle</h2>", cardsHtml);
         Assert.Equal("/Business/Cards", checkInResponse.RequestMessage?.RequestUri?.AbsolutePath);
     }
@@ -3149,16 +3152,17 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var enrollment = await CreateEnrollmentAsync(fake.Factory, userName);
         SeedOtherBusinessCard(fake.Factory, "othercard1");
 
-        var html = await client.GetStringAsync($"/Business/Cards?Query={userName}&CardId={enrollment.Card.Id}");
+        var html = await client.GetStringAsync($"/Business/Cards?Query={userName}");
 
-        Assert.Contains("business-card-results", html);
+        Assert.DoesNotContain("business-card-results", html);
+        Assert.DoesNotContain("business-card-list", html);
+        Assert.DoesNotContain(">Resultados<", html);
         Assert.Contains(userName, html);
         Assert.Contains(enrollment.Card.Id.ToString(), html);
         Assert.Contains("business-qr-scanner", html);
         Assert.DoesNotContain("business-card-quick-summary", html);
         Assert.DoesNotContain(">Seleccionada<", html);
         Assert.Contains("business-card-action-strip", html);
-        Assert.Contains("business-card-result-state", html);
         Assert.Contains("business-detail-card-face", html);
         Assert.Contains("business-wallet-status-row", html);
         Assert.Contains("business-card-wallet-status", html);
@@ -3170,6 +3174,21 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
         Assert.True(html.IndexOf("stamp-ledger-list", StringComparison.Ordinal) < html.IndexOf("business-card-management-panel", StringComparison.Ordinal));
         Assert.True(html.IndexOf("business-card-deactivate-submit", StringComparison.Ordinal) < html.IndexOf("business-card-delete-submit", StringComparison.Ordinal));
+
+        var missingHtml = await client.GetStringAsync("/Business/Cards?Query=missing-user-404");
+
+        Assert.Contains("Usuario no encontrado", missingHtml);
+        Assert.Contains("business-card-no-results", missingHtml);
+        Assert.DoesNotContain("business-card-results", missingHtml);
+
+        var ambiguousBase = NewLegacySafeUserName("amb");
+        await CreateEnrollmentAsync(fake.Factory, $"{ambiguousBase}a");
+        await CreateEnrollmentAsync(fake.Factory, $"{ambiguousBase}b");
+        var ambiguousHtml = await client.GetStringAsync($"/Business/Cards?Query={ambiguousBase}");
+
+        Assert.Contains("Busqueda ambigua", ambiguousHtml);
+        Assert.Contains("business-card-ambiguous-results", ambiguousHtml);
+        Assert.DoesNotContain("business-card-results", ambiguousHtml);
     }
 
     [Fact]
@@ -3275,7 +3294,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var html = await client.GetStringAsync($"/Business/Cards?Query=othercard2&CardId={otherCardId}");
 
-        Assert.Contains("No se encontraron tarjetas para este negocio.", html);
+        Assert.Contains("Usuario no encontrado", html);
         Assert.Contains("La tarjeta no existe para este negocio.", html);
         Assert.DoesNotContain("business-card-stamp-submit", html);
     }

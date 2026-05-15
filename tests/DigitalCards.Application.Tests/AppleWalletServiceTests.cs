@@ -155,6 +155,67 @@ public sealed class AppleWalletServiceTests
         Assert.Equal("10 de 10", ReadStampProgress(updated.PassFile!));
     }
 
+    [Fact]
+    public async Task CreateUpdatedPass_UsesResetStampProgressAfterRewardRedemption()
+    {
+        using var files = CreateAppleWalletTestFiles();
+        using var provider = BuildAppleProvider(new Dictionary<string, string?>
+        {
+            ["DigitalCards:AppleWallet:AssetsPath"] = files.AssetsPath,
+            ["DigitalCards:AppleWallet:CertificatePath"] = files.CertificatePath,
+            ["DigitalCards:AppleWallet:CertificatePassword"] = files.CertificatePassword,
+            ["DigitalCards:AppleWallet:WwdrCertificatePath"] = files.WwdrCertificatePath
+        });
+        var appleWallet = provider.GetRequiredService<IAppleWalletService>();
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var cards = provider.GetRequiredService<ILoyaltyCardRepository>();
+
+        var business = new Business(
+            Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+            "Runni Cafe",
+            "runni@example.test",
+            "hash",
+            string.Empty,
+            stampGoal: 10);
+        var client = new Client(
+            Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            "reward-client",
+            "Reward",
+            "Client",
+            "reward@example.test");
+        var card = LoyaltyCard.Restore(
+            Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+            client.Id,
+            business.Id,
+            enrollmentToken: "reward-token",
+            currentStamps: 10,
+            lifetimeStamps: 10,
+            DateTimeOffset.Parse("2026-05-11T00:00:00Z"),
+            DateTimeOffset.Parse("2026-05-11T00:10:00Z"),
+            googleObjectId: null,
+            googleSaveUrl: null);
+
+        await businesses.AddAsync(business);
+        await clients.AddAsync(client);
+        await cards.AddAsync(card);
+
+        var firstPass = await appleWallet.CreatePassAsync(card, client, business);
+        var authToken = ReadAuthenticationToken(firstPass);
+
+        card.RedeemReward(DateTimeOffset.Parse("2026-05-11T00:11:00Z"), business.StampGoal);
+        await cards.UpdateAsync(card);
+
+        var updated = await appleWallet.CreateUpdatedPassAsync(
+            "pass.com.example.digitalcards",
+            card.Id.ToString("N"),
+            $"ApplePass {authToken}");
+
+        Assert.Equal(AppleWalletPassRequestStatus.Ready, updated.Status);
+        Assert.NotNull(updated.PassFile);
+        Assert.Equal("0 de 10", ReadStampProgress(updated.PassFile!));
+    }
+
     private static ServiceProvider BuildAppleProvider(IReadOnlyDictionary<string, string?>? overrides = null)
     {
         var settings = new Dictionary<string, string?>

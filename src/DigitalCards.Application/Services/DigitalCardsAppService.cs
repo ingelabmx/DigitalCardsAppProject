@@ -5,6 +5,7 @@ using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Domain;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace DigitalCards.Application.Services;
 
@@ -21,7 +22,7 @@ public sealed class DigitalCardsAppService
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
     private const string RewardRedemptionTableMissingMessage =
-        "No se puede canjear la recompensa hasta aplicar docs/migration-context/118-reward-redemption-cycles-hostgator.sql.";
+        "No se puede canjear la recompensa en este momento. Contacta a soporte.";
     private const int MaxStampGoal = 1000;
 
     private readonly IBusinessCredentialRepository _businessCredentials;
@@ -35,6 +36,7 @@ public sealed class DigitalCardsAppService
     private readonly IGoogleWalletService _googleWallet;
     private readonly IAppleWalletService _appleWallet;
     private readonly IAppleWalletPassRepository _appleWalletPasses;
+    private readonly ILogger<DigitalCardsAppService> _logger;
     private readonly IAccountLifecycleRepository _accountLifecycle;
     private readonly ILoyaltyCardRepository _loyaltyCards;
     private readonly IPasswordResetTokenRepository _passwordResetTokens;
@@ -65,7 +67,8 @@ public sealed class DigitalCardsAppService
         IStampLedgerRepository stampLedger,
         WalletBrandingRefreshService walletBrandingRefresh,
         IWalletLinkTokenService walletLinkTokens,
-        IPasswordResetTokenRepository passwordResetTokens)
+        IPasswordResetTokenRepository passwordResetTokens,
+        ILogger<DigitalCardsAppService> logger)
     {
         _clients = clients;
         _clientCredentials = clientCredentials;
@@ -87,6 +90,7 @@ public sealed class DigitalCardsAppService
         _stampLedger = stampLedger;
         _walletBrandingRefresh = walletBrandingRefresh;
         _walletLinkTokens = walletLinkTokens;
+        _logger = logger;
     }
 
     public async Task<ClientDto> RegisterClientAsync(RegisterClientCommand command, CancellationToken cancellationToken = default)
@@ -1048,6 +1052,8 @@ public sealed class DigitalCardsAppService
 
         if (!await _rewardRedemptions.IsAvailableAsync(cancellationToken))
         {
+            _logger.LogError(
+                "Reward redemption storage is unavailable. Apply migration 118 before redeeming rewards.");
             return new RewardRedemptionResult(
                 false,
                 await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
@@ -1061,6 +1067,7 @@ public sealed class DigitalCardsAppService
         var redeemedAt = _clock.UtcNow;
         card.RedeemReward(redeemedAt, displayBusiness.StampGoal);
         await _loyaltyCards.UpdateAsync(card, cancellationToken);
+        card = await _loyaltyCards.FindByIdAsync(card.Id, cancellationToken) ?? card;
 
         var googleAttempted = false;
         var googleSucceeded = false;

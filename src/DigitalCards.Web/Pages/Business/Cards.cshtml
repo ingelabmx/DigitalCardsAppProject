@@ -56,62 +56,36 @@
             </div>
         }
 
-        <div class="business-card-grid">
-            <div class="business-card-list">
-                <h2>Resultados</h2>
-
-                @if (string.IsNullOrWhiteSpace(Model.Query))
-                {
-                    <div class="dashboard-empty-state compact" data-testid="business-card-empty-search">
-                        <p class="eyebrow">Busca una tarjeta</p>
-                        <h3>Escanea QR o captura usuario/correo</h3>
-                        <p>Cuando selecciones una tarjeta, aqui apareceran acciones para reenviar Wallet y agregar sello.</p>
-                    </div>
-                }
-                else if (Model.Results.Count == 0)
-                {
-                    <div class="dashboard-empty-state compact" data-testid="business-card-no-results">
-                        <p class="eyebrow">Sin resultados</p>
-                        <h3>No hay tarjeta asociada</h3>
-                        <p>No se encontraron tarjetas para este negocio. Asocia el cliente para enviar su link Wallet.</p>
-                        <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
-                    </div>
-                }
-                else
-                {
-                    <div class="list-group" data-testid="business-card-results">
-                        @foreach (var card in Model.Results)
-                        {
-                            <a class="list-group-item list-group-item-action business-card-result-row"
-                               asp-page="/Business/Cards"
-                               asp-route-query="@Model.Query"
-                               asp-route-cardId="@card.Id"
-                               data-testid="business-card-result">
-                                <div>
-                                    <strong>@FullClientName(card.Client)</strong>
-                                    <small>@card.Client.Email</small>
-                                </div>
-                                <div class="business-card-result-state">
-                                    <span>@card.VisibleStamps de @card.StampGoal sellos</span>
-                                    <span class="@(IsCardReady(card) ? "wallet-status-ok" : "wallet-status-pending")">
-                                        @(IsCardReady(card) ? "Tarjeta lista" : "Tarjeta pendiente")
-                                    </span>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                }
-            </div>
-
+        <div class="business-card-grid business-card-direct-grid">
             <div class="business-card-detail" data-testid="business-card-detail">
                 @if (Model.Detail is null)
                 {
                     <h2>Detalle</h2>
-                    <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-detail-empty">
-                        <p class="eyebrow">Selecciona una tarjeta</p>
-                        <h3>Opera desde el detalle validado</h3>
-                        <p>El detalle muestra sellos, estado Wallet, auditoria y acciones seguras del negocio autenticado.</p>
-                    </div>
+                    @if (Model.LookupState == CardsModel.CardLookupState.NotFound)
+                    {
+                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-no-results">
+                            <p class="eyebrow">Usuario no encontrado</p>
+                            <h3>No hay tarjeta asociada</h3>
+                            <p>No encontramos una tarjeta de este negocio para <strong>@Model.Query</strong>. Asocia el cliente para enviar su link Wallet.</p>
+                            <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
+                        </div>
+                    }
+                    else if (Model.LookupState == CardsModel.CardLookupState.Ambiguous)
+                    {
+                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-ambiguous-results">
+                            <p class="eyebrow">Busqueda ambigua</p>
+                            <h3>Captura el usuario o correo completo</h3>
+                            <p>Encontramos mas de una coincidencia para <strong>@Model.Query</strong>. Usa el usuario, correo o QR exacto para abrir el detalle.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-detail-empty">
+                            <p class="eyebrow">Busca una tarjeta</p>
+                            <h3>Escanea QR o captura usuario/correo</h3>
+                            <p>Cuando encontremos la tarjeta, aqui apareceran sellos, estado Wallet y acciones seguras del negocio autenticado.</p>
+                        </div>
+                    }
                 }
                 else
                 {
@@ -299,12 +273,6 @@
 </section>
 
 @functions {
-    private static string FullClientName(ClientDto client)
-    {
-        var fullName = $"{client.FirstName} {client.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? client.UserName : fullName;
-    }
-
     private static bool IsCardReady(BusinessCardDto card)
     {
         return card.GoogleIssued || card.AppleTracked;
