@@ -60,11 +60,16 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Contains("public-brand-lockup", homeHtml);
         Assert.Contains("puntelio-public-brand-mark", homeHtml);
+        Assert.Contains("/img/puntelio-branding.svg", homeHtml);
+        Assert.Contains("rel=\"icon\"", homeHtml);
+        Assert.Contains("/img/puntelio-logo.svg", homeHtml);
+        Assert.DoesNotContain("brand-lockup-text\">Puntelio", homeHtml);
         Assert.Contains("Propiedad de IngeLabs", homeHtml);
         Assert.Contains("--dc-primary", css);
         Assert.Contains("--dc-radius", css);
         Assert.Contains("puntelio-brand-mark", adminHtml);
-        Assert.Contains("brand-logo-letter", adminHtml);
+        Assert.Contains("/img/puntelio-branding.svg", adminHtml);
+        Assert.DoesNotContain("brand-logo-letter", adminHtml);
         Assert.Contains("Propiedad de IngeLabs", adminHtml);
     }
 

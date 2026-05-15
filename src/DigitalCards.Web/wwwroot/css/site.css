@@ -54,6 +54,18 @@ body.legacy-shell {
   gap: 0.55rem;
 }
 
+.brand-lockup-wordmark {
+  gap: 0;
+}
+
+.brand-wordmark-public {
+  display: block;
+  height: 38px;
+  max-width: 170px;
+  object-fit: contain;
+  width: auto;
+}
+
 .brand-mark {
   align-items: center;
   background: var(--dc-brand-soft);
@@ -151,8 +163,28 @@ body.legacy-shell {
   text-decoration: none;
 }
 
+.legacy-brand-link-wordmark {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .legacy-brand-link:hover {
   color: var(--dc-primary);
+}
+
+.brand-wordmark-shell img {
+  display: block;
+  height: 44px;
+  max-width: 180px;
+  object-fit: contain;
+  width: auto;
+}
+
+.legacy-brand-fallback {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.75rem;
 }
 
 .legacy-brand-mark {
@@ -2725,6 +2757,16 @@ body.public-shell {
 
   .legacy-brand {
     min-height: 70px;
+  }
+
+  .brand-wordmark-public {
+    height: 34px;
+    max-width: 148px;
+  }
+
+  .brand-wordmark-shell img {
+    height: 40px;
+    max-width: 160px;
   }
 
   .legacy-sidebar-nav {
