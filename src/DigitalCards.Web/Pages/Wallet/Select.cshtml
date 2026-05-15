@@ -16,7 +16,12 @@ else
     var primaryColor = Model.Landing.PrimaryColor ?? "#111827";
     var secondaryColor = Model.Landing.SecondaryColor ?? "#5d87ff";
     var customFieldColor = Model.Landing.CustomFieldColor ?? "#ffffff";
+    var programName = string.IsNullOrWhiteSpace(Model.Landing.ProgramName) ? "Tarjeta de lealtad" : Model.Landing.ProgramName;
+    var rewardText = string.IsNullOrWhiteSpace(Model.Landing.RewardText) ? programName : Model.Landing.RewardText;
     var fallbackInitials = Model.Landing.BusinessName[..Math.Min(Model.Landing.BusinessName.Length, 2)].ToUpperInvariant();
+    var stampGoal = Math.Max(1, Model.Landing.StampGoal);
+    var visibleStamps = Math.Min(Math.Max(Model.Landing.CurrentStamps, 0), stampGoal);
+    var qrSvg = EnrollmentQrCodeRenderer.RenderSvg(Model.Landing.ClientUserName);
 
     <section class="wallet-panel wallet-public-panel"
              style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;--wallet-custom:@customFieldColor;"
@@ -36,37 +41,62 @@ else
             </div>
         </div>
 
-        <div class="wallet-visual-card" data-testid="wallet-visual-card">
-            <div>
-                <span>Cliente</span>
-                <strong>@Model.Landing.ClientName</strong>
+        <div class="wallet-visual-card wallet-pass-preview" data-testid="wallet-visual-card">
+            <div class="wallet-pass-header">
+                @if (!string.IsNullOrWhiteSpace(Model.Landing.LogoPath))
+                {
+                    <img src="@Model.Landing.LogoPath" alt="@Model.Landing.BusinessName logo" />
+                }
+                else
+                {
+                    <span>@fallbackInitials</span>
+                }
+                <strong>@programName</strong>
             </div>
-            <div>
-                <span>Programa</span>
+
+            <div class="wallet-pass-primary">
+                <span>Nombre del negocio</span>
                 <strong>@Model.Landing.BusinessName</strong>
             </div>
-            <p>Guarda esta tarjeta digital para recibir sellos y actualizaciones del negocio.</p>
+
+            <div class="wallet-pass-fields">
+                <div>
+                    <span>Cliente</span>
+                    <strong>@Model.Landing.ClientName</strong>
+                </div>
+                <div>
+                    <span>Sellos</span>
+                    <strong>@visibleStamps de @stampGoal</strong>
+                </div>
+                <div>
+                    <span>Recompensa</span>
+                    <strong>@rewardText</strong>
+                </div>
+            </div>
+
+            <div class="wallet-pass-qr">
+                @Html.Raw(qrSvg)
+                <small>@Model.Landing.ClientUserName</small>
+            </div>
         </div>
 
         <p class="lead">Elige donde guardar tu tarjeta. Se actualizara automaticamente cuando el negocio agregue nuevos sellos.</p>
 
         <div class="wallet-actions">
-            <a class="btn btn-dark wallet-button d-flex align-items-center justify-content-center"
+            <a class="wallet-store-badge-link"
                asp-page="/Wallet/Apple"
                asp-route-token="@Model.Landing.Token"
                data-wallet-button="apple"
                data-testid="apple-wallet-button">
-                <span>Apple Wallet</span>
-                <small>iPhone</small>
+                <img src="/img/add_to_apple_wallet.svg" alt="Add to Apple Wallet" />
                 <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
-            <a class="btn btn-primary wallet-button d-flex align-items-center justify-content-center"
+            <a class="wallet-store-badge-link"
                asp-page="/Wallet/Google"
                asp-route-token="@Model.Landing.Token"
                data-wallet-button="google"
                data-testid="google-wallet-button">
-                <span>Google Wallet</span>
-                <small>Android</small>
+                <img src="/img/add_to_google_wallet.svg" alt="Add to Google Wallet" />
                 <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
         </div>

@@ -29,7 +29,9 @@ else
             </ul>
         </div>
         <div class="form-actions">
-            <a class="btn btn-primary" href="@Model.Result.SaveUrl" data-testid="google-save-url">Abrir Google Wallet</a>
+            <a class="wallet-store-badge-link wallet-store-badge-link-single" href="@Model.Result.SaveUrl" data-testid="google-save-url">
+                <img src="/img/add_to_google_wallet.svg" alt="Add to Google Wallet" />
+            </a>
             @if (Model.Landing is not null)
             {
                 <a class="btn btn-outline-secondary" asp-page="/Wallet/Select" asp-route-token="@Model.Landing.Token">Volver</a>

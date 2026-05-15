@@ -32,7 +32,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             <p>Hola {Html(email.ClientName)},</p>
             <p>Tu tarjeta digital de <strong>{Html(email.BusinessName)}</strong> esta lista para agregarse a tu billetera digital.</p>
             <p>Elige Apple Wallet o Google Wallet desde el siguiente link:</p>
-            {Button(email.EnrollmentUrl, "Abrir tarjeta digital", brand)}
+            {WalletStoreBadges(email.EnrollmentUrl, brand)}
             {FallbackLink(email.EnrollmentUrl)}
             """;
 
@@ -188,6 +188,66 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
               <a href="{SafeHref(url)}" style="background:{NormalizeColor(branding.PrimaryColor)};color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;">{Html(text)}</a>
             </p>
             """;
+    }
+
+    private static string WalletStoreBadges(string enrollmentUrl, EmailBranding branding)
+    {
+        if (!TryBuildWalletActionUrls(enrollmentUrl, out var appleUrl, out var googleUrl, out var origin))
+        {
+            return Button(enrollmentUrl, "Abrir tarjeta digital", branding);
+        }
+
+        var appleBadgeUrl = $"{origin}/img/add_to_apple_wallet.svg";
+        var googleBadgeUrl = $"{origin}/img/add_to_google_wallet.svg";
+        return $"""
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0;">
+              <tr>
+                <td style="padding:0 10px 10px 0;">
+                  <a href="{SafeHref(appleUrl)}" style="display:inline-block;text-decoration:none;">
+                    <img src="{SafeHref(appleBadgeUrl)}" alt="Add to Apple Wallet" width="199" height="55" style="display:block;border:0;width:199px;height:55px;object-fit:contain;" />
+                  </a>
+                </td>
+                <td style="padding:0 0 10px 0;">
+                  <a href="{SafeHref(googleUrl)}" style="display:inline-block;text-decoration:none;">
+                    <img src="{SafeHref(googleBadgeUrl)}" alt="Add to Google Wallet" width="199" height="55" style="display:block;border:0;width:199px;height:55px;object-fit:contain;" />
+                  </a>
+                </td>
+              </tr>
+            </table>
+            """;
+    }
+
+    private static bool TryBuildWalletActionUrls(
+        string enrollmentUrl,
+        out string appleUrl,
+        out string googleUrl,
+        out string origin)
+    {
+        appleUrl = string.Empty;
+        googleUrl = string.Empty;
+        origin = string.Empty;
+        if (!Uri.TryCreate(enrollmentUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            return false;
+        }
+
+        const string selectPrefix = "/Wallet/Select/";
+        if (!uri.AbsolutePath.StartsWith(selectPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var token = uri.AbsolutePath[selectPrefix.Length..];
+        if (string.IsNullOrWhiteSpace(token) || token.Contains('/', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        origin = uri.GetLeftPart(UriPartial.Authority);
+        appleUrl = $"{origin}/Wallet/Apple/{token}";
+        googleUrl = $"{origin}/Wallet/Google/{token}";
+        return true;
     }
 
     private static string FallbackLink(string url)

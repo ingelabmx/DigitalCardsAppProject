@@ -230,6 +230,7 @@ public sealed record WalletLandingDto(
     string Token,
     string BusinessName,
     string ClientName,
+    string ClientUserName,
     int CurrentStamps,
     int StampGoal,
     int LifetimeStamps,
@@ -237,7 +238,9 @@ public sealed record WalletLandingDto(
     string LogoPath,
     string? PrimaryColor,
     string? SecondaryColor,
-    string? CustomFieldColor);
+    string? CustomFieldColor,
+    string? ProgramName,
+    string? RewardText);
 
 public sealed record GoogleWalletIssueResult(string ObjectId, string SaveUrl);
 
