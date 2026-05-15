@@ -67,6 +67,13 @@ public sealed class CardsModel : PageModel
         }
 
         var businessId = BusinessAuth.GetBusinessId(User);
+        if (IsRewardReady(Detail!))
+        {
+            ModelState.AddModelError(string.Empty, "La tarjeta ya esta completa. Confirma el canje de recompensa.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return Page();
+        }
+
         Detail = await _appService.AddStampToCardAsync(businessId, cardId, cancellationToken);
         if (Detail is null)
         {
@@ -76,6 +83,35 @@ public sealed class CardsModel : PageModel
         }
 
         StatusMessage = $"Sello agregado a {Detail.Client.UserName}.";
+        await LoadSearchResultsAsync(cancellationToken);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRedeemAsync(Guid cardId, CancellationToken cancellationToken)
+    {
+        CardId = cardId;
+
+        if (!await ValidateOperationAsync(cancellationToken))
+        {
+            return Page();
+        }
+
+        var result = await _appService.RedeemRewardAsync(
+            BusinessAuth.GetBusinessId(User),
+            cardId,
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo canjear la recompensa.");
+            await LoadSearchResultsAsync(cancellationToken);
+            return Page();
+        }
+
+        Detail = result.Card;
+        StatusMessage = result.HasWalletWarning
+            ? result.ErrorMessage
+            : "Recompensa canjeada. La tarjeta inicio un nuevo ciclo con 0 sellos.";
         await LoadSearchResultsAsync(cancellationToken);
         return Page();
     }
@@ -270,5 +306,10 @@ public sealed class CardsModel : PageModel
             _configuration["DigitalCards:PublicBaseUrl"],
             Request.Scheme,
             Request.Host);
+    }
+
+    private static bool IsRewardReady(BusinessCardDto card)
+    {
+        return Math.Min(Math.Max(card.CurrentStamps, 0), Math.Max(1, card.StampGoal)) >= Math.Max(1, card.StampGoal);
     }
 }

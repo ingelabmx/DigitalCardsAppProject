@@ -1167,12 +1167,23 @@ public sealed class DigitalCardsAppServiceTests
             "https://app.puntelio.com"));
 
         var secondStamp = await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
-        var nextCycle = await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+        var completeException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            app.AddStampAsync(new AddStampCommand(business.Id, client.UserName)));
+        var detail = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+        Assert.NotNull(detail);
+        var redemption = await app.RedeemRewardAsync(business.Id, detail!.Id);
 
         Assert.Equal(2, secondStamp.CurrentStamps);
         Assert.Equal(2, secondStamp.StampGoal);
-        Assert.Equal(0, nextCycle.CurrentStamps);
-        Assert.Equal(2, nextCycle.StampGoal);
+        Assert.Contains("canje", completeException.Message);
+        Assert.True(redemption.Succeeded);
+        Assert.Equal(0, redemption.Card!.CurrentStamps);
+        Assert.Equal(2, redemption.Card.StampGoal);
+        Assert.Equal(2, redemption.Redemption!.RedeemedCheckQTY);
+        Assert.Equal(2, redemption.Redemption.StampGoal);
+        Assert.Contains("dos sellos", redemption.Redemption.RewardText);
+        Assert.Contains(redemption.Card.RecentStampEvents, item => item.Source == StampLedgerSource.RewardRedeemed);
+        Assert.Single(redemption.Card.RecentRewardRedemptions);
     }
 
     [Fact]

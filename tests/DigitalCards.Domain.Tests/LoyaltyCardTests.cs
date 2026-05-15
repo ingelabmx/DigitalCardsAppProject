@@ -18,7 +18,7 @@ public sealed class LoyaltyCardTests
     }
 
     [Fact]
-    public void AddStamp_ResetsVisibleStampsAfterConfiguredGoalAndKeepsLifetime()
+    public void AddStamp_KeepsCardCompleteUntilRewardIsRedeemed()
     {
         var now = DateTimeOffset.Parse("2026-05-08T12:00:00Z");
         var card = new LoyaltyCard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), now);
@@ -32,8 +32,26 @@ public sealed class LoyaltyCardTests
 
         card.AddStamp(now.AddMinutes(10), stampGoal: 5);
 
+        Assert.Equal(5, card.CurrentStamps);
+        Assert.Equal(5, card.LifetimeStamps);
+    }
+
+    [Fact]
+    public void RedeemReward_ResetsVisibleStampsAndKeepsLifetime()
+    {
+        var now = DateTimeOffset.Parse("2026-05-08T12:00:00Z");
+        var card = new LoyaltyCard(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), now);
+
+        for (var i = 0; i < 4; i++)
+        {
+            card.AddStamp(now.AddMinutes(i + 1), stampGoal: 5);
+        }
+
+        card.RedeemReward(now.AddMinutes(10), stampGoal: 5);
+
         Assert.Equal(0, card.CurrentStamps);
-        Assert.Equal(6, card.LifetimeStamps);
+        Assert.Equal(5, card.LifetimeStamps);
+        Assert.Equal(now.AddMinutes(10), card.LastStampedAt);
     }
 
     [Fact]

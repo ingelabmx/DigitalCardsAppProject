@@ -141,6 +141,15 @@ public sealed class SupportModel : PageModel
                     item.PreviousHistoricCheckQTY,
                     item.NewHistoricCheckQTY,
                     item.ErrorSummary
+                }),
+                recentRewardRedemptions = card.RecentRewardRedemptions.Select(item => new
+                {
+                    item.RedeemedAt,
+                    item.StampGoal,
+                    item.RedeemedCheckQTY,
+                    item.HistoricCheckQTY,
+                    item.RewardText,
+                    item.ErrorSummary
                 })
             })
         };

@@ -106,6 +106,16 @@
                                     <strong data-testid="client-card-wallet-status">@(card.GoogleIssued || card.AppleTracked ? "Lista" : "Pendiente")</strong>
                                 </div>
                             </div>
+                            @if (card.RecentRewardRedemptions.Count > 0)
+                            {
+                                <div class="client-card-progress-panel" data-testid="client-card-redemptions">
+                                    <div>
+                                        <span>Ultimo canje</span>
+                                        <strong>@card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</strong>
+                                    </div>
+                                    <small>@card.RecentRewardRedemptions[0].RewardText</small>
+                                </div>
+                            }
                         </div>
                     </div>
 

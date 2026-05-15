@@ -31,6 +31,10 @@ public sealed class StampModel : PageModel
 
     public LoyaltyCardDto? Result { get; private set; }
 
+    public BusinessCardDto? RewardCandidate { get; private set; }
+
+    public RewardRedemptionResult? Redemption { get; private set; }
+
     public string? PilotBlockMessage { get; private set; }
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
@@ -59,6 +63,15 @@ public sealed class StampModel : PageModel
         try
         {
             var businessId = BusinessAuth.GetBusinessId(User);
+            RewardCandidate = await _appService.GetBusinessCardForClientAsync(
+                businessId,
+                Input.UserNameOrEmail,
+                cancellationToken);
+            if (RewardCandidate is not null && IsRewardReady(RewardCandidate))
+            {
+                return Page();
+            }
+
             Result = await _appService.AddStampAsync(
                 new AddStampCommand(businessId, Input.UserNameOrEmail),
                 cancellationToken);
@@ -84,6 +97,31 @@ public sealed class StampModel : PageModel
         }
     }
 
+    public async Task<IActionResult> OnPostRedeemAsync(Guid cardId, CancellationToken cancellationToken)
+    {
+        if (!await SetPilotBusinessBlockAsync(cancellationToken))
+        {
+            ModelState.AddModelError(string.Empty, PilotBlockMessage!);
+            return Page();
+        }
+
+        Redemption = await _appService.RedeemRewardAsync(
+            BusinessAuth.GetBusinessId(User),
+            cardId,
+            cancellationToken);
+
+        if (!Redemption.Succeeded)
+        {
+            RewardCandidate = Redemption.Card;
+            ModelState.AddModelError(string.Empty, Redemption.ErrorMessage ?? "No se pudo canjear la recompensa.");
+            return Page();
+        }
+
+        Input = new InputModel();
+        ModelState.Clear();
+        return Page();
+    }
+
     private async Task<bool> SetPilotBusinessBlockAsync(CancellationToken cancellationToken)
     {
         var access = await _pilotAccess.CheckAuthenticatedBusinessAsync(User, cancellationToken);
@@ -102,5 +140,10 @@ public sealed class StampModel : PageModel
         [Display(Name = "Usuario o correo del cliente")]
         [Required]
         public string UserNameOrEmail { get; set; } = string.Empty;
+    }
+
+    private static bool IsRewardReady(BusinessCardDto card)
+    {
+        return Math.Min(Math.Max(card.CurrentStamps, 0), Math.Max(1, card.StampGoal)) >= Math.Max(1, card.StampGoal);
     }
 }

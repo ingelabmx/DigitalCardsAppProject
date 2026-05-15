@@ -134,6 +134,7 @@ public sealed class InMemoryAccountLifecycleRepository : IAccountLifecycleReposi
                 !string.Equals(registration.DeviceLibraryIdentifier, device.DeviceLibraryIdentifier, StringComparison.Ordinal)));
         _store.WalletLinkTokens.RemoveAll(token => token.CardId == cardId);
         _store.StampLedger.RemoveAll(record => record.CardId == cardId);
+        _store.RewardRedemptions.RemoveAll(record => record.CardId == cardId);
         _store.ClientCardStatuses.RemoveAll(status => status.CardId == cardId);
         return true;
     }

@@ -106,9 +106,26 @@ public sealed class LoyaltyCard
     public void AddStamp(DateTimeOffset stampedAt, int stampGoal = Business.DefaultStampGoal)
     {
         var normalizedGoal = stampGoal > 0 ? Math.Min(stampGoal, MaxVisibleStamps) : Business.DefaultStampGoal;
-        CurrentStamps = CurrentStamps >= normalizedGoal ? 0 : CurrentStamps + 1;
+        if (CurrentStamps >= normalizedGoal)
+        {
+            return;
+        }
+
+        CurrentStamps++;
         LifetimeStamps++;
         LastStampedAt = stampedAt;
+    }
+
+    public void RedeemReward(DateTimeOffset redeemedAt, int stampGoal = Business.DefaultStampGoal)
+    {
+        var normalizedGoal = stampGoal > 0 ? Math.Min(stampGoal, MaxVisibleStamps) : Business.DefaultStampGoal;
+        if (CurrentStamps < normalizedGoal)
+        {
+            throw new InvalidOperationException("Reward cannot be redeemed until the card is complete.");
+        }
+
+        CurrentStamps = 0;
+        LastStampedAt = redeemedAt;
     }
 
     public void MarkGoogleIssued(string objectId, string saveUrl)

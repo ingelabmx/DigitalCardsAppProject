@@ -44,6 +44,31 @@
         </div>
     }
 
+    @if (Model.Redemption is not null)
+    {
+        <div class="alert @(Model.Redemption.HasWalletWarning ? "alert-warning" : "alert-success")" role="status" data-testid="reward-redemption-success">
+            @(Model.Redemption.HasWalletWarning
+                ? Model.Redemption.ErrorMessage
+                : "Recompensa canjeada. La tarjeta inicio un nuevo ciclo con 0 sellos.")
+        </div>
+    }
+
+    @if (Model.RewardCandidate is not null)
+    {
+        var stampGoal = Math.Max(1, Model.RewardCandidate.StampGoal);
+        var visibleStamps = Math.Min(Model.RewardCandidate.CurrentStamps, stampGoal);
+        <div class="business-form-card" data-testid="stamp-reward-candidate">
+            <p class="eyebrow">Recompensa lista</p>
+            <h2>@Model.RewardCandidate.Client.FirstName @Model.RewardCandidate.Client.LastName</h2>
+            <p>Esta tarjeta ya tiene @visibleStamps de @stampGoal sellos. Confirma el canje para iniciar un nuevo ciclo con 0 sellos.</p>
+            <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.RewardCandidate.Id">
+                <button class="btn btn-success" type="submit" data-testid="stamp-redeem-submit" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
+                    Canjear recompensa
+                </button>
+            </form>
+        </div>
+    }
+
     @if (!Model.IsPilotBlocked)
     {
         <form method="post" class="business-form-card" data-testid="stamp-form">
