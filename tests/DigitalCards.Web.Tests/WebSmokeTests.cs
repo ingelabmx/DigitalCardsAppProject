@@ -1557,7 +1557,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.Redirect, newLogin.StatusCode);
         var dashboardHtml = await client.GetStringAsync("/Business/Dashboard");
 
-        Assert.Contains(updatedName, dashboardHtml);
+        Assert.Contains("Perfil Publico", dashboardHtml);
         Assert.DoesNotContain("pilot-business-blocked", dashboardHtml);
     }
 
@@ -2203,6 +2203,37 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task BusinessDashboard_UsesBrandingNameEvenWhenCookieHasLegacyName()
+    {
+        using var fake = WithFakeIntegrations();
+        var client = fake.Factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        await LoginBusinessAsync(client);
+        using (var scope = fake.Factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
+            await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+                Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                "Runni Cafe",
+                "/img/runni.png",
+                "#111827",
+                "#2563eb",
+                "#ffffff",
+                10,
+                "Runni Rewards",
+                "Cafe gratis."));
+        }
+
+        var html = await client.GetStringAsync("/Business/Dashboard");
+
+        Assert.Contains("data-testid=\"business-dashboard-title\">Runni Cafe", html);
+        Assert.Contains("Bienvenido, Runni Cafe", html);
+        Assert.DoesNotContain("Bienvenido, Demo Coffee", html);
+    }
+
+    [Fact]
     public async Task BusinessEnrollAndStamp_UseLegacyParityPanels()
     {
         using var fake = WithFakeIntegrations();
@@ -2274,31 +2305,26 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         });
 
         await LoginBusinessAsync(client);
+
+        var userName = NewLegacySafeUserName("rw");
+        await CreateEnrollmentAsync(fake.Factory, userName);
+        Guid cardId;
         using (var scope = fake.Factory.Services.CreateScope())
         {
             var app = scope.ServiceProvider.GetRequiredService<DigitalCardsAppService>();
-            await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
-                Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                "Demo Coffee",
-                "/img/demo-coffee.svg",
-                "#111827",
-                "#2563eb",
-                "#ffffff",
-                2,
-                "Demo Rewards",
-                "Recompensa al completar dos sellos."));
-        }
-
-        var userName = NewLegacySafeUserName("rw");
-        await RegisterClientAsync(fake.Factory, userName);
-        var enrollToken = await GetAntiforgeryTokenAsync(client, "/Business/Enroll");
-        await client.PostAsync(
-            "/Business/Enroll",
-            new FormUrlEncodedContent(new Dictionary<string, string>
+            var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+                "demo@digitalcards.test",
+                "business123"));
+            for (var index = 0; index < 7; index++)
             {
-                ["Input.UserNameOrEmail"] = userName,
-                ["__RequestVerificationToken"] = enrollToken
-            }));
+                await app.AddStampAsync(new AddStampCommand(business!.Id, userName));
+            }
+
+            var detail = await app.GetBusinessCardForClientAsync(business!.Id, userName);
+            Assert.NotNull(detail);
+            Assert.Equal(8, detail!.CurrentStamps);
+            cardId = detail.Id;
+        }
 
         var stampToken = await GetAntiforgeryTokenAsync(client, "/Business/Stamp");
         var response = await client.PostAsync(
@@ -2311,10 +2337,42 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("data-testid=\"current-stamps\">2 de 2</strong>", html);
-        Assert.Contains("data-testid=\"stamp-reward-candidate\"", html);
-        Assert.Contains("Recompensa lista", html);
-        Assert.Contains("Esta tarjeta ya tiene 2 de 2 sellos", html);
+        Assert.Contains("data-testid=\"current-stamps\">9 de 10</strong>", html);
+        Assert.DoesNotContain("data-testid=\"stamp-reward-candidate\"", html);
+        Assert.DoesNotContain("Recompensa lista", html);
+        Assert.DoesNotContain($"value=\"{userName}\"", html, StringComparison.OrdinalIgnoreCase);
+
+        var redeemToken = await GetAntiforgeryTokenAsync(client, "/Business/Stamp");
+        var redeemResponse = await client.PostAsync(
+            $"/Business/Stamp?handler=Redeem&cardId={cardId}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = redeemToken
+            }));
+        var redeemHtml = await redeemResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, redeemResponse.StatusCode);
+        Assert.Contains("La tarjeta aun no esta completa", redeemHtml);
+        Assert.DoesNotContain("data-testid=\"reward-redemption-success\"", redeemHtml);
+        Assert.DoesNotContain("Recompensa canjeada", redeemHtml);
+        Assert.DoesNotContain("data-testid=\"stamp-reward-candidate\"", redeemHtml);
+
+        var finalStampToken = await GetAntiforgeryTokenAsync(client, "/Business/Stamp");
+        var finalResponse = await client.PostAsync(
+            "/Business/Stamp",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.UserNameOrEmail"] = userName,
+                ["__RequestVerificationToken"] = finalStampToken
+            }));
+        var finalHtml = await finalResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, finalResponse.StatusCode);
+        Assert.Contains("data-testid=\"current-stamps\">10 de 10</strong>", finalHtml);
+        Assert.Contains("data-testid=\"stamp-reward-candidate\"", finalHtml);
+        Assert.Contains("Recompensa lista", finalHtml);
+        Assert.Contains("Esta tarjeta ya tiene 10 de 10 sellos", finalHtml);
+        Assert.DoesNotContain($"value=\"{userName}\"", finalHtml, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

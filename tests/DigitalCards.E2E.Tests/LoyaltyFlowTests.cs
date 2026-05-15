@@ -150,7 +150,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("business-email").FillAsync(updatedBusinessEmail);
         await page.GetByTestId("business-password").FillAsync(updatedBusinessPassword);
         await page.GetByTestId("business-login-submit").ClickAsync();
-        Assert.Contains(updatedBusinessName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
+        Assert.Contains(publicBrandName, await page.GetByTestId("business-dashboard-title").InnerTextAsync());
 
         await page.GetByTestId("enroll-link").ClickAsync();
         await page.GetByTestId("enroll-username").FillAsync(userName);

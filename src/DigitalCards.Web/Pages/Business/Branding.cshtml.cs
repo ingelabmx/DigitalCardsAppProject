@@ -3,6 +3,7 @@ using DigitalCards.Application.Services;
 using DigitalCards.Web.Branding;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -136,6 +137,8 @@ public sealed class BrandingModel : PageModel
         Settings = result.Settings!;
         SetInputFromSettings(Settings);
         RefreshLogoAvailability();
+        await RefreshBusinessCookieAsync(Settings, cancellationToken);
+        ViewData["BusinessShellName"] = Settings.Branding.PublicName;
         StatusMessage = "Branding actualizado.";
         if (!string.IsNullOrWhiteSpace(logoPath) &&
             !string.Equals(previousLogoPath, logoPath, StringComparison.OrdinalIgnoreCase))
@@ -187,6 +190,7 @@ public sealed class BrandingModel : PageModel
         {
             return false;
         }
+        ViewData["BusinessShellName"] = Settings.Branding.PublicName;
         RefreshLogoAvailability();
 
         var pilotAccess = await _pilotAccess.CheckAuthenticatedBusinessAsync(User, cancellationToken);
@@ -217,6 +221,24 @@ public sealed class BrandingModel : PageModel
     {
         CurrentLogoUnavailable = _logoUploads.IsOwned(Settings?.Branding.LogoPath) &&
             !_logoUploads.ExistsIfOwned(Settings?.Branding.LogoPath);
+    }
+
+    private async Task RefreshBusinessCookieAsync(
+        BusinessBrandingSettingsDto settings,
+        CancellationToken cancellationToken)
+    {
+        await HttpContext.SignInAsync(
+            BusinessAuth.Scheme,
+            BusinessAuth.CreatePrincipal(new BusinessDto(
+                settings.BusinessId,
+                settings.Branding.PublicName,
+                settings.BusinessEmail,
+                settings.Branding.LogoPath)),
+            new AuthenticationProperties
+            {
+                IsPersistent = false,
+                IssuedUtc = DateTimeOffset.UtcNow
+            });
     }
 
     private static string ToRefreshStatus(WalletBrandingRefreshResult result)

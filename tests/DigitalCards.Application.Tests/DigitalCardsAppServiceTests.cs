@@ -1193,6 +1193,102 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RedeemRewardAsync_WithIncompleteCard_DoesNotMutateStamps()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "redeemnine",
+            "Redeem",
+            "Nine",
+            "redeemnine@example.test",
+            "ClientPass123!"));
+        await app.EnrollClientAsync(new EnrollClientCommand(
+            business!.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        for (var index = 0; index < 8; index++)
+        {
+            await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+        }
+
+        var detail = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+        Assert.NotNull(detail);
+        Assert.Equal(9, detail!.CurrentStamps);
+        Assert.False(detail.RewardReady);
+
+        var redemption = await app.RedeemRewardAsync(business.Id, detail.Id);
+        var persisted = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+
+        Assert.False(redemption.Succeeded);
+        Assert.Contains("aun no esta completa", redemption.ErrorMessage);
+        Assert.Equal(9, redemption.Card!.CurrentStamps);
+        Assert.False(redemption.Card.RewardReady);
+        Assert.Equal(9, persisted!.CurrentStamps);
+        Assert.False(persisted.RewardReady);
+    }
+
+    [Fact]
+    public async Task RedeemRewardAsync_WhenRewardTableIsUnavailable_DoesNotResetCompleteCard()
+    {
+        var services = CreateDefaultServices();
+        foreach (var descriptor in services.Where(descriptor => descriptor.ServiceType == typeof(IRewardRedemptionRepository)).ToArray())
+        {
+            services.Remove(descriptor);
+        }
+
+        services.AddSingleton<IRewardRedemptionRepository, UnavailableRewardRedemptionRepository>();
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business!.Id,
+            "Goal Cafe",
+            "/img/demo-coffee.svg",
+            "#112233",
+            "#445566",
+            "#ffffff",
+            2,
+            "Goal Rewards",
+            "Recompensa al completar dos sellos."));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "missingreward",
+            "Missing",
+            "Reward",
+            "missingreward@example.test",
+            "ClientPass123!"));
+        await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+
+        var detail = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+        Assert.NotNull(detail);
+        Assert.True(detail!.RewardReady);
+
+        var redemption = await app.RedeemRewardAsync(business.Id, detail.Id);
+        var persisted = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+
+        Assert.False(redemption.Succeeded);
+        Assert.Contains("118-reward-redemption-cycles-hostgator.sql", redemption.ErrorMessage);
+        Assert.Equal(2, redemption.Card!.CurrentStamps);
+        Assert.True(redemption.Card.RewardReady);
+        Assert.Equal(2, persisted!.CurrentStamps);
+        Assert.True(persisted.RewardReady);
+        Assert.Empty(persisted.RecentRewardRedemptions);
+    }
+
+    [Fact]
     public async Task SelectGoogleWalletAsync_PatchesExistingObjectWithCurrentBranding()
     {
         var services = CreateDefaultServices();
@@ -2320,6 +2416,36 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task GetBusinessDashboardAsync_UsesBrandingPublicName()
+    {
+        var provider = CreateDefaultServices().BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business!.Id,
+            "Runni Cafe",
+            "/img/runni.png",
+            "#112233",
+            "#445566",
+            "#ffffff",
+            10,
+            "Runni Rewards",
+            "Cafe gratis."));
+
+        var dashboard = await app.GetBusinessDashboardAsync(business.Id);
+        var shell = await app.GetBusinessShellAsync(business.Id);
+
+        Assert.NotNull(dashboard);
+        Assert.Equal("Runni Cafe", dashboard!.Business.Name);
+        Assert.NotNull(shell);
+        Assert.Equal("Runni Cafe", shell!.Name);
+    }
+
+    [Fact]
     public async Task GetBusinessReportsAsync_ReturnsBusinessScopedOperationalReports()
     {
         var provider = CreateDefaultServices().BuildServiceProvider();
@@ -2464,6 +2590,27 @@ public sealed class DigitalCardsAppServiceTests
             PatchedBusinessName = business.DisplayName;
             PatchedProgramName = business.ProgramName;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class UnavailableRewardRedemptionRepository : IRewardRedemptionRepository
+    {
+        public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(false);
+        }
+
+        public Task AddAsync(RewardRedemptionRecord record, CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("Unavailable repository should not add records.");
+        }
+
+        public Task<IReadOnlyList<RewardRedemptionRecord>> ListRecentByCardIdAsync(
+            Guid cardId,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<RewardRedemptionRecord>>([]);
         }
     }
 

@@ -20,6 +20,8 @@ public sealed class DigitalCardsAppService
     private const string DefaultCustomFieldColor = "#FFFFFF";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
+    private const string RewardRedemptionTableMissingMessage =
+        "No se puede canjear la recompensa hasta aplicar docs/migration-context/118-reward-redemption-cycles-hostgator.sql.";
     private const int MaxStampGoal = 1000;
 
     private readonly IBusinessCredentialRepository _businessCredentials;
@@ -549,6 +551,16 @@ public sealed class DigitalCardsAppService
         return business is null ? null : await ToBusinessBrandingSettingsAsync(business, cancellationToken);
     }
 
+    public async Task<BusinessDto?> GetBusinessShellAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByIdAsync(businessId, cancellationToken);
+        return business is null
+            ? null
+            : ToDto(await ApplyBrandingAsync(business, cancellationToken));
+    }
+
     public async Task<BusinessSelfServiceBrandingResult> UpdateBusinessBrandingAsync(
         UpdateBusinessSelfServiceBrandingCommand command,
         CancellationToken cancellationToken = default)
@@ -795,6 +807,8 @@ public sealed class DigitalCardsAppService
             return null;
         }
 
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+
         var cards = await _loyaltyCards.SearchByBusinessAsync(
             business.Id,
             query: string.Empty,
@@ -832,7 +846,7 @@ public sealed class DigitalCardsAppService
             .ToArray();
 
         return new BusinessDashboardDto(
-            ToDto(business),
+            ToDto(displayBusiness),
             recentCards.Count,
             recentCards.Sum(card => card.CurrentStamps),
             recentCards.Sum(card => card.LifetimeStamps),
@@ -853,6 +867,7 @@ public sealed class DigitalCardsAppService
         {
             return null;
         }
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
 
         var cards = await _loyaltyCards.SearchByBusinessAsync(
             business.Id,
@@ -927,7 +942,7 @@ public sealed class DigitalCardsAppService
             .ToArray();
 
         return new BusinessReportsDto(
-            ToDto(business),
+            ToDto(displayBusiness),
             reportCards.Count,
             reportCards.Count(card => card.LastStampedAt >= since30Days),
             reportCards.Select(card => card.Client.Id).Distinct().Count(),
@@ -1029,6 +1044,16 @@ public sealed class DigitalCardsAppService
         if (!IsRewardReady(card, displayBusiness))
         {
             return new RewardRedemptionResult(false, await ToBusinessCardDtoAsync(card, client, business, cancellationToken), null, "La tarjeta aun no esta completa.", false);
+        }
+
+        if (!await _rewardRedemptions.IsAvailableAsync(cancellationToken))
+        {
+            return new RewardRedemptionResult(
+                false,
+                await ToBusinessCardDtoAsync(card, client, business, cancellationToken),
+                null,
+                RewardRedemptionTableMissingMessage,
+                false);
         }
 
         var previousCheckQty = card.CurrentStamps;
@@ -1523,7 +1548,7 @@ public sealed class DigitalCardsAppService
         var branding = await _businessBranding.FindByBusinessIdAsync(business.Id, cancellationToken);
         return new BusinessBrandingSettingsDto(
             business.Id,
-            business.DisplayName,
+            branding?.PublicName ?? business.DisplayName,
             business.Email,
             ToBrandingDto(business, branding));
     }

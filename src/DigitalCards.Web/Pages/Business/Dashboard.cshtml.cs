@@ -72,6 +72,7 @@ public sealed class DashboardModel : PageModel
         }
 
         BusinessName = Dashboard.Business.Name;
+        ViewData["BusinessShellName"] = BusinessName;
         var pilotAccess = await _pilotAccess.CheckBusinessAsync(
             Dashboard.Business.Id,
             Dashboard.Business.Email,
