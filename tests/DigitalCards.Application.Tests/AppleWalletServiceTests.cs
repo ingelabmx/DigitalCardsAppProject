@@ -1,7 +1,11 @@
+using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
+using DigitalCards.Domain;
 using DigitalCards.Infrastructure;
 using DigitalCards.Infrastructure.Wallets;
 using Microsoft.Extensions.Configuration;
@@ -88,26 +92,98 @@ public sealed class AppleWalletServiceTests
         Assert.Equal(AppleWalletRegistrationStatus.Unauthorized, registered);
     }
 
-    private static ServiceProvider BuildAppleProvider()
+    [Fact]
+    public async Task CreateUpdatedPass_ResolvesCurrentCardBySerialNumber()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        using var files = CreateAppleWalletTestFiles();
+        using var provider = BuildAppleProvider(new Dictionary<string, string?>
+        {
+            ["DigitalCards:AppleWallet:AssetsPath"] = files.AssetsPath,
+            ["DigitalCards:AppleWallet:CertificatePath"] = files.CertificatePath,
+            ["DigitalCards:AppleWallet:CertificatePassword"] = files.CertificatePassword,
+            ["DigitalCards:AppleWallet:WwdrCertificatePath"] = files.WwdrCertificatePath
+        });
+        var appleWallet = provider.GetRequiredService<IAppleWalletService>();
+        var businesses = provider.GetRequiredService<IBusinessRepository>();
+        var clients = provider.GetRequiredService<IClientRepository>();
+        var cards = provider.GetRequiredService<ILoyaltyCardRepository>();
+
+        var business = new Business(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            "Balboa Water",
+            "balboa@example.test",
+            "hash",
+            string.Empty,
+            publicName: "Runni Cafe",
+            programName: "Runni Rewards",
+            stampGoal: 10);
+        var client = new Client(
+            Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            "runni-client",
+            "Maria Fernanda",
+            "Lopez Perez",
+            "maria@example.test");
+        var card = LoyaltyCard.Restore(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            client.Id,
+            business.Id,
+            enrollmentToken: "opaque-enrollment-token",
+            currentStamps: 9,
+            lifetimeStamps: 9,
+            DateTimeOffset.Parse("2026-05-11T00:00:00Z"),
+            DateTimeOffset.Parse("2026-05-11T00:09:00Z"),
+            googleObjectId: null,
+            googleSaveUrl: null);
+
+        await businesses.AddAsync(business);
+        await clients.AddAsync(client);
+        await cards.AddAsync(card);
+
+        var firstPass = await appleWallet.CreatePassAsync(card, client, business);
+        var authToken = ReadAuthenticationToken(firstPass);
+
+        card.AddStamp(DateTimeOffset.Parse("2026-05-11T00:10:00Z"), business.StampGoal);
+        await cards.UpdateAsync(card);
+
+        var updated = await appleWallet.CreateUpdatedPassAsync(
+            "pass.com.example.digitalcards",
+            card.Id.ToString("N"),
+            $"ApplePass {authToken}");
+
+        Assert.Equal(AppleWalletPassRequestStatus.Ready, updated.Status);
+        Assert.NotNull(updated.PassFile);
+        Assert.Equal("10 de 10", ReadStampProgress(updated.PassFile!));
+    }
+
+    private static ServiceProvider BuildAppleProvider(IReadOnlyDictionary<string, string?>? overrides = null)
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["DigitalCards:PublicBaseUrl"] = "https://example.test",
+            ["DigitalCards:PersistenceProvider"] = "InMemory",
+            ["DigitalCards:GoogleWallet:Provider"] = "Fake",
+            ["DigitalCards:Email:Provider"] = "Fake",
+            ["DigitalCards:AppleWallet:Provider"] = "Apple",
+            ["DigitalCards:AppleWallet:TeamIdentifier"] = "TEAMID1234",
+            ["DigitalCards:AppleWallet:PassTypeIdentifier"] = "pass.com.example.digitalcards",
+            ["DigitalCards:AppleWallet:OrganizationName"] = "DigitalCards",
+            ["DigitalCards:AppleWallet:CertificatePath"] = @"C:\secure\apple-pass-certificate.p12",
+            ["DigitalCards:AppleWallet:CertificatePassword"] = "secret",
+            ["DigitalCards:AppleWallet:WwdrCertificatePath"] = @"C:\secure\AppleWWDR.cer",
+            ["DigitalCards:AppleWallet:AssetsPath"] = @"C:\secure\apple-assets",
+            ["DigitalCards:AppleWallet:AuthenticationTokenSecret"] = "this-is-a-long-apple-wallet-test-secret",
+            ["DigitalCards:AppleWallet:ApnsBaseUrl"] = "https://api.push.apple.com"
+        };
+        if (overrides is not null)
+        {
+            foreach (var pair in overrides)
             {
-                ["DigitalCards:PublicBaseUrl"] = "https://example.test",
-                ["DigitalCards:PersistenceProvider"] = "InMemory",
-                ["DigitalCards:GoogleWallet:Provider"] = "Fake",
-                ["DigitalCards:Email:Provider"] = "Fake",
-                ["DigitalCards:AppleWallet:Provider"] = "Apple",
-                ["DigitalCards:AppleWallet:TeamIdentifier"] = "TEAMID1234",
-                ["DigitalCards:AppleWallet:PassTypeIdentifier"] = "pass.com.example.digitalcards",
-                ["DigitalCards:AppleWallet:OrganizationName"] = "DigitalCards",
-                ["DigitalCards:AppleWallet:CertificatePath"] = @"C:\secure\apple-pass-certificate.p12",
-                ["DigitalCards:AppleWallet:CertificatePassword"] = "secret",
-                ["DigitalCards:AppleWallet:WwdrCertificatePath"] = @"C:\secure\AppleWWDR.cer",
-                ["DigitalCards:AppleWallet:AssetsPath"] = @"C:\secure\apple-assets",
-                ["DigitalCards:AppleWallet:AuthenticationTokenSecret"] = "this-is-a-long-apple-wallet-test-secret",
-                ["DigitalCards:AppleWallet:ApnsBaseUrl"] = "https://api.push.apple.com"
-            })
+                settings[pair.Key] = pair.Value;
+            }
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
             .Build();
 
         var services = new ServiceCollection();
@@ -116,8 +192,103 @@ public sealed class AppleWalletServiceTests
         return services.BuildServiceProvider();
     }
 
+    private static string ReadAuthenticationToken(AppleWalletPassFile passFile)
+    {
+        using var document = ReadPassJson(passFile);
+        return document.RootElement.GetProperty("authenticationToken").GetString()!;
+    }
+
+    private static string ReadStampProgress(AppleWalletPassFile passFile)
+    {
+        using var document = ReadPassJson(passFile);
+        return document.RootElement
+            .GetProperty("generic")
+            .GetProperty("secondaryFields")[1]
+            .GetProperty("value")
+            .GetString()!;
+    }
+
+    private static JsonDocument ReadPassJson(AppleWalletPassFile passFile)
+    {
+        using var archive = new ZipArchive(new MemoryStream(passFile.Content), ZipArchiveMode.Read);
+        var entry = archive.GetEntry("pass.json") ?? throw new InvalidOperationException("pass.json was not found.");
+        using var stream = entry.Open();
+        return JsonDocument.Parse(stream);
+    }
+
     private static string HashToken(string token)
     {
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
+    }
+
+    private static AppleWalletTestFiles CreateAppleWalletTestFiles()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"digitalcards-apple-{Guid.NewGuid():N}");
+        var assetsPath = Path.Combine(root, "assets");
+        var certificatePath = Path.Combine(root, "pass.p12");
+        var wwdrCertificatePath = Path.Combine(root, "wwdr.cer");
+        const string certificatePassword = "test-password";
+
+        Directory.CreateDirectory(assetsPath);
+        File.WriteAllBytes(Path.Combine(assetsPath, "icon.png"), TinyPng());
+        WriteSigningCertificate(certificatePath, certificatePassword);
+        WriteWwdrCertificate(wwdrCertificatePath);
+
+        return new AppleWalletTestFiles(
+            root,
+            assetsPath,
+            certificatePath,
+            wwdrCertificatePath,
+            certificatePassword);
+    }
+
+    private static void WriteSigningCertificate(string path, string password)
+    {
+        using var key = RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=Pass Type ID pass.com.example.digitalcards,O=Example",
+            key,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow.AddDays(1));
+        File.WriteAllBytes(path, certificate.Export(X509ContentType.Pkcs12, password));
+    }
+
+    private static void WriteWwdrCertificate(string path)
+    {
+        using var key = RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=Apple Worldwide Developer Relations Certification Authority,O=Apple Inc.",
+            key,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow.AddDays(1));
+        File.WriteAllBytes(path, certificate.Export(X509ContentType.Cert));
+    }
+
+    private static byte[] TinyPng()
+    {
+        return Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
+    }
+
+    private sealed record AppleWalletTestFiles(
+        string Root,
+        string AssetsPath,
+        string CertificatePath,
+        string WwdrCertificatePath,
+        string CertificatePassword) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (Directory.Exists(Root))
+            {
+                Directory.Delete(Root, recursive: true);
+            }
+        }
     }
 }

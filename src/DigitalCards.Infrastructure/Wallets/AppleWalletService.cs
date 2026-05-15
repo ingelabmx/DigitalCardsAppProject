@@ -297,7 +297,14 @@ public sealed class AppleWalletService : IAppleWalletService
         string serialNumber,
         CancellationToken cancellationToken)
     {
-        var card = await _loyaltyCards.FindByEnrollmentTokenAsync(serialNumber, cancellationToken);
+        LoyaltyCard? card = null;
+        if (Guid.TryParseExact(serialNumber, "N", out var cardId) ||
+            Guid.TryParse(serialNumber, out cardId))
+        {
+            card = await _loyaltyCards.FindByIdAsync(cardId, cancellationToken);
+        }
+
+        card ??= await _loyaltyCards.FindByEnrollmentTokenAsync(serialNumber, cancellationToken);
         if (card is null)
         {
             return null;
