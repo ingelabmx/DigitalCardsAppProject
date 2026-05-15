@@ -16,8 +16,10 @@ else
     var primaryColor = Model.Landing.PrimaryColor ?? "#111827";
     var secondaryColor = Model.Landing.SecondaryColor ?? "#5d87ff";
     var fallbackInitials = Model.Landing.BusinessName[..Math.Min(Model.Landing.BusinessName.Length, 2)].ToUpperInvariant();
-    var stampsToGoal = Math.Max(0, 10 - Math.Min(Model.Landing.CurrentStamps, 10));
-    var stampProgress = Math.Min(Model.Landing.CurrentStamps, 10) * 10;
+    var stampGoal = Math.Max(1, Model.Landing.StampGoal);
+    var visibleStamps = Math.Min(Model.Landing.CurrentStamps, stampGoal);
+    var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
+    var stampProgress = visibleStamps * 100 / stampGoal;
 
     <section class="wallet-panel wallet-public-panel"
              style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;"
@@ -79,7 +81,7 @@ else
         <div class="metric-row">
             <div class="metric">
                 <span>Sellos actuales</span>
-                <strong>@Model.Landing.CurrentStamps</strong>
+                <strong>@visibleStamps de @stampGoal</strong>
             </div>
             <div class="metric">
                 <span>Sellos historicos</span>
@@ -92,9 +94,9 @@ else
         </div>
 
         <div class="wallet-public-stamps" aria-label="Sellos actuales">
-            @for (var stamp = 1; stamp <= 10; stamp++)
+            @for (var stamp = 1; stamp <= stampGoal; stamp++)
             {
-                <span class="@(stamp <= Math.Min(Model.Landing.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
+                <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
             }
         </div>
 

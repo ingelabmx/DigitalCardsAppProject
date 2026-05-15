@@ -64,6 +64,7 @@ public sealed record UpdateBusinessSelfServiceBrandingCommand(
     string PrimaryColor,
     string SecondaryColor,
     string CustomFieldColor,
+    int StampGoal,
     string ProgramName,
     string ProgramDescription);
 
@@ -91,6 +92,7 @@ public sealed record LoyaltyCardDto(
     string BusinessName,
     string ClientUserName,
     int CurrentStamps,
+    int StampGoal,
     int LifetimeStamps,
     string? GoogleObjectId,
     string? GoogleSaveUrl);
@@ -101,6 +103,7 @@ public sealed record ClientLoyaltyCardDto(
     string BusinessName,
     string ClientUserName,
     int CurrentStamps,
+    int StampGoal,
     int LifetimeStamps,
     DateTimeOffset LastStampedAt,
     bool GoogleIssued,
@@ -125,6 +128,7 @@ public sealed record BusinessCardDto(
     ClientDto Client,
     string BusinessName,
     int CurrentStamps,
+    int StampGoal,
     int LifetimeStamps,
     DateTimeOffset LastStampedAt,
     bool GoogleIssued,
@@ -208,6 +212,7 @@ public sealed record WalletLandingDto(
     string BusinessName,
     string ClientName,
     int CurrentStamps,
+    int StampGoal,
     int LifetimeStamps,
     bool HasGooglePass,
     string LogoPath,

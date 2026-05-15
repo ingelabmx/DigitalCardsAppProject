@@ -1127,7 +1127,7 @@ form.is-submitting input[type="submit"] {
 .wallet-public-stamps {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(14px, 1fr));
 }
 
 .wallet-public-stamps span {
@@ -1493,7 +1493,7 @@ form.is-submitting input[type="submit"] {
 .business-stamp-track {
   display: grid;
   gap: 0.45rem;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
 }
 
 .business-stamp-track span {
@@ -1691,14 +1691,15 @@ form.is-submitting input[type="submit"] {
 
 .branding-preview span {
   color: var(--brand-secondary, #93c5fd);
-  font-size: 0.85rem;
+  font-size: 1.02rem;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .branding-preview strong {
   color: var(--brand-custom, #ffffff);
-  font-size: 1.15rem;
+  font-size: 2.3rem;
+  line-height: 1.05;
 }
 
 .branding-preview small {
@@ -2145,7 +2146,7 @@ form.is-submitting input[type="submit"] {
 .client-stamp-track {
   display: grid;
   gap: 0.4rem;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
   margin-top: auto;
 }
 
@@ -2162,7 +2163,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .client-card-preview .client-stamp-track {
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
   margin: 0;
 }
 

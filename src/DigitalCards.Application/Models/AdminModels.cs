@@ -99,6 +99,7 @@ public sealed record BusinessBrandingDto(
     string PrimaryColor,
     string SecondaryColor,
     string CustomFieldColor,
+    int StampGoal,
     string ProgramName,
     string ProgramDescription,
     DateTimeOffset? UpdatedAt);
@@ -118,6 +119,7 @@ public sealed record UpdateBusinessBrandingCommand(
     string PrimaryColor,
     string SecondaryColor,
     string CustomFieldColor,
+    int StampGoal,
     string ProgramName,
     string ProgramDescription);
 

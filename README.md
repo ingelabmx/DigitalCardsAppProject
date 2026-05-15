@@ -662,16 +662,19 @@ Antes de editar branding contra HostGator, ejecuta:
 
 ```text
 docs/migration-context/31-business-branding-v1-hostgator.sql
+docs/migration-context/113-branding-custom-field-color-hostgator.sql
+docs/migration-context/114-wallet-stamp-goal-hostgator.sql
 ```
 
 Desde `/Admin/BusinessProfile/{businessId}`, la seccion `Branding Wallet`
 permite configurar:
 
-- nombre publico;
-- logo publico como ruta o URL;
+- nombre del negocio;
+- logo PNG subido desde la UI;
 - color primario;
-- color secundario;
-- nombre y descripcion del programa.
+- color secundario 1;
+- color secundario 2;
+- nombre del programa, recompensa y numero de sellos.
 
 La app moderna usa ese branding en:
 
@@ -688,17 +691,18 @@ El admin tambien puede subir logo publico desde la misma seccion. Los archivos
 se guardan fuera del repo y se sirven desde `/uploads/business-logos/...`.
 
 El negocio tambien puede editar branding publico desde `/Business/Branding`.
-Ese self-service esta limitado a nombre publico, logo Wallet, colores, nombre
-del programa y descripcion. El negocio no puede cambiar email, password, estado
-piloto ni activacion desde esa pantalla; esos controles siguen siendo de admin.
+Ese self-service esta limitado a nombre del negocio, logo Wallet, colores,
+programa, recompensa y numero de sellos. El negocio no puede cambiar email,
+password, estado piloto ni activacion desde esa pantalla; esos controles siguen
+siendo de admin.
 Antes de habilitarlo contra HostGator, aplica:
 
 ```text
 docs/migration-context/48-business-self-service-v1-hostgator.sql
 ```
 
-Despues de cambiar logo, colores o nombre publico, admin y negocio pueden usar
-`Refrescar Wallets recientes` para aplicar el branding a Wallets ya emitidas.
+Despues de cambiar logo, colores, nombre del negocio o numero de sellos, admin y
+negocio pueden usar `Actualizar Tarjetas` para aplicar el branding a Wallets ya emitidas.
 El refresh ejecuta patch Google y update Apple/APNs para tarjetas recientes con
 Wallet trackeada, y registra `StampLedger.Source=BrandingRefresh`. No cambia
 sellos, tokens ni datos legacy.

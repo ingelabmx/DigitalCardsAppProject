@@ -57,7 +57,7 @@ public sealed class GoogleWalletServiceTests
             {
                 Assert.Equal("checks", module.Id);
                 Assert.Equal("Sellos", module.Header);
-                Assert.Equal("1", module.Body);
+                Assert.Equal("1 de 10", module.Body);
             },
             module =>
             {
@@ -123,7 +123,7 @@ public sealed class GoogleWalletServiceTests
 
     private static Client CreateClient(Guid clientId)
     {
-        return new Client(clientId, "maria-test", "Maria", "Lopez", "maria@example.test");
+        return new Client(clientId, "maria-test", "Maria Fernanda", "Lopez Perez", "maria@example.test");
     }
 }
 

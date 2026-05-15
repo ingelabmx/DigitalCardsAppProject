@@ -223,7 +223,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("business-card-resend-submit").ClickAsync();
         Assert.Contains("Correo reenviado", await page.GetByTestId("business-card-status").InnerTextAsync());
         await page.GetByTestId("business-card-stamp-submit").ClickAsync();
-        Assert.Equal("2", await page.GetByTestId("business-card-current-stamps").InnerTextAsync());
+        Assert.Equal("2 de 10", await page.GetByTestId("business-card-current-stamps").InnerTextAsync());
         Assert.Equal("Lista", await page.GetByTestId("business-card-wallet-status").InnerTextAsync());
         var ledgerText = await page.GetByTestId("stamp-ledger-list").InnerTextAsync();
         Assert.Contains("Actualizado", ledgerText);
@@ -259,7 +259,7 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         var cardText = await page.GetByTestId("client-card-results").InnerTextAsync();
         Assert.True(await page.GetByTestId("client-cards-summary").IsVisibleAsync());
         Assert.True(await page.GetByTestId("client-card-progress-panel").First.IsVisibleAsync());
-        Assert.Equal("2", await page.GetByTestId("client-card-current-stamps").First.InnerTextAsync());
+        Assert.Equal("2 de 10", await page.GetByTestId("client-card-current-stamps").First.InnerTextAsync());
         Assert.Contains("Tarjeta lista", cardText);
         Assert.DoesNotContain("Google emitida", cardText);
         Assert.DoesNotContain("Apple Wallet", cardText);

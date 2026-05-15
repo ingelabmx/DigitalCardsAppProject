@@ -1507,6 +1507,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["BrandingInput.PublicName"] = "Perfil Publico",
                 ["BrandingInput.ProgramName"] = "Perfil Rewards",
                 ["BrandingInput.ProgramDescription"] = "Sellos con branding desde web test.",
+                ["BrandingInput.StampGoal"] = "12",
                 ["BrandingInput.PrimaryColor"] = "#123456",
                 ["BrandingInput.SecondaryColor"] = "#abcdef",
                 ["BrandingInput.CustomFieldColor"] = "fedcba",
@@ -1519,6 +1520,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Perfil Publico", brandingHtml);
         Assert.Contains("#123456", brandingHtml);
         Assert.Contains("#fedcba", brandingHtml);
+        Assert.Contains("12", brandingHtml);
 
         var resetToken = ExtractAntiforgeryToken(brandingHtml);
         var resetResponse = await client.PostAsync(
@@ -1754,14 +1756,19 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             await LoginAdminAsync(client);
             var profilePath = "/Admin/BusinessProfile/11111111-1111-1111-1111-111111111111";
             var getHtml = await client.GetStringAsync(profilePath);
-            Assert.DoesNotContain("data-testid=\"admin-business-branding-logo\"", getHtml);
-            Assert.Contains("data-testid=\"admin-business-branding-logo-preview\"", getHtml);
-            var token = ExtractAntiforgeryToken(getHtml);
+        Assert.DoesNotContain("data-testid=\"admin-business-branding-logo\"", getHtml);
+        Assert.Contains("data-testid=\"admin-business-branding-logo-preview\"", getHtml);
+        Assert.Contains("Nombre del negocio", getHtml);
+        Assert.Contains("Numero de sellos", getHtml);
+        Assert.Contains("Color secundario 1", getHtml);
+        Assert.Contains("Color secundario 2", getHtml);
+        var token = ExtractAntiforgeryToken(getHtml);
             using var form = new MultipartFormDataContent
             {
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("10"), "BrandingInput.StampGoal" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
@@ -1799,6 +1806,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo replacement test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("10"), "BrandingInput.StampGoal" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(secondToken), "__RequestVerificationToken" }
@@ -1853,6 +1861,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("10"), "BrandingInput.StampGoal" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
@@ -1901,6 +1910,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Demo Coffee"), "BrandingInput.PublicName" },
                 { new StringContent("Demo Rewards"), "BrandingInput.ProgramName" },
                 { new StringContent("Logo upload test."), "BrandingInput.ProgramDescription" },
+                { new StringContent("10"), "BrandingInput.StampGoal" },
                 { new StringContent("#123456"), "BrandingInput.PrimaryColor" },
                 { new StringContent("#abcdef"), "BrandingInput.SecondaryColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
@@ -2009,6 +2019,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["BrandingInput.SecondaryColor"] = "#abcdef",
                 ["BrandingInput.ProgramName"] = "Admin Programa",
                 ["BrandingInput.ProgramDescription"] = "Recompensa admin",
+                ["BrandingInput.StampGoal"] = "10",
                 ["__RequestVerificationToken"] = ExtractAntiforgeryToken(getHtml)
             }));
         var html = await response.Content.ReadAsStringAsync();
@@ -2230,7 +2241,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, stampResponse.StatusCode);
         Assert.Contains("Sello agregado", stampHtml);
-        Assert.Contains("data-testid=\"current-stamps\">2</strong>", stampHtml);
+        Assert.Contains("data-testid=\"current-stamps\">2 de 10</strong>", stampHtml);
         Assert.Contains("data-testid=\"stamp-username\"", stampHtml);
         Assert.DoesNotContain($"value=\"{userName}\"", stampHtml, StringComparison.OrdinalIgnoreCase);
     }
@@ -2771,6 +2782,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Self Managed Coffee"), "Input.PublicName" },
                 { new StringContent("Self Rewards"), "Input.ProgramName" },
                 { new StringContent("Branding editado por negocio."), "Input.ProgramDescription" },
+                { new StringContent("14"), "Input.StampGoal" },
                 { new StringContent("#102030"), "Input.PrimaryColor" },
                 { new StringContent("#405060"), "Input.SecondaryColor" },
                 { new StringContent("778899"), "Input.CustomFieldColor" },
@@ -2798,6 +2810,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 logoPath = branding.LogoPath;
                 Assert.Equal("Self Rewards", branding.ProgramName);
                 Assert.Equal("#778899", branding.CustomFieldColor);
+                Assert.Equal(14, branding.StampGoal);
             }
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
@@ -2846,6 +2859,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Recompensa", getHtml);
         Assert.DoesNotContain(">Descripcion<", getHtml);
         Assert.Contains("business-branding-description", getHtml);
+        Assert.Contains("business-branding-stamp-goal", getHtml);
+        Assert.Contains("Nombre del negocio", getHtml);
+        Assert.Contains("Numero de sellos", getHtml);
+        Assert.Contains("Color secundario 1", getHtml);
+        Assert.Contains("Color secundario 2", getHtml);
         Assert.Contains("business-branding-custom-field-color", getHtml);
         Assert.Contains("type=\"text\"", getHtml);
         Assert.DoesNotContain("<textarea", getHtml);
@@ -2903,6 +2921,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["Input.PrimaryColor"] = "#123456",
                 ["Input.SecondaryColor"] = "#abcdef",
                 ["Input.CustomFieldColor"] = "112233",
+                ["Input.StampGoal"] = "10",
                 ["Input.ProgramName"] = "Programa Puntelio",
                 ["Input.ProgramDescription"] = "Recompensa de prueba",
                 ["__RequestVerificationToken"] = ExtractAntiforgeryToken(getHtml)

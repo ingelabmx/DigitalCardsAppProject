@@ -100,7 +100,7 @@ public sealed class ManualIntegrationSmokeTests
         Assert.StartsWith("https://pay.google.com/gp/v/save/", google!.SaveUrl);
 
         var stamped = await app.AddStampAsync(new AddStampCommand(business.Id, userName));
-        Assert.Equal(currentStampsBeforeAdd >= 9 ? 0 : currentStampsBeforeAdd + 1, stamped.CurrentStamps);
+        Assert.Equal(currentStampsBeforeAdd >= 10 ? 0 : currentStampsBeforeAdd + 1, stamped.CurrentStamps);
         Assert.Equal(lifetimeStampsBeforeAdd + 1, stamped.LifetimeStamps);
         Assert.NotNull(stamped.GoogleObjectId);
     }
@@ -309,7 +309,7 @@ public sealed class ManualIntegrationSmokeTests
 
         var stamped = await app.AddStampToCardAsync(business.Id, enrollment.Card.Id);
         Assert.NotNull(stamped);
-        Assert.Equal(enrollment.Card.CurrentStamps >= 9 ? 0 : enrollment.Card.CurrentStamps + 1, stamped!.CurrentStamps);
+        Assert.Equal(enrollment.Card.CurrentStamps >= 10 ? 0 : enrollment.Card.CurrentStamps + 1, stamped!.CurrentStamps);
         Assert.Equal(enrollment.Card.LifetimeStamps + 1, stamped.LifetimeStamps);
         Assert.True(stamped.GoogleIssued);
 

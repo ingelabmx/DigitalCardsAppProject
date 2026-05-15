@@ -23,13 +23,15 @@
 
     @if (Model.Result is not null)
     {
+        var stampGoal = Math.Max(1, Model.Result.StampGoal);
+        var visibleStamps = Math.Min(Model.Result.CurrentStamps, stampGoal);
         <div class="alert alert-success" role="status" data-testid="stamp-success">
             Sello agregado a @Model.Result.ClientUserName.
         </div>
         <div class="metric-row">
             <div class="metric">
                 <span>Sellos actuales</span>
-                <strong data-testid="current-stamps">@Model.Result.CurrentStamps</strong>
+                <strong data-testid="current-stamps">@visibleStamps de @stampGoal</strong>
             </div>
             <div class="metric">
                 <span>Sellos historicos</span>

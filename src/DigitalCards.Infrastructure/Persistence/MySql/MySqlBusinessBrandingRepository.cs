@@ -27,6 +27,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                    PrimaryColor,
                    SecondaryColor,
                    CustomFieldColor,
+                   StampGoal,
                    ProgramName,
                    ProgramDescription,
                    UpdatedAt,
@@ -62,6 +63,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 PrimaryColor,
                 SecondaryColor,
                 CustomFieldColor,
+                StampGoal,
                 ProgramName,
                 ProgramDescription,
                 UpdatedAt,
@@ -73,6 +75,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 @PrimaryColor,
                 @SecondaryColor,
                 @CustomFieldColor,
+                @StampGoal,
                 @ProgramName,
                 @ProgramDescription,
                 @UpdatedAt,
@@ -83,6 +86,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 PrimaryColor = values(PrimaryColor),
                 SecondaryColor = values(SecondaryColor),
                 CustomFieldColor = values(CustomFieldColor),
+                StampGoal = values(StampGoal),
                 ProgramName = values(ProgramName),
                 ProgramDescription = values(ProgramDescription),
                 UpdatedAt = values(UpdatedAt),
@@ -103,6 +107,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                         branding.PrimaryColor,
                         branding.SecondaryColor,
                         branding.CustomFieldColor,
+                        branding.StampGoal,
                         branding.ProgramName,
                         branding.ProgramDescription,
                         UpdatedAt = branding.UpdatedAt.UtcDateTime,
@@ -134,6 +139,8 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
 
         public string CustomFieldColor { get; init; } = "#FFFFFF";
 
+        public int StampGoal { get; init; } = Business.DefaultStampGoal;
+
         public string ProgramName { get; init; } = string.Empty;
 
         public string ProgramDescription { get; init; } = string.Empty;
@@ -151,6 +158,7 @@ public sealed class MySqlBusinessBrandingRepository : IBusinessBrandingRepositor
                 PrimaryColor,
                 SecondaryColor,
                 CustomFieldColor,
+                StampGoal,
                 ProgramName,
                 ProgramDescription,
                 new DateTimeOffset(DateTime.SpecifyKind(UpdatedAt, DateTimeKind.Utc)),

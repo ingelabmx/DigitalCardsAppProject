@@ -71,18 +71,20 @@
             <div class="client-card-preview-grid" data-testid="client-dashboard-card-preview">
                 @foreach (var card in Model.Dashboard.Cards.Take(3))
                 {
+                    var stampGoal = Math.Max(1, card.StampGoal);
+                    var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
                     <article class="client-card-preview">
                         <div>
                             <span class="client-card-kicker">Tarjeta</span>
                             <h3>@card.BusinessName</h3>
                         </div>
                         <div class="client-stamp-track" aria-label="Sellos actuales">
-                            @for (var stamp = 1; stamp <= 10; stamp++)
+                            @for (var stamp = 1; stamp <= stampGoal; stamp++)
                             {
-                                <span class="@(stamp <= Math.Min(card.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
+                                <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
                             }
                         </div>
-                        <p>@card.CurrentStamps sellos actuales</p>
+                        <p>@visibleStamps de @stampGoal sellos</p>
                         <a class="btn btn-outline-primary btn-sm"
                            asp-page="/Wallet/Select"
                            asp-route-token="@card.WalletSelectToken"

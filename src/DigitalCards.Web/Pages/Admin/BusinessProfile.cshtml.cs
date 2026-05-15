@@ -214,6 +214,7 @@ public sealed class BusinessProfileModel : PageModel
                 BrandingInput.PrimaryColor,
                 BrandingInput.SecondaryColor,
                 BrandingInput.CustomFieldColor,
+                BrandingInput.StampGoal,
                 BrandingInput.ProgramName,
                 BrandingInput.ProgramDescription),
             cancellationToken);
@@ -419,6 +420,7 @@ public sealed class BusinessProfileModel : PageModel
             PrimaryColor = profile.Branding.PrimaryColor,
             SecondaryColor = profile.Branding.SecondaryColor,
             CustomFieldColor = profile.Branding.CustomFieldColor,
+            StampGoal = profile.Branding.StampGoal,
             ProgramName = profile.Branding.ProgramName,
             ProgramDescription = profile.Branding.ProgramDescription
         };
@@ -512,6 +514,8 @@ public sealed class BusinessProfileModel : PageModel
         public string SecondaryColor { get; set; } = string.Empty;
 
         public string CustomFieldColor { get; set; } = string.Empty;
+
+        public int StampGoal { get; set; } = 10;
 
         public string ProgramName { get; set; } = string.Empty;
 

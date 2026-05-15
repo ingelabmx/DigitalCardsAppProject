@@ -20,6 +20,7 @@ public sealed class DigitalCardsAppService
     private const string DefaultCustomFieldColor = "#FFFFFF";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
+    private const int MaxStampGoal = 1000;
 
     private readonly IBusinessCredentialRepository _businessCredentials;
     private readonly IBusinessBrandingRepository _businessBranding;
@@ -549,6 +550,7 @@ public sealed class DigitalCardsAppService
         var primaryColor = NormalizeBrandingColor(command.PrimaryColor, DefaultPrimaryColor);
         var secondaryColor = NormalizeBrandingColor(command.SecondaryColor, DefaultSecondaryColor);
         var customFieldColor = NormalizeBrandingColor(command.CustomFieldColor, DefaultCustomFieldColor);
+        var stampGoal = NormalizeStampGoal(command.StampGoal);
         var programName = NormalizeBrandingValue(command.ProgramName, DefaultProgramName);
         var programDescription = NormalizeBrandingValue(command.ProgramDescription, DefaultProgramDescription);
         var validationError = ValidateBusinessBranding(
@@ -557,6 +559,7 @@ public sealed class DigitalCardsAppService
             primaryColor,
             secondaryColor,
             customFieldColor,
+            stampGoal,
             programName,
             programDescription);
         if (validationError is not null)
@@ -572,6 +575,7 @@ public sealed class DigitalCardsAppService
                 primaryColor,
                 secondaryColor,
                 customFieldColor,
+                stampGoal,
                 programName,
                 programDescription,
                 _clock.UtcNow,
@@ -633,6 +637,7 @@ public sealed class DigitalCardsAppService
             displayBusiness.DisplayName,
             client.FullName,
             card.CurrentStamps,
+            displayBusiness.StampGoal,
             card.LifetimeStamps,
             card.GoogleObjectId is not null,
             displayBusiness.LogoPath,
@@ -650,12 +655,13 @@ public sealed class DigitalCardsAppService
         }
 
         var (card, client, business) = context.Value;
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         if (card.GoogleObjectId is not null && card.GoogleSaveUrl is not null)
         {
             return new GoogleWalletIssueResult(card.GoogleObjectId, card.GoogleSaveUrl);
         }
 
-        var result = await _googleWallet.IssueSaveLinkAsync(card, client, business, cancellationToken);
+        var result = await _googleWallet.IssueSaveLinkAsync(card, client, displayBusiness, cancellationToken);
         card.MarkGoogleIssued(result.ObjectId, result.SaveUrl);
         await _loyaltyCards.UpdateAsync(card, cancellationToken);
         return result;
@@ -1078,6 +1084,7 @@ public sealed class DigitalCardsAppService
                 business.DisplayName,
                 client.UserName,
                 card.CurrentStamps,
+                business.StampGoal,
                 card.LifetimeStamps,
                 card.LastStampedAt,
                 card.GoogleObjectId is not null,
@@ -1354,7 +1361,8 @@ public sealed class DigitalCardsAppService
             branding.SecondaryColor,
             branding.ProgramName,
             branding.ProgramDescription,
-            branding.CustomFieldColor);
+            branding.CustomFieldColor,
+            branding.StampGoal);
     }
 
     private async Task<BusinessBrandingSettingsDto> ToBusinessBrandingSettingsAsync(
@@ -1377,6 +1385,7 @@ public sealed class DigitalCardsAppService
             branding?.PrimaryColor ?? DefaultPrimaryColor,
             branding?.SecondaryColor ?? DefaultSecondaryColor,
             branding?.CustomFieldColor ?? DefaultCustomFieldColor,
+            branding?.StampGoal ?? Business.DefaultStampGoal,
             branding?.ProgramName ?? DefaultProgramName,
             branding?.ProgramDescription ?? DefaultProgramDescription,
             branding?.UpdatedAt);
@@ -1438,6 +1447,7 @@ public sealed class DigitalCardsAppService
             business.DisplayName,
             client.UserName,
             card.CurrentStamps,
+            business.StampGoal,
             card.LifetimeStamps,
             card.GoogleObjectId,
             card.GoogleSaveUrl);
@@ -1449,6 +1459,7 @@ public sealed class DigitalCardsAppService
         Business business,
         CancellationToken cancellationToken)
     {
+        var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
         var applePass = await _appleWalletPasses.FindPassByCardIdAsync(card.Id, cancellationToken);
         var appleDeviceCount = 0;
         if (applePass is not null)
@@ -1467,8 +1478,9 @@ public sealed class DigitalCardsAppService
             card.Id,
             card.EnrollmentToken,
             ToDto(client),
-            business.DisplayName,
+            displayBusiness.DisplayName,
             card.CurrentStamps,
+            displayBusiness.StampGoal,
             card.LifetimeStamps,
             card.LastStampedAt,
             !string.IsNullOrWhiteSpace(card.GoogleObjectId),
@@ -1495,9 +1507,9 @@ public sealed class DigitalCardsAppService
     {
         var previousCheckQty = card.CurrentStamps;
         var previousHistoricCheckQty = card.LifetimeStamps;
-        card.AddStamp(_clock.UtcNow);
-        await _loyaltyCards.UpdateAsync(card, cancellationToken);
         var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
+        card.AddStamp(_clock.UtcNow, displayBusiness.StampGoal);
+        await _loyaltyCards.UpdateAsync(card, cancellationToken);
 
         var googleAttempted = false;
         var googleSucceeded = false;
@@ -1658,17 +1670,18 @@ public sealed class DigitalCardsAppService
         string primaryColor,
         string secondaryColor,
         string customFieldColor,
+        int stampGoal,
         string programName,
         string programDescription)
     {
         if (string.IsNullOrWhiteSpace(publicName))
         {
-            return "El nombre publico es requerido.";
+            return "El nombre del negocio es requerido.";
         }
 
         if (publicName.Length > BrandingNameMaxLength)
         {
-            return $"El nombre publico no puede exceder {BrandingNameMaxLength} caracteres.";
+            return $"El nombre del negocio no puede exceder {BrandingNameMaxLength} caracteres.";
         }
 
         if (logoPath.Length > BrandingLogoMaxLength)
@@ -1689,6 +1702,11 @@ public sealed class DigitalCardsAppService
         if (!IsHexColor(customFieldColor))
         {
             return "El color de campos personalizados debe usar formato #RRGGBB.";
+        }
+
+        if (stampGoal <= 0 || stampGoal > MaxStampGoal)
+        {
+            return $"El numero de sellos debe ser entre 1 y {MaxStampGoal}.";
         }
 
         if (string.IsNullOrWhiteSpace(programName))
@@ -1720,6 +1738,11 @@ public sealed class DigitalCardsAppService
         return normalized.Length == 6 && normalized[0] != '#'
             ? $"#{normalized}"
             : normalized;
+    }
+
+    private static int NormalizeStampGoal(int stampGoal)
+    {
+        return stampGoal <= 0 ? Business.DefaultStampGoal : stampGoal;
     }
 
     private static string NormalizeConsentValue(string value, string fallback)

@@ -131,51 +131,6 @@
                     }
                 </div>
 
-                <form method="post"
-                      asp-page-handler="Smoke"
-                      asp-route-businessId="@Model.Profile.BusinessId"
-                      class="cutover-smoke-form"
-                      data-testid="admin-business-profile-smoke-form">
-                    <h3>Registrar smoke de activacion</h3>
-                    <div class="cutover-smoke-checks">
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.HealthOk" class="form-check-input" checked="@(operations.LatestSmoke?.HealthOk == true)" />
-                            <span class="form-check-label">/health OK</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.ReadyOk" class="form-check-input" checked="@(operations.LatestSmoke?.ReadyOk == true)" />
-                            <span class="form-check-label">/health/ready OK</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.EmailOk" class="form-check-input" checked="@(operations.LatestSmoke?.EmailOk == true)" />
-                            <span class="form-check-label">Correo real validado</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.WalletMobileOk" class="form-check-input" checked="@(operations.LatestSmoke?.AppleWalletOk == true)" />
-                            <span class="form-check-label">Wallet movil actualizada</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.WalletSavedOk" class="form-check-input" checked="@(operations.LatestSmoke?.GoogleWalletOk == true)" />
-                            <span class="form-check-label">Wallet guardada actualizada</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.ModernStampOk" class="form-check-input" checked="@(operations.LatestSmoke?.ModernStampOk == true)" />
-                            <span class="form-check-label">Sello probado</span>
-                        </label>
-                        <label class="form-check">
-                            <input asp-for="SmokeInput.SupportReviewed" class="form-check-input" checked="@(operations.LatestSmoke?.SupportReviewed == true)" />
-                            <span class="form-check-label">Soporte revisado</span>
-                        </label>
-                    </div>
-                    <label asp-for="SmokeInput.Notes" class="form-label">Notas de evidencia</label>
-                    <textarea asp-for="SmokeInput.Notes" class="form-control" rows="2" data-testid="admin-business-profile-smoke-notes"></textarea>
-                    <button class="btn btn-outline-primary mt-2"
-                            type="submit"
-                            data-testid="admin-business-profile-smoke-save"
-                            onclick="return confirm('Confirma que esta evidencia no incluye secretos ni datos sensibles.');">
-                        Guardar evidencia
-                    </button>
-                </form>
             </section>
         }
 
@@ -284,7 +239,7 @@
                 <p class="text-muted">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
 
                 <div class="mb-3">
-                    <label asp-for="BrandingInput.PublicName" class="form-label">Nombre publico</label>
+                    <label asp-for="BrandingInput.PublicName" class="form-label">Nombre del negocio</label>
                     <input asp-for="BrandingInput.PublicName" class="form-control" maxlength="80" data-testid="admin-business-branding-public-name" />
                 </div>
 
@@ -296,6 +251,11 @@
                 <div class="mb-3">
                     <label asp-for="BrandingInput.ProgramDescription" class="form-label">Recompensa</label>
                     <textarea asp-for="BrandingInput.ProgramDescription" class="form-control" rows="3" maxlength="280" data-testid="admin-business-branding-description"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandingInput.StampGoal" class="form-label">Numero de sellos</label>
+                    <input asp-for="BrandingInput.StampGoal" class="form-control" type="number" min="1" max="1000" data-testid="admin-business-branding-stamp-goal" />
                 </div>
 
                 <div class="mb-3">
@@ -327,11 +287,11 @@
                         <input asp-for="BrandingInput.PrimaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-primary" data-branding-color-input="primary" />
                     </div>
                     <div class="mb-3">
-                        <label asp-for="BrandingInput.SecondaryColor" class="form-label">Color secundario</label>
+                        <label asp-for="BrandingInput.SecondaryColor" class="form-label">Color secundario 1</label>
                         <input asp-for="BrandingInput.SecondaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-secondary" data-branding-color-input="secondary" />
                     </div>
                     <div class="mb-3">
-                        <label asp-for="BrandingInput.CustomFieldColor" class="form-label">Color de campos personalizados</label>
+                        <label asp-for="BrandingInput.CustomFieldColor" class="form-label">Color secundario 2</label>
                         <input asp-for="BrandingInput.CustomFieldColor" class="form-control" maxlength="7" data-testid="admin-business-branding-custom-field-color" data-branding-color-input="custom" />
                     </div>
                 </div>
@@ -374,5 +334,57 @@
                 <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-wallet-branding-refresh-submit">Actualizar</button>
             </form>
         </div>
+
+        @if (Model.OperationalView is not null)
+        {
+            var operations = Model.OperationalView;
+            <section class="business-profile-panel mt-4" data-testid="admin-business-profile-smoke-section">
+                <form method="post"
+                      asp-page-handler="Smoke"
+                      asp-route-businessId="@Model.Profile.BusinessId"
+                      class="cutover-smoke-form"
+                      data-testid="admin-business-profile-smoke-form">
+                    <h3>Registrar smoke de activacion</h3>
+                    <div class="cutover-smoke-checks">
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.HealthOk" class="form-check-input" checked="@(operations.LatestSmoke?.HealthOk == true)" />
+                            <span class="form-check-label">/health OK</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.ReadyOk" class="form-check-input" checked="@(operations.LatestSmoke?.ReadyOk == true)" />
+                            <span class="form-check-label">/health/ready OK</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.EmailOk" class="form-check-input" checked="@(operations.LatestSmoke?.EmailOk == true)" />
+                            <span class="form-check-label">Correo real validado</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.WalletMobileOk" class="form-check-input" checked="@(operations.LatestSmoke?.AppleWalletOk == true)" />
+                            <span class="form-check-label">Wallet movil actualizada</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.WalletSavedOk" class="form-check-input" checked="@(operations.LatestSmoke?.GoogleWalletOk == true)" />
+                            <span class="form-check-label">Wallet guardada actualizada</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.ModernStampOk" class="form-check-input" checked="@(operations.LatestSmoke?.ModernStampOk == true)" />
+                            <span class="form-check-label">Sello probado</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.SupportReviewed" class="form-check-input" checked="@(operations.LatestSmoke?.SupportReviewed == true)" />
+                            <span class="form-check-label">Soporte revisado</span>
+                        </label>
+                    </div>
+                    <label asp-for="SmokeInput.Notes" class="form-label">Notas de evidencia</label>
+                    <textarea asp-for="SmokeInput.Notes" class="form-control" rows="2" data-testid="admin-business-profile-smoke-notes"></textarea>
+                    <button class="btn btn-outline-primary mt-2"
+                            type="submit"
+                            data-testid="admin-business-profile-smoke-save"
+                            onclick="return confirm('Confirma que esta evidencia no incluye secretos ni datos sensibles.');">
+                        Guardar evidencia
+                    </button>
+                </form>
+            </section>
+        }
     }
 </section>

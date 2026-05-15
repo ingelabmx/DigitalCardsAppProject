@@ -2,7 +2,7 @@ namespace DigitalCards.Domain;
 
 public sealed class LoyaltyCard
 {
-    private const int MaxVisibleStamps = 9;
+    private const int MaxVisibleStamps = 1000;
 
     public LoyaltyCard(Guid id, Guid clientId, Guid businessId, DateTimeOffset createdAt)
         : this(
@@ -82,7 +82,7 @@ public sealed class LoyaltyCard
 
         if (currentStamps < 0 || currentStamps > MaxVisibleStamps)
         {
-            throw new ArgumentOutOfRangeException(nameof(currentStamps), "Current stamps must be between 0 and 9.");
+            throw new ArgumentOutOfRangeException(nameof(currentStamps), $"Current stamps must be between 0 and {MaxVisibleStamps}.");
         }
 
         if (lifetimeStamps < currentStamps)
@@ -103,9 +103,10 @@ public sealed class LoyaltyCard
             googleSaveUrl);
     }
 
-    public void AddStamp(DateTimeOffset stampedAt)
+    public void AddStamp(DateTimeOffset stampedAt, int stampGoal = Business.DefaultStampGoal)
     {
-        CurrentStamps = CurrentStamps >= MaxVisibleStamps ? 0 : CurrentStamps + 1;
+        var normalizedGoal = stampGoal > 0 ? Math.Min(stampGoal, MaxVisibleStamps) : Business.DefaultStampGoal;
+        CurrentStamps = CurrentStamps >= normalizedGoal ? 0 : CurrentStamps + 1;
         LifetimeStamps++;
         LastStampedAt = stampedAt;
     }

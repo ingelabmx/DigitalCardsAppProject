@@ -57,19 +57,21 @@
         <div class="client-card-list">
             @foreach (var card in Model.Cards)
             {
-                var stampsToGoal = Math.Max(0, 10 - Math.Min(card.CurrentStamps, 10));
-                var stampProgress = Math.Min(card.CurrentStamps, 10) * 10;
+                var stampGoal = Math.Max(1, card.StampGoal);
+                var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
+                var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
+                var stampProgress = visibleStamps * 100 / stampGoal;
 
                 <article class="client-card-row" data-testid="client-card">
                     <div class="client-card-main">
                         <div class="client-card-face">
-                            <span class="client-card-kicker">Puntelio</span>
-                            <h3>@card.BusinessName</h3>
-                            <p>@card.ClientUserName</p>
-                            <div class="client-stamp-track" aria-label="Sellos actuales">
-                                @for (var stamp = 1; stamp <= 10; stamp++)
+                                <span class="client-card-kicker">Puntelio</span>
+                                <h3>@card.BusinessName</h3>
+                                <p>@card.ClientUserName</p>
+                                <div class="client-stamp-track" aria-label="Sellos actuales">
+                                @for (var stamp = 1; stamp <= stampGoal; stamp++)
                                 {
-                                    <span class="@(stamp <= Math.Min(card.CurrentStamps, 10) ? "filled" : string.Empty)"></span>
+                                    <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
                                 }
                             </div>
                         </div>
@@ -97,7 +99,7 @@
                             <div class="metric-row metric-row-wide">
                                 <div class="metric">
                                     <span>Sellos actuales</span>
-                                    <strong data-testid="client-card-current-stamps">@card.CurrentStamps</strong>
+                                    <strong data-testid="client-card-current-stamps">@visibleStamps de @stampGoal</strong>
                                 </div>
                                 <div class="metric">
                                     <span>Tarjeta</span>

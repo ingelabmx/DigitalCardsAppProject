@@ -92,7 +92,7 @@
                                     <small>@card.Client.Email</small>
                                 </div>
                                 <div class="business-card-result-state">
-                                    <span>@card.CurrentStamps sellos</span>
+                                    <span>@VisibleStamps(card.CurrentStamps, card.StampGoal) de @NormalizedStampGoal(card.StampGoal) sellos</span>
                                     <span class="@(IsCardReady(card) ? "wallet-status-ok" : "wallet-status-pending")">
                                         @(IsCardReady(card) ? "Tarjeta lista" : "Tarjeta pendiente")
                                     </span>
@@ -115,7 +115,9 @@
                 }
                 else
                 {
-                    var stampsToGoal = Math.Max(0, 10 - Math.Min(Model.Detail.CurrentStamps, 10));
+                    var stampGoal = NormalizedStampGoal(Model.Detail.StampGoal);
+                    var visibleStamps = VisibleStamps(Model.Detail.CurrentStamps, stampGoal);
+                    var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
 
                     <div class="detail-heading">
                         <div>
@@ -157,9 +159,9 @@
                             <small>@Model.Detail.Client.UserName</small>
                         </div>
                         <div class="business-stamp-track" aria-label="Sellos actuales">
-                            @for (var stamp = 1; stamp <= 10; stamp++)
+                            @for (var stamp = 1; stamp <= stampGoal; stamp++)
                             {
-                                <span class="@(stamp <= Model.Detail.CurrentStamps ? "filled" : null)"></span>
+                                <span class="@(stamp <= visibleStamps ? "filled" : null)"></span>
                             }
                         </div>
                     </div>
@@ -167,7 +169,7 @@
                     <div class="metric-row metric-row-wide">
                         <div class="metric">
                             <span>Sellos actuales</span>
-                            <strong data-testid="business-card-current-stamps">@Model.Detail.CurrentStamps</strong>
+                            <strong data-testid="business-card-current-stamps">@visibleStamps de @stampGoal</strong>
                         </div>
                         <div class="metric">
                             <span>Sellos historicos</span>
@@ -272,6 +274,16 @@
     private static bool IsCardReady(BusinessCardDto card)
     {
         return card.GoogleIssued || card.AppleTracked;
+    }
+
+    private static int NormalizedStampGoal(int stampGoal)
+    {
+        return Math.Max(1, stampGoal);
+    }
+
+    private static int VisibleStamps(int currentStamps, int stampGoal)
+    {
+        return Math.Min(Math.Max(currentStamps, 0), NormalizedStampGoal(stampGoal));
     }
 
     private static string CardStatus(
