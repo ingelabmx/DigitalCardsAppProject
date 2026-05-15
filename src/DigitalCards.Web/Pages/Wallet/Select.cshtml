@@ -26,26 +26,11 @@ else
     <section class="wallet-panel wallet-public-panel"
              style="--wallet-primary:@primaryColor;--wallet-secondary:@secondaryColor;--wallet-custom:@customFieldColor;"
              data-testid="wallet-select">
-        <div class="wallet-public-brand">
-            @if (!string.IsNullOrWhiteSpace(Model.Landing.LogoPath))
-            {
-                <img src="@Model.Landing.LogoPath" alt="@Model.Landing.BusinessName logo" data-testid="wallet-business-logo" />
-            }
-            else
-            {
-                <span>@fallbackInitials</span>
-            }
-            <div>
-                <p class="eyebrow">Tarjeta digital</p>
-                <h1>@Model.Landing.BusinessName</h1>
-            </div>
-        </div>
-
         <div class="wallet-visual-card wallet-pass-preview" data-testid="wallet-visual-card">
             <div class="wallet-pass-header">
                 @if (!string.IsNullOrWhiteSpace(Model.Landing.LogoPath))
                 {
-                    <img src="@Model.Landing.LogoPath" alt="@Model.Landing.BusinessName logo" />
+                    <img src="@Model.Landing.LogoPath" alt="@Model.Landing.BusinessName logo" data-testid="wallet-business-logo" />
                 }
                 else
                 {

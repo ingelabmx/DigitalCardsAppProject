@@ -9,6 +9,7 @@ using DigitalCards.Domain;
 using DigitalCards.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -3549,9 +3550,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var landingHtml = await client.GetStringAsync($"/Wallet/Select/{token}");
         var appleHtml = await client.GetStringAsync($"/Wallet/Apple/{token}");
         var googleHtml = await client.GetStringAsync($"/Wallet/Google/{token}");
+        var css = await client.GetStringAsync("/css/site.css");
 
         Assert.Contains("wallet-select", landingHtml);
         Assert.Contains("wallet-visual-card", landingHtml);
+        Assert.Contains("wallet-pass-preview", landingHtml);
         Assert.Contains("apple-wallet-button", landingHtml);
         Assert.Contains("google-wallet-button", landingHtml);
         Assert.Contains("wallet-store-badge-link", landingHtml);
@@ -3564,6 +3567,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("--wallet-primary:", landingHtml);
         Assert.Contains("--wallet-secondary:", landingHtml);
         Assert.Contains("--wallet-custom:", landingHtml);
+        Assert.DoesNotContain("wallet-public-brand", landingHtml);
         Assert.DoesNotContain("wallet-device-guidance", landingHtml);
         Assert.DoesNotContain("wallet-guidance-card", landingHtml);
         Assert.DoesNotContain("data-wallet-platform=", landingHtml);
@@ -3576,6 +3580,13 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("/img/add_to_google_wallet.svg", googleHtml);
         Assert.DoesNotContain("Authorization", landingHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ApplePass", appleHtml, StringComparison.OrdinalIgnoreCase);
+        var badgeRule = ExtractCssRule(css, ".wallet-store-badge-link {");
+        Assert.Contains("background: transparent;", badgeRule);
+        Assert.Contains("border: 0;", badgeRule);
+        Assert.Contains("padding: 0;", badgeRule);
+        Assert.Contains("width: fit-content;", badgeRule);
+        Assert.DoesNotContain("background: rgb(255 255 255 / 94%);", badgeRule);
+        Assert.DoesNotContain("min-height: 72px;", badgeRule);
     }
 
     [Fact]
@@ -3637,6 +3648,30 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var response = await client.GetAsync("/apple-wallet/v1/passes/pass.com.example.digitalcards/serial-123");
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AppleWalletWebServicePassEndpoint_WithUpdatedPass_DisablesCache()
+    {
+        using var fake = WithFakeIntegrations();
+        using var factory = fake.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IAppleWalletService>(new ReadyAppleWalletService());
+            });
+        });
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/apple-wallet/v1/passes/pass.com.example.digitalcards/serial-123");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/vnd.apple.pkpass", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("no-store", response.Headers.CacheControl?.ToString());
+        Assert.Contains("no-cache", response.Headers.CacheControl?.ToString());
+        Assert.Contains("must-revalidate", response.Headers.CacheControl?.ToString());
+        Assert.Contains(response.Headers.Pragma, value => value.Name == "no-cache");
+        Assert.Equal(ReadyAppleWalletService.LastModified, response.Content.Headers.LastModified);
     }
 
     [Fact]
@@ -3799,6 +3834,88 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
             {
                 Environment.SetEnvironmentVariable(pair.Key, pair.Value);
             }
+        }
+    }
+
+    private sealed class ReadyAppleWalletService : IAppleWalletService
+    {
+        public static readonly DateTimeOffset LastModified = new(2026, 5, 15, 0, 0, 0, TimeSpan.Zero);
+
+        private static readonly AppleWalletPassFile PassFile = new(
+            new byte[] { 1, 2, 3 },
+            "application/vnd.apple.pkpass",
+            "updated.pkpass",
+            "serial-123",
+            LastModified);
+
+        public Task<AppleWalletIssueResult> IssueAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new AppleWalletIssueResult(
+                AppleWalletIssueStatus.Ready,
+                "ready",
+                "/Wallet/Apple/Download/token.pkpass",
+                PassFile.SerialNumber));
+        }
+
+        public Task<AppleWalletPassFile> CreatePassAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(PassFile);
+        }
+
+        public Task<AppleWalletPassRequestResult> CreateUpdatedPassAsync(
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new AppleWalletPassRequestResult(AppleWalletPassRequestStatus.Ready, PassFile));
+        }
+
+        public Task<AppleWalletRegistrationStatus> RegisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string pushToken,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(AppleWalletRegistrationStatus.Created);
+        }
+
+        public Task<AppleWalletUnregistrationStatus> UnregisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(AppleWalletUnregistrationStatus.Removed);
+        }
+
+        public Task<AppleWalletUpdatedPasses?> ListUpdatedPassesAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string? previousLastUpdated,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<AppleWalletUpdatedPasses?>(null);
+        }
+
+        public Task NotifyPassUpdatedAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
     }
 
@@ -4010,6 +4127,18 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         return index < 0
             ? throw new InvalidOperationException("Wallet link was not found.")
             : enrollmentUrl[(index + marker.Length)..];
+    }
+
+    private static string ExtractCssRule(string css, string selector)
+    {
+        var start = css.IndexOf(selector, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return string.Empty;
+        }
+
+        var end = css.IndexOf('}', start);
+        return end < 0 ? css[start..] : css[start..(end + 1)];
     }
 
     private static string ExtractBusinessEnrollmentToken(string html)

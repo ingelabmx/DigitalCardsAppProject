@@ -149,6 +149,11 @@ public static class AppleWalletWebServiceEndpoints
                     passTypeIdentifier,
                     serialNumber);
 
+                if (result.Status == AppleWalletPassRequestStatus.Ready)
+                {
+                    AddNoCacheHeaders(httpContext.Response);
+                }
+
                 return result.Status switch
                 {
                     AppleWalletPassRequestStatus.Ready => Results.File(
@@ -172,6 +177,13 @@ public static class AppleWalletWebServiceEndpoints
             });
 
         return endpoints;
+    }
+
+    private static void AddNoCacheHeaders(HttpResponse response)
+    {
+        response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        response.Headers.Pragma = "no-cache";
+        response.Headers.Expires = "0";
     }
 
     private static string? GetAuthorization(HttpContext httpContext)
