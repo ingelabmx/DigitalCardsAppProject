@@ -55,6 +55,11 @@ public sealed class BusinessProfileModel : PageModel
 
     public bool BrandingLogoUnavailable { get; private set; }
 
+    public CutoverBusinessViewModel? OperationalView { get; private set; }
+
+    [BindProperty]
+    public BusinessProfileSmokeInput SmokeInput { get; set; } = new();
+
     public async Task<IActionResult> OnGetAsync(Guid businessId, CancellationToken cancellationToken)
     {
         return await LoadAsync(businessId, cancellationToken)
@@ -208,6 +213,7 @@ public sealed class BusinessProfileModel : PageModel
                 logoPath,
                 BrandingInput.PrimaryColor,
                 BrandingInput.SecondaryColor,
+                BrandingInput.CustomFieldColor,
                 BrandingInput.ProgramName,
                 BrandingInput.ProgramDescription),
             cancellationToken);
@@ -319,6 +325,53 @@ public sealed class BusinessProfileModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostSmokeAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        if (SmokeInput.Notes?.Length > 500)
+        {
+            ModelState.AddModelError(string.Empty, "Las notas no pueden exceder 500 caracteres.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await LoadAsync(businessId, cancellationToken);
+            return Page();
+        }
+
+        var result = await _adminApp.RecordCutoverSmokeEvidenceAsync(
+            new RecordCutoverSmokeEvidenceCommand(
+                businessId,
+                AdminAuth.GetAdminUserId(User),
+                SmokeInput.HealthOk,
+                SmokeInput.ReadyOk,
+                SmokeInput.EmailOk,
+                SmokeInput.WalletMobileOk,
+                SmokeInput.WalletSavedOk,
+                SmokeInput.ModernStampOk,
+                SmokeInput.SupportReviewed,
+                SmokeInput.Notes),
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo guardar la evidencia.");
+            await LoadAsync(businessId, cancellationToken);
+            return Page();
+        }
+
+        StatusMessage = result.Evidence!.IsComplete
+            ? "Smoke de activacion registrado como completo."
+            : "Smoke de activacion registrado con pendientes.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} recorded activation smoke evidence for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        await LoadAsync(businessId, cancellationToken);
+        return Page();
+    }
+
     private async Task<bool> LoadAsync(Guid businessId, CancellationToken cancellationToken)
     {
         Profile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
@@ -328,6 +381,21 @@ public sealed class BusinessProfileModel : PageModel
         }
 
         SetInputFromProfile(Profile);
+        var reports = await _adminApp.GetReportsAsync(cancellationToken);
+        var report = reports.Businesses.SingleOrDefault(item => item.BusinessId == businessId);
+        var smokeEvidence = await _adminApp.ListCutoverSmokeEvidenceAsync(businessId, limit: 1, cancellationToken);
+        OperationalView = CutoverBusinessViewModel.Create(
+            new PilotBusinessDto(
+                Profile.BusinessId,
+                Profile.BusinessName,
+                Profile.BusinessEmail,
+                Profile.IsPilotEnabled,
+                Profile.ActivationStatus,
+                Notes: null,
+                UpdatedAt: Profile.PilotUpdatedAt),
+            report,
+            Profile.Branding,
+            smokeEvidence.FirstOrDefault());
         ClearPasswordFields();
         return true;
     }
@@ -350,6 +418,7 @@ public sealed class BusinessProfileModel : PageModel
             PublicName = profile.Branding.PublicName,
             PrimaryColor = profile.Branding.PrimaryColor,
             SecondaryColor = profile.Branding.SecondaryColor,
+            CustomFieldColor = profile.Branding.CustomFieldColor,
             ProgramName = profile.Branding.ProgramName,
             ProgramDescription = profile.Branding.ProgramDescription
         };
@@ -442,8 +511,29 @@ public sealed class BusinessProfileModel : PageModel
 
         public string SecondaryColor { get; set; } = string.Empty;
 
+        public string CustomFieldColor { get; set; } = string.Empty;
+
         public string ProgramName { get; set; } = string.Empty;
 
         public string ProgramDescription { get; set; } = string.Empty;
+    }
+
+    public sealed class BusinessProfileSmokeInput
+    {
+        public bool HealthOk { get; set; }
+
+        public bool ReadyOk { get; set; }
+
+        public bool EmailOk { get; set; }
+
+        public bool WalletMobileOk { get; set; }
+
+        public bool WalletSavedOk { get; set; }
+
+        public bool ModernStampOk { get; set; }
+
+        public bool SupportReviewed { get; set; }
+
+        public string? Notes { get; set; }
     }
 }

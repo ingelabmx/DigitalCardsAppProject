@@ -1675,7 +1675,7 @@ form.is-submitting input[type="submit"] {
 .branding-color-row {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .branding-preview {
@@ -1697,7 +1697,13 @@ form.is-submitting input[type="submit"] {
 }
 
 .branding-preview strong {
+  color: var(--brand-custom, #ffffff);
   font-size: 1.15rem;
+}
+
+.branding-preview small {
+  color: var(--brand-custom, #ffffff);
+  font-weight: 600;
 }
 
 .branding-logo-preview {

@@ -63,6 +63,7 @@ public sealed record UpdateBusinessSelfServiceBrandingCommand(
     string LogoPath,
     string PrimaryColor,
     string SecondaryColor,
+    string CustomFieldColor,
     string ProgramName,
     string ProgramDescription);
 
@@ -211,7 +212,8 @@ public sealed record WalletLandingDto(
     bool HasGooglePass,
     string LogoPath,
     string? PrimaryColor,
-    string? SecondaryColor);
+    string? SecondaryColor,
+    string? CustomFieldColor);
 
 public sealed record GoogleWalletIssueResult(string ObjectId, string SaveUrl);
 

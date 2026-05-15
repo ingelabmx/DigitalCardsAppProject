@@ -85,7 +85,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-username").FillAsync(GetAdminEmail());
         await page.GetByTestId("admin-password").FillAsync(GetAdminPassword());
         await page.GetByTestId("admin-login-submit").ClickAsync();
-        await page.GetByTestId("admin-create-business-link").ClickAsync();
+        await page.GetByTestId("admin-businesses-link").ClickAsync();
+        await page.GetByTestId("admin-businesses-create-link").ClickAsync();
         await page.GetByTestId("admin-create-business-name").FillAsync(businessName);
         await page.GetByTestId("admin-create-business-email").FillAsync(businessEmail);
         await page.GetByTestId("admin-create-business-password").FillAsync(businessPassword);

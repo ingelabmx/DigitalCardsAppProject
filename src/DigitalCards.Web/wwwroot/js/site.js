@@ -92,3 +92,49 @@
     });
   });
 })();
+
+(() => {
+  const colorInputs = document.querySelectorAll("[data-branding-color-input]");
+  if (colorInputs.length === 0) {
+    return;
+  }
+
+  const normalizeHex = (value) => {
+    const trimmed = (value || "").trim();
+    if (/^[0-9a-fA-F]{6}$/.test(trimmed)) {
+      return `#${trimmed}`;
+    }
+
+    return trimmed;
+  };
+
+  const setPreviewValue = (input) => {
+    const form = input.closest("form");
+    const preview = form?.querySelector("[data-testid$='branding-preview']");
+    if (!preview) {
+      return;
+    }
+
+    const value = normalizeHex(input.value);
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) {
+      return;
+    }
+
+    const target = input.dataset.brandingColorInput;
+    if (target === "primary") {
+      preview.style.setProperty("--brand-primary", value);
+    } else if (target === "secondary") {
+      preview.style.setProperty("--brand-secondary", value);
+    } else if (target === "custom") {
+      preview.style.setProperty("--brand-custom", value);
+    }
+  };
+
+  colorInputs.forEach((input) => {
+    input.addEventListener("input", () => setPreviewValue(input));
+    input.addEventListener("blur", () => {
+      input.value = normalizeHex(input.value);
+      setPreviewValue(input);
+    });
+  });
+})();

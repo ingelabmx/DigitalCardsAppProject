@@ -8,6 +8,7 @@ public sealed class BusinessBranding
         string logoPath,
         string primaryColor,
         string secondaryColor,
+        string customFieldColor,
         string programName,
         string programDescription,
         DateTimeOffset updatedAt,
@@ -23,6 +24,7 @@ public sealed class BusinessBranding
         LogoPath = logoPath.Trim();
         PrimaryColor = primaryColor.Trim();
         SecondaryColor = secondaryColor.Trim();
+        CustomFieldColor = customFieldColor.Trim();
         ProgramName = programName.Trim();
         ProgramDescription = programDescription.Trim();
         UpdatedAt = updatedAt;
@@ -38,6 +40,8 @@ public sealed class BusinessBranding
     public string PrimaryColor { get; }
 
     public string SecondaryColor { get; }
+
+    public string CustomFieldColor { get; }
 
     public string ProgramName { get; }
 

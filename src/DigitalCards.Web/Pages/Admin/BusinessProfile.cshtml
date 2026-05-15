@@ -48,6 +48,137 @@
             </form>
         </section>
 
+        @if (Model.OperationalView is not null)
+        {
+            var operations = Model.OperationalView;
+            <section class="business-profile-panel mb-4" data-testid="admin-business-operational-panel">
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">Administrar</p>
+                        <h2>Estado operativo</h2>
+                        <p class="text-muted mb-0">Senales utiles para confirmar que el negocio esta listo para operar en Puntelio.</p>
+                    </div>
+                    <a class="btn btn-outline-primary"
+                       asp-page="/Admin/Support"
+                       asp-route-BusinessFilter="@Model.Profile.BusinessName"
+                       data-testid="admin-business-profile-support-link">
+                        Soporte
+                    </a>
+                </div>
+
+                <div class="metric-row">
+                    <div class="metric">
+                        <span>Estado</span>
+                        <strong data-testid="admin-business-profile-active-state">@(Model.Profile.IsPilotEnabled ? "Activo" : "Inactivo")</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Tarjetas</span>
+                        <strong>@(operations.Report?.CardCount ?? 0)</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Clientes</span>
+                        <strong>@(operations.Report?.ClientCount ?? 0)</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Alertas</span>
+                        <strong>@(operations.Report?.WalletIssueCount ?? 0)</strong>
+                    </div>
+                </div>
+
+                <div class="cutover-signal-grid" data-testid="admin-business-profile-readiness">
+                    <div>
+                        <h3>Listo</h3>
+                        @foreach (var signal in operations.ReadySignals)
+                        {
+                            <span class="badge text-bg-success">@signal</span>
+                        }
+                    </div>
+                    <div>
+                        <h3>Pendiente</h3>
+                        @foreach (var signal in operations.MissingSignals)
+                        {
+                            <span class="badge text-bg-warning">@signal</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="cutover-smoke-evidence" data-testid="admin-business-profile-smoke-evidence">
+                    <h3>Ultimo smoke real</h3>
+                    @if (operations.LatestSmoke is null)
+                    {
+                        <p class="text-muted">Sin evidencia registrada para este negocio.</p>
+                    }
+                    else
+                    {
+                        var smoke = operations.LatestSmoke;
+                        <p>
+                            <strong>@(smoke.IsComplete ? "Completo" : "Con pendientes")</strong>
+                            registrado por @smoke.AdminUserName el @smoke.CreatedAt.ToLocalTime().ToString("g")
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge @(smoke.HealthOk ? "text-bg-success" : "text-bg-warning")">Health</span>
+                            <span class="badge @(smoke.ReadyOk ? "text-bg-success" : "text-bg-warning")">Ready</span>
+                            <span class="badge @(smoke.EmailOk ? "text-bg-success" : "text-bg-warning")">Correo</span>
+                            <span class="badge @(smoke.AppleWalletOk ? "text-bg-success" : "text-bg-warning")">Wallet movil</span>
+                            <span class="badge @(smoke.GoogleWalletOk ? "text-bg-success" : "text-bg-warning")">Wallet guardada</span>
+                            <span class="badge @(smoke.ModernStampOk ? "text-bg-success" : "text-bg-warning")">Sello</span>
+                            <span class="badge @(smoke.SupportReviewed ? "text-bg-success" : "text-bg-warning")">Soporte</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(smoke.Notes))
+                        {
+                            <p class="text-muted">@smoke.Notes</p>
+                        }
+                    }
+                </div>
+
+                <form method="post"
+                      asp-page-handler="Smoke"
+                      asp-route-businessId="@Model.Profile.BusinessId"
+                      class="cutover-smoke-form"
+                      data-testid="admin-business-profile-smoke-form">
+                    <h3>Registrar smoke de activacion</h3>
+                    <div class="cutover-smoke-checks">
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.HealthOk" class="form-check-input" checked="@(operations.LatestSmoke?.HealthOk == true)" />
+                            <span class="form-check-label">/health OK</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.ReadyOk" class="form-check-input" checked="@(operations.LatestSmoke?.ReadyOk == true)" />
+                            <span class="form-check-label">/health/ready OK</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.EmailOk" class="form-check-input" checked="@(operations.LatestSmoke?.EmailOk == true)" />
+                            <span class="form-check-label">Correo real validado</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.WalletMobileOk" class="form-check-input" checked="@(operations.LatestSmoke?.AppleWalletOk == true)" />
+                            <span class="form-check-label">Wallet movil actualizada</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.WalletSavedOk" class="form-check-input" checked="@(operations.LatestSmoke?.GoogleWalletOk == true)" />
+                            <span class="form-check-label">Wallet guardada actualizada</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.ModernStampOk" class="form-check-input" checked="@(operations.LatestSmoke?.ModernStampOk == true)" />
+                            <span class="form-check-label">Sello probado</span>
+                        </label>
+                        <label class="form-check">
+                            <input asp-for="SmokeInput.SupportReviewed" class="form-check-input" checked="@(operations.LatestSmoke?.SupportReviewed == true)" />
+                            <span class="form-check-label">Soporte revisado</span>
+                        </label>
+                    </div>
+                    <label asp-for="SmokeInput.Notes" class="form-label">Notas de evidencia</label>
+                    <textarea asp-for="SmokeInput.Notes" class="form-control" rows="2" data-testid="admin-business-profile-smoke-notes"></textarea>
+                    <button class="btn btn-outline-primary mt-2"
+                            type="submit"
+                            data-testid="admin-business-profile-smoke-save"
+                            onclick="return confirm('Confirma que esta evidencia no incluye secretos ni datos sensibles.');">
+                        Guardar evidencia
+                    </button>
+                </form>
+            </section>
+        }
+
         <div class="business-profile-grid">
             <form method="post"
                   asp-page-handler="Save"
@@ -193,19 +324,24 @@
                 <div class="branding-color-row">
                     <div class="mb-3">
                         <label asp-for="BrandingInput.PrimaryColor" class="form-label">Color primario</label>
-                        <input asp-for="BrandingInput.PrimaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-primary" />
+                        <input asp-for="BrandingInput.PrimaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-primary" data-branding-color-input="primary" />
                     </div>
                     <div class="mb-3">
                         <label asp-for="BrandingInput.SecondaryColor" class="form-label">Color secundario</label>
-                        <input asp-for="BrandingInput.SecondaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-secondary" />
+                        <input asp-for="BrandingInput.SecondaryColor" class="form-control" maxlength="7" data-testid="admin-business-branding-secondary" data-branding-color-input="secondary" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="BrandingInput.CustomFieldColor" class="form-label">Color de campos personalizados</label>
+                        <input asp-for="BrandingInput.CustomFieldColor" class="form-control" maxlength="7" data-testid="admin-business-branding-custom-field-color" data-branding-color-input="custom" />
                     </div>
                 </div>
 
                 <div class="branding-preview"
-                     style="--brand-primary:@Model.BrandingInput.PrimaryColor;--brand-secondary:@Model.BrandingInput.SecondaryColor;"
+                     style="--brand-primary:@Model.BrandingInput.PrimaryColor;--brand-secondary:@Model.BrandingInput.SecondaryColor;--brand-custom:@Model.BrandingInput.CustomFieldColor;"
                      data-testid="admin-business-branding-preview">
                     <span>@Model.BrandingInput.ProgramName</span>
                     <strong>@Model.BrandingInput.PublicName</strong>
+                    <small>@Model.BrandingInput.ProgramDescription</small>
                 </div>
 
                 <div class="form-actions">

@@ -121,6 +121,7 @@ public sealed class BrandingModel : PageModel
                 logoPath,
                 Input.PrimaryColor,
                 Input.SecondaryColor,
+                Input.CustomFieldColor,
                 Input.ProgramName,
                 Input.ProgramDescription),
             cancellationToken);
@@ -204,6 +205,7 @@ public sealed class BrandingModel : PageModel
             PublicName = settings.Branding.PublicName,
             PrimaryColor = settings.Branding.PrimaryColor,
             SecondaryColor = settings.Branding.SecondaryColor,
+            CustomFieldColor = settings.Branding.CustomFieldColor,
             ProgramName = settings.Branding.ProgramName,
             ProgramDescription = settings.Branding.ProgramDescription
         };
@@ -234,6 +236,8 @@ public sealed class BrandingModel : PageModel
         public string PrimaryColor { get; set; } = string.Empty;
 
         public string SecondaryColor { get; set; } = string.Empty;
+
+        public string CustomFieldColor { get; set; } = string.Empty;
 
         public string ProgramName { get; set; } = string.Empty;
 

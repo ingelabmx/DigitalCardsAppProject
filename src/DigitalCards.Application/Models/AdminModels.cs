@@ -98,6 +98,7 @@ public sealed record BusinessBrandingDto(
     string LogoPath,
     string PrimaryColor,
     string SecondaryColor,
+    string CustomFieldColor,
     string ProgramName,
     string ProgramDescription,
     DateTimeOffset? UpdatedAt);
@@ -116,6 +117,7 @@ public sealed record UpdateBusinessBrandingCommand(
     string LogoPath,
     string PrimaryColor,
     string SecondaryColor,
+    string CustomFieldColor,
     string ProgramName,
     string ProgramDescription);
 

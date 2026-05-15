@@ -162,7 +162,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-businesses-panel", businessesHtml);
         Assert.Contains("admin-filter-card", businessesHtml);
         Assert.Contains("support-filter-panel", supportHtml);
-        Assert.Contains("admin-cutover-page", cutoverHtml);
+        Assert.Contains("admin-businesses-panel", cutoverHtml);
+        Assert.Contains("admin-support-audit-events", supportHtml);
         Assert.DoesNotContain("LegacyWalletSync", cutoverHtml);
         Assert.DoesNotContain("PasswordHash", supportHtml);
         Assert.DoesNotContain("connection string", supportHtml, StringComparison.OrdinalIgnoreCase);
@@ -187,7 +188,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         {
             await adminClient.GetStringAsync("/Admin/Dashboard"),
             await adminClient.GetStringAsync("/Admin/Support"),
-            await adminClient.GetStringAsync("/Admin/Cutover"),
+            await adminClient.GetStringAsync("/Admin/Businesses"),
             await businessClient.GetStringAsync("/Business/Dashboard"),
             await businessClient.GetStringAsync("/Business/Reports"),
             await clientClient.GetStringAsync("/Client/Dashboard")
@@ -393,34 +394,36 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var client = fake.Factory.CreateClient();
 
         await LoginAdminAsync(client);
-        var html = await client.GetStringAsync("/Admin/Cutover?Query=demo");
-        var token = ExtractAntiforgeryToken(html);
         using var scope = fake.Factory.Services.CreateScope();
         var businesses = scope.ServiceProvider.GetRequiredService<IBusinessRepository>();
         var business = await businesses.FindByEmailAsync("demo@digitalcards.test");
-
         Assert.NotNull(business);
-        Assert.Contains("admin-cutover-page", html);
+
+        var profilePath = $"/Admin/BusinessProfile/{business!.Id}";
+        var html = await client.GetStringAsync(profilePath);
+        var token = ExtractAntiforgeryToken(html);
+
+        Assert.Contains("admin-business-operational-panel", html);
         Assert.Contains("Demo Coffee", html);
-        Assert.Contains("admin-cutover-readiness", html);
+        Assert.Contains("admin-business-profile-readiness", html);
         Assert.DoesNotContain("LegacyWalletSync", html);
 
         var response = await client.PostAsync(
-            "/Admin/Cutover?handler=Status",
+            $"{profilePath}?handler=Save",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["Query"] = "demo",
-                ["Input.BusinessId"] = business!.Id.ToString(),
+                ["Input.BusinessName"] = "Demo Coffee",
+                ["Input.BusinessEmail"] = "demo@digitalcards.test",
+                ["Input.BusinessLogo"] = "/img/demo-coffee.svg",
                 ["Input.ActivationStatus"] = "ModernPrimary",
-                ["Input.Notes"] = "cutover test",
                 ["__RequestVerificationToken"] = token
             }));
         var updatedHtml = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("admin-cutover-status-message", updatedHtml);
+        Assert.Contains("admin-business-profile-status", updatedHtml);
         Assert.Contains("Activo", updatedHtml);
-        Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", updatedHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -431,23 +434,24 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var client = fake.Factory.CreateClient();
 
         await LoginAdminAsync(client);
-        var html = await client.GetStringAsync("/Admin/Cutover?Query=demo");
-        var token = ExtractAntiforgeryToken(html);
         using var scope = fake.Factory.Services.CreateScope();
         var businesses = scope.ServiceProvider.GetRequiredService<IBusinessRepository>();
         var business = await businesses.FindByEmailAsync("demo@digitalcards.test");
+        Assert.NotNull(business);
+
+        var profilePath = $"/Admin/BusinessProfile/{business!.Id}";
+        var html = await client.GetStringAsync(profilePath);
+        var token = ExtractAntiforgeryToken(html);
 
         var response = await client.PostAsync(
-            "/Admin/Cutover?handler=Smoke",
+            $"{profilePath}?handler=Smoke",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["Query"] = "demo",
-                ["SmokeInput.BusinessId"] = business!.Id.ToString(),
                 ["SmokeInput.HealthOk"] = "true",
                 ["SmokeInput.ReadyOk"] = "true",
                 ["SmokeInput.EmailOk"] = "true",
-                ["SmokeInput.AppleWalletOk"] = "true",
-                ["SmokeInput.GoogleWalletOk"] = "true",
+                ["SmokeInput.WalletMobileOk"] = "true",
+                ["SmokeInput.WalletSavedOk"] = "true",
                 ["SmokeInput.ModernStampOk"] = "true",
                 ["SmokeInput.SupportReviewed"] = "true",
                 ["SmokeInput.Notes"] = "validado con iPhone controlado",
@@ -456,10 +460,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         var updatedHtml = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("admin-cutover-smoke-evidence", updatedHtml);
+        Assert.Contains("admin-business-profile-smoke-evidence", updatedHtml);
         Assert.Contains("Smoke de activacion registrado como completo", updatedHtml);
         Assert.Contains("validado con iPhone controlado", updatedHtml);
-        Assert.DoesNotContain("Password", updatedHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("business123", updatedHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ConnectionString", updatedHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("push token", updatedHtml, StringComparison.OrdinalIgnoreCase);
     }
@@ -1217,12 +1221,12 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         await LoginAdminAsync(http);
         var exportResponse = await http.GetAsync($"/Admin/Support?handler=Export&Query={userName}");
-        var auditHtml = await http.GetStringAsync($"/Admin/Audit?EventType={OperationalAuditEventType.SupportExported}");
+        var auditHtml = await http.GetStringAsync($"/Admin/Support?AuditEventType={OperationalAuditEventType.SupportExported}");
 
         Assert.Equal(HttpStatusCode.Redirect, anonymousResponse.StatusCode);
         Assert.Contains("/Admin/Login", anonymousResponse.Headers.Location?.OriginalString);
         Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
-        Assert.Contains("admin-audit-table", auditHtml);
+        Assert.Contains("admin-support-audit-table", auditHtml);
         Assert.Contains("SupportExported", auditHtml);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, auditHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("business123", auditHtml, StringComparison.OrdinalIgnoreCase);
@@ -1505,6 +1509,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["BrandingInput.ProgramDescription"] = "Sellos con branding desde web test.",
                 ["BrandingInput.PrimaryColor"] = "#123456",
                 ["BrandingInput.SecondaryColor"] = "#abcdef",
+                ["BrandingInput.CustomFieldColor"] = "fedcba",
                 ["__RequestVerificationToken"] = brandingToken
             }));
         var brandingHtml = await brandingResponse.Content.ReadAsStringAsync();
@@ -1513,6 +1518,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Branding del negocio actualizado", brandingHtml);
         Assert.Contains("Perfil Publico", brandingHtml);
         Assert.Contains("#123456", brandingHtml);
+        Assert.Contains("#fedcba", brandingHtml);
 
         var resetToken = ExtractAntiforgeryToken(brandingHtml);
         var resetResponse = await client.PostAsync(
@@ -2767,6 +2773,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 { new StringContent("Branding editado por negocio."), "Input.ProgramDescription" },
                 { new StringContent("#102030"), "Input.PrimaryColor" },
                 { new StringContent("#405060"), "Input.SecondaryColor" },
+                { new StringContent("778899"), "Input.CustomFieldColor" },
                 { new StringContent(token), "__RequestVerificationToken" }
             };
             var file = new ByteArrayContent(RectangularPng());
@@ -2790,6 +2797,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 var branding = Assert.Single(store.BusinessBranding);
                 logoPath = branding.LogoPath;
                 Assert.Equal("Self Rewards", branding.ProgramName);
+                Assert.Equal("#778899", branding.CustomFieldColor);
             }
 
             Assert.StartsWith("/uploads/business-logos/", logoPath, StringComparison.Ordinal);
@@ -2838,6 +2846,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Recompensa", getHtml);
         Assert.DoesNotContain(">Descripcion<", getHtml);
         Assert.Contains("business-branding-description", getHtml);
+        Assert.Contains("business-branding-custom-field-color", getHtml);
         Assert.Contains("type=\"text\"", getHtml);
         Assert.DoesNotContain("<textarea", getHtml);
         Assert.DoesNotContain("business-wallet-branding-refresh-limit", getHtml);
@@ -2893,6 +2902,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
                 ["Input.PublicName"] = "Cafe Puntelio",
                 ["Input.PrimaryColor"] = "#123456",
                 ["Input.SecondaryColor"] = "#abcdef",
+                ["Input.CustomFieldColor"] = "112233",
                 ["Input.ProgramName"] = "Programa Puntelio",
                 ["Input.ProgramDescription"] = "Recompensa de prueba",
                 ["__RequestVerificationToken"] = ExtractAntiforgeryToken(getHtml)

@@ -1,5 +1,6 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,10 +43,24 @@ public sealed class SupportModel : PageModel
     [BindProperty(SupportsGet = true)]
     public DateTimeOffset? To { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public OperationalAuditEventType? AuditEventType { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? AuditSearch { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTimeOffset? AuditFrom { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTimeOffset? AuditTo { get; set; }
+
     [BindProperty]
     public Guid RetryCardId { get; set; }
 
     public AdminSupportResult? Result { get; private set; }
+
+    public IReadOnlyList<AdminAuditEventDto> AuditEvents { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
 
@@ -55,10 +70,12 @@ public sealed class SupportModel : PageModel
     {
         if (!HasSupportCriteria())
         {
+            await LoadAuditAsync(cancellationToken);
             return;
         }
 
         Result = await _adminApp.SearchSupportAsync(CreateSupportQuery(), cancellationToken);
+        await LoadAuditAsync(cancellationToken);
 
         _logger.LogInformation(
             "Admin {AdminUserId} searched support center with query length {QueryLength} and filters enabled {HasFilters}.",
@@ -222,6 +239,8 @@ public sealed class SupportModel : PageModel
         {
             Result = new AdminSupportResult(string.Empty, [], [], [result.Card]);
         }
+
+        await LoadAuditAsync(cancellationToken);
     }
 
     public static string Suffix(Guid id)
@@ -239,6 +258,13 @@ public sealed class SupportModel : PageModel
             WalletIssuesOnly,
             From,
             To);
+    }
+
+    private async Task LoadAuditAsync(CancellationToken cancellationToken)
+    {
+        AuditEvents = await _adminApp.SearchAuditAsync(
+            new AdminAuditQuery(AuditEventType, AuditSearch, AuditFrom, AuditTo, Limit: 100),
+            cancellationToken);
     }
 
     private bool HasSupportCriteria()

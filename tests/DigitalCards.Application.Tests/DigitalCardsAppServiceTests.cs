@@ -1002,12 +1002,14 @@ public sealed class DigitalCardsAppServiceTests
             "/img/puntelio.svg",
             "#123456",
             "#abcdef",
+            "#fedcba",
             "Puntelio Rewards",
             "Sellos digitales de Puntelio."));
 
         Assert.True(result.Succeeded);
         Assert.Equal("Puntelio Cafe", result.Business!.Branding.PublicName);
         Assert.Equal("#123456", result.Business.Branding.PrimaryColor);
+        Assert.Equal("#fedcba", result.Business.Branding.CustomFieldColor);
 
         var stored = await brandingRepository.FindByBusinessIdAsync(business.Id);
         Assert.NotNull(stored);
@@ -1061,12 +1063,14 @@ public sealed class DigitalCardsAppServiceTests
             "/uploads/business-logos/demo/logo.png",
             "#112233",
             "#445566",
+            "#778899",
             "Self Rewards",
             "Sellos desde autoservicio."));
 
         Assert.True(result.Succeeded);
         Assert.Equal("Self Service Cafe", result.Settings!.Branding.PublicName);
         Assert.Equal("#112233", result.Settings.Branding.PrimaryColor);
+        Assert.Equal("#778899", result.Settings.Branding.CustomFieldColor);
 
         var client = await app.RegisterClientAsync(new RegisterClientCommand(
             "selfbrand",
