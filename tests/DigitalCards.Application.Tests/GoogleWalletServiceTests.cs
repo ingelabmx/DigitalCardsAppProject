@@ -27,12 +27,12 @@ public sealed class GoogleWalletServiceTests
         var client = CreateClient(card.ClientId);
         var business = new Business(
             card.BusinessId,
-            "Demo Coffee",
-            "demo@example.test",
+            "Balboa Water",
+            "balboa@example.test",
             "hash",
             "/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
-            publicName: "Puntelio Cafe",
-            programName: "Cafe Rewards",
+            publicName: "Runni Cafe",
+            programName: "Runni Rewards",
             programDescription: "Cafe gratis al completar sellos.");
 
         var genericObject = BuildObject(service, card, client, business);
@@ -40,8 +40,8 @@ public sealed class GoogleWalletServiceTests
         Assert.Equal(
             "https://app.puntelio.com/uploads/business-logos/cccccccccccccccccccccccccccccccc/version-token/logo.png",
             genericObject.Logo.SourceUri.Uri);
-        Assert.Equal("Cafe Rewards", genericObject.CardTitle.DefaultValue.Value);
-        Assert.Equal("Puntelio Cafe", genericObject.Header.DefaultValue.Value);
+        Assert.Equal("Runni Rewards", genericObject.CardTitle.DefaultValue.Value);
+        Assert.Equal("Runni Cafe", genericObject.Header.DefaultValue.Value);
         Assert.Null(genericObject.Subheader);
         Assert.Equal("maria-test", genericObject.Barcode.Value);
 

@@ -138,3 +138,47 @@
     });
   });
 })();
+
+(() => {
+  const logoInputs = document.querySelectorAll("[data-branding-logo-upload]");
+  if (logoInputs.length === 0) {
+    return;
+  }
+
+  const objectUrls = [];
+
+  logoInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
+      if (!isPng) {
+        return;
+      }
+
+      const form = input.closest("form");
+      const preview = form?.querySelector("[data-branding-logo-preview-container]");
+      const image = preview?.querySelector("[data-branding-logo-preview-image]");
+      if (!preview || !image) {
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      objectUrls.push(objectUrl);
+      image.src = objectUrl;
+      image.hidden = false;
+      preview.hidden = false;
+
+      form.querySelectorAll("[data-branding-logo-placeholder]").forEach((placeholder) => {
+        placeholder.hidden = true;
+      });
+    });
+  });
+
+  window.addEventListener("beforeunload", () => {
+    objectUrls.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
+  });
+})();

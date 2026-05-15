@@ -260,24 +260,30 @@
 
                 <div class="mb-3">
                     <label class="form-label">Logo actual</label>
+                    @{
+                        var hasBrandingLogo = !Model.BrandingLogoUnavailable && !string.IsNullOrWhiteSpace(Model.Profile.Branding.LogoPath);
+                    }
+                    <div class="branding-logo-preview"
+                         data-testid="admin-business-branding-logo-preview"
+                         data-branding-logo-preview-container
+                         hidden="@(!hasBrandingLogo)">
+                        <img src="@(hasBrandingLogo ? VersionedLogoPath(Model.Profile.Branding.LogoPath, Model.Profile.Branding.UpdatedAt) : string.Empty)"
+                             alt="Logo actual"
+                             data-branding-logo-preview-image
+                             hidden="@(!hasBrandingLogo)" />
+                    </div>
                     @if (Model.BrandingLogoUnavailable)
                     {
-                        <div class="alert alert-warning py-2 mb-2" role="status" data-testid="admin-business-branding-logo-missing">
+                        <div class="alert alert-warning py-2 mb-2" role="status" data-testid="admin-business-branding-logo-missing" data-branding-logo-placeholder>
                             El logo actual no esta disponible; sube un PNG nuevo.
                         </div>
                     }
-                    else if (!string.IsNullOrWhiteSpace(Model.Profile.Branding.LogoPath))
+                    else if (!hasBrandingLogo)
                     {
-                        <div class="branding-logo-preview" data-testid="admin-business-branding-logo-preview">
-                            <img src="@Model.Profile.Branding.LogoPath" alt="Logo actual" />
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-2" data-testid="admin-business-branding-logo-empty">Sin logo personalizado.</p>
+                        <p class="text-muted mb-2" data-testid="admin-business-branding-logo-empty" data-branding-logo-placeholder>Sin logo personalizado.</p>
                     }
                     <label asp-for="BrandingInput.LogoUpload" class="form-label">Subir logo PNG</label>
-                    <input asp-for="BrandingInput.LogoUpload" class="form-control" type="file" accept=".png,image/png" data-testid="admin-business-branding-logo-upload" />
+                    <input asp-for="BrandingInput.LogoUpload" class="form-control" type="file" accept=".png,image/png" data-testid="admin-business-branding-logo-upload" data-branding-logo-upload />
                     <small class="form-text text-muted">Solo PNG. Maximo 2 MB. Si no es cuadrado, Puntelio lo centra en un lienzo transparente para Wallet.</small>
                 </div>
 
@@ -388,3 +394,17 @@
         }
     }
 </section>
+
+@functions {
+    private static string VersionedLogoPath(string logoPath, DateTimeOffset? updatedAt)
+    {
+        if (string.IsNullOrWhiteSpace(logoPath))
+        {
+            return string.Empty;
+        }
+
+        var version = updatedAt?.ToUnixTimeSeconds() ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var separator = logoPath.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+        return $"{logoPath}{separator}v={version}";
+    }
+}

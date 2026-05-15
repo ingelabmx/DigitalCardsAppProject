@@ -23,15 +23,13 @@
 
     @if (Model.Result is not null)
     {
-        var stampGoal = Math.Max(1, Model.Result.StampGoal);
-        var visibleStamps = Math.Min(Model.Result.CurrentStamps, stampGoal);
         <div class="alert alert-success" role="status" data-testid="stamp-success">
             Sello agregado a @Model.Result.ClientUserName.
         </div>
         <div class="metric-row">
             <div class="metric">
                 <span>Sellos actuales</span>
-                <strong data-testid="current-stamps">@visibleStamps de @stampGoal</strong>
+                <strong data-testid="current-stamps">@Model.Result.VisibleStamps de @Model.Result.StampGoal</strong>
             </div>
             <div class="metric">
                 <span>Sellos historicos</span>
@@ -55,12 +53,10 @@
 
     @if (Model.RewardCandidate is not null)
     {
-        var stampGoal = Math.Max(1, Model.RewardCandidate.StampGoal);
-        var visibleStamps = Math.Min(Model.RewardCandidate.CurrentStamps, stampGoal);
         <div class="business-form-card" data-testid="stamp-reward-candidate">
             <p class="eyebrow">Recompensa lista</p>
             <h2>@Model.RewardCandidate.Client.FirstName @Model.RewardCandidate.Client.LastName</h2>
-            <p>Esta tarjeta ya tiene @visibleStamps de @stampGoal sellos. Confirma el canje para iniciar un nuevo ciclo con 0 sellos.</p>
+            <p>Esta tarjeta ya tiene @Model.RewardCandidate.VisibleStamps de @Model.RewardCandidate.StampGoal sellos. Confirma el canje para iniciar un nuevo ciclo con 0 sellos.</p>
             <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.RewardCandidate.Id">
                 <button class="btn btn-success" type="submit" data-testid="stamp-redeem-submit" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
                     Canjear recompensa

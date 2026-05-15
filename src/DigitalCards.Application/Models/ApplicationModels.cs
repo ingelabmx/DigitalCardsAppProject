@@ -94,6 +94,9 @@ public sealed record LoyaltyCardDto(
     int CurrentStamps,
     int StampGoal,
     int LifetimeStamps,
+    int VisibleStamps,
+    bool RewardReady,
+    int StampsRemaining,
     string? GoogleObjectId,
     string? GoogleSaveUrl);
 
@@ -131,6 +134,9 @@ public sealed record BusinessCardDto(
     int CurrentStamps,
     int StampGoal,
     int LifetimeStamps,
+    int VisibleStamps,
+    bool RewardReady,
+    int StampsRemaining,
     DateTimeOffset LastStampedAt,
     bool GoogleIssued,
     bool AppleTracked,
