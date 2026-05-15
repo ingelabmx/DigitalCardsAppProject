@@ -16,6 +16,24 @@ public sealed class MySqlRewardRedemptionRepository : IRewardRedemptionRepositor
         _connectionFactory = connectionFactory;
     }
 
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        const string sql = "select 1 from RewardRedemption limit 1;";
+
+        try
+        {
+            await using var connection = _connectionFactory.Create();
+            await connection.ExecuteScalarAsync<int?>(new CommandDefinition(
+                sql,
+                cancellationToken: cancellationToken));
+            return true;
+        }
+        catch (MySqlException exception) when (exception.Number == MissingTableErrorNumber)
+        {
+            return false;
+        }
+    }
+
     public async Task AddAsync(RewardRedemptionRecord record, CancellationToken cancellationToken = default)
     {
         const string sql = """

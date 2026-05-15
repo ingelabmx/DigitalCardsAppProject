@@ -12,6 +12,11 @@ public sealed class InMemoryRewardRedemptionRepository : IRewardRedemptionReposi
         _store = store;
     }
 
+    public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(true);
+    }
+
     public Task AddAsync(RewardRedemptionRecord record, CancellationToken cancellationToken = default)
     {
         lock (_store.Sync)

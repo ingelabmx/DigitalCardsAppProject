@@ -69,8 +69,10 @@ public sealed class StampModel : PageModel
                 cancellationToken);
             if (RewardCandidate is not null && RewardCandidate.RewardReady)
             {
+                ClearInput();
                 return Page();
             }
+            RewardCandidate = null;
 
             Result = await _appService.AddStampAsync(
                 new AddStampCommand(businessId, Input.UserNameOrEmail),
@@ -90,8 +92,7 @@ public sealed class StampModel : PageModel
                     cancellationToken);
             }
 
-            Input = new InputModel();
-            ModelState.Clear();
+            ClearInput();
             return Page();
         }
         catch (InvalidOperationException ex)
@@ -120,14 +121,29 @@ public sealed class StampModel : PageModel
 
         if (!Redemption.Succeeded)
         {
-            RewardCandidate = Redemption.Card;
+            RewardCandidate = Redemption.Card?.RewardReady == true
+                ? Redemption.Card
+                : null;
             ModelState.AddModelError(string.Empty, Redemption.ErrorMessage ?? "No se pudo canjear la recompensa.");
+            ClearInput(clearModelState: false);
             return Page();
         }
 
-        Input = new InputModel();
-        ModelState.Clear();
+        RewardCandidate = null;
+        ClearInput();
         return Page();
+    }
+
+    private void ClearInput(bool clearModelState = true)
+    {
+        Input = new InputModel();
+        if (clearModelState)
+        {
+            ModelState.Clear();
+            return;
+        }
+
+        ModelState.Remove("Input.UserNameOrEmail");
     }
 
     private async Task<bool> SetPilotBusinessBlockAsync(CancellationToken cancellationToken)

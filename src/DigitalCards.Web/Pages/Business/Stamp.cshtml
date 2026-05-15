@@ -42,7 +42,7 @@
         </div>
     }
 
-    @if (Model.Redemption is not null)
+    @if (Model.Redemption is { Succeeded: true })
     {
         <div class="alert @(Model.Redemption.HasWalletWarning ? "alert-warning" : "alert-success")" role="status" data-testid="reward-redemption-success">
             @(Model.Redemption.HasWalletWarning
@@ -51,7 +51,7 @@
         </div>
     }
 
-    @if (Model.RewardCandidate is not null)
+    @if (Model.RewardCandidate is { RewardReady: true })
     {
         <div class="business-form-card" data-testid="stamp-reward-candidate">
             <p class="eyebrow">Recompensa lista</p>

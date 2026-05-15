@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
+@inject DigitalCards.Application.Services.DigitalCardsAppService AppService
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,6 +30,16 @@
         : isBusiness
             ? User.FindFirst(BusinessAuth.BusinessNameClaim)?.Value ?? "Negocio"
             : User.FindFirst(ClientAuth.ClientNameClaim)?.Value ?? "Cliente";
+    if (isBusiness)
+    {
+        var shellBusiness = await AppService.GetBusinessShellAsync(
+            BusinessAuth.GetBusinessId(User),
+            Context.RequestAborted);
+        shellName = ViewData["BusinessShellName"] as string
+            ?? shellBusiness?.Name
+            ?? shellName;
+    }
+
     var puntelioLogoPath = ResolvePuntelioLogoPath();
     string SidebarClass(string path) => requestPath.StartsWithSegments(path)
         ? "legacy-sidebar-link active"
