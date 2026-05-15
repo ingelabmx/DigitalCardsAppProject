@@ -215,8 +215,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("business-card-search-input").FillAsync(userName);
         await page.GetByTestId("business-card-search-submit").ClickAsync();
         Assert.Equal(0, await page.GetByTestId("business-card-quick-summary").CountAsync());
+        Assert.Equal(0, await page.GetByTestId("business-card-results").CountAsync());
         Assert.True(await page.GetByTestId("business-qr-scanner").IsVisibleAsync());
-        await page.GetByTestId("business-card-result").First.ClickAsync();
         Assert.Contains(userName, await page.GetByTestId("business-card-detail").InnerTextAsync());
         Assert.True(await page.GetByTestId("business-card-action-strip").IsVisibleAsync());
         Assert.True(await BusinessCardManagementIsAtBottomAsync(page));

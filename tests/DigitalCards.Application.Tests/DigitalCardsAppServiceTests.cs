@@ -1234,6 +1234,66 @@ public sealed class DigitalCardsAppServiceTests
     }
 
     [Fact]
+    public async Task RedeemRewardAsync_NotifiesWalletsWithResetCard()
+    {
+        var services = CreateDefaultServices();
+        var google = new RecordingGoogleWalletService();
+        var apple = new RecordingAppleWalletService();
+        foreach (var descriptor in services.Where(descriptor => descriptor.ServiceType == typeof(IGoogleWalletService)).ToArray())
+        {
+            services.Remove(descriptor);
+        }
+
+        foreach (var descriptor in services.Where(descriptor => descriptor.ServiceType == typeof(IAppleWalletService)).ToArray())
+        {
+            services.Remove(descriptor);
+        }
+
+        services.AddSingleton<IGoogleWalletService>(google);
+        services.AddSingleton<IAppleWalletService>(apple);
+        var provider = services.BuildServiceProvider();
+        var app = provider.GetRequiredService<DigitalCardsAppService>();
+        var business = await app.LoginBusinessAsync(new BusinessLoginCommand(
+            "demo@digitalcards.test",
+            "business123"));
+        Assert.NotNull(business);
+
+        await app.UpdateBusinessBrandingAsync(new UpdateBusinessSelfServiceBrandingCommand(
+            business!.Id,
+            "Goal Cafe",
+            "/img/demo-coffee.svg",
+            "#112233",
+            "#445566",
+            "#ffffff",
+            2,
+            "Goal Rewards",
+            "Recompensa al completar dos sellos."));
+        var client = await app.RegisterClientAsync(new RegisterClientCommand(
+            "redeemwallet",
+            "Redeem",
+            "Wallet",
+            "redeemwallet@example.test",
+            "ClientPass123!"));
+        var enrollment = await app.EnrollClientAsync(new EnrollClientCommand(
+            business.Id,
+            client.UserName,
+            "https://app.puntelio.com"));
+        await app.SelectGoogleWalletAsync(ExtractWalletToken(enrollment.EnrollmentUrl));
+        await app.AddStampAsync(new AddStampCommand(business.Id, client.UserName));
+
+        var detail = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
+        Assert.NotNull(detail);
+        Assert.True(detail!.RewardReady);
+
+        var redemption = await app.RedeemRewardAsync(business.Id, detail.Id);
+
+        Assert.True(redemption.Succeeded);
+        Assert.Equal(0, redemption.Card!.CurrentStamps);
+        Assert.Equal(0, google.PatchedCurrentStamps);
+        Assert.Equal(0, apple.NotifiedCurrentStamps);
+    }
+
+    [Fact]
     public async Task RedeemRewardAsync_WhenRewardTableIsUnavailable_DoesNotResetCompleteCard()
     {
         var services = CreateDefaultServices();
@@ -1280,7 +1340,10 @@ public sealed class DigitalCardsAppServiceTests
         var persisted = await app.GetBusinessCardForClientAsync(business.Id, client.UserName);
 
         Assert.False(redemption.Succeeded);
-        Assert.Contains("118-reward-redemption-cycles-hostgator.sql", redemption.ErrorMessage);
+        Assert.Equal("No se puede canjear la recompensa en este momento. Contacta a soporte.", redemption.ErrorMessage);
+        Assert.DoesNotContain(".sql", redemption.ErrorMessage);
+        Assert.DoesNotContain("migration-context", redemption.ErrorMessage);
+        Assert.DoesNotContain("RewardRedemption", redemption.ErrorMessage);
         Assert.Equal(2, redemption.Card!.CurrentStamps);
         Assert.True(redemption.Card.RewardReady);
         Assert.Equal(2, persisted!.CurrentStamps);
@@ -2570,6 +2633,8 @@ public sealed class DigitalCardsAppServiceTests
 
         public string? PatchedProgramName { get; private set; }
 
+        public int? PatchedCurrentStamps { get; private set; }
+
         public Task<GoogleWalletIssueResult> IssueSaveLinkAsync(
             LoyaltyCard card,
             Client client,
@@ -2589,6 +2654,83 @@ public sealed class DigitalCardsAppServiceTests
         {
             PatchedBusinessName = business.DisplayName;
             PatchedProgramName = business.ProgramName;
+            PatchedCurrentStamps = card.CurrentStamps;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingAppleWalletService : IAppleWalletService
+    {
+        public int? NotifiedCurrentStamps { get; private set; }
+
+        public Task<AppleWalletIssueResult> IssueAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new AppleWalletIssueResult(
+                AppleWalletIssueStatus.Pending,
+                "Pending",
+                DownloadUrl: null,
+                SerialNumber: null));
+        }
+
+        public Task<AppleWalletPassFile> CreatePassAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletPassRequestResult> CreateUpdatedPassAsync(
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletRegistrationStatus> RegisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string pushToken,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletUnregistrationStatus> UnregisterDeviceAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string serialNumber,
+            string? authorizationHeader,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<AppleWalletUpdatedPasses?> ListUpdatedPassesAsync(
+            string deviceLibraryIdentifier,
+            string passTypeIdentifier,
+            string? previousLastUpdated,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task NotifyPassUpdatedAsync(
+            LoyaltyCard card,
+            Client client,
+            Business business,
+            CancellationToken cancellationToken = default)
+        {
+            NotifiedCurrentStamps = card.CurrentStamps;
             return Task.CompletedTask;
         }
     }

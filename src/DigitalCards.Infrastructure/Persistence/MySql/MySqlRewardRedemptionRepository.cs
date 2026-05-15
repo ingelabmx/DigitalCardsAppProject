@@ -82,7 +82,7 @@ public sealed class MySqlRewardRedemptionRepository : IRewardRedemptionRepositor
         catch (MySqlException exception) when (exception.Number == MissingTableErrorNumber)
         {
             throw new InvalidOperationException(
-                "RewardRedemption table is missing. Run docs/migration-context/118-reward-redemption-cycles-hostgator.sql before redeeming rewards.",
+                "Reward redemption storage is unavailable.",
                 exception);
         }
     }

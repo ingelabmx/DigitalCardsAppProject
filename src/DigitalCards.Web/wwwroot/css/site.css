@@ -357,7 +357,6 @@ body.legacy-shell {
 .legacy-shell .wallet-panel,
 .legacy-shell .business-dashboard-panel,
 .legacy-shell .business-profile-panel,
-.legacy-shell .business-card-list,
 .legacy-shell .business-card-detail,
 .legacy-shell .client-profile-panel,
 .legacy-shell .client-card-preview,
@@ -1373,6 +1372,10 @@ form.is-submitting input[type="submit"] {
   grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
 }
 
+.business-card-direct-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .business-card-quick-summary {
   display: grid;
   gap: 0.75rem;
@@ -1403,14 +1406,12 @@ form.is-submitting input[type="submit"] {
   font-size: 1.2rem;
 }
 
-.business-card-list,
 .business-card-detail {
   border: 1px solid #dde3ea;
   border-radius: 8px;
   padding: 1rem;
 }
 
-.business-primary-workflow .business-card-list,
 .business-primary-workflow .business-card-detail {
   box-shadow: 0 8px 22px rgb(42 53 71 / 6%);
 }
@@ -2461,7 +2462,6 @@ body.public-shell {
 .admin-command-card,
 .business-dashboard-panel,
 .business-profile-panel,
-.business-card-list,
 .business-card-detail,
 .client-card-preview,
 .client-card-row,
@@ -2536,7 +2536,6 @@ body.public-shell {
   gap: 1rem;
 }
 
-.business-card-list h2,
 .business-card-detail h2,
 .business-dashboard-panel h2,
 .support-card h3,
