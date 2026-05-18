@@ -367,6 +367,8 @@ public sealed class DigitalCardsAppServiceTests
         var listed = Assert.Single(businesses);
         Assert.False(listed.IsEnabled);
         Assert.Equal(BusinessActivationStatus.Inactive, listed.ActivationStatus);
+        Assert.Equal(0, listed.ClientCount);
+        Assert.Equal(0, listed.CurrentStampTotal);
         Assert.Equal("pausado", listed.Notes);
     }
 
@@ -728,6 +730,7 @@ public sealed class DigitalCardsAppServiceTests
         var console = Assert.Single(clients);
         Assert.Equal("consoleclient1", console.UserName);
         Assert.Equal("Console Client", console.ClientName);
+        Assert.Contains("Demo Coffee", console.LinkedBusinessNames);
         Assert.Equal(1, console.CardCount);
         Assert.Equal(2, console.CurrentStamps);
         Assert.Equal(2, console.LifetimeStamps);
@@ -2776,6 +2779,14 @@ public sealed class DigitalCardsAppServiceTests
 
         public Task<IReadOnlyList<RewardRedemptionRecord>> ListRecentByCardIdAsync(
             Guid cardId,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<RewardRedemptionRecord>>([]);
+        }
+
+        public Task<IReadOnlyList<RewardRedemptionRecord>> ListByBusinessAsync(
+            Guid businessId,
             int limit,
             CancellationToken cancellationToken = default)
         {

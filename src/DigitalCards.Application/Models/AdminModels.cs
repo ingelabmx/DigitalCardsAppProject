@@ -129,6 +129,8 @@ public sealed record PilotBusinessDto(
     string BusinessEmail,
     bool IsEnabled,
     BusinessActivationStatus ActivationStatus,
+    int ClientCount,
+    int CurrentStampTotal,
     string? Notes,
     DateTimeOffset? UpdatedAt);
 
@@ -153,6 +155,7 @@ public sealed record AdminClientConsoleDto(
     string UserName,
     string ClientName,
     string ClientEmail,
+    IReadOnlyList<string> LinkedBusinessNames,
     int CardCount,
     int CurrentStamps,
     int LifetimeStamps,

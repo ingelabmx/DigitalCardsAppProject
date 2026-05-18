@@ -182,6 +182,19 @@ public sealed class LegacyWalletSyncProcessorTests
                     .Take(limit)
                     .ToArray());
         }
+
+        public Task<IReadOnlyList<StampLedgerRecord>> ListByBusinessAsync(
+            Guid businessId,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<StampLedgerRecord>>(
+                Records
+                    .Where(record => record.BusinessId == businessId)
+                    .OrderByDescending(record => record.CreatedAt)
+                    .Take(limit)
+                    .ToArray());
+        }
     }
 
     private sealed class FixedClock : IClock

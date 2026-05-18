@@ -10,4 +10,9 @@ public interface IStampLedgerRepository
         Guid cardId,
         int limit,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StampLedgerRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default);
 }

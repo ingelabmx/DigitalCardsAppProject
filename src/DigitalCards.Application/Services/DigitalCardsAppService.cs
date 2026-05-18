@@ -804,6 +804,28 @@ public sealed class DigitalCardsAppService
         return results;
     }
 
+    public async Task<IReadOnlyList<BusinessCardDto>> ListBusinessCardsAsync(
+        Guid businessId,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await RequireBusinessAsync(businessId, cancellationToken);
+        var cards = await _loyaltyCards.ListByBusinessAsync(business.Id, cancellationToken);
+        var results = new List<BusinessCardDto>(cards.Count);
+
+        foreach (var card in cards.OrderByDescending(card => card.LastStampedAt).ThenBy(card => card.CreatedAt))
+        {
+            var client = await _clients.FindByIdAsync(card.ClientId, cancellationToken);
+            if (client is null)
+            {
+                continue;
+            }
+
+            results.Add(await ToBusinessCardDtoAsync(card, client, business, cancellationToken));
+        }
+
+        return results;
+    }
+
     public async Task<BusinessDashboardDto?> GetBusinessDashboardAsync(
         Guid businessId,
         CancellationToken cancellationToken = default)
@@ -876,11 +898,7 @@ public sealed class DigitalCardsAppService
         }
         var displayBusiness = await ApplyBrandingAsync(business, cancellationToken);
 
-        var cards = await _loyaltyCards.SearchByBusinessAsync(
-            business.Id,
-            query: string.Empty,
-            limit: 250,
-            cancellationToken);
+        var cards = await _loyaltyCards.ListByBusinessAsync(business.Id, cancellationToken);
         var reportCards = new List<BusinessCardDto>(cards.Count);
 
         foreach (var card in cards)
@@ -896,11 +914,15 @@ public sealed class DigitalCardsAppService
 
         var now = _clock.UtcNow;
         var since30Days = now.AddDays(-30);
-        var events = reportCards
-            .SelectMany(card => card.RecentStampEvents.Select(item => new BusinessDashboardStampEventDto(
-                card.Id,
-                card.Client.UserName,
-                $"{card.Client.FirstName} {card.Client.LastName}".Trim(),
+        var ledgerRecords = await _stampLedger.ListByBusinessAsync(business.Id, 1000, cancellationToken);
+        var redemptionRecords = await _rewardRedemptions.ListByBusinessAsync(business.Id, 1000, cancellationToken);
+        var events = ledgerRecords
+            .Select(item => new BusinessDashboardStampEventDto(
+                item.CardId,
+                reportCards.FirstOrDefault(card => card.Id == item.CardId)?.Client.UserName ?? string.Empty,
+                reportCards.FirstOrDefault(card => card.Id == item.CardId) is { } card
+                    ? $"{card.Client.FirstName} {card.Client.LastName}".Trim()
+                    : string.Empty,
                 item.CreatedAt,
                 item.Source,
                 item.PreviousCheckQTY,
@@ -909,13 +931,34 @@ public sealed class DigitalCardsAppService
                 item.GoogleWalletSucceeded,
                 item.AppleWalletAttempted,
                 item.AppleWalletSucceeded,
-                item.ErrorSummary)))
+                item.ErrorSummary))
             .ToArray();
-        var periods = events
-            .Where(item => item.CreatedAt >= now.AddMonths(-6))
-            .GroupBy(item => item.CreatedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture))
-            .OrderBy(group => group.Key, StringComparer.Ordinal)
-            .Select(group => new BusinessReportPeriodDto(group.Key, group.Count()))
+        var recentPeriodKeys = Enumerable.Range(0, 6)
+            .Select(index => now.AddMonths(-(5 - index)).ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture))
+            .ToArray();
+        var periods = recentPeriodKeys
+            .Select(period =>
+            {
+                var stampCount = ledgerRecords.Count(record =>
+                    record.CreatedAt >= now.AddMonths(-6) &&
+                    record.CreatedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period &&
+                    record.NewCheckQTY > record.PreviousCheckQTY);
+                var redemptionCount = redemptionRecords.Count(record =>
+                    record.RedeemedAt >= now.AddMonths(-6) &&
+                    record.RedeemedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period);
+                return new BusinessReportPeriodDto(period, stampCount, redemptionCount);
+            })
+            .ToArray();
+        var newClientPeriods = recentPeriodKeys
+            .Select(period =>
+            {
+                var newClientCount = reportCards
+                    .GroupBy(card => card.Client.Id)
+                    .Select(group => group.Min(card => card.CreatedAt))
+                    .Count(createdAt => createdAt >= now.AddMonths(-6) &&
+                        createdAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period);
+                return new BusinessReportPeriodDto(period, 0, 0, newClientCount);
+            })
             .ToArray();
         var businessClients = reportCards
             .GroupBy(card => card.Client.Id)
@@ -942,20 +985,46 @@ public sealed class DigitalCardsAppService
             .OrderByDescending(client => client.LastActivityAt)
             .ThenBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        var topClients = reportCards
+            .GroupBy(card => card.Client.Id)
+            .Select(group =>
+            {
+                var first = group
+                    .OrderByDescending(card => card.LastStampedAt)
+                    .First();
+                return new BusinessReportTopClientDto(
+                    first.Client.Id,
+                    first.Client.UserName,
+                    $"{first.Client.FirstName} {first.Client.LastName}".Trim(),
+                    group.Sum(card => card.CurrentStamps),
+                    group.Sum(card => card.LifetimeStamps),
+                    redemptionRecords.Count(record => record.UserId == first.Client.Id),
+                    group.Max(card => card.LastStampedAt));
+            })
+            .OrderByDescending(client => client.LifetimeStamps)
+            .ThenByDescending(client => client.CurrentStamps)
+            .ThenByDescending(client => client.LastActivityAt)
+            .Take(5)
+            .ToArray();
         var walletIssues = events
             .Where(HasWalletIssue)
             .OrderByDescending(item => item.CreatedAt)
             .Take(10)
             .ToArray();
+        var stampsLast30Days = ledgerRecords.Count(item => item.CreatedAt >= since30Days && item.NewCheckQTY > item.PreviousCheckQTY);
+        var redemptionsLast30Days = redemptionRecords.Count(item => item.RedeemedAt >= since30Days);
+        var redemptionRate = stampsLast30Days == 0
+            ? 0m
+            : Math.Round((decimal)redemptionsLast30Days / stampsLast30Days * 100m, 1, MidpointRounding.AwayFromZero);
 
         return new BusinessReportsDto(
             ToDto(displayBusiness),
             reportCards.Count,
-            reportCards.Count(card => card.LastStampedAt >= since30Days),
+            reportCards.Count(card => card.CreatedAt >= since30Days),
             reportCards.Select(card => card.Client.Id).Distinct().Count(),
             reportCards.Sum(card => card.CurrentStamps),
             reportCards.Sum(card => card.LifetimeStamps),
-            events.Count(item => item.CreatedAt >= since30Days),
+            stampsLast30Days,
             reportCards.Count(card => card.GoogleIssued || card.AppleTracked),
             reportCards.Count(card => !card.GoogleIssued && !card.AppleTracked),
             reportCards.Count(card => card.GoogleIssued),
@@ -964,8 +1033,12 @@ public sealed class DigitalCardsAppService
             reportCards.Count(card => !card.AppleTracked),
             reportCards.Sum(card => card.AppleRegisteredDeviceCount),
             walletIssues.Length,
+            redemptionsLast30Days,
+            redemptionRate,
             periods,
+            newClientPeriods,
             businessClients,
+            topClients,
             walletIssues);
     }
 
@@ -1671,6 +1744,7 @@ public sealed class DigitalCardsAppService
             card.EnrollmentToken,
             ToDto(client),
             displayBusiness.DisplayName,
+            card.CreatedAt,
             card.CurrentStamps,
             progress.StampGoal,
             card.LifetimeStamps,

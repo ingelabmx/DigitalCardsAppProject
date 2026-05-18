@@ -7,9 +7,8 @@
 <section class="result-panel admin-list-panel" data-testid="admin-businesses-panel">
     <div class="page-heading">
         <div>
-            <p class="eyebrow">Admin</p>
             <h1>Negocios</h1>
-            <p class="lead">Activa, desactiva o administra negocios existentes en Puntelio.</p>
+            <p class="lead">Consulta negocios activos e inactivos y abre su administracion desde una tabla compacta.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-primary" asp-page="/Admin/CreateBusiness" data-testid="admin-businesses-create-link">Crear negocio</a>
@@ -18,9 +17,19 @@
     </div>
 
     <div class="admin-filter-card">
-        <form method="get" class="search-row" data-testid="admin-business-search-form">
-            <label asp-for="Query" class="form-label visually-hidden"></label>
-            <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-business-search-input" />
+        <form method="get" class="business-table-controls" data-testid="admin-business-search-form">
+            <div class="business-table-control-group grow">
+                <label asp-for="Query" class="form-label visually-hidden"></label>
+                <input asp-for="Query" class="form-control" placeholder="nombre o correo del negocio" data-testid="admin-business-search-input" />
+            </div>
+            <div class="business-table-control-group">
+                <label asp-for="PageSize" class="form-label mb-0">Mostrar</label>
+                <select asp-for="PageSize" class="form-select form-select-sm" onchange="this.form.submit()" data-testid="admin-business-page-size">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
             <button class="btn btn-primary" type="submit" data-testid="admin-business-search-submit">Buscar</button>
         </form>
     </div>
@@ -34,10 +43,9 @@
         </div>
     }
 
-    @if (Model.Businesses.Count == 0)
+    @if (Model.PagedBusinesses.Count == 0)
     {
         <div class="dashboard-empty-state compact" data-testid="admin-business-no-results">
-            <p class="eyebrow">Sin resultados</p>
             <h3>No se encontraron negocios</h3>
             <p>Prueba con otro nombre o correo, o crea un negocio nuevo desde el panel admin.</p>
             <a class="btn btn-primary btn-sm" asp-page="/Admin/CreateBusiness">Crear negocio</a>
@@ -45,47 +53,65 @@
     }
     else
     {
-        <div class="pilot-business-list legacy-admin-list" data-testid="admin-business-list">
-            @foreach (var business in Model.Businesses)
-            {
-                <article class="pilot-business-item legacy-admin-row" data-testid="admin-business-row">
-                    <div>
-                        <h2>@business.BusinessName</h2>
-                        <p>@business.BusinessEmail</p>
-                    </div>
-                    <div class="admin-status-stack">
-                        <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-activation-status">
-                            @ActivationLabel(business.IsEnabled)
-                        </span>
-                        @if (business.UpdatedAt is not null)
-                        {
-                            <small>Actualizado @business.UpdatedAt.Value.ToLocalTime().ToString("g")</small>
-                        }
-                    </div>
-                    <div class="pilot-business-actions">
-                        <a class="btn btn-outline-primary"
-                           asp-page="/Admin/BusinessProfile"
-                           asp-route-businessId="@business.BusinessId"
-                           data-testid="admin-manage-business">
-                            Administrar
-                        </a>
-                        @if (business.IsEnabled)
-                        {
-                            <form method="post" asp-page-handler="Disable" asp-route-query="@Model.Query" class="pilot-business-inline-form" data-testid="admin-business-row-actions">
-                                <input type="hidden" name="businessId" value="@business.BusinessId" />
-                                <button class="btn btn-outline-danger" type="submit" data-testid="admin-disable-pilot">Desactivar</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <form method="post" asp-page-handler="Enable" asp-route-query="@Model.Query" class="pilot-business-inline-form" data-testid="admin-business-row-actions">
-                                <input type="hidden" name="businessId" value="@business.BusinessId" />
-                                <button class="btn btn-outline-success" type="submit" data-testid="admin-enable-pilot">Activar</button>
-                            </form>
-                        }
-                    </div>
-                </article>
-            }
+        <div class="table-responsive business-table-shell" data-testid="admin-business-table">
+            <table class="table align-middle legacy-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Negocio</th>
+                        <th>Correo</th>
+                        <th>Clientes</th>
+                        <th>Sellos</th>
+                        <th>Estado</th>
+                        <th>Actualizado</th>
+                        <th class="text-end">Administrar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var business in Model.PagedBusinesses)
+                    {
+                        <tr data-testid="admin-business-row">
+                            <td>@business.BusinessName</td>
+                            <td>@business.BusinessEmail</td>
+                            <td>@business.ClientCount</td>
+                            <td>@business.CurrentStampTotal</td>
+                            <td>
+                                <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-activation-status">
+                                    @ActivationLabel(business.IsEnabled)
+                                </span>
+                            </td>
+                            <td>@(business.UpdatedAt?.ToLocalTime().ToString("g") ?? "Sin cambios")</td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm"
+                                   asp-page="/Admin/BusinessProfile"
+                                   asp-route-businessId="@business.BusinessId"
+                                   data-testid="admin-manage-business">
+                                    Administrar
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-pager" data-testid="admin-business-pager">
+            <span>Pagina @Model.PageNumber de @Model.TotalPages</span>
+            <div class="table-pager-actions">
+                <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber <= 1 ? "disabled" : null)"
+                   asp-page="/Admin/Businesses"
+                   asp-route-query="@Model.Query"
+                   asp-route-pageNumber="@(Model.PageNumber - 1)"
+                   asp-route-pageSize="@Model.PageSize">
+                    Anterior
+                </a>
+                <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber >= Model.TotalPages ? "disabled" : null)"
+                   asp-page="/Admin/Businesses"
+                   asp-route-query="@Model.Query"
+                   asp-route-pageNumber="@(Model.PageNumber + 1)"
+                   asp-route-pageSize="@Model.PageSize">
+                    Siguiente
+                </a>
+            </div>
         </div>
     }
 </section>

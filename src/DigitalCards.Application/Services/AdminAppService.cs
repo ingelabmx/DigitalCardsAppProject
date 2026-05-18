@@ -273,16 +273,22 @@ public sealed class AdminAppService
         var pilotRecords = await _pilotBusinesses.ListAsync(cancellationToken);
         var byBusinessId = pilotRecords.ToDictionary(record => record.BusinessId);
         var normalizedQuery = query.Trim();
+        var results = new List<PilotBusinessDto>();
 
-        return businesses
+        foreach (var business in businesses
             .Where(business => MatchesQuery(business, normalizedQuery))
-            .OrderBy(business => business.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(business =>
-            {
-                byBusinessId.TryGetValue(business.Id, out var pilot);
-                return ToPilotBusinessDto(business, pilot);
-            })
-            .ToArray();
+            .OrderBy(business => business.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            byBusinessId.TryGetValue(business.Id, out var pilot);
+            var cards = await _loyaltyCards.ListByBusinessAsync(business.Id, cancellationToken);
+            results.Add(ToPilotBusinessDto(
+                await ApplyBrandingAsync(business, cancellationToken),
+                pilot,
+                cards.Select(card => card.ClientId).Distinct().Count(),
+                cards.Sum(card => card.CurrentStamps)));
+        }
+
+        return results;
     }
 
     public async Task<CreateBusinessResult> CreateBusinessAsync(
@@ -365,7 +371,7 @@ public sealed class AdminAppService
             summary: $"Business {business.Name} created. Pilot enabled: {command.EnablePilot}.",
             cancellationToken: cancellationToken);
 
-        return new CreateBusinessResult(ToPilotBusinessDto(business, access), ErrorMessage: null);
+        return new CreateBusinessResult(ToPilotBusinessDto(business, access, 0, 0), ErrorMessage: null);
     }
 
     public async Task<BusinessProfileDto?> GetBusinessProfileAsync(
@@ -666,7 +672,12 @@ public sealed class AdminAppService
                 cancellationToken: cancellationToken);
         }
 
-        return ToPilotBusinessDto(business, access);
+        var cards = await _loyaltyCards.ListByBusinessAsync(business.Id, cancellationToken);
+        return ToPilotBusinessDto(
+            await ApplyBrandingAsync(business, cancellationToken),
+            access,
+            cards.Select(card => card.ClientId).Distinct().Count(),
+            cards.Sum(card => card.CurrentStamps));
     }
 
     public async Task<IReadOnlyList<CutoverSmokeEvidenceDto>> ListCutoverSmokeEvidenceAsync(
@@ -806,6 +817,11 @@ public sealed class AdminAppService
                 client.UserName,
                 client.FullName,
                 client.Email,
+                summaries
+                    .Select(card => card.BusinessName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
                 summaries.Count,
                 summaries.Sum(card => card.CurrentStamps),
                 summaries.Sum(card => card.LifetimeStamps),
@@ -1887,14 +1903,20 @@ public sealed class AdminAppService
             admin.Email);
     }
 
-    private static PilotBusinessDto ToPilotBusinessDto(Business business, PilotBusinessAccess? access)
+    private static PilotBusinessDto ToPilotBusinessDto(
+        Business business,
+        PilotBusinessAccess? access,
+        int clientCount,
+        int currentStampTotal)
     {
         return new PilotBusinessDto(
             business.Id,
-            business.Name,
+            business.DisplayName,
             business.Email,
             access?.IsEnabled ?? false,
             access?.ActivationStatus ?? BusinessActivationStatus.Inactive,
+            clientCount,
+            currentStampTotal,
             access?.Notes,
             access?.UpdatedAt);
     }

@@ -40,4 +40,22 @@ public sealed class InMemoryStampLedgerRepository : IStampLedgerRepository
             return Task.FromResult<IReadOnlyList<StampLedgerRecord>>(records);
         }
     }
+
+    public Task<IReadOnlyList<StampLedgerRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var records = _store.StampLedger
+                .Where(record => record.BusinessId == businessId)
+                .OrderByDescending(record => record.CreatedAt)
+                .ThenByDescending(record => record.Id)
+                .Take(Math.Max(1, Math.Min(limit, 1000)))
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyList<StampLedgerRecord>>(records);
+        }
+    }
 }

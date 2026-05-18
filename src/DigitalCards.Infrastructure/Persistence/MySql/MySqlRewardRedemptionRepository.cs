@@ -142,6 +142,61 @@ public sealed class MySqlRewardRedemptionRepository : IRewardRedemptionRepositor
         return rows.Select(row => row.ToModel()).ToArray();
     }
 
+    public async Task<IReadOnlyList<RewardRedemptionRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select ID,
+                   CardID,
+                   BusinessID,
+                   UserID,
+                   ActorBusinessID,
+                   StampGoal,
+                   RedeemedCheckQTY,
+                   HistoricCheckQTY,
+                   RewardText,
+                   GoogleWalletAttempted,
+                   GoogleWalletSucceeded,
+                   AppleWalletAttempted,
+                   AppleWalletSucceeded,
+                   ErrorSummary,
+                   RedeemedAt,
+                   CreatedAt
+            from RewardRedemption
+            where BusinessID = @BusinessID
+            order by RedeemedAt desc, ID desc
+            limit @Limit;
+            """;
+
+        var legacyBusinessId = LegacyIdMapper.TryGuidToInt32(businessId);
+        if (legacyBusinessId is null)
+        {
+            return [];
+        }
+
+        IEnumerable<RewardRedemptionRow> rows;
+        try
+        {
+            await using var connection = _connectionFactory.Create();
+            rows = await connection.QueryAsync<RewardRedemptionRow>(new CommandDefinition(
+                sql,
+                new
+                {
+                    BusinessID = legacyBusinessId.Value,
+                    Limit = Math.Max(1, Math.Min(limit, 1000))
+                },
+                cancellationToken: cancellationToken));
+        }
+        catch (MySqlException exception) when (exception.Number == MissingTableErrorNumber)
+        {
+            return [];
+        }
+
+        return rows.Select(row => row.ToModel()).ToArray();
+    }
+
     private static object ToParameters(RewardRedemptionRecord record)
     {
         return new

@@ -2,14 +2,19 @@
 @model DigitalCards.Web.Pages.Business.ReportsModel
 @{
     ViewData["Title"] = "Reportes negocio";
+    var maxStampPeriod = Model.Reports is { StampPeriods.Count: > 0 }
+        ? Math.Max(1, Model.Reports.StampPeriods.Max(period => period.StampCount))
+        : 1;
+    var maxClientPeriod = Model.Reports is { NewClientPeriods.Count: > 0 }
+        ? Math.Max(1, Model.Reports.NewClientPeriods.Max(period => period.NewClientCount))
+        : 1;
 }
 
 <section class="result-panel business-reports" data-testid="business-reports">
     <div class="page-heading">
         <div>
-            <p class="eyebrow">Negocio</p>
             <h1>Reportes</h1>
-            <p class="lead">Resumen operativo de tarjetas, sellos y clientes del negocio autenticado.</p>
+            <p class="lead">Resumen operativo de tarjetas, sellos, canjes y clientes del negocio autenticado.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="business-reports-back-link">Dashboard</a>
     </div>
@@ -35,39 +40,41 @@
             <div class="metric">
                 <span>Clientes</span>
                 <strong data-testid="business-report-client-count">@Model.Reports.ClientCount</strong>
+                <small>@Model.Reports.NewClientPeriods.Sum(period => period.NewClientCount) nuevos en 6 meses</small>
             </div>
             <div class="metric">
-                <span>Sellos actuales</span>
-                <strong data-testid="business-report-current-stamps">@Model.Reports.CurrentStampTotal</strong>
+                <span>Sellos vs canjes</span>
+                <strong>@Model.Reports.StampsLast30Days / @Model.Reports.RedemptionsLast30Days</strong>
+                <small>ultimos 30 dias</small>
             </div>
             <div class="metric">
-                <span>Sellos historicos</span>
-                <strong data-testid="business-report-lifetime-stamps">@Model.Reports.LifetimeStampTotal</strong>
-                <small>@Model.Reports.StampsLast30Days eventos en 30 dias</small>
+                <span>Tasa de redencion</span>
+                <strong>@Model.Reports.RedemptionRate.ToString("0.0")%</strong>
+                <small>canjes sobre sellos</small>
             </div>
         </div>
 
         <div class="business-dashboard-grid">
             <section class="business-dashboard-panel">
-                <h2>Sellos por periodo</h2>
+                <h2>Sellos por mes</h2>
                 @if (Model.Reports.StampPeriods.Count == 0)
                 {
                     <p class="text-muted" data-testid="business-report-no-periods">No hay eventos recientes de sellos.</p>
                 }
                 else
                 {
-                    <div class="dashboard-card-list" data-testid="business-report-periods">
+                    <div class="report-bar-chart" data-testid="business-report-periods">
                         @foreach (var period in Model.Reports.StampPeriods)
                         {
-                            <div class="dashboard-card-row compact" data-testid="business-report-period">
-                                <div>
-                                    <strong>@period.Period</strong>
-                                    <span>periodo</span>
+                            var stampHeight = Math.Max(10, (int)Math.Round(period.StampCount * 100d / maxStampPeriod));
+                            var redemptionHeight = period.RedemptionCount == 0 ? 0 : Math.Max(10, (int)Math.Round(period.RedemptionCount * 100d / maxStampPeriod));
+                            <div class="report-bar-group" data-testid="business-report-period">
+                                <div class="report-bar-values">
+                                    <span class="report-bar report-bar-primary" style="height:@stampHeight%" title="@period.StampCount sellos"></span>
+                                    <span class="report-bar report-bar-accent" style="height:@redemptionHeight%" title="@period.RedemptionCount canjes"></span>
                                 </div>
-                                <div>
-                                    <strong>@period.StampCount</strong>
-                                    <span>sellos</span>
-                                </div>
+                                <strong>@period.Period</strong>
+                                <small>@period.StampCount sellos · @period.RedemptionCount canjes</small>
                             </div>
                         }
                     </div>
@@ -75,36 +82,88 @@
             </section>
 
             <section class="business-dashboard-panel">
-                <h2>Clientes recientes</h2>
-                @if (Model.Reports.RecentClients.Count == 0)
+                <h2>Nuevos clientes por mes</h2>
+                @if (Model.Reports.NewClientPeriods.Count == 0)
                 {
-                    <p class="text-muted" data-testid="business-report-no-clients">No hay clientes recientes.</p>
+                    <p class="text-muted">No hay altas recientes.</p>
                 }
                 else
                 {
-                    <div class="dashboard-card-list" data-testid="business-report-recent-clients">
-                        @foreach (var client in Model.Reports.RecentClients)
+                    <div class="report-bar-chart report-bar-chart-compact" data-testid="business-report-new-clients">
+                        @foreach (var period in Model.Reports.NewClientPeriods)
+                        {
+                            var newClientHeight = period.NewClientCount == 0 ? 0 : Math.Max(10, (int)Math.Round(period.NewClientCount * 100d / maxClientPeriod));
+                            <div class="report-bar-group" data-testid="business-report-new-client-period">
+                                <div class="report-bar-values single">
+                                    <span class="report-bar report-bar-secondary" style="height:@newClientHeight%" title="@period.NewClientCount nuevos clientes"></span>
+                                </div>
+                                <strong>@period.Period</strong>
+                                <small>@period.NewClientCount cliente(s)</small>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="business-dashboard-grid">
+            <section class="business-dashboard-panel">
+                <h2>Top clientes por uso</h2>
+                @if (Model.Reports.TopClients.Count == 0)
+                {
+                    <p class="text-muted">No hay clientes suficientes para generar ranking.</p>
+                }
+                else
+                {
+                    <div class="dashboard-card-list" data-testid="business-report-top-clients">
+                        @foreach (var client in Model.Reports.TopClients)
                         {
                             <a class="dashboard-card-row"
                                asp-page="/Business/Cards"
                                asp-route-query="@client.UserName"
-                               data-testid="business-report-recent-client">
+                               data-testid="business-report-top-client">
                                 <div>
                                     <strong>@client.ClientName</strong>
-                                    <span>@client.Email</span>
+                                    <span>@client.UserName</span>
                                 </div>
                                 <div>
-                                    <strong>@client.CardCount</strong>
-                                    <span>tarjeta(s)</span>
+                                    <strong>@client.LifetimeStamps</strong>
+                                    <span>sellos historicos</span>
                                 </div>
                                 <div>
-                                    <strong>@client.LastActivityAt.ToLocalTime().ToString("g")</strong>
-                                    <span>ultima actividad</span>
+                                    <strong>@client.RedemptionCount</strong>
+                                    <span>canjes</span>
                                 </div>
                             </a>
                         }
                     </div>
                 }
+            </section>
+
+            <section class="business-dashboard-panel">
+                <h2>Resumen comercial</h2>
+                <div class="dashboard-card-list" data-testid="business-report-summary-cards">
+                    <div class="dashboard-card-row compact">
+                        <div>
+                            <strong>@Model.Reports.NewClientPeriods.Sum(period => period.NewClientCount)</strong>
+                            <span>nuevos clientes en 6 meses</span>
+                        </div>
+                        <div>
+                            <strong>@Model.Reports.StampsLast30Days</strong>
+                            <span>sellos generados en 30 dias</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card-row compact">
+                        <div>
+                            <strong>@Model.Reports.RedemptionsLast30Days</strong>
+                            <span>canjes en 30 dias</span>
+                        </div>
+                        <div>
+                            <strong>@Model.Reports.CurrentStampTotal</strong>
+                            <span>sellos activos acumulados</span>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
 

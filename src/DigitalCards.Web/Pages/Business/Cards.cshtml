@@ -8,9 +8,8 @@
 <section class="result-panel business-cards business-primary-workflow" data-testid="business-primary-workflow">
     <div class="page-heading">
         <div>
-            <p class="eyebrow">Operacion</p>
             <h1>Tarjetas de clientes</h1>
-            <p class="lead">Busca una tarjeta, reenvia el link Wallet y aplica sellos desde el detalle validado del negocio.</p>
+            <p class="lead">Consulta las tarjetas del negocio, abre su detalle y opera sellos, wallet y estado desde un solo panel.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Business/Dashboard" data-testid="cards-back-link">Dashboard</a>
     </div>
@@ -23,26 +22,6 @@
     }
     else
     {
-        <div class="business-card-toolbar">
-            <form method="get" class="search-row business-card-search-row" data-testid="business-card-search-form">
-                <label asp-for="Query" class="form-label visually-hidden"></label>
-                <input asp-for="Query" class="form-control" placeholder="username, correo o QR" data-testid="business-card-search-input" />
-                <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
-            </form>
-
-            <div class="qr-scanner-panel" data-business-qr-scanner data-testid="business-qr-scanner">
-                <div>
-                    <strong>Lector QR</strong>
-                    <span data-qr-status>Listo</span>
-                </div>
-                <div class="qr-scanner-actions">
-                    <button class="btn btn-outline-primary btn-sm" type="button" data-qr-start data-testid="business-qr-start">Escanear</button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-qr-stop data-testid="business-qr-stop">Detener</button>
-                </div>
-                <video class="qr-scanner-video" autoplay muted playsinline data-qr-video aria-label="Vista de camara QR"></video>
-            </div>
-        </div>
-
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         @if (Model.StatusMessage is not null)
@@ -56,36 +35,115 @@
             </div>
         }
 
+        <div class="admin-filter-card business-card-table-toolbar">
+            <form method="get" class="business-table-controls" data-testid="business-card-table-controls">
+                <input type="hidden" asp-for="CardId" />
+                <div class="business-table-control-group grow">
+                    <label asp-for="Query" class="form-label visually-hidden"></label>
+                    <input asp-for="Query" class="form-control" placeholder="usuario o correo del cliente" data-testid="business-card-search-input" />
+                </div>
+                <div>
+                    <span class="table-counter-label">Tarjetas del negocio</span>
+                    <strong data-testid="business-card-total-count">@Model.TotalCards registro(s)</strong>
+                </div>
+                <div class="business-table-control-group">
+                    <label asp-for="PageSize" class="form-label mb-0">Mostrar</label>
+                    <select asp-for="PageSize" class="form-select form-select-sm" onchange="this.form.submit()" data-testid="business-card-page-size">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="submit" data-testid="business-card-search-submit">Buscar</button>
+            </form>
+        </div>
+
+        @if (Model.PagedCards.Count == 0)
+        {
+            <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-no-results">
+                <h3>No hay clientes asociados</h3>
+                <p>Asocia un cliente para comenzar a operar tarjetas desde este panel.</p>
+                <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive business-table-shell" data-testid="business-card-table">
+                <table class="table align-middle legacy-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Usuario</th>
+                            <th>Sellos</th>
+                            <th>Alta</th>
+                            <th>Ultima actividad</th>
+                            <th>Estado</th>
+                            <th class="text-end">Administrar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var card in Model.PagedCards)
+                        {
+                            <tr data-testid="business-card-row">
+                                <td>@card.Client.FirstName @card.Client.LastName</td>
+                                <td>@card.Client.UserName</td>
+                                <td>@card.VisibleStamps de @card.StampGoal</td>
+                                <td>@card.CreatedAt.ToLocalTime().ToString("g")</td>
+                                <td>@card.LastStampedAt.ToLocalTime().ToString("g")</td>
+                                <td><span class="status-pill">@(card.IsActive ? "Activa" : "Inactiva")</span></td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Business/Cards"
+                                       asp-route-cardId="@card.Id"
+                                       asp-route-query="@Model.Query"
+                                       asp-route-pageNumber="@Model.PageNumber"
+                                       asp-route-pageSize="@Model.PageSize"
+                                       data-testid="business-card-manage-link">
+                                        Administrar
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-pager" data-testid="business-card-pager">
+                <span>Pagina @Model.PageNumber de @Model.TotalPages</span>
+                <div class="table-pager-actions">
+                    <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber <= 1 ? "disabled" : null)"
+                       asp-page="/Business/Cards"
+                       asp-route-query="@Model.Query"
+                       asp-route-pageNumber="@(Model.PageNumber - 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-cardId="@Model.CardId"
+                       data-testid="business-card-page-prev">
+                        Anterior
+                    </a>
+                    <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber >= Model.TotalPages ? "disabled" : null)"
+                       asp-page="/Business/Cards"
+                       asp-route-query="@Model.Query"
+                       asp-route-pageNumber="@(Model.PageNumber + 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-cardId="@Model.CardId"
+                       data-testid="business-card-page-next">
+                        Siguiente
+                    </a>
+                </div>
+            </div>
+        }
+
         <div class="business-card-grid business-card-direct-grid">
-            <div class="business-card-detail" data-testid="business-card-detail">
+            <div class="business-card-detail business-card-detail-wide" data-testid="business-card-detail">
                 @if (Model.Detail is null)
                 {
                     <h2>Detalle</h2>
-                    @if (Model.LookupState == CardsModel.CardLookupState.NotFound)
-                    {
-                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-no-results">
-                            <p class="eyebrow">Usuario no encontrado</p>
-                            <h3>No hay tarjeta asociada</h3>
-                            <p>No encontramos una tarjeta de este negocio para <strong>@Model.Query</strong>. Asocia el cliente para enviar su link Wallet.</p>
-                            <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
-                        </div>
-                    }
-                    else if (Model.LookupState == CardsModel.CardLookupState.Ambiguous)
-                    {
-                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-ambiguous-results">
-                            <p class="eyebrow">Busqueda ambigua</p>
-                            <h3>Captura el usuario o correo completo</h3>
-                            <p>Encontramos mas de una coincidencia para <strong>@Model.Query</strong>. Usa el usuario, correo o QR exacto para abrir el detalle.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-detail-empty">
-                            <p class="eyebrow">Busca una tarjeta</p>
-                            <h3>Escanea QR o captura usuario/correo</h3>
-                            <p>Cuando encontremos la tarjeta, aqui apareceran sellos, estado Wallet y acciones seguras del negocio autenticado.</p>
-                        </div>
-                    }
+                    <div class="dashboard-empty-state compact business-card-detail-empty-panel" data-testid="business-card-detail-empty">
+                        <h3>@(string.IsNullOrWhiteSpace(Model.Query) ? "Selecciona una tarjeta" : "Usuario no encontrado")</h3>
+                        <p>@(string.IsNullOrWhiteSpace(Model.Query)
+                            ? "El detalle mostrara sellos, estado Wallet y acciones del negocio cuando abras un registro."
+                            : "No se encontro una tarjeta para esa busqueda. Ajusta el usuario o correo, o asocia un cliente nuevo.")</p>
+                    </div>
                 }
                 else
                 {
@@ -109,14 +167,24 @@
                             </strong>
                         </div>
                         <div class="business-card-action-buttons">
-                            <form method="post" asp-page-handler="Resend" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                            <form method="post"
+                                  asp-page-handler="Resend"
+                                  asp-route-cardId="@Model.Detail.Id"
+                                  asp-route-query="@Model.Query"
+                                  asp-route-pageNumber="@Model.PageNumber"
+                                  asp-route-pageSize="@Model.PageSize">
                                 <button class="btn btn-outline-primary" type="submit" data-testid="business-card-resend-submit" disabled="@(!Model.Detail.IsActive)">
                                     Reenviar Wallet
                                 </button>
                             </form>
                             @if (Model.Detail.RewardReady)
                             {
-                                <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <form method="post"
+                                      asp-page-handler="Redeem"
+                                      asp-route-cardId="@Model.Detail.Id"
+                                      asp-route-query="@Model.Query"
+                                      asp-route-pageNumber="@Model.PageNumber"
+                                      asp-route-pageSize="@Model.PageSize">
                                     <button class="btn btn-success" type="submit" data-testid="business-card-redeem-submit" disabled="@(!Model.Detail.IsActive)" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
                                         Canjear recompensa
                                     </button>
@@ -124,7 +192,12 @@
                             }
                             else
                             {
-                                <form method="post" asp-page-handler="Stamp" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <form method="post"
+                                      asp-page-handler="Stamp"
+                                      asp-route-cardId="@Model.Detail.Id"
+                                      asp-route-query="@Model.Query"
+                                      asp-route-pageNumber="@Model.PageNumber"
+                                      asp-route-pageSize="@Model.PageSize">
                                     <button class="btn btn-primary" type="submit" data-testid="business-card-stamp-submit" disabled="@(!Model.Detail.IsActive)">
                                         Agregar sello
                                     </button>
@@ -188,10 +261,7 @@
                                             <strong>@CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</strong>
                                             <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                         </div>
-                                        <p>
-                                            Sellos actuales @item.NewCheckQTY
-                                            &middot; Historicos @item.NewHistoricCheckQTY
-                                        </p>
+                                        <p>Sellos actuales @item.NewCheckQTY · Historicos @item.NewHistoricCheckQTY</p>
                                         @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                         {
                                             <p class="text-danger">Error: @item.ErrorSummary</p>
@@ -218,7 +288,7 @@
                                             <strong>@(string.IsNullOrWhiteSpace(item.ErrorSummary) ? "Canje registrado" : "Con alerta")</strong>
                                             <span>@item.RedeemedAt.ToLocalTime().ToString("g")</span>
                                         </div>
-                                        <p>@item.RedeemedCheckQTY de @item.StampGoal sellos &middot; @item.RewardText</p>
+                                        <p>@item.RedeemedCheckQTY de @item.StampGoal sellos · @item.RewardText</p>
                                         @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                         {
                                             <p class="text-danger">Error: @item.ErrorSummary</p>
@@ -235,7 +305,12 @@
                         <div class="business-card-action-buttons">
                             @if (Model.Detail.IsActive)
                             {
-                                <form method="post" asp-page-handler="Deactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <form method="post"
+                                      asp-page-handler="Deactivate"
+                                      asp-route-cardId="@Model.Detail.Id"
+                                      asp-route-query="@Model.Query"
+                                      asp-route-pageNumber="@Model.PageNumber"
+                                      asp-route-pageSize="@Model.PageSize">
                                     <button class="btn btn-outline-warning" type="submit" data-testid="business-card-deactivate-submit">
                                         Desactivar cliente
                                     </button>
@@ -243,14 +318,25 @@
                             }
                             else
                             {
-                                <form method="post" asp-page-handler="Reactivate" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query">
+                                <form method="post"
+                                      asp-page-handler="Reactivate"
+                                      asp-route-cardId="@Model.Detail.Id"
+                                      asp-route-query="@Model.Query"
+                                      asp-route-pageNumber="@Model.PageNumber"
+                                      asp-route-pageSize="@Model.PageSize">
                                     <button class="btn btn-outline-success" type="submit" data-testid="business-card-reactivate-submit">
                                         Reactivar cliente
                                     </button>
                                 </form>
                             }
                         </div>
-                        <form method="post" asp-page-handler="Delete" asp-route-cardId="@Model.Detail.Id" asp-route-query="@Model.Query" class="business-card-delete-form danger-action-panel danger-zone-card">
+                        <form method="post"
+                  asp-page-handler="Delete"
+                  asp-route-cardId="@Model.Detail.Id"
+                  asp-route-query="@Model.Query"
+                  asp-route-pageNumber="@Model.PageNumber"
+                  asp-route-pageSize="@Model.PageSize"
+                              class="business-card-delete-form danger-action-panel danger-zone-card">
                             <div>
                                 <strong>Eliminar permanentemente</strong>
                                 <p>Esta accion elimina la tarjeta, sus links Wallet y sus datos asociados para este negocio. Escribe <b>@Model.Detail.Client.UserName</b> para confirmar.</p>
@@ -291,8 +377,4 @@
 
         return "Actualizado";
     }
-}
-
-@section Scripts {
-    <script src="~/js/business-cards.js" asp-append-version="true"></script>
 }

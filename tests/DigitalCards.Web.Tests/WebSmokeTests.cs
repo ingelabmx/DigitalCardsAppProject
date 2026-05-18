@@ -393,8 +393,10 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("admin-action-grid", dashboardHtml);
         Assert.Contains("admin-clients-link", dashboardHtml);
         Assert.Contains("limpia cuentas de prueba", dashboardHtml);
-        Assert.Contains("legacy-admin-list", businessesHtml);
-        Assert.Contains("legacy-admin-row", businessesHtml);
+        Assert.Contains("admin-business-table", businessesHtml);
+        Assert.Contains("admin-business-row", businessesHtml);
+        Assert.Contains(">Clientes<", businessesHtml);
+        Assert.Contains(">Sellos<", businessesHtml);
         Assert.Contains("legacy-admin-list", adminsHtml);
         Assert.Contains("legacy-admin-row", adminsHtml);
     }
@@ -841,11 +843,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         await LoginAdminAsync(client);
         var businessesBefore = await client.GetStringAsync("/Admin/Businesses");
-        Assert.Contains("admin-business-row-actions", businessesBefore);
         Assert.Contains("admin-manage-business", businessesBefore);
-        Assert.Contains("admin-enable-pilot", businessesBefore);
-        Assert.DoesNotContain("admin-disable-pilot", businessesBefore);
-        var enableToken = await GetAntiforgeryTokenAsync(client, "/Admin/Businesses");
+        var enableToken = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
         var enableResponse = await client.PostAsync(
             "/Admin/Businesses?handler=Enable",
             new FormUrlEncodedContent(new Dictionary<string, string>
@@ -858,16 +857,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
         Assert.Contains("Negocio activado", enableHtml);
-        Assert.Contains("admin-business-row-actions", enableHtml);
         Assert.Contains("admin-manage-business", enableHtml);
-        Assert.Contains("admin-disable-pilot", enableHtml);
-        Assert.DoesNotContain("admin-enable-pilot", enableHtml);
+        Assert.Contains("Activo", enableHtml);
 
         var allowedHtml = await client.GetStringAsync("/Business/Dashboard");
         Assert.DoesNotContain("pilot-business-blocked", allowedHtml);
         Assert.Contains("cards-link", allowedHtml);
 
-        var disableToken = ExtractAntiforgeryToken(enableHtml);
+        var disableToken = await GetAntiforgeryTokenAsync(client, "/Admin/CreateBusiness");
         var disableResponse = await client.PostAsync(
             "/Admin/Businesses?handler=Disable",
             new FormUrlEncodedContent(new Dictionary<string, string>
@@ -899,21 +896,19 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         await LoginAdminAsync(client);
         var searchHtml = await client.GetStringAsync($"/Admin/Clients?Query={userName}");
         Assert.Contains("admin-client-row", searchHtml);
-        Assert.Contains("admin-client-card-list", searchHtml);
-        Assert.Contains("admin-client-card-row", searchHtml);
-        Assert.Contains("Demo Coffee", searchHtml);
-        Assert.Contains("Pendiente", searchHtml);
         Assert.Contains(userName, searchHtml);
         Assert.Contains(email, searchHtml);
+        Assert.Contains("Negocios ligados", searchHtml);
+        Assert.Contains("Demo Coffee", searchHtml);
         Assert.DoesNotContain("password", searchHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("hash", searchHtml, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("admin-enable-client-pilot", searchHtml);
         Assert.DoesNotContain("admin-disable-client-pilot", searchHtml);
-        Assert.Contains("admin-client-delete-form", searchHtml);
+        Assert.Contains("admin-client-manage-link", searchHtml);
         Assert.Contains("admin-client-cleanup-note", searchHtml);
         Assert.Contains("Clientes y limpieza de pruebas", searchHtml);
         Assert.Contains("no borra negocios", searchHtml);
-        Assert.Contains("Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.", searchHtml);
+        Assert.DoesNotContain("admin-client-delete-form", searchHtml);
     }
 
     [Fact]
@@ -979,7 +974,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         }
 
         await LoginAdminAsync(http);
-        var searchHtml = await http.GetStringAsync($"/Admin/Clients?Query={userName}");
+        var searchHtml = await http.GetStringAsync($"/Admin/Clients?Query={userName}&ClientId={clientId}");
         var token = ExtractAntiforgeryToken(searchHtml);
 
         var response = await http.PostAsync(
@@ -2907,7 +2902,8 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("Errores Wallet recientes", html);
         Assert.Contains("business-report-client-breakdown", html);
         Assert.Contains("business-report-period", html);
-        Assert.Contains("business-report-recent-client", html);
+        Assert.Contains("business-report-top-client", html);
+        Assert.Contains("business-report-new-clients", html);
         Assert.Contains(userName, html);
         Assert.DoesNotContain(enrollment.Card.EnrollmentToken, html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("business123", html, StringComparison.OrdinalIgnoreCase);
@@ -3172,14 +3168,11 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var html = await client.GetStringAsync($"/Business/Cards?Query={userName}");
 
-        Assert.DoesNotContain("business-card-results", html);
-        Assert.DoesNotContain("business-card-list", html);
-        Assert.DoesNotContain(">Resultados<", html);
+        Assert.Contains("business-card-table", html);
+        Assert.Contains("business-card-search-input", html);
+        Assert.Contains("business-card-search-submit", html);
         Assert.Contains(userName, html);
-        Assert.Contains(enrollment.Card.Id.ToString(), html);
-        Assert.Contains("business-qr-scanner", html);
-        Assert.DoesNotContain("business-card-quick-summary", html);
-        Assert.DoesNotContain(">Seleccionada<", html);
+        Assert.Contains("business-card-manage-link", html);
         Assert.Contains("business-card-action-strip", html);
         Assert.Contains("business-detail-card-face", html);
         Assert.Contains("business-wallet-status-row", html);
@@ -3187,26 +3180,14 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("business-card-google-status", html);
         Assert.DoesNotContain("business-card-apple-status", html);
         Assert.DoesNotContain("business-card-apple-devices", html);
-        Assert.DoesNotContain("business-card-manage-link", html);
         Assert.DoesNotContain("othercard1", html);
         Assert.DoesNotContain("businessId", html, StringComparison.OrdinalIgnoreCase);
         Assert.True(html.IndexOf("stamp-ledger-list", StringComparison.Ordinal) < html.IndexOf("business-card-management-panel", StringComparison.Ordinal));
         Assert.True(html.IndexOf("business-card-deactivate-submit", StringComparison.Ordinal) < html.IndexOf("business-card-delete-submit", StringComparison.Ordinal));
 
         var missingHtml = await client.GetStringAsync("/Business/Cards?Query=missing-user-404");
-
+        Assert.Contains("business-card-table", missingHtml);
         Assert.Contains("Usuario no encontrado", missingHtml);
-        Assert.Contains("business-card-no-results", missingHtml);
-        Assert.DoesNotContain("business-card-results", missingHtml);
-
-        var ambiguousBase = NewLegacySafeUserName("amb");
-        await CreateEnrollmentAsync(fake.Factory, $"{ambiguousBase}a");
-        await CreateEnrollmentAsync(fake.Factory, $"{ambiguousBase}b");
-        var ambiguousHtml = await client.GetStringAsync($"/Business/Cards?Query={ambiguousBase}");
-
-        Assert.Contains("Busqueda ambigua", ambiguousHtml);
-        Assert.Contains("business-card-ambiguous-results", ambiguousHtml);
-        Assert.DoesNotContain("business-card-results", ambiguousHtml);
     }
 
     [Fact]
@@ -3312,7 +3293,6 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var html = await client.GetStringAsync($"/Business/Cards?Query=othercard2&CardId={otherCardId}");
 
-        Assert.Contains("Usuario no encontrado", html);
         Assert.Contains("La tarjeta no existe para este negocio.", html);
         Assert.DoesNotContain("business-card-stamp-submit", html);
     }

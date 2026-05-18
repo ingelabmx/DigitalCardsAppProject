@@ -107,6 +107,54 @@ public sealed class MySqlStampLedgerRepository : IStampLedgerRepository
         return rows.Select(row => row.ToModel()).ToArray();
     }
 
+    public async Task<IReadOnlyList<StampLedgerRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select ID,
+                   CardID,
+                   BusinessID,
+                   UserID,
+                   Source,
+                   ActorBusinessID,
+                   PreviousCheckQTY,
+                   NewCheckQTY,
+                   PreviousHistoricCheckQTY,
+                   NewHistoricCheckQTY,
+                   ObservedLastCheck,
+                   GoogleWalletAttempted,
+                   GoogleWalletSucceeded,
+                   AppleWalletAttempted,
+                   AppleWalletSucceeded,
+                   ErrorSummary,
+                   CreatedAt
+            from StampLedger
+            where BusinessID = @BusinessID
+            order by CreatedAt desc, ID desc
+            limit @Limit;
+            """;
+
+        var legacyBusinessId = LegacyIdMapper.TryGuidToInt32(businessId);
+        if (legacyBusinessId is null)
+        {
+            return [];
+        }
+
+        await using var connection = _connectionFactory.Create();
+        var rows = await connection.QueryAsync<StampLedgerRow>(new CommandDefinition(
+            sql,
+            new
+            {
+                BusinessID = legacyBusinessId.Value,
+                Limit = Math.Max(1, Math.Min(limit, 1000))
+            },
+            cancellationToken: cancellationToken));
+
+        return rows.Select(row => row.ToModel()).ToArray();
+    }
+
     private static object ToParameters(StampLedgerRecord record)
     {
         return new

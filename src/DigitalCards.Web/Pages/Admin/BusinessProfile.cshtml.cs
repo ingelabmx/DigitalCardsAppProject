@@ -392,6 +392,8 @@ public sealed class BusinessProfileModel : PageModel
                 Profile.BusinessEmail,
                 Profile.IsPilotEnabled,
                 Profile.ActivationStatus,
+                report?.ClientCount ?? 0,
+                report?.CurrentStampTotal ?? 0,
                 Notes: null,
                 UpdatedAt: Profile.PilotUpdatedAt),
             report,

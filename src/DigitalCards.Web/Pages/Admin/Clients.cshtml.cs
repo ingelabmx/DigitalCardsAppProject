@@ -22,9 +22,24 @@ public sealed class ClientsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Query { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public Guid? ClientId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int PageSize { get; set; } = 10;
+
     public IReadOnlyList<AdminClientConsoleDto> Clients { get; private set; } = [];
 
+    public IReadOnlyList<AdminClientConsoleDto> PagedClients { get; private set; } = [];
+
+    public AdminClientConsoleDto? SelectedClient { get; private set; }
+
     public string? StatusMessage { get; private set; }
+
+    public int TotalPages { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -61,6 +76,7 @@ public sealed class ClientsModel : PageModel
 
         if (!result.Succeeded)
         {
+            ClientId = clientId;
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo eliminar el cliente.");
             await LoadAsync(cancellationToken);
             return Page();
@@ -70,6 +86,7 @@ public sealed class ClientsModel : PageModel
             "Admin {AdminUserId} permanently deleted client {ClientId}.",
             AdminAuth.GetAdminUserId(User),
             clientId);
+        ClientId = null;
         StatusMessage = "Cliente eliminado permanentemente. Sus tarjetas y datos Wallet relacionados fueron removidos.";
         await LoadAsync(cancellationToken);
         return Page();
@@ -87,6 +104,27 @@ public sealed class ClientsModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Clients = await _adminApp.ListClientConsoleAsync(Query ?? string.Empty, cancellationToken);
+        Clients = (await _adminApp.ListClientConsoleAsync(Query ?? string.Empty, cancellationToken))
+            .OrderByDescending(client => client.LastActivityAt ?? DateTimeOffset.MinValue)
+            .ThenBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        PageSize = NormalizePageSize(PageSize);
+        TotalPages = Math.Max(1, (int)Math.Ceiling(Clients.Count / (double)PageSize));
+        PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
+        PagedClients = Clients
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToArray();
+
+        if (ClientId is not null)
+        {
+            SelectedClient = Clients.FirstOrDefault(client => client.ClientId == ClientId.Value);
+        }
+    }
+
+    private static int NormalizePageSize(int value)
+    {
+        return value is 20 or 50 ? value : 10;
     }
 }
