@@ -39,7 +39,7 @@ El tema legacy usa:
 - SimpleBar para scroll de sidebar;
 - Tabler Icons e Iconify para iconos;
 - logo DigitalCards o logo del negocio en sidebar;
-- footer recurrente `Propiedad de IngeLabs`.
+- footer recurrente `Propiedad de Ingelab`.
 
 ## Layout Legacy
 

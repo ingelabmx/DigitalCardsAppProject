@@ -6,7 +6,7 @@ namespace DigitalCards.Infrastructure.Email;
 
 public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
 {
-    private const string DefaultBrandName = "DigitalCards";
+    private const string DefaultBrandName = "Puntelio";
     private const string DefaultPrimaryColor = "#111827";
 
     public RenderedEmailTemplate RenderWalletEnrollment(WalletEnrollmentEmail email)
@@ -25,7 +25,7 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             Abre este link para elegir Apple Wallet o Google Wallet:
             {email.EnrollmentUrl}
 
-            Gracias por usar DigitalCards.
+            Gracias por usar Puntelio.
             """;
         var bodyHtml = $"""
             <h1>Tu tarjeta digital esta lista</h1>
@@ -134,6 +134,48 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             subject,
             textBody,
             Layout("Alerta interna", bodyHtml, brand));
+    }
+
+    public RenderedEmailTemplate RenderLandingContact(LandingContactEmail email)
+    {
+        var brand = new EmailBranding(DefaultBrandName, PrimaryColor: DefaultPrimaryColor);
+        var subject = "Nueva solicitud de videollamada - Puntelio";
+        var textBody = $"""
+            Nueva solicitud de videollamada
+
+            Nombre:
+            {email.Name}
+
+            Nombre del negocio:
+            {email.BusinessName}
+
+            Correo:
+            {email.Email}
+
+            Telefono:
+            {email.Phone}
+
+            Tipo de solicitud:
+            {email.RequestType}
+
+            El usuario solicita agendar una videollamada por Google Meet.
+            """;
+        var bodyHtml = $"""
+            <h1>Nueva solicitud de videollamada</h1>
+            <p><strong>Nombre:</strong> {Html(email.Name)}</p>
+            <p><strong>Nombre del negocio:</strong> {Html(email.BusinessName)}</p>
+            <p><strong>Correo:</strong> {Html(email.Email)}</p>
+            <p><strong>Telefono:</strong> {Html(email.Phone)}</p>
+            <p><strong>Tipo de solicitud:</strong> {Html(email.RequestType)}</p>
+            <p>El usuario solicita agendar una videollamada por Google Meet.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.LandingContact,
+            email.To,
+            subject,
+            textBody,
+            Layout("Nueva solicitud de videollamada", bodyHtml, brand));
     }
 
     private static string Layout(string title, string bodyHtml, EmailBranding branding)

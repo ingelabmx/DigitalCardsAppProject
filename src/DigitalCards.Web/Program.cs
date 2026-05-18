@@ -3,6 +3,7 @@ using DigitalCards.Infrastructure;
 using DigitalCards.Infrastructure.Branding;
 using DigitalCards.Web;
 using DigitalCards.Web.Branding;
+using DigitalCards.Web.Landing;
 using DigitalCards.Web.Operations;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
@@ -36,6 +37,7 @@ builder.Configuration
     .AddCommandLine(args);
 
 builder.Services.Configure<PilotOptions>(builder.Configuration.GetSection(PilotOptions.SectionName));
+builder.Services.Configure<LandingOptions>(builder.Configuration.GetSection(LandingOptions.SectionName));
 builder.Services.AddScoped<PilotAccessService>();
 builder.Services.AddScoped<BusinessLogoUploadService>();
 builder.Services.AddDigitalCardsOperations(builder.Configuration);
@@ -114,6 +116,19 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseDigitalCardsSecurityHeaders();
+app.Use(async (context, next) =>
+{
+    var landing = context.RequestServices.GetRequiredService<IOptions<LandingOptions>>().Value;
+    if (LandingHost.ShouldRedirectToApp(context, landing))
+    {
+        var appUrl = landing.AppUrl.TrimEnd('/');
+        var destination = $"{appUrl}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+        context.Response.Redirect(destination, permanent: false);
+        return;
+    }
+
+    await next();
+});
 app.UseStaticFiles();
 
 var logoUploadOptions = app.Services.GetRequiredService<IOptions<BusinessLogoUploadOptions>>().Value;

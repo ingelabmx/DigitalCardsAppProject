@@ -11,4 +11,6 @@ public interface IEmailTemplateRenderer
     RenderedEmailTemplate RenderPasswordReset(PasswordResetEmail email);
 
     RenderedEmailTemplate RenderInternalAlert(InternalAlertEmail email);
+
+    RenderedEmailTemplate RenderLandingContact(LandingContactEmail email);
 }

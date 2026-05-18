@@ -1,0 +1,69 @@
+@using DigitalCards.Web.Landing
+@inject Microsoft.Extensions.Options.IOptions<LandingOptions> LandingOptionsAccessor
+@{
+    var landing = LandingOptionsAccessor.Value;
+    var title = ViewData["Title"]?.ToString() == "Puntelio" ? "Puntelio" : "Puntelio";
+    var description = ViewData["Description"]?.ToString()
+        ?? "Digitaliza tus tarjetas de sellos, premia a tus clientes y administra recompensas con QR desde una plataforma simple para negocios.";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title</title>
+    <meta name="description" content="@description" />
+    <meta property="og:title" content="Puntelio" />
+    <meta property="og:description" content="@description" />
+    <meta property="og:url" content="@landing.SiteUrl" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="@($"{landing.SiteUrl.TrimEnd('/')}/img/puntelio-branding.svg")" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Puntelio" />
+    <meta name="twitter:description" content="@description" />
+    <link rel="icon" type="image/svg+xml" href="~/img/puntelio-logo.svg" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="landing-shell">
+    <header class="landing-header">
+        <a class="landing-brand" asp-page="/Index" aria-label="Puntelio">
+            <img src="~/img/puntelio-branding.svg" asp-append-version="true" alt="Puntelio" />
+        </a>
+        <nav aria-label="Navegacion principal">
+            <a class="btn btn-primary" href="@landing.AppUrl">Entrar</a>
+        </nav>
+    </header>
+
+    <main class="landing-main">
+        @RenderBody()
+    </main>
+
+    <footer class="landing-footer">
+        <div>
+            <img src="~/img/puntelio-branding.svg" asp-append-version="true" alt="Puntelio" />
+            <p>Sistema de fidelizacion para negocios locales mediante tarjetas digitales de sellos.</p>
+        </div>
+        <div>
+            <h2>Contacto</h2>
+            <p><a href="mailto:@landing.ContactEmail">@landing.ContactEmail</a></p>
+            <p>@landing.PhoneDisplay</p>
+            <p>Tijuana, BC</p>
+        </div>
+        <div>
+            <h2>Redes</h2>
+            <p><a href="@landing.InstagramUrl">Instagram @@puntelio</a></p>
+            <p><a href="@landing.TikTokUrl">TikTok @@puntelio</a></p>
+        </div>
+        <div>
+            <h2>Legal</h2>
+            <p><a asp-page="/Terminos">Terminos y condiciones</a></p>
+            <p><a asp-page="/Privacidad">Politica de privacidad</a></p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

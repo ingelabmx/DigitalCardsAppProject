@@ -76,17 +76,19 @@ Para pruebas automatizadas con fakes, se puede ignorar esta configuracion real:
 $env:DigitalCards__SkipUserLocalConfiguration='true'
 ```
 
-## Cloudflare con `app.puntelio.com`
+## Cloudflare con `puntelio.com` y `app.puntelio.com`
 
-`app.puntelio.com` es la URL canonica para correos, Google Wallet y Apple
-Wallet. Apple Wallet guarda esta URL dentro del `.pkpass`, asi que no debe
-cambiarse despues de instalar tarjetas.
+`puntelio.com` sirve la landing publica. `app.puntelio.com` es la URL canonica
+para app, correos, Google Wallet y Apple Wallet. Apple Wallet guarda esta URL
+dentro del `.pkpass`, asi que no debe cambiarse despues de instalar tarjetas.
 
 Crear tunnel nombrado:
 
 ```powershell
 cloudflared tunnel login
 cloudflared tunnel create puntelio-app
+cloudflared tunnel route dns puntelio-app puntelio.com
+cloudflared tunnel route dns puntelio-app www.puntelio.com
 cloudflared tunnel route dns puntelio-app app.puntelio.com
 ```
 
@@ -97,6 +99,10 @@ tunnel: puntelio-app
 credentials-file: C:\Users\eguillen\.cloudflared\<TUNNEL_ID>.json
 
 ingress:
+  - hostname: puntelio.com
+    service: http://localhost:5031
+  - hostname: www.puntelio.com
+    service: http://localhost:5031
   - hostname: app.puntelio.com
     service: http://localhost:5031
   - service: http_status:404
@@ -114,6 +120,7 @@ Validar:
 ```powershell
 Invoke-WebRequest https://app.puntelio.com/health -UseBasicParsing
 Invoke-WebRequest https://app.puntelio.com/health/ready -UseBasicParsing
+Invoke-WebRequest https://puntelio.com -UseBasicParsing
 ```
 
 En `appsettings.Local.json`, usar:
@@ -990,7 +997,7 @@ rollback por negocio y criterios para marcar `LegacyRetired`.
 
 Las paginas autenticadas de admin, negocio y cliente usan un shell inspirado en
 Web Forms: sidebar izquierdo, header superior, cards, metricas y footer
-`Propiedad de IngeLabs`. En mobile, el sidebar se abre con el boton del header y
+`Propiedad de Ingelab`. En mobile, el sidebar se abre con el boton del header y
 se cierra con overlay o tecla `Escape`.
 
 Guia de esta capa visual:

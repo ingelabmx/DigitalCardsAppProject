@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /Admin
+Disallow: /Business
+Disallow: /Client
+
+Sitemap: https://puntelio.com/sitemap.xml

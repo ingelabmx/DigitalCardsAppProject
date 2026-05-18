@@ -133,7 +133,7 @@
                     <table width="100%">
                         <tr>
                             <td align="center">
-                                <p class="mb-0 fs-4">Propiedad de IngeLabs®</p>
+                                <p class="mb-0 fs-4">Propiedad de Ingelab®</p>
                             </td>
                         </tr>
                     </table>

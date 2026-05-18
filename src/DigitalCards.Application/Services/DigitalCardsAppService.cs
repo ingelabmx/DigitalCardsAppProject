@@ -937,10 +937,11 @@ public sealed class DigitalCardsAppService
         var recentPeriods = Enumerable.Range(0, 6)
             .Select(index => now.AddMonths(-(5 - index)).ToLocalTime())
             .ToArray();
+        var includeReportYear = recentPeriods.Select(period => period.Year).Distinct().Count() > 1;
         var periods = recentPeriods
             .Select(period =>
             {
-                var label = reportCulture.TextInfo.ToTitleCase(period.ToString("MMMM", reportCulture));
+                var label = FormatReportPeriod(period, includeReportYear, reportCulture);
                 var stampCount = ledgerRecords.Count(record =>
                     record.CreatedAt >= now.AddMonths(-6) &&
                     record.CreatedAt.ToLocalTime().Year == period.Year &&
@@ -956,7 +957,7 @@ public sealed class DigitalCardsAppService
         var newClientPeriods = recentPeriods
             .Select(period =>
             {
-                var label = reportCulture.TextInfo.ToTitleCase(period.ToString("MMMM", reportCulture));
+                var label = FormatReportPeriod(period, includeReportYear, reportCulture);
                 var newClientCount = reportCards
                     .GroupBy(card => card.Client.Id)
                     .Select(group => group.Min(card => card.CreatedAt))
@@ -2080,6 +2081,12 @@ public sealed class DigitalCardsAppService
     private static int NormalizeStampGoal(int stampGoal)
     {
         return stampGoal <= 0 ? Business.DefaultStampGoal : stampGoal;
+    }
+
+    private static string FormatReportPeriod(DateTimeOffset period, bool includeYear, CultureInfo culture)
+    {
+        var format = includeYear ? "MMM yyyy" : "MMMM";
+        return culture.TextInfo.ToTitleCase(period.ToString(format, culture));
     }
 
     private static string NormalizeConsentValue(string value, string fallback)

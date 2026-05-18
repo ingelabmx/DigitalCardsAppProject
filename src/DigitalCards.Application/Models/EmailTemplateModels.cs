@@ -5,7 +5,8 @@ public enum EmailTemplateKind
     WalletEnrollment,
     Welcome,
     PasswordReset,
-    InternalAlert
+    InternalAlert,
+    LandingContact
 }
 
 public sealed record RenderedEmailTemplate(
@@ -43,4 +44,13 @@ public sealed record InternalAlertEmail(
     string AlertSummary,
     string Severity,
     string? ActionUrl,
+    DateTimeOffset CreatedAt);
+
+public sealed record LandingContactEmail(
+    string To,
+    string Name,
+    string BusinessName,
+    string Email,
+    string Phone,
+    string RequestType,
     DateTimeOffset CreatedAt);

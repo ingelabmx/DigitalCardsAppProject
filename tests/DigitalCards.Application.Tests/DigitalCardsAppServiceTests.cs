@@ -2560,7 +2560,9 @@ public sealed class DigitalCardsAppServiceTests
         Assert.Equal(1, reports.StampsLast30Days);
         Assert.Equal(1, reports.GoogleIssuedCount);
         Assert.Equal(0, reports.GooglePendingCount);
-        Assert.True(reports.StampPeriods.Count >= 1);
+        Assert.Equal(6, reports.StampPeriods.Count);
+        Assert.All(reports.StampPeriods, period => Assert.DoesNotContain("-", period.Period, StringComparison.Ordinal));
+        Assert.Equal(6, reports.NewClientPeriods.Count);
         var client = Assert.Single(reports.RecentClients);
         Assert.Equal("bizreport1", client.UserName);
         Assert.Equal("Token User", client.ClientName);

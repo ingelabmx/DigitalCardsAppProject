@@ -29,6 +29,11 @@ public sealed class FakeWalletEmailOutbox : IEmailSender, IWalletEmailOutbox, IP
         return Task.CompletedTask;
     }
 
+    public Task SendLandingContactAsync(LandingContactEmail email, CancellationToken cancellationToken = default)
+    {
+        throw new InvalidOperationException("SMTP email is required for public landing contact forms.");
+    }
+
     public Task<IReadOnlyList<WalletEnrollmentEmail>> ListAsync(CancellationToken cancellationToken = default)
     {
         lock (_sync)

@@ -4,7 +4,7 @@
 
 Agregar un shell autenticado en ASP.NET Core que se parezca al layout Web Forms:
 sidebar izquierdo, header superior, cards sobre fondo claro y footer
-`Propiedad de IngeLabs`.
+`Propiedad de Ingelab`.
 
 ## Comportamiento
 

@@ -1,9 +1,10 @@
 @page
+@using System.Globalization
 @model DigitalCards.Web.Pages.Business.ReportsModel
 @{
     ViewData["Title"] = "Reportes negocio";
     var maxStampPeriod = Model.Reports is { StampPeriods.Count: > 0 }
-        ? Math.Max(1, Model.Reports.StampPeriods.Max(period => period.StampCount))
+        ? Math.Max(1, Model.Reports.StampPeriods.Max(period => Math.Max(period.StampCount, period.RedemptionCount)))
         : 1;
     var maxClientPeriod = Model.Reports is { NewClientPeriods.Count: > 0 }
         ? Math.Max(1, Model.Reports.NewClientPeriods.Max(period => period.NewClientCount))
@@ -62,20 +63,34 @@
                 }
                 else
                 {
-                    <div class="report-bar-chart" data-testid="business-report-periods">
+                    <div class="report-line-chart" data-testid="business-report-periods">
+                        <svg viewBox="0 0 100 60" preserveAspectRatio="none" role="img" aria-label="Sellos y canjes por mes">
+                            <polyline class="report-line report-line-primary"
+                                      points="@LinePoints(Model.Reports.StampPeriods.Select(period => period.StampCount), maxStampPeriod)" />
+                            <polyline class="report-line report-line-accent"
+                                      points="@LinePoints(Model.Reports.StampPeriods.Select(period => period.RedemptionCount), maxStampPeriod)" />
+                            @foreach (var point in ChartPoints(Model.Reports.StampPeriods.Select(period => period.StampCount), maxStampPeriod))
+                            {
+                                <circle class="report-point report-point-primary" cx="@point.X" cy="@point.Y" r="1.8" />
+                            }
+                            @foreach (var point in ChartPoints(Model.Reports.StampPeriods.Select(period => period.RedemptionCount), maxStampPeriod))
+                            {
+                                <circle class="report-point report-point-accent" cx="@point.X" cy="@point.Y" r="1.8" />
+                            }
+                        </svg>
+                        <div class="report-line-labels">
                         @foreach (var period in Model.Reports.StampPeriods)
                         {
-                            var stampHeight = Math.Max(10, (int)Math.Round(period.StampCount * 100d / maxStampPeriod));
-                            var redemptionHeight = period.RedemptionCount == 0 ? 0 : Math.Max(10, (int)Math.Round(period.RedemptionCount * 100d / maxStampPeriod));
-                            <div class="report-bar-group" data-testid="business-report-period">
-                                <div class="report-bar-values">
-                                    <span class="report-bar report-bar-primary" style="height:@stampHeight%" title="@period.StampCount sellos"></span>
-                                    <span class="report-bar report-bar-accent" style="height:@redemptionHeight%" title="@period.RedemptionCount canjes"></span>
-                                </div>
+                            <div data-testid="business-report-period">
                                 <strong>@period.Period</strong>
                                 <small>@period.StampCount sellos · @period.RedemptionCount canjes</small>
                             </div>
                         }
+                        </div>
+                        <div class="report-chart-legend">
+                            <span><i class="report-legend-primary"></i>Sellos</span>
+                            <span><i class="report-legend-accent"></i>Canjes</span>
+                        </div>
                     </div>
                 }
             </section>
@@ -88,18 +103,24 @@
                 }
                 else
                 {
-                    <div class="report-bar-chart report-bar-chart-compact" data-testid="business-report-new-clients">
+                    <div class="report-line-chart report-line-chart-compact" data-testid="business-report-new-clients">
+                        <svg viewBox="0 0 100 60" preserveAspectRatio="none" role="img" aria-label="Nuevos clientes por mes">
+                            <polyline class="report-line report-line-secondary"
+                                      points="@LinePoints(Model.Reports.NewClientPeriods.Select(period => period.NewClientCount), maxClientPeriod)" />
+                            @foreach (var point in ChartPoints(Model.Reports.NewClientPeriods.Select(period => period.NewClientCount), maxClientPeriod))
+                            {
+                                <circle class="report-point report-point-secondary" cx="@point.X" cy="@point.Y" r="1.8" />
+                            }
+                        </svg>
+                        <div class="report-line-labels">
                         @foreach (var period in Model.Reports.NewClientPeriods)
                         {
-                            var newClientHeight = period.NewClientCount == 0 ? 0 : Math.Max(10, (int)Math.Round(period.NewClientCount * 100d / maxClientPeriod));
-                            <div class="report-bar-group" data-testid="business-report-new-client-period">
-                                <div class="report-bar-values single">
-                                    <span class="report-bar report-bar-secondary" style="height:@newClientHeight%" title="@period.NewClientCount nuevos clientes"></span>
-                                </div>
+                            <div data-testid="business-report-new-client-period">
                                 <strong>@period.Period</strong>
                                 <small>@period.NewClientCount cliente(s)</small>
                             </div>
                         }
+                        </div>
                     </div>
                 }
             </section>
@@ -209,3 +230,30 @@
         </section>
     }
 </section>
+
+@functions {
+    private static string LinePoints(IEnumerable<int> values, int maxValue)
+    {
+        return string.Join(" ", ChartPoints(values, maxValue).Select(point =>
+            $"{point.X},{point.Y}"));
+    }
+
+    private static IReadOnlyList<ChartPoint> ChartPoints(IEnumerable<int> values, int maxValue)
+    {
+        var items = values.ToArray();
+        if (items.Length == 0)
+        {
+            return [];
+        }
+
+        var divisor = Math.Max(1, items.Length - 1);
+        var safeMax = Math.Max(1, maxValue);
+        return items
+            .Select((value, index) => new ChartPoint(
+                X: (index * 100d / divisor).ToString("0.##", CultureInfo.InvariantCulture),
+                Y: (56d - (Math.Max(0, value) * 50d / safeMax)).ToString("0.##", CultureInfo.InvariantCulture)))
+            .ToArray();
+    }
+
+    private sealed record ChartPoint(string X, string Y);
+}

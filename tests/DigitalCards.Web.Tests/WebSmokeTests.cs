@@ -65,7 +65,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("rel=\"icon\"", homeHtml);
         Assert.Contains("/img/puntelio-logo.svg", homeHtml);
         Assert.DoesNotContain("brand-lockup-text\">Puntelio", homeHtml);
-        Assert.Contains("Propiedad de IngeLabs", homeHtml);
+        Assert.Contains("Propiedad de Ingelab", homeHtml);
         Assert.Contains("--dc-primary", css);
         Assert.Contains("--dc-radius", css);
         Assert.Contains("height: clamp(52px, 7vw, 64px);", css);
@@ -74,7 +74,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("puntelio-brand-mark", adminHtml);
         Assert.Contains("/img/puntelio-branding.svg", adminHtml);
         Assert.DoesNotContain("brand-logo-letter", adminHtml);
-        Assert.Contains("Propiedad de IngeLabs", adminHtml);
+        Assert.Contains("Propiedad de Ingelab", adminHtml);
     }
 
     [Fact]
@@ -310,6 +310,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal("DENY", home.Headers.GetValues("X-Frame-Options").Single());
         Assert.Equal("nosniff", home.Headers.GetValues("X-Content-Type-Options").Single());
         Assert.Equal("strict-origin-when-cross-origin", home.Headers.GetValues("Referrer-Policy").Single());
+        Assert.Equal("camera=(self)", home.Headers.GetValues("Permissions-Policy").Single());
         Assert.Contains("no-store", login.Headers.CacheControl?.ToString());
         Assert.Contains(login.Headers.Pragma, value => value.Name == "no-cache");
     }
@@ -354,7 +355,7 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("data-testid=\"legacy-shell\"", adminHtml);
         Assert.Contains("Administradores", adminHtml);
         Assert.Contains("/Admin/Clients", adminHtml);
-        Assert.Contains("Propiedad de IngeLabs", adminHtml);
+        Assert.Contains("Propiedad de Ingelab", adminHtml);
         Assert.Contains("data-legacy-menu-button", adminHtml);
         Assert.Contains("data-legacy-sidebar-backdrop", adminHtml);
         Assert.Contains("legacy-sidebar-icon", adminHtml);
@@ -2253,11 +2254,24 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
 
         var enrollHtml = await client.GetStringAsync("/Business/Enroll");
         var stampHtml = await client.GetStringAsync("/Business/Stamp");
+        var stampJs = await client.GetStringAsync("/js/business-stamp.js");
+        var qrJs = await client.GetStringAsync("/js/jsQR.js");
 
         Assert.Contains("business-enroll-panel", enrollHtml);
         Assert.Contains("business-form-card", enrollHtml);
         Assert.Contains("business-stamp-panel", stampHtml);
         Assert.Contains("business-form-card", stampHtml);
+        Assert.Contains("stamp-scan-submit", stampHtml);
+        Assert.Contains("stamp-scanned-code", stampHtml);
+        Assert.Contains("stamp-scan-preview", stampHtml);
+        Assert.DoesNotContain("business-stamp-scanner", stampHtml);
+        Assert.DoesNotContain(">Detener<", stampHtml);
+        Assert.Contains("BarcodeDetector", stampJs);
+        Assert.Contains("window.jsQR", stampJs);
+        Assert.Contains("scanTimeoutMs = 10000", stampJs);
+        Assert.Contains("Camara no disponible. Captura el usuario manualmente.", stampJs);
+        Assert.Contains("No se pudo leer el QR. Intenta de nuevo.", stampJs);
+        Assert.Contains("function webpackUniversalModuleDefinition", qrJs);
     }
 
     [Fact]
@@ -2902,6 +2916,9 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         Assert.DoesNotContain("Errores Wallet recientes", html);
         Assert.Contains("business-report-client-breakdown", html);
         Assert.Contains("business-report-period", html);
+        Assert.Contains("report-line-chart", html);
+        Assert.DoesNotContain("report-bar-chart", html);
+        Assert.Equal(6, CountOccurrences(html, "data-testid=\"business-report-period\""));
         Assert.Contains("business-report-top-client", html);
         Assert.Contains("business-report-new-clients", html);
         Assert.Contains(userName, html);
@@ -4144,6 +4161,19 @@ public sealed class WebSmokeTests : IClassFixture<WebApplicationFactory<Program>
         return match.Success
             ? WebUtility.HtmlDecode(match.Groups["token"].Value)
             : throw new InvalidOperationException("Business enrollment link was not found.");
+    }
+
+    private static int CountOccurrences(string value, string token)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = value.IndexOf(token, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += token.Length;
+        }
+
+        return count;
     }
 
     private static bool HasBusinessCookie(HttpResponseMessage response)

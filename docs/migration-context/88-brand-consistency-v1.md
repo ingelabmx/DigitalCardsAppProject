@@ -20,7 +20,7 @@ La hoja `wwwroot/css/site.css` define tokens CSS base:
 ## Cambios
 
 - El nav publico usa un lockup visual de Puntelio con marca compacta.
-- El shell autenticado conserva la marca DigitalCards y footer `Propiedad de IngeLabs`.
+- El shell autenticado conserva la marca DigitalCards y footer `Propiedad de Ingelab`.
 - Botones primarios y outline usan los mismos tokens que el sidebar y cards.
 - Cards, metricas, sidebar y header empiezan a consumir tokens comunes.
 - Se agrega smoke test para asegurar presencia de marca, footer y tokens CSS.

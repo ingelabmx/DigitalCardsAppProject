@@ -82,6 +82,7 @@ public static class DigitalCardsSecurityExtensions
                 headers.TryAdd("X-Content-Type-Options", "nosniff");
                 headers.TryAdd("X-Frame-Options", "DENY");
                 headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+                headers.TryAdd("Permissions-Policy", "camera=(self)");
 
                 if (ShouldDisableCache(context.Request.Path))
                 {

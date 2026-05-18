@@ -1,48 +1,288 @@
 @page
 @model IndexModel
 @{
+    Layout = Model.IsLanding ? "_LandingLayout" : "_Layout";
     ViewData["Title"] = "Inicio";
+    ViewData["Description"] = "Digitaliza tus tarjetas de sellos, premia a tus clientes y administra recompensas con QR desde una plataforma simple para negocios.";
 }
 
-<section class="home-gateway" data-testid="home-login-gateway">
-    <div class="home-hero-copy">
-        <p class="eyebrow">Puntelio</p>
-        <h1>Tarjetas de lealtad digitales para clientes y negocios.</h1>
-        <p class="lead">
-            Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital desde un solo lugar.
-        </p>
-        <div class="home-hero-actions">
-            <a class="btn btn-primary btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
-            <a class="btn btn-outline-primary btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
-        </div>
-    </div>
+@if (Model.IsLanding)
+{
+    var infoWhatsApp = Model.WhatsAppLink(Model.Landing.WhatsAppInfoMessage);
+    var hireWhatsApp = Model.WhatsAppLink(Model.Landing.WhatsAppHireMessage);
+    var customWhatsApp = Model.WhatsAppLink(Model.Landing.WhatsAppCustomPlanMessage);
 
-    <div class="home-wallet-preview" aria-label="Vista previa de tarjeta digital">
-        <div class="home-wallet-card">
-            <span>Puntelio</span>
-            <strong>Tarjeta digital</strong>
-            <p>Sellos, recompensas y Wallet en un solo lugar.</p>
-            <div class="home-stamp-row" aria-hidden="true">
-                <span class="filled"></span>
-                <span class="filled"></span>
-                <span class="filled"></span>
-                <span></span>
-                <span></span>
+    <section class="landing-hero" id="inicio" data-landing-reveal>
+        <div class="landing-hero-copy">
+            <p class="landing-kicker">Sistema de fidelizacion para negocios</p>
+            <h1>Premia la lealtad de tus clientes de forma simple y moderna con tarjetas digitales</h1>
+            <p>Puntelio ayuda a negocios locales a reemplazar las tarjetas fisicas por tarjetas digitales con sellos, QR, recompensas y estadisticas.</p>
+            <div class="landing-actions">
+                <a class="btn btn-primary btn-lg" href="#informacion">Solicitar informacion</a>
+                <a class="btn btn-outline-primary btn-lg" href="@Model.Landing.AppUrl">Entrar</a>
+                <a class="landing-link" href="#videollamada">Agendar videollamada</a>
             </div>
         </div>
-        <div class="home-wallet-status">
-            <span>Tarjeta lista</span>
-            <span>Sellos actualizados</span>
+        <div class="landing-pass-preview" aria-label="Vista previa de tarjeta Puntelio">
+            <div class="landing-pass-card">
+                <div>
+                    <span>Puntelio</span>
+                    <strong>Runni Cafe</strong>
+                    <small>Programa de lealtad</small>
+                </div>
+                <div class="landing-pass-grid">
+                    <span>CLIENTE<br><strong>Ana Lopez</strong></span>
+                    <span>SELLOS<br><strong>5 de 10</strong></span>
+                    <span>RECOMPENSA<br><strong>Cafe gratis</strong></span>
+                </div>
+                <div class="landing-qr-placeholder">QR</div>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="home-info-band">
-    <div>
-        <p class="eyebrow">Operacion real</p>
-        <h2>Un flujo para el mostrador y otro para el cliente.</h2>
-    </div>
-    <p>
-        El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.
-    </p>
-</section>
+    <section class="landing-section" id="beneficios-negocio" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Para negocios</p>
+            <h2>Mas rentable, medible y flexible que una tarjeta fisica.</h2>
+        </div>
+        <div class="landing-card-grid five">
+            <article><h3>Mejora la retencion de clientes</h3><p>Motiva a tus clientes a regresar con recompensas claras y faciles de entender.</p></article>
+            <article><h3>Menor costo operativo</h3><p>Reduce la impresion de tarjetas fisicas y administra tu programa desde una plataforma digital.</p></article>
+            <article><h3>Menos tarjetas perdidas u olvidadas</h3><p>Tus clientes acceden a sus tarjetas en linea, sin depender de una tarjeta fisica.</p></article>
+            <article><h3>Reduce fraudes</h3><p>Controla sellos y canjes desde el sistema para evitar duplicados, errores o recompensas indebidas.</p></article>
+            <article><h3>Promociones mas inteligentes</h3><p>Consulta estadisticas y comportamiento para tomar mejores decisiones comerciales.</p></article>
+        </div>
+    </section>
+
+    <section class="landing-section landing-split" id="beneficios-clientes" data-landing-reveal>
+        <div>
+            <p class="landing-kicker">Para clientes</p>
+            <h2>Una experiencia simple y moderna.</h2>
+            <p>Tus clientes pueden consultar sus tarjetas digitales, mostrar su QR y saber cuantos sellos les faltan para obtener su recompensa.</p>
+        </div>
+        <ul class="landing-check-list">
+            <li>No necesitan cargar tarjetas fisicas.</li>
+            <li>Pueden consultar sus sellos en linea.</li>
+            <li>Usan su QR para acumular sellos.</li>
+            <li>Ven cuando tienen recompensa disponible.</li>
+        </ul>
+    </section>
+
+    <section class="landing-section" id="funciones" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Funciones principales</p>
+            <h2>Todo lo necesario para operar lealtad digital.</h2>
+        </div>
+        <div class="landing-feature-grid">
+            <article><h3>Tarjetas digitales</h3><p>Reemplaza tarjetas fisicas por tarjetas digitales accesibles en linea.</p></article>
+            <article><h3>QR por cliente</h3><p>Cada cliente puede mostrar su QR para recibir sellos de forma rapida.</p></article>
+            <article><h3>Sellos desde celular o PC</h3><p>Agrega sellos escaneando el QR o de forma manual.</p></article>
+            <article><h3>Logo personalizado</h3><p>Las tarjetas muestran la identidad visual del negocio.</p></article>
+            <article><h3>Estadisticas</h3><p>Consulta informacion util sobre clientes, tarjetas y actividad.</p></article>
+            <article><h3>Recompensas controladas</h3><p>Cuando una tarjeta se completa, se genera una alerta de canje.</p></article>
+        </div>
+        <div class="landing-steps" aria-label="Como funciona">
+            <h3>Como funciona</h3>
+            <p>En tres pasos, tu negocio puede operar un programa de lealtad digital sin tarjetas fisicas y sin procesos complicados.</p>
+            <ol>
+                <li>El negocio registra a sus clientes.</li>
+                <li>El cliente muestra su QR en cada compra.</li>
+                <li>El negocio agrega sellos y canjea recompensas.</li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="landing-section" id="ideal-para" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Ideal para</p>
+            <h2>Negocios locales que quieren que sus clientes regresen.</h2>
+        </div>
+        <div class="landing-badge-grid">
+            <span>Cafeterias</span><span>Food trucks</span><span>Barberias</span><span>Lavanderias</span><span>Purificadoras de agua</span><span>Negocios locales</span>
+        </div>
+    </section>
+
+    <section class="landing-section" id="screenshots" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Vista del producto</p>
+            <h2>Preparado para capturas reales.</h2>
+        </div>
+        <div class="landing-carousel" data-landing-carousel>
+            <button type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
+            <div class="landing-carousel-track">
+                @for (var index = 1; index <= 5; index++)
+                {
+                    <figure class="landing-screenshot-card" data-carousel-slide>
+                        <img src="/landing/screenshots/screenshot-@(index).png" alt="Captura de Puntelio @index" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false;" />
+                        <figcaption hidden>Captura de ejemplo @index</figcaption>
+                    </figure>
+                }
+            </div>
+            <button type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
+        </div>
+    </section>
+
+    <section class="landing-section landing-pricing" id="precios" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Planes y precios</p>
+            <h2>Empieza con un plan simple.</h2>
+        </div>
+        <div class="landing-pricing-grid">
+            <article class="landing-price-card featured">
+                <h3>Plan Basico</h3>
+                <p>Para negocios que quieren iniciar con un programa de lealtad digital simple y profesional.</p>
+                <strong>$399 MXN <span>/ mes</span></strong>
+                <ul>
+                    <li>1 negocio</li>
+                    <li>Hasta 100 clientes</li>
+                    <li>Personalizacion de logo</li>
+                    <li>Estadisticas</li>
+                    <li>Soporte</li>
+                    <li>Invitaciones por correo</li>
+                </ul>
+                <div class="landing-actions">
+                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio")">Contratar por correo</a>
+                    <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
+                </div>
+            </article>
+            <article class="landing-price-card">
+                <h3>Plan Personalizado</h3>
+                <p>Necesitas mas clientes, varios negocios o funciones adicionales? Podemos preparar una propuesta personalizada.</p>
+                <div class="landing-actions">
+                    <a class="btn btn-primary" href="@Model.MailTo("Propuesta personalizada Puntelio")">Solicitar por correo</a>
+                    <a class="btn btn-outline-primary" href="@customWhatsApp">Contactar por WhatsApp</a>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="landing-section landing-split" id="contratar" data-landing-reveal>
+        <div>
+            <p class="landing-kicker">Contratar servicio</p>
+            <h2>La contratacion es manual por ahora.</h2>
+            <p>No se crea negocio ni cuenta automaticamente desde la landing.</p>
+        </div>
+        <div class="landing-actions">
+            <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio")">Contratar por correo</a>
+            <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
+        </div>
+    </section>
+
+    <section class="landing-section landing-form-section" id="videollamada" data-landing-reveal>
+        <div>
+            <p class="landing-kicker">Google Meet</p>
+            <h2>Agendar videollamada</h2>
+            <p>Dejanos tus datos y te contactaremos para coordinar la videollamada.</p>
+        </div>
+        <form method="post" asp-page-handler="ScheduleCall" class="landing-form" data-landing-form>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @if (!string.IsNullOrWhiteSpace(Model.LandingSuccessMessage))
+            {
+                <div class="alert alert-success">@Model.LandingSuccessMessage</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.LandingErrorMessage))
+            {
+                <div class="alert alert-danger">@Model.LandingErrorMessage</div>
+            }
+            <label asp-for="ScheduleCall.Name"></label>
+            <input asp-for="ScheduleCall.Name" autocomplete="name" />
+            <span asp-validation-for="ScheduleCall.Name" class="text-danger"></span>
+
+            <label asp-for="ScheduleCall.BusinessName"></label>
+            <input asp-for="ScheduleCall.BusinessName" autocomplete="organization" />
+            <span asp-validation-for="ScheduleCall.BusinessName" class="text-danger"></span>
+
+            <label asp-for="ScheduleCall.Email"></label>
+            <input asp-for="ScheduleCall.Email" autocomplete="email" />
+            <span asp-validation-for="ScheduleCall.Email" class="text-danger"></span>
+
+            <label asp-for="ScheduleCall.Phone"></label>
+            <input asp-for="ScheduleCall.Phone" autocomplete="tel" />
+            <span asp-validation-for="ScheduleCall.Phone" class="text-danger"></span>
+
+            <p class="landing-form-note">Al enviar este formulario aceptas que usemos tus datos para contactarte sobre Puntelio. No compartimos tu informacion con terceros para fines comerciales.</p>
+            <button class="btn btn-primary btn-lg" type="submit" data-loading-text="Enviando...">Enviar solicitud</button>
+        </form>
+    </section>
+
+    <section class="landing-section landing-split" id="informacion" data-landing-reveal>
+        <div>
+            <p class="landing-kicker">Solicitar mas informacion</p>
+            <h2>Hablemos de tu negocio.</h2>
+            <p>Te explicamos como Puntelio puede funcionar para tu flujo de clientes y recompensas.</p>
+        </div>
+        <div class="landing-actions">
+            <a class="btn btn-primary" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
+            <a class="btn btn-outline-primary" href="@infoWhatsApp">Enviar WhatsApp</a>
+        </div>
+    </section>
+
+    <section class="landing-section" id="faq" data-landing-reveal>
+        <div class="landing-section-heading">
+            <p class="landing-kicker">Preguntas frecuentes</p>
+            <h2>Lo basico antes de empezar.</h2>
+        </div>
+        <div class="landing-faq">
+            <details><summary>Necesito instalar una app?</summary><p>No, todo es en linea.</p></details>
+            <details><summary>Los clientes necesitan crear cuenta?</summary><p>Si, con su correo y una contrasena.</p></details>
+            <details><summary>Puedo personalizar mi logo?</summary><p>Si, todas las tarjetas se actualizan automaticamente al nuevo logo.</p></details>
+            <details><summary>Como se agregan sellos?</summary><p>Desde tu celular o PC, escaneando el QR de cada tarjeta o manualmente.</p></details>
+            <details><summary>Que pasa cuando el cliente completa la tarjeta?</summary><p>Se genera una alerta de canje de recompensa, se canjea y la tarjeta vuelve a 0 sellos.</p></details>
+            <details><summary>Puedo administrar varios negocios?</summary><p>Si, se genera un acceso con diferente usuario y contrasena.</p></details>
+            <details><summary>Como contrato el servicio?</summary><p>Directamente por correo con nosotros.</p></details>
+        </div>
+    </section>
+}
+else
+{
+    <section class="home-gateway" data-testid="home-login-gateway">
+        <div class="home-hero-copy">
+            <p class="eyebrow">Puntelio</p>
+            <h1>Tarjetas de lealtad digitales para clientes y negocios.</h1>
+            <p class="lead">
+                Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital desde un solo lugar.
+            </p>
+            <div class="home-hero-actions">
+                <a class="btn btn-primary btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
+                <a class="btn btn-outline-primary btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
+            </div>
+        </div>
+
+        <div class="home-wallet-preview" aria-label="Vista previa de tarjeta digital">
+            <div class="home-wallet-card">
+                <span>Puntelio</span>
+                <strong>Tarjeta digital</strong>
+                <p>Sellos, recompensas y Wallet en un solo lugar.</p>
+                <div class="home-stamp-row" aria-hidden="true">
+                    <span class="filled"></span>
+                    <span class="filled"></span>
+                    <span class="filled"></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <div class="home-wallet-status">
+                <span>Tarjeta lista</span>
+                <span>Sellos actualizados</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-info-band">
+        <div>
+            <p class="eyebrow">Operacion real</p>
+            <h2>Un flujo para el mostrador y otro para el cliente.</h2>
+        </div>
+        <p>
+            El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.
+        </p>
+    </section>
+}
+
+@section Scripts {
+    @if (Model.IsLanding)
+    {
+        <partial name="_ValidationScriptsPartial" />
+        <script src="~/js/landing.js" asp-append-version="true"></script>
+    }
+}
