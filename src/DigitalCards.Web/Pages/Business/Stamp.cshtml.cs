@@ -29,6 +29,9 @@ public sealed class StampModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    [BindProperty]
+    public string? ScannedCode { get; set; }
+
     public LoyaltyCardDto? Result { get; private set; }
 
     public BusinessCardDto? RewardCandidate { get; private set; }
@@ -55,6 +58,11 @@ public sealed class StampModel : PageModel
             return Page();
         }
 
+        if (!string.IsNullOrWhiteSpace(ScannedCode))
+        {
+            ModelState.Remove("Input.UserNameOrEmail");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -63,9 +71,16 @@ public sealed class StampModel : PageModel
         try
         {
             var businessId = BusinessAuth.GetBusinessId(User);
+            var identifier = ResolveIdentifier();
+            if (string.IsNullOrWhiteSpace(identifier))
+            {
+                ModelState.AddModelError(string.Empty, "Captura o escanea un cliente.");
+                return Page();
+            }
+
             RewardCandidate = await _appService.GetBusinessCardForClientAsync(
                 businessId,
-                Input.UserNameOrEmail,
+                identifier,
                 cancellationToken);
             if (RewardCandidate is not null && RewardCandidate.RewardReady)
             {
@@ -75,7 +90,7 @@ public sealed class StampModel : PageModel
             RewardCandidate = null;
 
             Result = await _appService.AddStampAsync(
-                new AddStampCommand(businessId, Input.UserNameOrEmail),
+                new AddStampCommand(businessId, identifier),
                 cancellationToken);
 
             _logger.LogInformation(
@@ -137,6 +152,7 @@ public sealed class StampModel : PageModel
     private void ClearInput(bool clearModelState = true)
     {
         Input = new InputModel();
+        ScannedCode = null;
         if (clearModelState)
         {
             ModelState.Clear();
@@ -144,6 +160,14 @@ public sealed class StampModel : PageModel
         }
 
         ModelState.Remove("Input.UserNameOrEmail");
+        ModelState.Remove(nameof(ScannedCode));
+    }
+
+    private string ResolveIdentifier()
+    {
+        return string.IsNullOrWhiteSpace(ScannedCode)
+            ? Input.UserNameOrEmail.Trim()
+            : ScannedCode.Trim();
     }
 
     private async Task<bool> SetPilotBusinessBlockAsync(CancellationToken cancellationToken)

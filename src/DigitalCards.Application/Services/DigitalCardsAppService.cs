@@ -933,31 +933,37 @@ public sealed class DigitalCardsAppService
                 item.AppleWalletSucceeded,
                 item.ErrorSummary))
             .ToArray();
-        var recentPeriodKeys = Enumerable.Range(0, 6)
-            .Select(index => now.AddMonths(-(5 - index)).ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture))
+        var reportCulture = CultureInfo.GetCultureInfo("es-MX");
+        var recentPeriods = Enumerable.Range(0, 6)
+            .Select(index => now.AddMonths(-(5 - index)).ToLocalTime())
             .ToArray();
-        var periods = recentPeriodKeys
+        var periods = recentPeriods
             .Select(period =>
             {
+                var label = reportCulture.TextInfo.ToTitleCase(period.ToString("MMMM", reportCulture));
                 var stampCount = ledgerRecords.Count(record =>
                     record.CreatedAt >= now.AddMonths(-6) &&
-                    record.CreatedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period &&
+                    record.CreatedAt.ToLocalTime().Year == period.Year &&
+                    record.CreatedAt.ToLocalTime().Month == period.Month &&
                     record.NewCheckQTY > record.PreviousCheckQTY);
                 var redemptionCount = redemptionRecords.Count(record =>
                     record.RedeemedAt >= now.AddMonths(-6) &&
-                    record.RedeemedAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period);
-                return new BusinessReportPeriodDto(period, stampCount, redemptionCount);
+                    record.RedeemedAt.ToLocalTime().Year == period.Year &&
+                    record.RedeemedAt.ToLocalTime().Month == period.Month);
+                return new BusinessReportPeriodDto(label, stampCount, redemptionCount);
             })
             .ToArray();
-        var newClientPeriods = recentPeriodKeys
+        var newClientPeriods = recentPeriods
             .Select(period =>
             {
+                var label = reportCulture.TextInfo.ToTitleCase(period.ToString("MMMM", reportCulture));
                 var newClientCount = reportCards
                     .GroupBy(card => card.Client.Id)
                     .Select(group => group.Min(card => card.CreatedAt))
                     .Count(createdAt => createdAt >= now.AddMonths(-6) &&
-                        createdAt.ToLocalTime().ToString("yyyy-MM", CultureInfo.InvariantCulture) == period);
-                return new BusinessReportPeriodDto(period, 0, 0, newClientCount);
+                        createdAt.ToLocalTime().Year == period.Year &&
+                        createdAt.ToLocalTime().Month == period.Month);
+                return new BusinessReportPeriodDto(label, 0, 0, newClientCount);
             })
             .ToArray();
         var businessClients = reportCards
