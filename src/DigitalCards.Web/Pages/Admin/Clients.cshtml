@@ -7,9 +7,8 @@
 <section class="result-panel">
     <div class="page-heading">
         <div>
-            <p class="eyebrow">Admin</p>
             <h1>Clientes</h1>
-            <p class="lead">Consulta clientes, tarjetas asociadas, sellos y estado operativo sin exponer datos sensibles.</p>
+            <p class="lead">Consulta clientes, sus tarjetas por negocio y opera la limpieza de pruebas desde un solo panel.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-page="/Admin/Dashboard" data-testid="admin-clients-back-link">Dashboard</a>
     </div>
@@ -17,15 +16,27 @@
     <div class="danger-action-panel danger-zone-card admin-client-cleanup-note" data-testid="admin-client-cleanup-note">
         <div>
             <strong>Clientes y limpieza de pruebas</strong>
-            <p>Busca el cliente, confirma con su usuario o correo y elimina su cuenta global, tarjetas, links Wallet y datos relacionados. Esta herramienta sirve para limpiar clientes de prueba y no borra negocios.</p>
+            <p>Busca el cliente, abre su detalle y elimina su cuenta global, tarjetas, links Wallet y datos relacionados. Esta herramienta no borra negocios.</p>
         </div>
     </div>
 
-    <form method="get" class="search-row" data-testid="admin-client-search-form">
-        <label asp-for="Query" class="form-label visually-hidden"></label>
-        <input asp-for="Query" class="form-control" placeholder="usuario, correo, nombre o apellido" data-testid="admin-client-search-input" />
-        <button class="btn btn-primary" type="submit" data-testid="admin-client-search-submit">Buscar</button>
-    </form>
+    <div class="admin-filter-card">
+        <form method="get" class="business-table-controls" data-testid="admin-client-search-form">
+            <div class="business-table-control-group grow">
+                <label asp-for="Query" class="form-label visually-hidden"></label>
+                <input asp-for="Query" class="form-control" placeholder="usuario, correo, nombre o apellido" data-testid="admin-client-search-input" />
+            </div>
+            <div class="business-table-control-group">
+                <label asp-for="PageSize" class="form-label mb-0">Mostrar</label>
+                <select asp-for="PageSize" class="form-select form-select-sm" onchange="this.form.submit()" data-testid="admin-client-page-size">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit" data-testid="admin-client-search-submit">Buscar</button>
+        </form>
+    </div>
 
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -36,86 +47,145 @@
         </div>
     }
 
-    @if (Model.Clients.Count == 0)
+    @if (Model.PagedClients.Count == 0)
     {
         <p class="text-muted" data-testid="admin-client-no-results">No se encontraron clientes.</p>
     }
     else
     {
-        <div class="pilot-business-list legacy-admin-list admin-client-console-list" data-testid="admin-client-list">
-            @foreach (var client in Model.Clients)
-            {
-                <article class="pilot-business-item legacy-admin-row" data-testid="admin-client-row">
-                    <div class="admin-client-console-header">
-                        <div>
-                            <h2>@client.ClientName</h2>
-                            <p>@client.ClientEmail</p>
-                            <small>@client.UserName</small>
-                        </div>
-                        <div class="admin-client-console-stats">
-                            <span><strong>@client.CardCount</strong> tarjeta(s)</span>
-                            <span><strong>@client.CurrentStamps</strong> sellos actuales</span>
-                            <span><strong>@client.LifetimeStamps</strong> sellos historicos</span>
-                            <span><strong>@(client.LastActivityAt?.ToLocalTime().ToString("g") ?? "Sin actividad")</strong> ultima actividad</span>
-                        </div>
-                    </div>
-
-                    @if (client.Cards.Count == 0)
+        <div class="table-responsive business-table-shell" data-testid="admin-client-table">
+            <table class="table align-middle legacy-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Usuario</th>
+                        <th>Correo</th>
+                        <th>Negocios ligados</th>
+                        <th>Tarjetas</th>
+                        <th>Sellos</th>
+                        <th>Ultima actividad</th>
+                        <th class="text-end">Administrar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var client in Model.PagedClients)
                     {
-                        <p class="text-muted mb-0" data-testid="admin-client-no-cards">Este cliente no tiene tarjetas asociadas.</p>
+                        <tr data-testid="admin-client-row">
+                            <td>@client.ClientName</td>
+                            <td>@client.UserName</td>
+                            <td>@client.ClientEmail</td>
+                            <td>@string.Join(", ", client.LinkedBusinessNames)</td>
+                            <td>@client.CardCount</td>
+                            <td>@client.CurrentStamps / @client.LifetimeStamps</td>
+                            <td>@(client.LastActivityAt?.ToLocalTime().ToString("g") ?? "Sin actividad")</td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm"
+                                   asp-page="/Admin/Clients"
+                                   asp-route-clientId="@client.ClientId"
+                                   asp-route-query="@Model.Query"
+                                   asp-route-pageNumber="@Model.PageNumber"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   data-testid="admin-client-manage-link">
+                                    Administrar
+                                </a>
+                            </td>
+                        </tr>
                     }
-                    else
-                    {
-                        <div class="table-responsive" data-testid="admin-client-card-list">
-                            <table class="table align-middle legacy-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Negocio</th>
-                                        <th>Sellos</th>
-                                        <th>Historico</th>
-                                        <th>Estado</th>
-                                        <th>Ultima actividad</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var card in client.Cards)
-                                    {
-                                        <tr data-testid="admin-client-card-row">
-                                            <td>
-                                                <a asp-page="/Admin/BusinessProfile" asp-route-businessId="@card.BusinessId">@card.BusinessName</a>
-                                            </td>
-                                            <td>@card.CurrentStamps</td>
-                                            <td>@card.LifetimeStamps</td>
-                                            <td><span class="status-pill">@card.CardStatus</span></td>
-                                            <td>@card.LastActivityAt.ToLocalTime().ToString("g")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-
-                    <form method="post"
-                          asp-page-handler="Delete"
-                          asp-route-clientId="@client.ClientId"
-                          class="danger-action-panel danger-zone-card admin-client-delete-form"
-                          data-testid="admin-client-delete-form">
-                        <div>
-                            <strong>Eliminar permanentemente</strong>
-                            <p>Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.</p>
-                        </div>
-                        <div class="danger-action-controls">
-                            <input class="form-control form-control-sm"
-                                   name="confirmation"
-                                   placeholder="Escribe @client.UserName"
-                                   data-testid="admin-client-delete-confirmation" />
-                            <button class="btn btn-outline-danger btn-sm" type="submit" data-testid="admin-client-delete-submit">
-                                Eliminar cliente
-                            </button>
-                        </div>
-                    </form>
-                </article>
-            }
+                </tbody>
+            </table>
         </div>
+
+        <div class="table-pager" data-testid="admin-client-pager">
+            <span>Pagina @Model.PageNumber de @Model.TotalPages</span>
+            <div class="table-pager-actions">
+                <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber <= 1 ? "disabled" : null)"
+                   asp-page="/Admin/Clients"
+                   asp-route-query="@Model.Query"
+                   asp-route-clientId="@Model.ClientId"
+                   asp-route-pageNumber="@(Model.PageNumber - 1)"
+                   asp-route-pageSize="@Model.PageSize">
+                    Anterior
+                </a>
+                <a class="btn btn-outline-secondary btn-sm @(Model.PageNumber >= Model.TotalPages ? "disabled" : null)"
+                   asp-page="/Admin/Clients"
+                   asp-route-query="@Model.Query"
+                   asp-route-clientId="@Model.ClientId"
+                   asp-route-pageNumber="@(Model.PageNumber + 1)"
+                   asp-route-pageSize="@Model.PageSize">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    }
+
+    @if (Model.SelectedClient is not null)
+    {
+        <section class="business-dashboard-panel admin-client-detail-panel" data-testid="admin-client-detail-panel">
+            <div class="detail-heading">
+                <div>
+                    <h2>@Model.SelectedClient.ClientName</h2>
+                    <p>@Model.SelectedClient.ClientEmail · @Model.SelectedClient.UserName</p>
+                </div>
+                <span class="badge text-bg-light">@(Model.SelectedClient.CardCount) tarjeta(s)</span>
+            </div>
+
+            @if (Model.SelectedClient.Cards.Count == 0)
+            {
+                <p class="text-muted" data-testid="admin-client-no-cards">Este cliente no tiene tarjetas asociadas.</p>
+            }
+            else
+            {
+                <div class="table-responsive" data-testid="admin-client-card-list">
+                    <table class="table align-middle legacy-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Negocio</th>
+                                <th>Sellos</th>
+                                <th>Historico</th>
+                                <th>Estado</th>
+                                <th>Ultima actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var card in Model.SelectedClient.Cards)
+                            {
+                                <tr data-testid="admin-client-card-row">
+                                    <td>
+                                        <a asp-page="/Admin/BusinessProfile" asp-route-businessId="@card.BusinessId">@card.BusinessName</a>
+                                    </td>
+                                    <td>@card.CurrentStamps</td>
+                                    <td>@card.LifetimeStamps</td>
+                                    <td><span class="status-pill">@card.CardStatus</span></td>
+                                    <td>@card.LastActivityAt.ToLocalTime().ToString("g")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <form method="post"
+                  asp-page-handler="Delete"
+                  asp-route-clientId="@Model.SelectedClient.ClientId"
+                  asp-route-query="@Model.Query"
+                  asp-route-pageNumber="@Model.PageNumber"
+                  asp-route-pageSize="@Model.PageSize"
+                  class="danger-action-panel danger-zone-card admin-client-delete-form"
+                  data-testid="admin-client-delete-form">
+                <div>
+                    <strong>Eliminar permanentemente</strong>
+                    <p>Eliminar cliente borra cuenta global, tarjetas, links Wallet y datos relacionados; no borra negocios.</p>
+                </div>
+                <div class="danger-action-controls">
+                    <input class="form-control form-control-sm"
+                           name="confirmation"
+                           placeholder="Escribe @Model.SelectedClient.UserName"
+                           data-testid="admin-client-delete-confirmation" />
+                    <button class="btn btn-outline-danger btn-sm" type="submit" data-testid="admin-client-delete-submit">
+                        Eliminar cliente
+                    </button>
+                </div>
+            </form>
+        </section>
     }
 </section>

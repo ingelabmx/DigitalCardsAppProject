@@ -34,6 +34,16 @@ public sealed class CardsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid? CardId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int PageSize { get; set; } = 10;
+
+    public IReadOnlyList<BusinessCardDto> Cards { get; private set; } = [];
+
+    public IReadOnlyList<BusinessCardDto> PagedCards { get; private set; } = [];
+
     public BusinessCardDto? Detail { get; private set; }
 
     public CardLookupState LookupState { get; private set; } = CardLookupState.Empty;
@@ -45,6 +55,10 @@ public sealed class CardsModel : PageModel
     public string? ResentEnrollmentUrl { get; private set; }
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
+
+    public int TotalPages { get; private set; }
+
+    public int TotalCards => Cards.Count;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -70,6 +84,7 @@ public sealed class CardsModel : PageModel
         if (Detail!.RewardReady)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta ya esta completa. Confirma el canje de recompensa.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
@@ -77,10 +92,12 @@ public sealed class CardsModel : PageModel
         if (Detail is null)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta no existe para este negocio.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
         StatusMessage = $"Sello agregado a {Detail.Client.UserName}.";
+        await LoadAsync(cancellationToken);
         return Page();
     }
 
@@ -102,6 +119,7 @@ public sealed class CardsModel : PageModel
         {
             Detail = result.Card ?? Detail;
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo canjear la recompensa.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
@@ -109,6 +127,7 @@ public sealed class CardsModel : PageModel
         StatusMessage = result.HasWalletWarning
             ? result.ErrorMessage
             : "Recompensa canjeada. La tarjeta inicio un nuevo ciclo con 0 sellos.";
+        await LoadAsync(cancellationToken);
         return Page();
     }
 
@@ -131,12 +150,14 @@ public sealed class CardsModel : PageModel
         if (result is null)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta no existe para este negocio.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
         Detail = result.Card;
         ResentEnrollmentUrl = result.EnrollmentUrl;
         StatusMessage = $"Correo reenviado a {Detail.Client.Email}.";
+        await LoadAsync(cancellationToken);
         return Page();
     }
 
@@ -163,6 +184,7 @@ public sealed class CardsModel : PageModel
         if (!string.Equals(confirmation?.Trim(), expected, StringComparison.Ordinal))
         {
             ModelState.AddModelError(string.Empty, $"Escribe exactamente {expected} para eliminar la tarjeta.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
@@ -174,6 +196,7 @@ public sealed class CardsModel : PageModel
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo eliminar la tarjeta.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
@@ -181,11 +204,14 @@ public sealed class CardsModel : PageModel
         Detail = null;
         LookupState = CardLookupState.NotFound;
         StatusMessage = "Tarjeta eliminada para este negocio. La cuenta global del cliente se conserva.";
+        await LoadAsync(cancellationToken);
         return Page();
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
+        await LoadCardTableAsync(cancellationToken);
+
         if (CardId is not null)
         {
             Detail = await _appService.GetBusinessCardDetailAsync(
@@ -245,6 +271,26 @@ public sealed class CardsModel : PageModel
             : CardLookupState.Ambiguous;
     }
 
+    private async Task LoadCardTableAsync(CancellationToken cancellationToken)
+    {
+        Cards = string.IsNullOrWhiteSpace(Query)
+            ? await _appService.ListBusinessCardsAsync(
+                BusinessAuth.GetBusinessId(User),
+                cancellationToken)
+            : await _appService.SearchBusinessCardsAsync(
+                BusinessAuth.GetBusinessId(User),
+                Query,
+                cancellationToken);
+
+        PageSize = NormalizePageSize(PageSize);
+        TotalPages = Math.Max(1, (int)Math.Ceiling(Cards.Count / (double)PageSize));
+        PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
+        PagedCards = Cards
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToArray();
+    }
+
     private async Task<IActionResult> SetCardActiveAsync(
         Guid cardId,
         bool isActive,
@@ -267,11 +313,13 @@ public sealed class CardsModel : PageModel
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo cambiar el estado de la tarjeta.");
+            await LoadAsync(cancellationToken);
             return Page();
         }
 
         Detail = result.Card;
         StatusMessage = statusMessage;
+        await LoadAsync(cancellationToken);
         return Page();
     }
 
@@ -280,6 +328,7 @@ public sealed class CardsModel : PageModel
         if (!await SetPilotBusinessBlockAsync(cancellationToken))
         {
             ModelState.AddModelError(string.Empty, PilotBlockMessage!);
+            await LoadCardTableAsync(cancellationToken);
             return false;
         }
 
@@ -288,12 +337,14 @@ public sealed class CardsModel : PageModel
         if (Detail is null)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta no existe para este negocio.");
+            await LoadCardTableAsync(cancellationToken);
             return false;
         }
 
         if (!allowInactive && !Detail.IsActive)
         {
             ModelState.AddModelError(string.Empty, "La tarjeta esta desactivada para este negocio.");
+            await LoadCardTableAsync(cancellationToken);
             return false;
         }
 
@@ -329,4 +380,8 @@ public sealed class CardsModel : PageModel
         Ambiguous
     }
 
+    private static int NormalizePageSize(int value)
+    {
+        return value is 20 or 50 ? value : 10;
+    }
 }

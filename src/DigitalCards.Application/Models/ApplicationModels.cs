@@ -131,6 +131,7 @@ public sealed record BusinessCardDto(
     string EnrollmentToken,
     ClientDto Client,
     string BusinessName,
+    DateTimeOffset CreatedAt,
     int CurrentStamps,
     int StampGoal,
     int LifetimeStamps,
@@ -209,11 +210,19 @@ public sealed record BusinessReportsDto(
     int ApplePendingCount,
     int AppleRegisteredDeviceCount,
     int WalletIssueCount,
+    int RedemptionsLast30Days,
+    decimal RedemptionRate,
     IReadOnlyList<BusinessReportPeriodDto> StampPeriods,
+    IReadOnlyList<BusinessReportPeriodDto> NewClientPeriods,
     IReadOnlyList<BusinessReportClientDto> RecentClients,
+    IReadOnlyList<BusinessReportTopClientDto> TopClients,
     IReadOnlyList<BusinessDashboardStampEventDto> RecentWalletIssues);
 
-public sealed record BusinessReportPeriodDto(string Period, int StampCount);
+public sealed record BusinessReportPeriodDto(
+    string Period,
+    int StampCount,
+    int RedemptionCount = 0,
+    int NewClientCount = 0);
 
 public sealed record BusinessReportClientDto(
     Guid ClientId,
@@ -224,6 +233,15 @@ public sealed record BusinessReportClientDto(
     int CurrentStamps,
     int LifetimeStamps,
     string CardStatus,
+    DateTimeOffset LastActivityAt);
+
+public sealed record BusinessReportTopClientDto(
+    Guid ClientId,
+    string UserName,
+    string ClientName,
+    int CurrentStamps,
+    int LifetimeStamps,
+    int RedemptionCount,
     DateTimeOffset LastActivityAt);
 
 public sealed record WalletLandingDto(

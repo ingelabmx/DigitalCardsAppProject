@@ -1,3 +1,4 @@
+using DigitalCards.Domain;
 using Microsoft.Playwright;
 
 namespace DigitalCards.E2E.Tests;
@@ -212,11 +213,8 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         Assert.Contains("fake-google-", await page.GetByTestId("google-object-id").InnerTextAsync());
 
         await page.GotoAsync(new Uri(_fixture.BaseAddress, cardsUrl!).ToString());
-        await page.GetByTestId("business-card-search-input").FillAsync(userName);
-        await page.GetByTestId("business-card-search-submit").ClickAsync();
-        Assert.Equal(0, await page.GetByTestId("business-card-quick-summary").CountAsync());
-        Assert.Equal(0, await page.GetByTestId("business-card-results").CountAsync());
-        Assert.True(await page.GetByTestId("business-qr-scanner").IsVisibleAsync());
+        Assert.True(await page.GetByTestId("business-card-table").IsVisibleAsync());
+        await page.GetByRole(AriaRole.Row, new() { Name = userName }).GetByTestId("business-card-manage-link").ClickAsync();
         Assert.Contains(userName, await page.GetByTestId("business-card-detail").InnerTextAsync());
         Assert.True(await page.GetByTestId("business-card-action-strip").IsVisibleAsync());
         Assert.True(await BusinessCardManagementIsAtBottomAsync(page));
@@ -352,8 +350,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GetByTestId("admin-businesses-link").ClickAsync();
         await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
-        await page.GetByTestId("admin-enable-pilot").First.ClickAsync();
-        Assert.Contains("Negocio activado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+        await page.GetByTestId("admin-manage-business").First.ClickAsync();
+        await page.GetByTestId("admin-business-activation-status").SelectOptionAsync(((int)BusinessActivationStatus.ModernPrimary).ToString());
+        await page.GetByTestId("admin-business-profile-save").ClickAsync();
+        Assert.Contains("Negocio actualizado.", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
     }
 
     private async Task DisableDemoBusinessPilotAsync(IPage page)
@@ -361,8 +361,10 @@ public sealed class LoyaltyFlowTests : IClassFixture<WebAppFixture>
         await page.GotoAsync(new Uri(_fixture.BaseAddress, "/Admin/Businesses").ToString());
         await page.GetByTestId("admin-business-search-input").FillAsync(GetBusinessEmail());
         await page.GetByTestId("admin-business-search-submit").ClickAsync();
-        await page.GetByTestId("admin-disable-pilot").First.ClickAsync();
-        Assert.Contains("Negocio desactivado", await page.GetByTestId("admin-business-status").InnerTextAsync());
+        await page.GetByTestId("admin-manage-business").First.ClickAsync();
+        await page.GetByTestId("admin-business-activation-status").SelectOptionAsync(((int)BusinessActivationStatus.Inactive).ToString());
+        await page.GetByTestId("admin-business-profile-save").ClickAsync();
+        Assert.Contains("Negocio actualizado.", await page.GetByTestId("admin-business-profile-status").InnerTextAsync());
     }
 
     private static async Task AssertQrFitsCardAsync(IPage page, string testId)

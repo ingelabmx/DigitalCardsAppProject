@@ -596,6 +596,7 @@ body.legacy-shell {
 
 .eyebrow {
   color: #0f766e;
+  display: none !important;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -1871,6 +1872,121 @@ form.is-submitting input[type="submit"] {
   margin-bottom: 0.85rem;
 }
 
+.business-table-controls {
+  align-items: center;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+}
+
+.business-table-control-group {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.business-table-control-group.grow {
+  min-width: 0;
+}
+
+.business-table-control-group.grow .form-control {
+  width: 100%;
+}
+
+.business-table-toolbar .business-table-controls {
+  grid-template-columns: minmax(240px, 1fr) auto auto auto;
+}
+
+.business-card-table-toolbar {
+  margin-bottom: 1rem;
+}
+
+.table-counter-label {
+  color: #7c8fac;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.business-table-shell {
+  margin-top: 1rem;
+}
+
+.table-pager {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.table-pager-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.business-card-detail-wide {
+  width: 100%;
+}
+
+.report-bar-chart {
+  align-items: end;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  min-height: 260px;
+}
+
+.report-bar-chart-compact {
+  min-height: 220px;
+}
+
+.report-bar-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.report-bar-values {
+  align-items: end;
+  background: #f6f9fc;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 180px;
+  padding: 0.75rem;
+}
+
+.report-bar-values.single {
+  grid-template-columns: 1fr;
+}
+
+.report-bar {
+  border-radius: 999px 999px 6px 6px;
+  display: block;
+  min-height: 0;
+  width: 100%;
+}
+
+.report-bar-primary {
+  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%);
+}
+
+.report-bar-secondary {
+  background: linear-gradient(180deg, #1d4ed8 0%, #60a5fa 100%);
+}
+
+.report-bar-accent {
+  background: linear-gradient(180deg, #d97706 0%, #fbbf24 100%);
+}
+
+.report-bar-group strong,
+.report-bar-group small {
+  text-align: center;
+}
+
 .dashboard-card-list {
   display: grid;
   gap: 0.75rem;
@@ -2749,6 +2865,13 @@ body.public-shell {
   }
 
   .admin-client-console-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .business-table-controls,
+  .table-pager,
+  .table-pager-actions {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

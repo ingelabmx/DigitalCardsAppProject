@@ -12,4 +12,9 @@ public interface IRewardRedemptionRepository
         Guid cardId,
         int limit,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RewardRedemptionRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default);
 }

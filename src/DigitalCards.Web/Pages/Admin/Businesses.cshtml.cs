@@ -22,9 +22,19 @@ public sealed class BusinessesModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Query { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int PageSize { get; set; } = 10;
+
     public IReadOnlyList<PilotBusinessDto> Businesses { get; private set; } = [];
 
+    public IReadOnlyList<PilotBusinessDto> PagedBusinesses { get; private set; } = [];
+
     public string? StatusMessage { get; private set; }
+
+    public int TotalPages { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -93,5 +103,17 @@ public sealed class BusinessesModel : PageModel
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         Businesses = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
+        PageSize = NormalizePageSize(PageSize);
+        TotalPages = Math.Max(1, (int)Math.Ceiling(Businesses.Count / (double)PageSize));
+        PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
+        PagedBusinesses = Businesses
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToArray();
+    }
+
+    private static int NormalizePageSize(int value)
+    {
+        return value is 20 or 50 ? value : 10;
     }
 }

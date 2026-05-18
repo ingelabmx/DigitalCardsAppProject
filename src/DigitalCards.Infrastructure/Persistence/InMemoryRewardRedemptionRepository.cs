@@ -45,4 +45,22 @@ public sealed class InMemoryRewardRedemptionRepository : IRewardRedemptionReposi
             return Task.FromResult<IReadOnlyList<RewardRedemptionRecord>>(records);
         }
     }
+
+    public Task<IReadOnlyList<RewardRedemptionRecord>> ListByBusinessAsync(
+        Guid businessId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var records = _store.RewardRedemptions
+                .Where(record => record.BusinessId == businessId)
+                .OrderByDescending(record => record.RedeemedAt)
+                .ThenByDescending(record => record.Id)
+                .Take(Math.Max(1, Math.Min(limit, 1000)))
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyList<RewardRedemptionRecord>>(records);
+        }
+    }
 }
