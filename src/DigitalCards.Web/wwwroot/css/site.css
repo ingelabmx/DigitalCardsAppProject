@@ -2641,9 +2641,20 @@ body.public-shell {
   margin-bottom: 0.35rem;
 }
 
+.page-heading .btn-outline-secondary {
+  display: none !important;
+}
+
 .page-heading .lead,
 .page-heading .text-muted {
   margin-bottom: 0;
+}
+
+.stamp-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .metric,

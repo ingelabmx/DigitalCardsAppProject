@@ -11,7 +11,6 @@
             <h1>Agregar sello</h1>
             <p class="lead">Aplicacion rapida por username o correo; la operacion completa vive en Tarjetas.</p>
         </div>
-        <a class="btn btn-outline-secondary" asp-page="/Business/Cards">Tarjetas</a>
     </div>
 
     @if (Model.IsPilotBlocked)
@@ -69,6 +68,7 @@
     {
         <form method="post" class="business-form-card" data-testid="stamp-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input asp-for="ScannedCode" type="hidden" data-testid="stamp-scanned-code" />
 
             <div class="mb-3">
                 <label asp-for="Input.UserNameOrEmail" class="form-label"></label>
@@ -76,11 +76,26 @@
                 <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
             </div>
 
-            <button class="btn btn-primary" type="submit" data-testid="stamp-submit">Agregar sello</button>
+            <div class="stamp-form-actions">
+                <button class="btn btn-primary" type="submit" data-testid="stamp-submit">Agregar sello</button>
+                <button class="btn btn-outline-primary" type="button" data-qr-start data-testid="stamp-scan-submit">Escanear QR</button>
+            </div>
+
+            <div class="qr-scanner-panel" data-business-stamp-scanner data-testid="business-stamp-scanner">
+                <div>
+                    <strong>Escaner QR</strong>
+                    <span data-qr-status>Listo</span>
+                </div>
+                <video class="qr-scanner-video" data-qr-video playsinline muted></video>
+                <div class="qr-scanner-actions">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-qr-stop>Detener</button>
+                </div>
+            </div>
         </form>
     }
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/business-stamp.js" asp-append-version="true"></script>
 }
