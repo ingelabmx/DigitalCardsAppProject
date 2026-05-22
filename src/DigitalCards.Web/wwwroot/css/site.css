@@ -5114,6 +5114,30 @@ body.legacy-shell .legacy-container-fluid {
    9. AUTH PAGES — login, register, forgot password
    ============================================================ */
 
+/* Public shell navbar override */
+body.public-shell .navbar,
+body.public-shell header nav.navbar {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #D8D7D3 !important;
+  box-shadow: none !important;
+  font-family: 'DM Sans', sans-serif;
+}
+
+body.public-shell .navbar .nav-link {
+  color: #6B6B6B !important;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+}
+
+body.public-shell .navbar .nav-link:hover { color: #0A0A0A !important; }
+
+/* Simple auth wrapper (forgot/reset password) */
+body.public-shell .p-auth-simple {
+  max-width: 480px;
+  margin: 48px auto;
+}
+
 body.public-shell .auth-gateway {
   gap: 0;
   grid-template-columns: 1fr 1fr;

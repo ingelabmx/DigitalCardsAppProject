@@ -4,24 +4,20 @@
     ViewData["Title"] = "Registro cliente";
 }
 
-<section class="public-registration-grid">
-    <div class="public-registration-copy">
-        <p class="eyebrow">Clientes</p>
+<section class="auth-gateway">
+    <div class="auth-copy-panel">
         <h1>Empieza a usar tus tarjetas digitales.</h1>
-        <p>
-            Crea tu cuenta para consultar sellos, abrir tus links Wallet y mantener tus tarjetas de lealtad en un solo lugar.
-        </p>
-        <div class="public-step-list" aria-label="Pasos de registro">
-            <span>1. Crea tu cuenta</span>
-            <span>2. Asocia una tarjeta con un negocio</span>
-            <span>3. Elige Apple Wallet o Google Wallet</span>
-        </div>
+        <p>Crea tu cuenta para consultar sellos, abrir tus links Wallet y mantener tus tarjetas de lealtad en un solo lugar.</p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
     </div>
 
-    <div class="form-panel public-form-panel">
-        <p class="eyebrow">Registro</p>
-        <h1>Registro cliente</h1>
-        <p class="lead">Usa un correo al que puedas acceder para recibir links de Wallet y recuperacion.</p>
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <div>
+                <h2>Crear cuenta</h2>
+                <p>Usa un correo al que puedas acceder para recibir links de Wallet y recuperacion.</p>
+            </div>
+        </div>
 
         @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
         {
@@ -68,7 +64,7 @@
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
 
-            <div class="form-check mb-3 public-consent-box">
+            <div class="form-check mb-3">
                 <input asp-for="Input.AcceptTerms" class="form-check-input" data-testid="register-accept-terms" />
                 <label asp-for="Input.AcceptTerms" class="form-check-label">
                     Acepto los <a asp-page="/Privacy" target="_blank" rel="noopener">terminos y privacidad</a>.
