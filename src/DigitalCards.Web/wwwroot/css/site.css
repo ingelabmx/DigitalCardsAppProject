@@ -5138,6 +5138,79 @@ body.public-shell .p-auth-simple {
   margin: 48px auto;
 }
 
+/* Public enrollment page — left panel with business branding */
+.p-enroll-copy {
+  background: linear-gradient(135deg, var(--enroll-primary, #0A0A0A) 0%, var(--enroll-secondary, #2A2A2A) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.p-enroll-copy h1 { color: #FFFFFF; }
+.p-enroll-copy p { color: rgba(255,255,255,0.8); }
+
+.p-enroll-copy .public-business-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.p-enroll-copy .public-business-brand img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: rgba(255,255,255,0.2);
+}
+
+.p-enroll-initials {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.p-enroll-wallet-card {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: auto;
+}
+
+.p-enroll-wallet-card span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 4px;
+}
+
+.p-enroll-wallet-card strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+
+.p-enroll-wallet-card p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin: 0;
+}
+
 body.public-shell .auth-gateway {
   gap: 0;
   grid-template-columns: 1fr 1fr;
