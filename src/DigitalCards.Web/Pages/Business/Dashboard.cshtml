@@ -4,163 +4,175 @@
     ViewData["Title"] = "Dashboard negocio";
 }
 
-<section class="app-surface business-dashboard-shell" data-testid="business-dashboard-shell">
-    <div class="business-hero-grid">
-        <div>
-            <p class="eyebrow">Negocio</p>
-            <h1 data-testid="business-dashboard-title">@Model.BusinessName</h1>
-            <p class="lead">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
-        </div>
-        <div class="business-flow-card" data-testid="business-flow-steps">
-            <span>Flujo diario</span>
-            <ol>
-                <li>Buscar tarjeta</li>
-                <li>Reenviar Wallet</li>
-                <li>Agregar sello</li>
-            </ol>
-        </div>
-    </div>
+<div class="p-page-header" data-testid="business-dashboard-shell">
+    <span class="p-eyebrow">Duenos de negocios</span>
+    <h1 class="p-page-heading" data-testid="business-dashboard-title">@Model.BusinessName</h1>
+    <p class="p-page-sub">Superficie inicial para enrolar clientes, agregar sellos y validar Wallets.</p>
+</div>
 
-    @if (Model.IsPilotBlocked)
-    {
-        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
-            @Model.PilotBlockMessage
-        </div>
-    }
-</section>
+@if (Model.IsPilotBlocked)
+{
+    <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+        @Model.PilotBlockMessage
+    </div>
+}
 
 @if (!Model.IsPilotBlocked && Model.Dashboard is not null)
 {
-    <section class="result-panel" data-testid="business-public-enrollment-panel">
-        <div class="page-heading">
+    <div class="p-steps-grid" data-testid="business-flow-steps">
+        <div class="p-step">
+            <span class="p-step-num">01</span>
+            <i class="bi bi-search p-step-icon"></i>
+            <span class="p-step-title">Buscar tarjeta</span>
+            <span class="p-step-desc">Encuentra al cliente por usuario o email.</span>
+        </div>
+        <div class="p-step">
+            <span class="p-step-num">02</span>
+            <i class="bi bi-send p-step-icon"></i>
+            <span class="p-step-title">Reenviar Wallet</span>
+            <span class="p-step-desc">Actualiza la tarjeta digital del cliente.</span>
+        </div>
+        <div class="p-step">
+            <span class="p-step-num">03</span>
+            <i class="bi bi-patch-check p-step-icon"></i>
+            <span class="p-step-title">Agregar sello</span>
+            <span class="p-step-desc">Registra la visita del cliente.</span>
+        </div>
+    </div>
+
+    <div class="p-stats-grid">
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon blue"><i class="bi bi-credit-card-2-front"></i></span>
+                Tarjetas recientes
+            </div>
+            <div class="p-stat-value" data-testid="business-dashboard-card-count">@Model.Dashboard.RecentCardCount</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon amber"><i class="bi bi-star-fill"></i></span>
+                Sellos actuales
+            </div>
+            <div class="p-stat-value" data-testid="business-dashboard-current-stamps">@Model.Dashboard.CurrentStampTotal</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon green"><i class="bi bi-graph-up"></i></span>
+                Sellos historicos
+            </div>
+            <div class="p-stat-value" data-testid="business-dashboard-lifetime-stamps">@Model.Dashboard.LifetimeStampTotal</div>
+        </div>
+    </div>
+
+    <div class="p-card p-qr-panel mb-4" data-testid="business-public-enrollment-panel">
+        <div class="p-qr-panel-header">
             <div>
-                <p class="eyebrow">Registro publico</p>
-                <h2>QR para clientes</h2>
-                <p class="text-muted">Genera un link y QR para que clientes se registren directamente en este negocio.</p>
+                <h2 class="p-card-title">QR para clientes</h2>
+                <p class="p-card-desc">Genera un link y QR para que clientes se registren directamente.</p>
             </div>
             <form method="post" asp-page-handler="GenerateEnrollmentLink">
-                <button class="btn btn-outline-primary" type="submit" data-testid="business-generate-enrollment-qr">
-                    Generar link y QR
+                <button class="p-btn p-btn-primary" type="submit" data-testid="business-generate-enrollment-qr">
+                    <i class="bi bi-qr-code"></i> Generar link y QR
                 </button>
             </form>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(Model.GeneratedEnrollmentUrl) && !string.IsNullOrWhiteSpace(Model.GeneratedEnrollmentQrSvg))
         {
-            <div class="business-dashboard-grid" data-testid="business-enrollment-qr-result">
-                <div class="business-dashboard-panel">
-                    <h2>Link publico</h2>
-                    <input class="form-control" value="@Model.GeneratedEnrollmentUrl" readonly data-testid="business-enrollment-public-link" />
-                    <p class="text-muted mt-2">El token plano no se guarda. Si generas otro QR, el anterior queda revocado.</p>
+            <div class="business-dashboard-grid mt-4" data-testid="business-enrollment-qr-result">
+                <div>
+                    <h3 class="p-sub-heading">Link publico</h3>
+                    <input class="p-input" value="@Model.GeneratedEnrollmentUrl" readonly data-testid="business-enrollment-public-link" />
+                    <p class="p-note mt-2">El token plano no se guarda. Si generas otro QR, el anterior queda revocado.</p>
                 </div>
-                <div class="business-dashboard-panel text-center" data-testid="business-enrollment-qr">
+                <div class="text-center" data-testid="business-enrollment-qr">
                     @Html.Raw(Model.GeneratedEnrollmentQrSvg)
                 </div>
             </div>
         }
-    </section>
+    </div>
 
-    <section class="result-panel business-dashboard-summary" data-testid="business-dashboard-summary">
-        <div class="page-heading">
-            <div>
-                <p class="eyebrow">Resumen operativo</p>
-                <h2>Actividad reciente</h2>
-                <p class="text-muted">Datos recientes del negocio autenticado. No se muestran tokens ni credenciales.</p>
-            </div>
-        </div>
-
-        <div class="metric-row">
-            <div class="metric">
-                <span>Tarjetas recientes</span>
-                <strong data-testid="business-dashboard-card-count">@Model.Dashboard.RecentCardCount</strong>
-            </div>
-            <div class="metric">
-                <span>Sellos actuales</span>
-                <strong data-testid="business-dashboard-current-stamps">@Model.Dashboard.CurrentStampTotal</strong>
-            </div>
-            <div class="metric">
-                <span>Sellos historicos</span>
-                <strong data-testid="business-dashboard-lifetime-stamps">@Model.Dashboard.LifetimeStampTotal</strong>
-            </div>
-        </div>
-
-        <div class="business-dashboard-grid">
-            <section class="business-dashboard-panel">
+    <div class="p-activity-grid" data-testid="business-dashboard-summary">
+        <div class="p-card-flush">
+            <div class="p-card-header">
                 <h2>Tarjetas recientes</h2>
-                @if (Model.Dashboard.RecentCards.Count == 0)
-                {
-                    <div class="dashboard-empty-state compact" data-testid="business-dashboard-no-cards">
-                        <p class="eyebrow">Sin tarjetas todavia</p>
-                        <h3>Asocia tu primer cliente</h3>
-                        <p>Cuando agregues una tarjeta, aqui veras sellos, Wallets y actividad reciente.</p>
-                        <a class="btn btn-primary btn-sm" asp-page="/Business/Enroll">Asociar cliente</a>
-                    </div>
-                }
-                else
-                {
-                    <div class="dashboard-card-list" data-testid="business-dashboard-recent-cards">
-                        @foreach (var card in Model.Dashboard.RecentCards)
-                        {
-                            var clientName = $"{card.Client.FirstName} {card.Client.LastName}".Trim();
-                            if (string.IsNullOrWhiteSpace(clientName))
-                            {
-                                clientName = card.Client.UserName;
-                            }
-                            var stampGoal = Math.Max(1, card.StampGoal);
-                            var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
-                            <a class="dashboard-card-row"
-                               asp-page="/Business/Cards"
-                               asp-route-query="@card.Client.UserName"
-                               asp-route-cardId="@card.Id"
-                               data-testid="business-dashboard-recent-card">
-                                <div>
-                                    <strong>@clientName</strong>
-                                    <span>@card.Client.Email</span>
-                                </div>
-                                <div>
-                                    <strong>@visibleStamps de @stampGoal</strong>
-                                    <span>sellos</span>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                }
-            </section>
+                <a class="p-btn p-btn-ghost p-btn-sm" asp-page="/Business/Cards">Ver todas</a>
+            </div>
+            @if (Model.Dashboard.RecentCards.Count == 0)
+            {
+                <div class="p-empty" data-testid="business-dashboard-no-cards">
+                    <i class="bi bi-credit-card p-empty-icon"></i>
+                    <div class="p-empty-title">Sin tarjetas todavia</div>
+                    <p class="p-empty-desc">Cuando agregues una tarjeta, aqui veras sellos y actividad reciente.</p>
+                    <a class="p-btn p-btn-primary p-btn-sm p-empty-cta" asp-page="/Business/Enroll">Asociar cliente</a>
+                </div>
+            }
+            else
+            {
+                <div data-testid="business-dashboard-recent-cards">
+                    @foreach (var card in Model.Dashboard.RecentCards)
+                    {
+                        var clientName = $"{card.Client.FirstName} {card.Client.LastName}".Trim();
+                        if (string.IsNullOrWhiteSpace(clientName)) clientName = card.Client.UserName;
+                        var stampGoal = Math.Max(1, card.StampGoal);
+                        var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
+                        <a class="p-list-row"
+                           asp-page="/Business/Cards"
+                           asp-route-query="@card.Client.UserName"
+                           asp-route-cardId="@card.Id"
+                           data-testid="business-dashboard-recent-card">
+                            <div>
+                                <strong class="p-list-name">@clientName</strong>
+                                <span class="p-list-meta">@card.Client.Email</span>
+                            </div>
+                            <span class="p-badge p-badge-gray">@visibleStamps / @stampGoal sellos</span>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
 
-            <section class="business-dashboard-panel">
+        <div class="p-card-flush">
+            <div class="p-card-header">
                 <h2>Ultimos sellos</h2>
-                @if (Model.Dashboard.RecentStampEvents.Count == 0)
-                {
-                    <div class="dashboard-empty-state compact" data-testid="business-dashboard-no-ledger">
-                        <p class="eyebrow">Sin checadas recientes</p>
-                        <h3>Agrega sellos desde tarjetas</h3>
-                        <p>Los eventos apareceran aqui con el resultado de la tarjeta digital y auditoria.</p>
-                        <a class="btn btn-outline-primary btn-sm" asp-page="/Business/Cards">Abrir tarjetas</a>
-                    </div>
-                }
-                else
-                {
-                    <div class="stamp-ledger-items" data-testid="business-dashboard-ledger">
-                        @foreach (var item in Model.Dashboard.RecentStampEvents)
-                        {
-                            <div class="stamp-ledger-item" data-testid="business-dashboard-ledger-event">
+                <a class="p-btn p-btn-ghost p-btn-sm" asp-page="/Business/Cards">Abrir tarjetas</a>
+            </div>
+            @if (Model.Dashboard.RecentStampEvents.Count == 0)
+            {
+                <div class="p-empty" data-testid="business-dashboard-no-ledger">
+                    <i class="bi bi-patch-check p-empty-icon"></i>
+                    <div class="p-empty-title">Sin checadas recientes</div>
+                    <p class="p-empty-desc">Los eventos apareceran aqui con el resultado de la tarjeta digital.</p>
+                </div>
+            }
+            else
+            {
+                <div class="stamp-ledger-items" data-testid="business-dashboard-ledger">
+                    @foreach (var item in Model.Dashboard.RecentStampEvents)
+                    {
+                        var status = CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded);
+                        var statusClass = status == "Con alerta" ? "p-badge p-badge-amber" : "p-badge p-badge-green";
+                        <div class="p-ledger-item" data-testid="business-dashboard-ledger-event">
+                            <div class="p-ledger-row">
                                 <div>
-                                    <strong>@item.ClientName</strong>
-                                    <span>@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                    <strong class="p-list-name">@item.ClientName</strong>
+                                    <span class="p-list-meta">@item.CreatedAt.ToLocalTime().ToString("g")</span>
                                 </div>
-                                <p>Sellos actuales @item.NewCheckQTY</p>
-                                <p>Estado: @CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</p>
+                                <span class="p-badge p-badge-gray">@item.NewCheckQTY sellos</span>
+                            </div>
+                            <div class="p-ledger-status">
+                                <span class="@statusClass">@status</span>
                                 @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                 {
-                                    <p class="text-danger">Error: @item.ErrorSummary</p>
+                                    <span class="p-badge p-badge-red"><i class="bi bi-exclamation-circle"></i> @item.ErrorSummary</span>
                                 }
                             </div>
-                        }
-                    </div>
-                }
-            </section>
+                        </div>
+                    }
+                </div>
+            }
         </div>
-    </section>
+    </div>
 }
 
 @functions {
@@ -172,11 +184,7 @@
     {
         var hasGoogleAlert = googleAttempted && !googleSucceeded;
         var hasAppleAlert = appleAttempted && !appleSucceeded;
-        if (hasGoogleAlert || hasAppleAlert)
-        {
-            return "Con alerta";
-        }
-
+        if (hasGoogleAlert || hasAppleAlert) return "Con alerta";
         return "Actualizado";
     }
 }

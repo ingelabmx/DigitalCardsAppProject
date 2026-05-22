@@ -65,6 +65,22 @@
                 {
                     <div class="report-line-chart" data-testid="business-report-periods">
                         <svg viewBox="0 0 100 60" preserveAspectRatio="none" role="img" aria-label="Sellos y canjes por mes">
+                            <defs>
+                                <linearGradient id="grad-primary" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#0f766e" stop-opacity="0.22" />
+                                    <stop offset="100%" stop-color="#0f766e" stop-opacity="0" />
+                                </linearGradient>
+                                <linearGradient id="grad-accent" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#d97706" stop-opacity="0.18" />
+                                    <stop offset="100%" stop-color="#d97706" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <polygon class="report-area report-area-primary"
+                                     points="@AreaPoints(Model.Reports.StampPeriods.Select(period => period.StampCount), maxStampPeriod)"
+                                     fill="url(#grad-primary)" />
+                            <polygon class="report-area report-area-accent"
+                                     points="@AreaPoints(Model.Reports.StampPeriods.Select(period => period.RedemptionCount), maxStampPeriod)"
+                                     fill="url(#grad-accent)" />
                             <polyline class="report-line report-line-primary"
                                       points="@LinePoints(Model.Reports.StampPeriods.Select(period => period.StampCount), maxStampPeriod)" />
                             <polyline class="report-line report-line-accent"
@@ -105,6 +121,15 @@
                 {
                     <div class="report-line-chart report-line-chart-compact" data-testid="business-report-new-clients">
                         <svg viewBox="0 0 100 60" preserveAspectRatio="none" role="img" aria-label="Nuevos clientes por mes">
+                            <defs>
+                                <linearGradient id="grad-secondary" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.2" />
+                                    <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <polygon class="report-area report-area-secondary"
+                                     points="@AreaPoints(Model.Reports.NewClientPeriods.Select(period => period.NewClientCount), maxClientPeriod)"
+                                     fill="url(#grad-secondary)" />
                             <polyline class="report-line report-line-secondary"
                                       points="@LinePoints(Model.Reports.NewClientPeriods.Select(period => period.NewClientCount), maxClientPeriod)" />
                             @foreach (var point in ChartPoints(Model.Reports.NewClientPeriods.Select(period => period.NewClientCount), maxClientPeriod))
@@ -236,6 +261,14 @@
     {
         return string.Join(" ", ChartPoints(values, maxValue).Select(point =>
             $"{point.X},{point.Y}"));
+    }
+
+    private static string AreaPoints(IEnumerable<int> values, int maxValue)
+    {
+        var points = ChartPoints(values, maxValue);
+        if (points.Count == 0) return string.Empty;
+        var line = string.Join(" ", points.Select(p => $"{p.X},{p.Y}"));
+        return $"{line} {points[^1].X},58 {points[0].X},58";
     }
 
     private static IReadOnlyList<ChartPoint> ChartPoints(IEnumerable<int> values, int maxValue)

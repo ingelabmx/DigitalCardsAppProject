@@ -72,6 +72,8 @@
         <link rel="icon" type="image/svg+xml" href="@puntelioIconPath" asp-append-version="true" />
     }
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DigitalCards.Web.styles.css" asp-append-version="true" />
 </head>
@@ -189,9 +191,9 @@
                             <span></span>
                         </button>
                     </div>
-                    <div class="legacy-header-user">
-                        <span>@shellRole</span>
-                        <h5>Bienvenido, @shellName</h5>
+                    <div class="p-user-pill">
+                        <span class="p-user-role">@shellRole</span>
+                        <span class="p-user-name">@shellName</span>
                     </div>
                 </header>
 

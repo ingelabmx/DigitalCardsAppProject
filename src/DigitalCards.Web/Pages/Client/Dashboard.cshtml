@@ -4,112 +4,104 @@
     ViewData["Title"] = "Dashboard cliente";
 }
 
-<section class="app-surface client-legacy-hero">
-    <div>
-        <p class="eyebrow">Cliente</p>
-        <h1 data-testid="client-dashboard-title">Mis tarjetas de @Model.ClientName</h1>
-        <p class="lead">@Model.ClientName, consulta tus tarjetas de lealtad, revisa tus sellos y vuelve a abrir tus links Wallet.</p>
-    </div>
-</section>
+<div class="p-page-header">
+    <span class="p-eyebrow">Mis tarjetas</span>
+    <h1 class="p-page-heading" data-testid="client-dashboard-title">Hola, @Model.ClientName</h1>
+    <p class="p-page-sub">Consulta tus tarjetas de lealtad, revisa tus sellos y abre tus links Wallet.</p>
+</div>
 
 @if (Model.Dashboard is not null)
 {
-    <section class="client-wallet-guide" data-testid="client-wallet-guide">
-        <div>
-            <span>01</span>
-            <strong>Muestra tu QR</strong>
-            <small>El negocio te encuentra por usuario.</small>
+    <div class="p-steps-grid" data-testid="client-wallet-guide">
+        <div class="p-step">
+            <span class="p-step-num">01</span>
+            <i class="bi bi-qr-code p-step-icon"></i>
+            <span class="p-step-title">Muestra tu QR</span>
+            <span class="p-step-desc">El negocio te encuentra por usuario.</span>
         </div>
-        <div>
-            <span>02</span>
-            <strong>Revisa tus sellos</strong>
-            <small>Consulta avance por tarjeta.</small>
+        <div class="p-step">
+            <span class="p-step-num">02</span>
+            <i class="bi bi-patch-check-fill p-step-icon"></i>
+            <span class="p-step-title">Revisa tus sellos</span>
+            <span class="p-step-desc">Consulta avance por tarjeta.</span>
         </div>
-        <div>
-            <span>03</span>
-            <strong>Abre Wallet</strong>
-            <small>Instala o consulta tu tarjeta digital.</small>
+        <div class="p-step">
+            <span class="p-step-num">03</span>
+            <i class="bi bi-wallet2 p-step-icon"></i>
+            <span class="p-step-title">Abre Wallet</span>
+            <span class="p-step-desc">Instala o consulta tu tarjeta digital.</span>
         </div>
-    </section>
+    </div>
 
-    <section class="result-panel client-dashboard-summary" data-testid="client-dashboard-summary">
-        <div class="page-heading">
-            <div>
-                <p class="eyebrow">Resumen</p>
-                <h2>@Model.ClientName</h2>
-            </div>
-            <span class="badge text-bg-light" data-testid="client-dashboard-card-count">@Model.Dashboard.Cards.Count tarjeta(s)</span>
-        </div>
-
-        <div class="client-dashboard-grid">
-            <div class="client-identity-panel" data-testid="client-identity-panel">
+    <div class="p-client-identity p-card mb-4" data-testid="client-dashboard-summary">
+        <div class="p-identity-grid">
+            <div class="p-identity-qr" data-testid="client-identity-panel">
                 <div class="client-qr-card" data-testid="client-qr-card" aria-label="QR real del usuario @Model.Dashboard.Client.UserName">
                     @Html.Raw(Model.ClientQrSvg)
                 </div>
-                <dl class="client-profile-list" data-testid="client-profile-summary">
-                    <div>
-                        <dt>Usuario</dt>
-                        <dd data-testid="client-profile-username">@Model.Dashboard.Client.UserName</dd>
+            </div>
+            <div class="p-identity-info">
+                <dl class="p-profile-dl" data-testid="client-profile-summary">
+                    <div class="p-profile-item">
+                        <dt class="p-profile-label">Usuario</dt>
+                        <dd class="p-profile-value" data-testid="client-profile-username">@Model.Dashboard.Client.UserName</dd>
                     </div>
-                    <div>
-                        <dt>Correo</dt>
-                        <dd data-testid="client-profile-email">@Model.Dashboard.Client.Email</dd>
+                    <div class="p-profile-item">
+                        <dt class="p-profile-label">Correo</dt>
+                        <dd class="p-profile-value" data-testid="client-profile-email">@Model.Dashboard.Client.Email</dd>
+                    </div>
+                    <div class="p-profile-item">
+                        <dt class="p-profile-label">Sellos actuales</dt>
+                        <dd class="p-stat-value" data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</dd>
                     </div>
                 </dl>
             </div>
+        </div>
+    </div>
 
-            <div class="client-dashboard-metrics">
-                <div class="metric">
-                    <span>Sellos actuales</span>
-                    <strong data-testid="client-dashboard-current-stamps">@Model.Dashboard.TotalCurrentStamps</strong>
-                </div>
+    @if (Model.Dashboard.Cards.Count > 0)
+    {
+        <div class="p-cards-grid" data-testid="client-dashboard-card-preview">
+            @foreach (var card in Model.Dashboard.Cards.Take(3))
+            {
+                var stampGoal = Math.Max(1, card.StampGoal);
+                var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
+                <article class="p-card client-card-preview">
+                    <div>
+                        <span class="p-eyebrow p-eyebrow-sm">Tarjeta</span>
+                        <h3 class="p-card-title">@card.BusinessName</h3>
+                    </div>
+                    <div class="p-stamps client-stamp-track" aria-label="Sellos actuales">
+                        @for (var stamp = 1; stamp <= stampGoal; stamp++)
+                        {
+                            <span class="p-stamp @(stamp <= visibleStamps ? "on" : string.Empty)"></span>
+                        }
+                    </div>
+                    <p class="p-note">@visibleStamps de @stampGoal sellos</p>
+                    @if (card.RecentRewardRedemptions.Count > 0)
+                    {
+                        <small class="p-list-meta" data-testid="client-dashboard-redemption">Ultimo canje @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</small>
+                    }
+                    <a class="p-btn p-btn-blue p-wallet-btn"
+                       asp-page="/Wallet/Select"
+                       asp-route-token="@card.WalletSelectToken"
+                       data-testid="client-dashboard-wallet-link">
+                        <i class="bi bi-wallet2"></i> Abrir Wallet
+                    </a>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="p-card p-empty" data-testid="client-dashboard-empty-cards">
+            <i class="bi bi-credit-card p-empty-icon"></i>
+            <div class="p-empty-title">Sin tarjetas activas</div>
+            <p class="p-empty-desc">Escanea el QR del mostrador o abre el link que te comparta el negocio para asociar tu primera tarjeta.</p>
+            <div class="p-empty-actions">
+                <a class="p-btn p-btn-primary" asp-page="/Index">Ir al inicio</a>
+                <a class="p-btn p-btn-outline" asp-page="/Client/Profile">Revisar perfil</a>
             </div>
         </div>
-
-        @if (Model.Dashboard.Cards.Count > 0)
-        {
-            <div class="client-card-preview-grid" data-testid="client-dashboard-card-preview">
-                @foreach (var card in Model.Dashboard.Cards.Take(3))
-                {
-                    var stampGoal = Math.Max(1, card.StampGoal);
-                    var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
-                    <article class="client-card-preview">
-                        <div>
-                            <span class="client-card-kicker">Tarjeta</span>
-                            <h3>@card.BusinessName</h3>
-                        </div>
-                        <div class="client-stamp-track" aria-label="Sellos actuales">
-                            @for (var stamp = 1; stamp <= stampGoal; stamp++)
-                            {
-                                <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
-                            }
-                        </div>
-                        <p>@visibleStamps de @stampGoal sellos</p>
-                        @if (card.RecentRewardRedemptions.Count > 0)
-                        {
-                            <small data-testid="client-dashboard-redemption">Ultimo canje @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</small>
-                        }
-                        <a class="btn btn-outline-primary btn-sm"
-                           asp-page="/Wallet/Select"
-                           asp-route-token="@card.WalletSelectToken"
-                           data-testid="client-dashboard-wallet-link">Abrir Wallet</a>
-                    </article>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="dashboard-empty-state" data-testid="client-dashboard-empty-cards">
-                <div>
-                    <p class="eyebrow">Sin tarjetas activas</p>
-                    <h3>Registrate con un negocio participante</h3>
-                    <p>Escanea el QR del mostrador o abre el link que te comparta el negocio para asociar tu primera tarjeta.</p>
-                </div>
-                <div class="dashboard-empty-actions">
-                    <a class="btn btn-primary" asp-page="/Index">Ir al inicio</a>
-                    <a class="btn btn-outline-primary" asp-page="/Client/Profile">Revisar perfil</a>
-                </div>
-            </div>
-        }
-    </section>
+    }
 }
