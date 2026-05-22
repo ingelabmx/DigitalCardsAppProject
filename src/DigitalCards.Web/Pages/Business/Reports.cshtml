@@ -11,55 +11,69 @@
         : 1;
 }
 
-<section class="result-panel business-reports" data-testid="business-reports">
-    <div class="page-heading">
-        <div>
-            <h1>Reportes</h1>
-            <p class="lead">Resumen operativo de tarjetas, sellos, canjes y clientes del negocio autenticado.</p>
+<div class="p-page-header" data-testid="business-reports">
+    <span class="p-eyebrow">Negocio</span>
+    <h1 class="p-page-heading">Reportes</h1>
+    <p class="p-page-sub">Resumen operativo de tarjetas, sellos, canjes y clientes del negocio autenticado.</p>
+</div>
+
+@if (Model.IsPilotBlocked)
+{
+    <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+        @Model.PilotBlockMessage
+    </div>
+}
+else if (Model.Reports is null)
+{
+    <div class="p-empty">
+        <div class="p-empty-icon"><i class="bi bi-bar-chart"></i></div>
+        <p class="p-empty-title">Sin datos disponibles</p>
+        <p class="p-empty-desc">No hay datos disponibles aun para este negocio.</p>
+    </div>
+}
+else
+{
+    <div class="p-stats-grid-4 mb-4">
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon blue"><i class="bi bi-credit-card-2-front"></i></span>
+                Tarjetas
+            </div>
+            <div class="p-stat-value" data-testid="business-report-card-count">@Model.Reports.CardCount</div>
+            <div class="p-stat-sub">@Model.Reports.CardsCreatedLast30Days en 30 dias</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon green"><i class="bi bi-people"></i></span>
+                Clientes
+            </div>
+            <div class="p-stat-value" data-testid="business-report-client-count">@Model.Reports.ClientCount</div>
+            <div class="p-stat-sub">@Model.Reports.NewClientPeriods.Sum(p => p.NewClientCount) nuevos en 6 meses</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon amber"><i class="bi bi-patch-check"></i></span>
+                Sellos / Canjes (30d)
+            </div>
+            <div class="p-stat-value">@Model.Reports.StampsLast30Days <span class="p-stat-sub">/ @Model.Reports.RedemptionsLast30Days</span></div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">
+                <span class="p-stat-icon blue"><i class="bi bi-graph-up"></i></span>
+                Tasa de redencion
+            </div>
+            <div class="p-stat-value">@Model.Reports.RedemptionRate.ToString("0.0")%</div>
+            <div class="p-stat-sub">canjes sobre sellos</div>
         </div>
     </div>
 
-    @if (Model.IsPilotBlocked)
-    {
-        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
-            @Model.PilotBlockMessage
-        </div>
-    }
-    else if (Model.Reports is null)
-    {
-        <p class="text-muted">No hay datos disponibles.</p>
-    }
-    else
-    {
-        <div class="metric-row business-report-metrics business-report-metrics-four">
-            <div class="metric">
-                <span>Tarjetas</span>
-                <strong data-testid="business-report-card-count">@Model.Reports.CardCount</strong>
-                <small>@Model.Reports.CardsCreatedLast30Days en 30 dias</small>
-            </div>
-            <div class="metric">
-                <span>Clientes</span>
-                <strong data-testid="business-report-client-count">@Model.Reports.ClientCount</strong>
-                <small>@Model.Reports.NewClientPeriods.Sum(period => period.NewClientCount) nuevos en 6 meses</small>
-            </div>
-            <div class="metric">
-                <span>Sellos vs canjes</span>
-                <strong>@Model.Reports.StampsLast30Days / @Model.Reports.RedemptionsLast30Days</strong>
-                <small>ultimos 30 dias</small>
-            </div>
-            <div class="metric">
-                <span>Tasa de redencion</span>
-                <strong>@Model.Reports.RedemptionRate.ToString("0.0")%</strong>
-                <small>canjes sobre sellos</small>
-            </div>
-        </div>
-
-        <div class="business-dashboard-grid">
-            <section class="business-dashboard-panel">
-                <h2>Sellos por mes</h2>
+    <div class="p-charts-grid">
+        <div class="p-chart-card">
+            <h2>Sellos por mes</h2>
+            <div class="p-chart-body">
                 @if (Model.Reports.StampPeriods.Count == 0)
                 {
-                    <p class="text-muted" data-testid="business-report-no-periods">No hay eventos recientes de sellos.</p>
+                    <p class="p-page-sub" data-testid="business-report-no-periods">No hay eventos recientes de sellos.</p>
                 }
                 else
                 {
@@ -95,13 +109,13 @@
                             }
                         </svg>
                         <div class="report-line-labels">
-                        @foreach (var period in Model.Reports.StampPeriods)
-                        {
-                            <div data-testid="business-report-period">
-                                <strong>@period.Period</strong>
-                                <small>@period.StampCount sellos · @period.RedemptionCount canjes</small>
-                            </div>
-                        }
+                            @foreach (var period in Model.Reports.StampPeriods)
+                            {
+                                <div data-testid="business-report-period">
+                                    <strong>@period.Period</strong>
+                                    <small>@period.StampCount sellos · @period.RedemptionCount canjes</small>
+                                </div>
+                            }
                         </div>
                         <div class="report-chart-legend">
                             <span><i class="report-legend-primary"></i>Sellos</span>
@@ -109,13 +123,15 @@
                         </div>
                     </div>
                 }
-            </section>
+            </div>
+        </div>
 
-            <section class="business-dashboard-panel">
-                <h2>Nuevos clientes por mes</h2>
+        <div class="p-chart-card">
+            <h2>Nuevos clientes por mes</h2>
+            <div class="p-chart-body">
                 @if (Model.Reports.NewClientPeriods.Count == 0)
                 {
-                    <p class="text-muted">No hay altas recientes.</p>
+                    <p class="p-page-sub">No hay altas recientes.</p>
                 }
                 else
                 {
@@ -138,123 +154,127 @@
                             }
                         </svg>
                         <div class="report-line-labels">
-                        @foreach (var period in Model.Reports.NewClientPeriods)
-                        {
-                            <div data-testid="business-report-new-client-period">
-                                <strong>@period.Period</strong>
-                                <small>@period.NewClientCount cliente(s)</small>
-                            </div>
-                        }
+                            @foreach (var period in Model.Reports.NewClientPeriods)
+                            {
+                                <div data-testid="business-report-new-client-period">
+                                    <strong>@period.Period</strong>
+                                    <small>@period.NewClientCount cliente(s)</small>
+                                </div>
+                            }
                         </div>
                     </div>
                 }
-            </section>
+            </div>
         </div>
+    </div>
 
-        <div class="business-dashboard-grid">
-            <section class="business-dashboard-panel">
-                <h2>Top clientes por uso</h2>
-                @if (Model.Reports.TopClients.Count == 0)
-                {
-                    <p class="text-muted">No hay clientes suficientes para generar ranking.</p>
-                }
-                else
-                {
-                    <div class="dashboard-card-list" data-testid="business-report-top-clients">
-                        @foreach (var client in Model.Reports.TopClients)
-                        {
-                            <a class="dashboard-card-row"
-                               asp-page="/Business/Cards"
-                               asp-route-query="@client.UserName"
-                               data-testid="business-report-top-client">
-                                <div>
-                                    <strong>@client.ClientName</strong>
-                                    <span>@client.UserName</span>
-                                </div>
-                                <div>
-                                    <strong>@client.LifetimeStamps</strong>
-                                    <span>sellos historicos</span>
-                                </div>
-                                <div>
-                                    <strong>@client.RedemptionCount</strong>
-                                    <span>canjes</span>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                }
-            </section>
-
-            <section class="business-dashboard-panel">
-                <h2>Resumen comercial</h2>
-                <div class="dashboard-card-list" data-testid="business-report-summary-cards">
-                    <div class="dashboard-card-row compact">
-                        <div>
-                            <strong>@Model.Reports.NewClientPeriods.Sum(period => period.NewClientCount)</strong>
-                            <span>nuevos clientes en 6 meses</span>
-                        </div>
-                        <div>
-                            <strong>@Model.Reports.StampsLast30Days</strong>
-                            <span>sellos generados en 30 dias</span>
-                        </div>
-                    </div>
-                    <div class="dashboard-card-row compact">
-                        <div>
-                            <strong>@Model.Reports.RedemptionsLast30Days</strong>
-                            <span>canjes en 30 dias</span>
-                        </div>
-                        <div>
-                            <strong>@Model.Reports.CurrentStampTotal</strong>
-                            <span>sellos activos acumulados</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <section class="business-dashboard-panel business-report-client-breakdown">
-            <h2>Clientes del negocio</h2>
-            @if (Model.Reports.RecentClients.Count == 0)
+    <div class="p-charts-grid">
+        <div class="p-card-flush">
+            <div class="p-card-header">
+                <h3>Top clientes por uso</h3>
+            </div>
+            @if (Model.Reports.TopClients.Count == 0)
             {
-                <p class="text-muted" data-testid="business-report-no-client-breakdown">No hay clientes asociados a este negocio.</p>
+                <div class="p-empty">
+                    <p class="p-empty-title">Sin ranking</p>
+                    <p class="p-empty-desc" data-testid="business-report-top-clients">No hay clientes suficientes para generar ranking.</p>
+                </div>
             }
             else
             {
-                <div class="table-responsive" data-testid="business-report-client-breakdown">
-                    <table class="table align-middle legacy-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Usuario</th>
-                                <th>Correo</th>
-                                <th>Tarjetas</th>
-                                <th>Sellos actuales</th>
-                                <th>Sellos historicos</th>
-                                <th>Estado</th>
-                                <th>Ultima actividad</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var client in Model.Reports.RecentClients)
-                            {
-                                <tr data-testid="business-report-client-breakdown-row">
-                                    <td>@client.ClientName</td>
-                                    <td>@client.UserName</td>
-                                    <td>@client.Email</td>
-                                    <td>@client.CardCount</td>
-                                    <td>@client.CurrentStamps</td>
-                                    <td>@client.LifetimeStamps</td>
-                                    <td><span class="status-pill">@client.CardStatus</span></td>
-                                    <td>@client.LastActivityAt.ToLocalTime().ToString("g")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <div data-testid="business-report-top-clients">
+                    @foreach (var client in Model.Reports.TopClients)
+                    {
+                        <a class="p-list-row"
+                           asp-page="/Business/Cards"
+                           asp-route-query="@client.UserName"
+                           data-testid="business-report-top-client">
+                            <div>
+                                <span class="p-list-name">@client.ClientName</span>
+                                <span class="p-list-meta">@client.UserName</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="p-list-name">@client.LifetimeStamps</span>
+                                <span class="p-list-meta">@client.RedemptionCount canjes</span>
+                            </div>
+                        </a>
+                    }
                 </div>
             }
-        </section>
-    }
-</section>
+        </div>
+
+        <div class="p-card-flush">
+            <div class="p-card-header">
+                <h3>Resumen comercial</h3>
+            </div>
+            <div data-testid="business-report-summary-cards">
+                <div class="p-list-row">
+                    <span class="p-list-meta">Nuevos clientes (6 meses)</span>
+                    <span class="p-list-name">@Model.Reports.NewClientPeriods.Sum(p => p.NewClientCount)</span>
+                </div>
+                <div class="p-list-row">
+                    <span class="p-list-meta">Sellos generados (30 dias)</span>
+                    <span class="p-list-name">@Model.Reports.StampsLast30Days</span>
+                </div>
+                <div class="p-list-row">
+                    <span class="p-list-meta">Canjes en 30 dias</span>
+                    <span class="p-list-name">@Model.Reports.RedemptionsLast30Days</span>
+                </div>
+                <div class="p-list-row">
+                    <span class="p-list-meta">Sellos activos acumulados</span>
+                    <span class="p-list-name">@Model.Reports.CurrentStampTotal</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-card-flush">
+        <div class="p-card-header">
+            <h3>Clientes del negocio</h3>
+        </div>
+        @if (Model.Reports.RecentClients.Count == 0)
+        {
+            <div class="p-empty">
+                <p class="p-empty-title" data-testid="business-report-no-client-breakdown">Sin clientes asociados</p>
+                <p class="p-empty-desc">No hay clientes asociados a este negocio.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive" data-testid="business-report-client-breakdown">
+                <table class="p-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Tarjetas</th>
+                            <th>Sellos actuales</th>
+                            <th>Sellos historicos</th>
+                            <th>Estado</th>
+                            <th>Ultima actividad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var client in Model.Reports.RecentClients)
+                        {
+                            <tr data-testid="business-report-client-breakdown-row">
+                                <td>@client.ClientName</td>
+                                <td class="td-muted">@client.UserName</td>
+                                <td class="td-muted">@client.Email</td>
+                                <td>@client.CardCount</td>
+                                <td>@client.CurrentStamps</td>
+                                <td>@client.LifetimeStamps</td>
+                                <td><span class="p-badge p-badge-gray">@client.CardStatus</span></td>
+                                <td class="td-muted">@client.LastActivityAt.ToLocalTime().ToString("g")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
 
 @functions {
     private static string LinePoints(IEnumerable<int> values, int maxValue)

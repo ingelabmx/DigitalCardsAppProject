@@ -4,42 +4,39 @@
     ViewData["Title"] = "Branding negocio";
 }
 
-<section class="result-panel">
-    <div class="page-heading">
-        <div>
-            <p class="eyebrow">Negocio</p>
-            <h1>Branding Wallet</h1>
-            @if (Model.Settings is not null)
-            {
-                <p class="lead" data-testid="business-branding-heading">@Model.Settings.BusinessName</p>
-            }
-        </div>
+<div class="p-page-header">
+    <span class="p-eyebrow">Negocio</span>
+    <h1 class="p-page-heading">Branding Wallet</h1>
+    @if (Model.Settings is not null)
+    {
+        <p class="p-page-sub" data-testid="business-branding-heading">@Model.Settings.BusinessName</p>
+    }
+</div>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status" data-testid="business-branding-status">
+        @Model.StatusMessage
     </div>
+}
 
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-    {
-        <div class="alert alert-success" role="status" data-testid="business-branding-status">
-            @Model.StatusMessage
-        </div>
-    }
-
-    @if (Model.IsPilotBlocked)
-    {
-        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
-            @Model.PilotBlockMessage
-        </div>
-    }
-    else if (Model.Settings is not null)
-    {
-        <div class="business-profile-grid">
-            <form method="post"
-                  enctype="multipart/form-data"
-                  class="business-profile-panel business-branding-panel"
-                  data-testid="business-branding-form">
-                <h2>Perfil publico</h2>
-                <p class="text-muted">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
+@if (Model.IsPilotBlocked)
+{
+    <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+        @Model.PilotBlockMessage
+    </div>
+}
+else if (Model.Settings is not null)
+{
+    <div class="p-branding-grid">
+        <form method="post"
+              enctype="multipart/form-data"
+              data-testid="business-branding-form">
+            <div class="p-card mb-4">
+                <h2 class="p-section-title">Perfil publico</h2>
+                <p class="p-page-sub mb-4">Estos datos aparecen en correos, landing Wallet, tarjeta digital y dashboard cliente.</p>
 
                 <div class="mb-3">
                     <label asp-for="Input.PublicName" class="form-label">Nombre del negocio</label>
@@ -83,37 +80,29 @@
                     }
                     else if (!hasLogo)
                     {
-                        <p class="text-muted mb-2" data-testid="business-branding-logo-empty" data-branding-logo-placeholder>Sin logo personalizado.</p>
+                        <p class="p-page-sub mb-2" data-testid="business-branding-logo-empty" data-branding-logo-placeholder>Sin logo personalizado.</p>
                     }
                     <label asp-for="Input.LogoUpload" class="form-label">Subir logo PNG</label>
                     <input asp-for="Input.LogoUpload" class="form-control" type="file" accept=".png,image/png" data-testid="business-branding-logo-upload" data-branding-logo-upload />
-                    <small class="form-text text-muted">Solo PNG. Maximo 2 MB. Si no es cuadrado, Puntelio lo centra en un lienzo transparente para Wallet.</small>
+                    <small class="p-page-sub">Solo PNG. Maximo 2 MB. Si no es cuadrado, Puntelio lo centra en un lienzo transparente para Wallet.</small>
                 </div>
 
-                <div class="branding-color-row">
-                    <div class="mb-3">
+                <div class="p-branding-colors mb-3">
+                    <div>
                         <label asp-for="Input.PrimaryColor" class="form-label">Color primario</label>
                         <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" data-branding-color-input="primary" />
                     </div>
-                    <div class="mb-3">
+                    <div>
                         <label asp-for="Input.SecondaryColor" class="form-label">Color secundario 1</label>
                         <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" data-branding-color-input="secondary" />
                     </div>
-                    <div class="mb-3">
+                    <div>
                         <label asp-for="Input.CustomFieldColor" class="form-label">Color secundario 2</label>
                         <input asp-for="Input.CustomFieldColor" class="form-control" maxlength="7" data-testid="business-branding-custom-field-color" data-branding-color-input="custom" />
                     </div>
                 </div>
 
-                <div class="branding-preview"
-                     style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;--brand-custom:@Model.Input.CustomFieldColor;"
-                     data-testid="business-branding-preview">
-                    <span>@Model.Input.ProgramName</span>
-                    <strong>@Model.Input.PublicName</strong>
-                    <small>@Model.Input.ProgramDescription</small>
-                </div>
-
-                <div class="form-actions">
+                <div class="p-action-buttons">
                     <button class="btn btn-primary" type="submit" data-testid="business-branding-submit">Guardar</button>
                     <button class="btn btn-outline-primary"
                             type="submit"
@@ -122,28 +111,37 @@
                         Guardar y actualizar
                     </button>
                 </div>
-            </form>
+            </div>
+        </form>
 
-            <form method="post"
-                  asp-page-handler="RefreshWallets"
-                  class="business-profile-panel"
-                  data-testid="business-wallet-branding-refresh-form">
-                <h2>Actualizar Tarjetas</h2>
-                <p class="text-muted">Aplica el branding actual a todas las tarjetas digitales ya emitidas de este negocio. No modifica sellos ni datos del cliente.</p>
+        <div>
+            <div class="p-branding-preview"
+                 style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;--brand-custom:@Model.Input.CustomFieldColor;"
+                 data-testid="business-branding-preview">
+                <span>@Model.Input.ProgramName</span>
+                <strong>@Model.Input.PublicName</strong>
+                <small>@Model.Input.ProgramDescription</small>
+            </div>
 
-                @if (Model.RefreshResult is not null)
-                {
-                    <div class="wallet-refresh-summary" data-testid="business-wallet-branding-refresh-result">
-                        <span>Tarjetas Wallet: @Model.RefreshResult.CardsWithTrackedWallets</span>
-                        <span>Actualizaciones: @(Model.RefreshResult.GoogleWalletSucceeded + Model.RefreshResult.AppleWalletSucceeded) / @(Model.RefreshResult.GoogleWalletAttempted + Model.RefreshResult.AppleWalletAttempted)</span>
-                    </div>
-                }
+            <div class="p-card mt-4" data-testid="business-wallet-branding-refresh-form">
+                <form method="post" asp-page-handler="RefreshWallets">
+                    <h2 class="p-section-title">Actualizar Tarjetas</h2>
+                    <p class="p-page-sub mb-3">Aplica el branding actual a todas las tarjetas digitales ya emitidas de este negocio. No modifica sellos ni datos del cliente.</p>
 
-                <button class="btn btn-outline-primary" type="submit" data-testid="business-wallet-branding-refresh-submit">Actualizar</button>
-            </form>
+                    @if (Model.RefreshResult is not null)
+                    {
+                        <div class="p-wallet-refresh mb-3" data-testid="business-wallet-branding-refresh-result">
+                            <span>Tarjetas Wallet: <strong>@Model.RefreshResult.CardsWithTrackedWallets</strong></span>
+                            <span>Actualizaciones: <strong>@(Model.RefreshResult.GoogleWalletSucceeded + Model.RefreshResult.AppleWalletSucceeded) / @(Model.RefreshResult.GoogleWalletAttempted + Model.RefreshResult.AppleWalletAttempted)</strong></span>
+                        </div>
+                    }
+
+                    <button class="btn btn-outline-primary" type="submit" data-testid="business-wallet-branding-refresh-submit">Actualizar</button>
+                </form>
+            </div>
         </div>
-    }
-</section>
+    </div>
+}
 
 @functions {
     private static string VersionedLogoPath(string logoPath, DateTimeOffset? updatedAt)
