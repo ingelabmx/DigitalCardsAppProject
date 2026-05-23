@@ -226,6 +226,13 @@ public sealed class AppleWalletService : IAppleWalletService
             pass.SerialNumber,
             cancellationToken);
 
+        _logger.LogInformation(
+            "Apple Wallet pass update: serial={SerialNumber} proposedTag={UpdateTag} stamps={Stamps} devices={DeviceCount}",
+            pass.SerialNumber,
+            updateTag,
+            card.CurrentStamps,
+            devices.Count);
+
         foreach (var device in devices)
         {
             try

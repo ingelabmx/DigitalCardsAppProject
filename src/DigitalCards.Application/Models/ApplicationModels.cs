@@ -26,6 +26,10 @@ public sealed record UpdateClientProfileResult(ClientDto? Client, string? ErrorM
 
 public sealed record BusinessLoginCommand(string Email, string Password);
 
+public sealed record ChangeBusinessPasswordCommand(Guid BusinessId, string CurrentPassword, string NewPassword);
+
+public sealed record ChangeBusinessPasswordResult(bool Succeeded, string? ErrorMessage);
+
 public sealed record RequestClientPasswordResetCommand(string UserNameOrEmail, string BaseUrl);
 
 public sealed record RequestBusinessPasswordResetCommand(string Email, string BaseUrl);

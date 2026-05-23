@@ -13,4 +13,6 @@ public interface IEmailTemplateRenderer
     RenderedEmailTemplate RenderInternalAlert(InternalAlertEmail email);
 
     RenderedEmailTemplate RenderLandingContact(LandingContactEmail email);
+
+    RenderedEmailTemplate RenderPasswordChanged(PasswordChangedEmail email);
 }

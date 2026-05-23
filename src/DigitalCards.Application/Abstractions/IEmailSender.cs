@@ -9,4 +9,6 @@ public interface IEmailSender
     Task SendPasswordResetAsync(PasswordResetEmail email, CancellationToken cancellationToken = default);
 
     Task SendLandingContactAsync(LandingContactEmail email, CancellationToken cancellationToken = default);
+
+    Task SendPasswordChangedAsync(PasswordChangedEmail email, CancellationToken cancellationToken = default);
 }

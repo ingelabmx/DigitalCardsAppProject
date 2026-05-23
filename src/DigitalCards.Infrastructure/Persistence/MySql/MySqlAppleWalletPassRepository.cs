@@ -84,9 +84,11 @@ public sealed class MySqlAppleWalletPassRepository : IAppleWalletPassRepository
         DateTimeOffset updatedAt,
         CancellationToken cancellationToken = default)
     {
+        // GREATEST ensures the tag is strictly increasing even when two operations
+        // happen within the same millisecond (redeem + immediate stamp race condition).
         const string sql = """
             update AppleWalletPass
-            set UpdateTag = @UpdateTag,
+            set UpdateTag = cast(GREATEST(cast(@UpdateTag as unsigned), cast(UpdateTag as unsigned) + 1) as char),
                 UpdatedAt = @UpdatedAt
             where PassTypeIdentifier = @PassTypeIdentifier
               and SerialNumber = @SerialNumber;

@@ -63,9 +63,12 @@ public sealed class InMemoryAppleWalletPassRepository : IAppleWalletPassReposito
             if (index >= 0)
             {
                 var pass = _store.AppleWalletPasses[index];
+                var currentTag = long.TryParse(pass.UpdateTag, out var ct) ? ct : 0L;
+                var proposedTag = long.TryParse(updateTag, out var pt) ? pt : 0L;
+                var finalTag = Math.Max(proposedTag, currentTag + 1).ToString();
                 _store.AppleWalletPasses[index] = pass with
                 {
-                    UpdateTag = updateTag,
+                    UpdateTag = finalTag,
                     UpdatedAt = updatedAt
                 };
             }

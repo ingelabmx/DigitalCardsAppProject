@@ -6,7 +6,8 @@ public enum EmailTemplateKind
     Welcome,
     PasswordReset,
     InternalAlert,
-    LandingContact
+    LandingContact,
+    PasswordChanged
 }
 
 public sealed record RenderedEmailTemplate(
@@ -54,3 +55,10 @@ public sealed record LandingContactEmail(
     string Phone,
     string RequestType,
     DateTimeOffset CreatedAt);
+
+public sealed record PasswordChangedEmail(
+    string To,
+    string RecipientName,
+    string AccountType,
+    DateTimeOffset ChangedAt,
+    EmailBranding? Branding = null);

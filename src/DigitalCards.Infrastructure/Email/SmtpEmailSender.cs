@@ -54,6 +54,16 @@ public sealed class SmtpEmailSender : IEmailSender
         _logger.LogInformation("Sent landing contact email to {Recipient}.", MaskEmail(email.To));
     }
 
+    public async Task SendPasswordChangedAsync(
+        PasswordChangedEmail email,
+        CancellationToken cancellationToken = default)
+    {
+        var rendered = _templates.RenderPasswordChanged(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent password changed email to {Recipient}.", MaskEmail(email.To));
+    }
+
     private async Task SendRenderedAsync(
         RenderedEmailTemplate rendered,
         CancellationToken cancellationToken)

@@ -550,6 +550,103 @@ public sealed class DigitalCardsAppService
         return ToDto(business);
     }
 
+    public async Task<ChangeBusinessPasswordResult> ChangeBusinessPasswordAsync(
+        ChangeBusinessPasswordCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.BusinessId == Guid.Empty)
+        {
+            return new ChangeBusinessPasswordResult(false, "La sesion de negocio no es valida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.CurrentPassword))
+        {
+            return new ChangeBusinessPasswordResult(false, "La contrasena actual es requerida.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.NewPassword))
+        {
+            return new ChangeBusinessPasswordResult(false, "La contrasena nueva es requerida.");
+        }
+
+        if (command.NewPassword.Length < 8)
+        {
+            return new ChangeBusinessPasswordResult(false, "La contrasena nueva debe tener al menos 8 caracteres.");
+        }
+
+        if (command.NewPassword.Length > 128)
+        {
+            return new ChangeBusinessPasswordResult(false, "La contrasena nueva no puede exceder 128 caracteres.");
+        }
+
+        var business = await _businesses.FindByIdAsync(command.BusinessId, cancellationToken);
+        if (business is null)
+        {
+            return new ChangeBusinessPasswordResult(false, "El negocio no existe.");
+        }
+
+        var subject = new BusinessPasswordHashSubject(business.Id);
+        var credential = await _businessCredentials.FindByBusinessIdAsync(business.Id, cancellationToken);
+
+        bool currentPasswordValid;
+        if (credential is not null)
+        {
+            var verification = _passwordHasher.VerifyHashedPassword(subject, credential.PasswordHash, command.CurrentPassword);
+            currentPasswordValid = verification != PasswordVerificationResult.Failed;
+        }
+        else
+        {
+            currentPasswordValid = LegacyPasswordVerifier.Matches(business.PasswordHashPlaceholder, command.CurrentPassword);
+        }
+
+        if (!currentPasswordValid)
+        {
+            return new ChangeBusinessPasswordResult(false, "La contrasena actual no es valida.");
+        }
+
+        var now = _clock.UtcNow;
+        var legacyPasswordHash = LegacyPasswordVerifier.CreateLegacyBusinessPasswordHash(command.NewPassword);
+        await _businesses.UpdateAsync(
+            new Business(
+                business.Id,
+                business.Name,
+                business.Email,
+                legacyPasswordHash,
+                business.LogoPath,
+                business.PublicName,
+                business.PrimaryColor,
+                business.SecondaryColor,
+                business.ProgramName,
+                business.ProgramDescription,
+                business.CustomFieldColor),
+            cancellationToken);
+
+        await _businessCredentials.UpsertAsync(
+            new BusinessCredential(
+                business.Id,
+                _passwordHasher.HashPassword(subject, command.NewPassword),
+                now,
+                now),
+            cancellationToken);
+
+        try
+        {
+            await _emailSender.SendPasswordChangedAsync(
+                new PasswordChangedEmail(
+                    business.Email,
+                    business.DisplayName,
+                    "negocio",
+                    now),
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not send password changed email to business {BusinessId}.", business.Id);
+        }
+
+        return new ChangeBusinessPasswordResult(true, ErrorMessage: null);
+    }
+
     public async Task<BusinessBrandingSettingsDto?> GetBusinessBrandingSettingsAsync(
         Guid businessId,
         CancellationToken cancellationToken = default)

@@ -178,6 +178,34 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             Layout("Nueva solicitud de videollamada", bodyHtml, brand));
     }
 
+    public RenderedEmailTemplate RenderPasswordChanged(PasswordChangedEmail email)
+    {
+        var brand = NormalizeBrand(email.Branding);
+        var subject = $"Tu contrasena de {brand.DisplayName} fue cambiada";
+        var changedAt = email.ChangedAt.ToLocalTime().ToString("g");
+        var textBody = $"""
+            Hola {email.RecipientName},
+
+            Tu contrasena de {brand.DisplayName} ({email.AccountType}) fue cambiada exitosamente el {changedAt}.
+
+            Si no realizaste este cambio, contacta a soporte de inmediato.
+            """;
+        var bodyHtml = $"""
+            <h1>Contrasena cambiada</h1>
+            <p>Hola {Html(email.RecipientName)},</p>
+            <p>Tu contrasena de <strong>{Html(brand.DisplayName)}</strong> ({Html(email.AccountType)}) fue cambiada exitosamente.</p>
+            <p><strong>Fecha:</strong> {Html(changedAt)}</p>
+            <p>Si no realizaste este cambio, contacta a soporte de inmediato.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.PasswordChanged,
+            email.To,
+            subject,
+            textBody,
+            Layout("Contrasena cambiada", bodyHtml, brand));
+    }
+
     private static string Layout(string title, string bodyHtml, EmailBranding branding)
     {
         var brand = NormalizeBrand(branding);

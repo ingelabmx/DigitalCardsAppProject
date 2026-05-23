@@ -1,0 +1,66 @@
+@page
+@model DigitalCards.Web.Pages.Business.AccountModel
+@{
+    ViewData["Title"] = "Mi cuenta";
+}
+
+<div class="p-page-header">
+    <h1 class="p-page-heading">Mi cuenta</h1>
+    @if (Model.BusinessName is not null)
+    {
+        <p class="p-page-sub" data-testid="business-account-heading">@Model.BusinessName</p>
+    }
+</div>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status" data-testid="business-account-status">
+        @Model.StatusMessage
+    </div>
+}
+
+<form method="post" data-testid="business-account-form">
+    <div class="p-card mb-4">
+        <h2 class="p-section-title">Cambiar contrasena</h2>
+        <p class="p-page-sub mb-4">Ingresa tu contrasena actual y elige una nueva.</p>
+
+        <div class="mb-3">
+            <label asp-for="Input.CurrentPassword" class="form-label">Contrasena actual</label>
+            <input asp-for="Input.CurrentPassword"
+                   class="form-control"
+                   autocomplete="current-password"
+                   data-testid="business-account-current-password" />
+            <span asp-validation-for="Input.CurrentPassword" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.NewPassword" class="form-label">Nueva contrasena</label>
+            <input asp-for="Input.NewPassword"
+                   class="form-control"
+                   autocomplete="new-password"
+                   data-testid="business-account-new-password" />
+            <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.ConfirmNewPassword" class="form-label">Confirmar nueva contrasena</label>
+            <input asp-for="Input.ConfirmNewPassword"
+                   class="form-control"
+                   autocomplete="new-password"
+                   data-testid="business-account-confirm-password" />
+            <span asp-validation-for="Input.ConfirmNewPassword" class="text-danger"></span>
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary"
+                data-testid="business-account-submit">
+            Guardar contrasena
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
