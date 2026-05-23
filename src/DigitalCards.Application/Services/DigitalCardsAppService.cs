@@ -119,20 +119,23 @@ public sealed class DigitalCardsAppService
             email,
             legacyPasswordHash);
         await _clients.AddAsync(client, cancellationToken);
+        // Re-fetch from DB to get the auto-assigned legacy integer ID encoded as Guid.
+        var persistedClient = await _clients.FindByUserNameOrEmailAsync(userName, cancellationToken)
+            ?? throw new InvalidOperationException("Client could not be retrieved after creation.");
         if (!string.IsNullOrWhiteSpace(command.Password))
         {
             var now = _clock.UtcNow;
-            var subject = new ClientPasswordHashSubject(client.Id);
+            var subject = new ClientPasswordHashSubject(persistedClient.Id);
             await _clientCredentials.UpsertAsync(
                 new ClientCredential(
-                    client.Id,
+                    persistedClient.Id,
                     _clientPasswordHasher.HashPassword(subject, command.Password),
                     now,
                     now),
                 cancellationToken);
         }
 
-        return ToDto(client);
+        return ToDto(persistedClient);
     }
 
     public async Task RecordClientConsentAsync(
