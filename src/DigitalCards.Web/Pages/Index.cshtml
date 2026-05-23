@@ -109,6 +109,27 @@
                 <figure class="landing-screenshot-card" data-carousel-slide>
                     <img src="/img/card5.png" alt="Puntelio — tarjeta 5" loading="lazy" />
                 </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card6.png" alt="Puntelio — tarjeta 6" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card1.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card2.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card3.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card4.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card5.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card6.png" alt="" loading="lazy" />
+                </figure>
             </div>
             <button type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
         </div>
@@ -233,48 +254,61 @@
 }
 else
 {
-    <section class="home-gateway" data-testid="home-login-gateway">
-        <div class="home-hero-copy">
-            <p class="eyebrow">Puntelio</p>
+    <section class="p-app-hero" data-testid="home-login-gateway">
+        <div class="p-app-hero-left">
             <h1>Tarjetas de lealtad digitales para clientes y negocios.</h1>
-            <p class="lead">
-                Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital desde un solo lugar.
-            </p>
-            <div class="home-hero-actions">
-                <a class="btn btn-primary btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
-                <a class="btn btn-outline-primary btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
+            <p class="p-app-hero-sub">Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital.</p>
+            <div class="p-hero-ctas">
+                <a class="p-btn p-btn-primary p-btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
+                <a class="p-btn p-btn-outline p-btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
             </div>
         </div>
-
-        <div class="home-wallet-preview" aria-label="Vista previa de tarjeta digital">
-            <div class="home-wallet-card">
-                <span>Puntelio</span>
-                <strong>Tarjeta digital</strong>
-                <p>Sellos, recompensas y Wallet en un solo lugar.</p>
-                <div class="home-stamp-row" aria-hidden="true">
-                    <span class="filled"></span>
-                    <span class="filled"></span>
-                    <span class="filled"></span>
-                    <span></span>
-                    <span></span>
+        <div class="p-app-hero-right">
+            <div class="p-app-wallet-card">
+                <span class="p-app-card-kicker">Puntelio</span>
+                <strong class="p-app-card-name">Tarjeta digital</strong>
+                <p class="p-app-card-sub">Sellos, recompensas y Wallet en un solo lugar.</p>
+                <div class="p-stamps" aria-hidden="true">
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp"></span>
+                    <span class="p-stamp"></span>
                 </div>
             </div>
-            <div class="home-wallet-status">
+            <div class="p-app-card-meta">
                 <span>Tarjeta lista</span>
                 <span>Sellos actualizados</span>
             </div>
         </div>
     </section>
 
-    <section class="home-info-band">
+    <section class="p-app-split">
         <div>
-            <p class="eyebrow">Operacion real</p>
+            <span class="p-eyebrow">Operacion real</span>
             <h2>Un flujo para el mostrador y otro para el cliente.</h2>
         </div>
-        <p>
-            El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.
-        </p>
+        <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.</p>
     </section>
+
+    <div class="p-mini-grid">
+        <div class="p-mini-card">
+            <strong>Dashboard negocio</strong>
+            <p>Gestiona tarjetas, sellos y clientes desde un panel claro y rapido.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Apple &amp; Google Wallet</strong>
+            <p>El cliente recibe un link para instalar su tarjeta digital en su telefono.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Sellos en tiempo real</strong>
+            <p>Cada sello actualiza la tarjeta del cliente instantaneamente.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Branding propio</strong>
+            <p>Personaliza colores y logo para que tu tarjeta refleje tu negocio.</p>
+        </div>
+    </div>
 }
 
 @section Scripts {

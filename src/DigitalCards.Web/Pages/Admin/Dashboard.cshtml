@@ -4,69 +4,41 @@
     ViewData["Title"] = "Dashboard admin";
 }
 
-<section class="app-surface admin-dashboard-hero admin-command-hero">
-    <div>
-        <p class="eyebrow">Admin</p>
-        <h1 data-testid="admin-dashboard-title">@Model.AdminName</h1>
-        <p class="lead">Administra negocios, clientes, soporte y operacion de app.puntelio.com.</p>
-    </div>
+<div class="p-page-header">
+    <h1 class="p-page-heading" data-testid="admin-dashboard-title">@Model.AdminName</h1>
+    <p class="p-page-sub">Administra negocios, clientes, soporte y operacion de app.puntelio.com.</p>
+</div>
 
-    <div class="action-grid admin-action-grid" data-testid="admin-action-grid">
-        <a class="action-card" asp-page="/Admin/Businesses" data-testid="admin-businesses-link">
-            <span>Negocios</span>
-            <small>Registra, activa, desactiva o administra perfiles.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Clients" data-testid="admin-clients-link">
-            <span>Clientes</span>
-            <small>Consulta clientes y limpia cuentas de prueba con borrado seguro.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/AdminUsers" data-testid="admin-users-link">
-            <span>Administradores</span>
-            <small>Crea admins y resetea accesos sin SQL manual.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Reports" data-testid="admin-reports-link">
-            <span>Reportes</span>
-            <small>Resumen de tarjetas, sellos y estado Wallet.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Support" data-testid="admin-support-link">
-            <span>Soporte</span>
-            <small>Diagnostico seguro, eventos operativos y soporte.</small>
-        </a>
-        <a class="action-card" asp-page="/Admin/Logout" data-testid="admin-logout-link">
-            <span>Cerrar sesion</span>
-            <small>Cierra la sesion de administrador.</small>
+<div class="p-steps-grid mb-4" data-testid="admin-dashboard-command-strip">
+    <div class="p-step">
+        <span class="p-step-num">01</span>
+        <a class="p-step-link" asp-page="/Admin/Businesses">
+            <strong class="p-step-title">Negocios</strong>
+            <span class="p-step-desc">Alta, estado y perfil.</span>
         </a>
     </div>
-</section>
-
-<section class="admin-command-strip" data-testid="admin-dashboard-command-strip">
-    <a class="admin-command-card" asp-page="/Admin/Businesses">
-        <span>01</span>
-        <strong>Negocios</strong>
-        <small>Alta, estado y perfil.</small>
-    </a>
-    <a class="admin-command-card" asp-page="/Admin/Support">
-        <span>02</span>
-        <strong>Soporte</strong>
-        <small>Diagnostico y eventos operativos.</small>
-    </a>
-    <a class="admin-command-card" asp-page="/Admin/Clients">
-        <span>03</span>
-        <strong>Clientes</strong>
-        <small>Consulta y limpieza de pruebas.</small>
-    </a>
-</section>
-
-<section class="result-panel dashboard-empty-state" data-testid="admin-dashboard-next-steps">
-    <div>
-        <p class="eyebrow">Siguiente paso</p>
-        <h2>Prepara un negocio para operar en Puntelio</h2>
-        <p>
-            Si todavia no hay negocios activos, crea uno o activa un negocio existente. Despues valida branding, soporte y smoke real desde esta misma consola.
-        </p>
+    <div class="p-step">
+        <span class="p-step-num">02</span>
+        <a class="p-step-link" asp-page="/Admin/Support">
+            <strong class="p-step-title">Soporte</strong>
+            <span class="p-step-desc">Diagnostico y eventos operativos.</span>
+        </a>
     </div>
-    <div class="dashboard-empty-actions">
+    <div class="p-step">
+        <span class="p-step-num">03</span>
+        <a class="p-step-link" asp-page="/Admin/Clients">
+            <strong class="p-step-title">Clientes</strong>
+            <span class="p-step-desc">Consulta y limpieza de pruebas.</span>
+        </a>
+    </div>
+</div>
+
+<div class="p-card" data-testid="admin-dashboard-next-steps">
+    <span class="p-eyebrow">Siguiente paso</span>
+    <h2 class="p-page-heading" style="font-size:20px">Prepara un negocio para operar en Puntelio</h2>
+    <p class="p-page-sub">Si todavia no hay negocios activos, crea uno o activa un negocio existente. Despues valida branding, soporte y smoke real desde esta misma consola.</p>
+    <div class="d-flex gap-2 mt-3">
         <a class="btn btn-primary" asp-page="/Admin/Businesses">Administrar negocios</a>
-        <a class="btn btn-outline-primary" asp-page="/Admin/Support">Revisar soporte</a>
+        <a class="btn btn-outline-secondary" asp-page="/Admin/Support">Revisar soporte</a>
     </div>
-</section>
+</div>

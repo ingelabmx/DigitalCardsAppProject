@@ -4,11 +4,11 @@
     ViewData["Title"] = "Negocios";
 }
 
-<section class="result-panel admin-list-panel" data-testid="admin-businesses-panel">
-    <div class="page-heading">
+<div class="p-card" data-testid="admin-businesses-panel">
+    <div class="p-page-header mb-4">
         <div>
-            <h1>Negocios</h1>
-            <p class="lead">Consulta negocios activos e inactivos y abre su administracion desde una tabla compacta.</p>
+            <h1 class="p-page-heading">Negocios</h1>
+            <p class="p-page-sub">Consulta negocios activos e inactivos y abre su administracion desde una tabla compacta.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-primary" asp-page="/Admin/CreateBusiness" data-testid="admin-businesses-create-link">Crear negocio</a>
@@ -44,7 +44,7 @@
 
     @if (Model.PagedBusinesses.Count == 0)
     {
-        <div class="dashboard-empty-state compact" data-testid="admin-business-no-results">
+        <div class="p-empty" data-testid="admin-business-no-results">
             <h3>No se encontraron negocios</h3>
             <p>Prueba con otro nombre o correo, o crea un negocio nuevo desde el panel admin.</p>
             <a class="btn btn-primary btn-sm" asp-page="/Admin/CreateBusiness">Crear negocio</a>
@@ -53,7 +53,7 @@
     else
     {
         <div class="table-responsive business-table-shell" data-testid="admin-business-table">
-            <table class="table align-middle legacy-table mb-0">
+            <table class="table align-middle p-table mb-0">
                 <thead>
                     <tr>
                         <th>Negocio</th>
@@ -74,7 +74,7 @@
                             <td>@business.ClientCount</td>
                             <td>@business.CurrentStampTotal</td>
                             <td>
-                                <span class="badge @(business.IsEnabled ? "text-bg-success" : "text-bg-secondary")" data-testid="admin-business-activation-status">
+                                <span class="p-badge @(business.IsEnabled ? "p-badge-green" : "p-badge-gray")" data-testid="admin-business-activation-status">
                                     @ActivationLabel(business.IsEnabled)
                                 </span>
                             </td>
@@ -113,7 +113,7 @@
             </div>
         </div>
     }
-</section>
+</div>
 
 @functions {
     private static string ActivationLabel(bool isEnabled)

@@ -114,7 +114,9 @@ public sealed record ClientLoyaltyCardDto(
     bool AppleTracked,
     int AppleRegisteredDeviceCount,
     DateTimeOffset? AppleUpdatedAt,
-    IReadOnlyList<RewardRedemptionDto> RecentRewardRedemptions);
+    IReadOnlyList<RewardRedemptionDto> RecentRewardRedemptions,
+    string? PrimaryColor,
+    string? SecondaryColor);
 
 public sealed record ClientDashboardDto(
     ClientDto Client,

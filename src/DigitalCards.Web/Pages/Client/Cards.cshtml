@@ -5,7 +5,6 @@
 }
 
 <div class="p-page-header">
-    <span class="p-eyebrow">Cliente</span>
     <h1 class="p-page-heading">Mis tarjetas</h1>
     <p class="p-page-sub">Estas tarjetas pertenecen a tu sesion de cliente. Los links Wallet usan tokens opacos.</p>
 </div>
@@ -51,7 +50,9 @@
             var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
             var stampProgress = visibleStamps * 100 / stampGoal;
 
-            <article class="p-client-card" data-testid="client-card">
+            <article class="p-client-card" data-testid="client-card"
+                     style="--card-primary:@(card.PrimaryColor ?? "#1A1A1A");--card-secondary:@(card.SecondaryColor ?? "#2E2E2E");"
+>
                 <div class="p-client-card-face">
                     <p class="kicker">Puntelio</p>
                     <h3>@card.BusinessName</h3>

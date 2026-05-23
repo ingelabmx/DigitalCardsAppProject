@@ -1355,7 +1355,9 @@ public sealed class DigitalCardsAppService
                 AppleTracked: false,
                 AppleRegisteredDeviceCount: 0,
                 AppleUpdatedAt: null,
-                recentRedemptions.Select(ToRewardRedemptionDto).ToArray()));
+                recentRedemptions.Select(ToRewardRedemptionDto).ToArray(),
+                business.PrimaryColor,
+                business.SecondaryColor));
         }
 
         for (var index = 0; index < results.Count; index++)

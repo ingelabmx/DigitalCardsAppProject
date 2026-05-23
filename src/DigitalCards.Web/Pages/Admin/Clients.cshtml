@@ -4,11 +4,11 @@
     ViewData["Title"] = "Clientes";
 }
 
-<section class="result-panel">
-    <div class="page-heading">
+<div class="p-card">
+    <div class="p-page-header mb-4">
         <div>
-            <h1>Clientes</h1>
-            <p class="lead">Consulta clientes, sus tarjetas por negocio y opera la limpieza de pruebas desde un solo panel.</p>
+            <h1 class="p-page-heading">Clientes</h1>
+            <p class="p-page-sub">Consulta clientes, sus tarjetas por negocio y opera la limpieza de pruebas desde un solo panel.</p>
         </div>
     </div>
 
@@ -53,7 +53,7 @@
     else
     {
         <div class="table-responsive business-table-shell" data-testid="admin-client-table">
-            <table class="table align-middle legacy-table mb-0">
+            <table class="table align-middle p-table mb-0">
                 <thead>
                     <tr>
                         <th>Nombre</th>
@@ -125,7 +125,7 @@
                     <h2>@Model.SelectedClient.ClientName</h2>
                     <p>@Model.SelectedClient.ClientEmail · @Model.SelectedClient.UserName</p>
                 </div>
-                <span class="badge text-bg-light">@(Model.SelectedClient.CardCount) tarjeta(s)</span>
+                <span class="p-badge p-badge-gray">@(Model.SelectedClient.CardCount) tarjeta(s)</span>
             </div>
 
             @if (Model.SelectedClient.Cards.Count == 0)
@@ -135,7 +135,7 @@
             else
             {
                 <div class="table-responsive" data-testid="admin-client-card-list">
-                    <table class="table align-middle legacy-table mb-0">
+                    <table class="table align-middle p-table mb-0">
                         <thead>
                             <tr>
                                 <th>Negocio</th>
@@ -187,4 +187,4 @@
             </form>
         </section>
     }
-</section>
+</div>

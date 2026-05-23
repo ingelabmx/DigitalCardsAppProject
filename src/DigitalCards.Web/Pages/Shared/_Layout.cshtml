@@ -15,13 +15,17 @@
         requestPath.Value?.EndsWith("/Login", StringComparison.OrdinalIgnoreCase) == true ||
         requestPath.Value?.EndsWith("/ForgotPassword", StringComparison.OrdinalIgnoreCase) == true ||
         requestPath.Value?.EndsWith("/ResetPassword", StringComparison.OrdinalIgnoreCase) == true;
+    var navClientCta = requestPath.Value?.EndsWith("/Client/Login", StringComparison.OrdinalIgnoreCase) == true;
+    var navBusinessCta = requestPath.Value?.EndsWith("/Business/Login", StringComparison.OrdinalIgnoreCase) == true;
     var useLegacyShell = isAuthenticatedArea && !isAuthPage && (isAdmin || isBusiness || isClient);
-    var shellRole = isAdmin ? "Administradores" : isBusiness ? "Duenos de negocios" : "Cliente";
+    var shellRole = isAdmin ? "Administradores" : isBusiness ? "Negocio" : "Cliente";
     var shellName = isAdmin
         ? User.FindFirst(AdminAuth.AdminNameClaim)?.Value ?? "Admin"
         : isBusiness
             ? User.FindFirst(BusinessAuth.BusinessNameClaim)?.Value ?? "Negocio"
             : User.FindFirst(ClientAuth.ClientNameClaim)?.Value ?? "Cliente";
+    string shellPrimaryColor = "#0A0A0A";
+    string shellSecondaryColor = "#1D6AF5";
     if (isBusiness)
     {
         var shellBusiness = await AppService.GetBusinessShellAsync(
@@ -65,7 +69,7 @@
 }
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>@ViewData["Title"] - Puntelio</title>
     @if (puntelioIconPath is not null)
     {
@@ -103,7 +107,7 @@
 <body class="@(useLegacyShell ? "legacy-shell" : "public-shell")">
     @if (useLegacyShell)
     {
-        <div class="legacy-page-wrapper" data-testid="legacy-shell">
+        <div class="legacy-page-wrapper" style="--shell-primary:@shellPrimaryColor;--shell-secondary:@shellSecondaryColor;" data-testid="legacy-shell">
             <aside class="legacy-left-sidebar" id="legacy-sidebar" data-testid="legacy-sidebar">
                 <div class="legacy-brand">
                     <a asp-page="@(isAdmin ? "/Admin/Dashboard" : isBusiness ? "/Business/Dashboard" : "/Client/Dashboard")" class="legacy-brand-link legacy-brand-link-wordmark">
@@ -236,10 +240,10 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Client/Login">Clientes</a>
+                                <a class="nav-link @(navClientCta ? "nav-link-cta" : "")" asp-page="/Client/Login">Clientes</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Business/Login">Negocios</a>
+                                <a class="nav-link @(navBusinessCta ? "nav-link-cta" : "")" asp-page="/Business/Login">Negocios</a>
                             </li>
                         </ul>
                     </div>

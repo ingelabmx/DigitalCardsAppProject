@@ -5,7 +5,6 @@
 }
 
 <div class="p-page-header">
-    <span class="p-eyebrow">Negocio</span>
     <h1 class="p-page-heading">Branding Wallet</h1>
     @if (Model.Settings is not null)
     {
@@ -40,17 +39,17 @@ else if (Model.Settings is not null)
 
                 <div class="mb-3">
                     <label asp-for="Input.PublicName" class="form-label">Nombre del negocio</label>
-                    <input asp-for="Input.PublicName" class="form-control" maxlength="80" data-testid="business-branding-public-name" />
+                    <input asp-for="Input.PublicName" class="form-control" maxlength="80" data-testid="business-branding-public-name" data-branding-text="name" />
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Input.ProgramName" class="form-label">Programa</label>
-                    <input asp-for="Input.ProgramName" class="form-control" maxlength="80" data-testid="business-branding-program-name" />
+                    <input asp-for="Input.ProgramName" class="form-control" maxlength="80" data-testid="business-branding-program-name" data-branding-text="program" />
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Input.ProgramDescription" class="form-label">Recompensa</label>
-                    <input asp-for="Input.ProgramDescription" class="form-control" maxlength="280" data-testid="business-branding-description" />
+                    <input asp-for="Input.ProgramDescription" class="form-control" maxlength="280" data-testid="business-branding-description" data-branding-text="desc" />
                 </div>
 
                 <div class="mb-3">
@@ -102,7 +101,16 @@ else if (Model.Settings is not null)
                     </div>
                 </div>
 
-                <div class="p-action-buttons">
+                <div class="p-branding-preview"
+                     id="brandingPreview"
+                     style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;--brand-custom:@Model.Input.CustomFieldColor;"
+                     data-testid="business-branding-preview">
+                    <span data-branding-preview="program">@Model.Input.ProgramName</span>
+                    <strong data-branding-preview="name">@Model.Input.PublicName</strong>
+                    <small data-branding-preview="desc">@Model.Input.ProgramDescription</small>
+                </div>
+
+                <div class="p-action-buttons mt-4">
                     <button class="btn btn-primary" type="submit" data-testid="business-branding-submit">Guardar</button>
                     <button class="btn btn-outline-primary"
                             type="submit"
@@ -115,15 +123,7 @@ else if (Model.Settings is not null)
         </form>
 
         <div>
-            <div class="p-branding-preview"
-                 style="--brand-primary:@Model.Input.PrimaryColor;--brand-secondary:@Model.Input.SecondaryColor;--brand-custom:@Model.Input.CustomFieldColor;"
-                 data-testid="business-branding-preview">
-                <span>@Model.Input.ProgramName</span>
-                <strong>@Model.Input.PublicName</strong>
-                <small>@Model.Input.ProgramDescription</small>
-            </div>
-
-            <div class="p-card mt-4" data-testid="business-wallet-branding-refresh-form">
+            <div class="p-card" data-testid="business-wallet-branding-refresh-form">
                 <form method="post" asp-page-handler="RefreshWallets">
                     <h2 class="p-section-title">Actualizar Tarjetas</h2>
                     <p class="p-page-sub mb-3">Aplica el branding actual a todas las tarjetas digitales ya emitidas de este negocio. No modifica sellos ni datos del cliente.</p>
@@ -141,6 +141,61 @@ else if (Model.Settings is not null)
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+(function () {
+    var preview = document.getElementById('brandingPreview');
+    if (!preview) return;
+
+    // --- Color normalization ---
+    function normalizeHex(val) {
+        val = (val || '').trim();
+        if (val.charAt(0) === '#') val = val.slice(1);
+        val = val.replace(/[^0-9a-fA-F]/g, '');
+        if (val.length > 6) val = val.slice(0, 6);
+        while (val.length < 6) val += '0';
+        return val.length === 0 ? '' : '#' + val;
+    }
+
+    // --- Update preview gradient ---
+    function updateColors() {
+        var primary   = document.querySelector('[data-branding-color-input="primary"]');
+        var secondary = document.querySelector('[data-branding-color-input="secondary"]');
+        var custom    = document.querySelector('[data-branding-color-input="custom"]');
+        if (primary   && primary.value)   preview.style.setProperty('--brand-primary',   primary.value);
+        if (secondary && secondary.value) preview.style.setProperty('--brand-secondary', secondary.value);
+        if (custom    && custom.value)    preview.style.setProperty('--brand-custom',     custom.value);
+    }
+
+    // --- Update preview text ---
+    function updateText(key, value) {
+        var el = preview.querySelector('[data-branding-preview="' + key + '"]');
+        if (el) el.textContent = value;
+    }
+
+    // --- Wire color inputs ---
+    document.querySelectorAll('[data-branding-color-input]').forEach(function (input) {
+        input.addEventListener('input', updateColors);
+        input.addEventListener('blur', function () {
+            var normalized = normalizeHex(this.value);
+            if (normalized) {
+                this.value = normalized;
+                updateColors();
+            }
+        });
+    });
+
+    // --- Wire text inputs ---
+    document.querySelectorAll('[data-branding-text]').forEach(function (input) {
+        var key = input.getAttribute('data-branding-text');
+        input.addEventListener('input', function () {
+            updateText(key, this.value);
+        });
+    });
+})();
+</script>
 }
 
 @functions {
