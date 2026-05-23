@@ -12,51 +12,73 @@
     var hireWhatsApp = Model.WhatsAppLink(Model.Landing.WhatsAppHireMessage);
     var customWhatsApp = Model.WhatsAppLink(Model.Landing.WhatsAppCustomPlanMessage);
 
-    <section class="landing-hero" id="inicio" data-landing-reveal>
-        <div class="landing-hero-copy">
-            <p class="landing-kicker">Sistema de fidelizacion para negocios</p>
-            <h1>Premia la lealtad de tus clientes de forma simple y moderna con tarjetas digitales</h1>
-            <p>Puntelio ayuda a negocios locales a reemplazar las tarjetas fisicas por tarjetas digitales con sellos, QR, recompensas y estadisticas.</p>
-            <div class="landing-actions">
-                <a class="btn btn-primary btn-lg" href="#informacion">Solicitar informacion</a>
-                <a class="btn btn-outline-primary btn-lg" href="@Model.Landing.AppUrl">Entrar</a>
-                <a class="landing-link" href="#videollamada">Agendar videollamada</a>
+    <div class="p-hero" id="inicio" data-landing-reveal>
+        <div class="p-hero-left">
+            <h1>Lealtad digital<br>para negocios<br>y clientes.</h1>
+            <div class="p-hero-ctas">
+                <a class="p-btn p-btn-primary p-btn-lg" href="#flujo">Solicitar informacion</a>
+                <a class="p-btn p-btn-outline p-btn-lg" href="@Model.Landing.AppUrl">Entrar</a>
             </div>
         </div>
-        <div class="landing-pass-preview" aria-label="Vista previa de tarjeta Puntelio">
-            <div class="landing-pass-card">
-                <div>
-                    <span>Puntelio</span>
-                    <strong>Runni Cafe</strong>
-                    <small>Programa de lealtad</small>
-                </div>
-                <div class="landing-pass-grid">
-                    <span>CLIENTE<br><strong>Ana Lopez</strong></span>
-                    <span>SELLOS<br><strong>5 de 10</strong></span>
-                    <span>RECOMPENSA<br><strong>Cafe gratis</strong></span>
-                </div>
-                <div class="landing-qr-placeholder">QR</div>
-            </div>
+        <div class="p-hero-right">
+            <p>Puntelio ayuda a negocios locales a reemplazar las tarjetas fisicas por tarjetas digitales con sellos, QR, recompensas y estadisticas. Un sistema para el mostrador y otro para el cliente.</p>
         </div>
-    </section>
+    </div>
 
-    <section class="landing-section" id="beneficios-negocio" data-landing-reveal>
-        <div class="landing-section-heading">
-            <p class="landing-kicker">Para negocios</p>
-            <h2>Mas rentable, medible y flexible que una tarjeta fisica.</h2>
+    <div class="p-feature-grid" data-landing-reveal>
+        <div class="p-feature-card">
+            <div class="blob-area blob-blue-purple">
+                <span class="card-label">Para el negocio</span>
+            </div>
+            <div class="card-body">
+                <h3>Gestiona sellos y tarjetas desde el mostrador.</h3>
+                <p>Enrola clientes, agrega sellos escaneando su QR o manualmente, y controla canjes desde una sola pantalla. Sin papel, sin errores.</p>
+            </div>
         </div>
-        <div class="landing-card-grid five">
-            <article><h3>Mejora la retencion de clientes</h3><p>Motiva a tus clientes a regresar con recompensas claras y faciles de entender.</p></article>
-            <article><h3>Menor costo operativo</h3><p>Reduce la impresion de tarjetas fisicas y administra tu programa desde una plataforma digital.</p></article>
-            <article><h3>Menos tarjetas perdidas u olvidadas</h3><p>Tus clientes acceden a sus tarjetas en linea, sin depender de una tarjeta fisica.</p></article>
-            <article><h3>Reduce fraudes</h3><p>Controla sellos y canjes desde el sistema para evitar duplicados, errores o recompensas indebidas.</p></article>
-            <article><h3>Promociones mas inteligentes</h3><p>Consulta estadisticas y comportamiento para tomar mejores decisiones comerciales.</p></article>
+        <div class="p-feature-card">
+            <div class="blob-area blob-lavender">
+                <span class="card-label">Para el cliente</span>
+            </div>
+            <div class="card-body">
+                <h3>Consulta tus tarjetas y sellos en cualquier momento.</h3>
+                <p>Muestra tu QR en el mostrador, revisa cuantos sellos llevas y guarda tu tarjeta digital en Apple o Google Wallet.</p>
+            </div>
         </div>
-    </section>
+    </div>
+
+    <div class="p-mini-grid" data-landing-reveal>
+        <div class="p-mini-card">
+            <i class="bi bi-qr-code mini-icon"></i>
+            <span class="mini-label">QR de registro</span>
+        </div>
+        <div class="p-mini-card">
+            <i class="bi bi-star-fill mini-icon"></i>
+            <span class="mini-label">Sellos digitales</span>
+        </div>
+        <div class="p-mini-card">
+            <i class="bi bi-wallet2 mini-icon"></i>
+            <span class="mini-label">Wallet digital</span>
+        </div>
+        <div class="p-mini-card">
+            <i class="bi bi-graph-up mini-icon"></i>
+            <span class="mini-label">Reportes</span>
+        </div>
+    </div>
+
+    <div class="p-trusted-strip" data-landing-reveal>
+        <p class="p-trusted-label">Confiado por negocios de todo tipo</p>
+        <div class="p-trusted-logos">
+            <span>Cafeterias</span>
+            <span>Food trucks</span>
+            <span>Barberias</span>
+            <span>Lavanderias</span>
+            <span>Purificadoras</span>
+            <span>Negocios locales</span>
+        </div>
+    </div>
 
     <section class="landing-section landing-split" id="beneficios-clientes" data-landing-reveal>
         <div>
-            <p class="landing-kicker">Para clientes</p>
             <h2>Una experiencia simple y moderna.</h2>
             <p>Tus clientes pueden consultar sus tarjetas digitales, mostrar su QR y saber cuantos sellos les faltan para obtener su recompensa.</p>
         </div>
@@ -68,9 +90,53 @@
         </ul>
     </section>
 
+    <section class="landing-section" id="screenshots" data-landing-reveal>
+        <div class="landing-carousel" data-landing-carousel>
+            <button type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
+            <div class="landing-carousel-track">
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card1.png" alt="Puntelio — tarjeta 1" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card2.png" alt="Puntelio — tarjeta 2" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card3.png" alt="Puntelio — tarjeta 3" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card4.png" alt="Puntelio — tarjeta 4" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card5.png" alt="Puntelio — tarjeta 5" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" data-carousel-slide>
+                    <img src="/img/card6.png" alt="Puntelio — tarjeta 6" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card1.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card2.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card3.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card4.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card5.png" alt="" loading="lazy" />
+                </figure>
+                <figure class="landing-screenshot-card" aria-hidden="true">
+                    <img src="/img/card6.png" alt="" loading="lazy" />
+                </figure>
+            </div>
+            <button type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
+        </div>
+    </section>
+
     <section class="landing-section" id="funciones" data-landing-reveal>
         <div class="landing-section-heading">
-            <p class="landing-kicker">Funciones principales</p>
             <h2>Todo lo necesario para operar lealtad digital.</h2>
         </div>
         <div class="landing-feature-grid">
@@ -92,39 +158,8 @@
         </div>
     </section>
 
-    <section class="landing-section" id="ideal-para" data-landing-reveal>
-        <div class="landing-section-heading">
-            <p class="landing-kicker">Ideal para</p>
-            <h2>Negocios locales que quieren que sus clientes regresen.</h2>
-        </div>
-        <div class="landing-badge-grid">
-            <span>Cafeterias</span><span>Food trucks</span><span>Barberias</span><span>Lavanderias</span><span>Purificadoras de agua</span><span>Negocios locales</span>
-        </div>
-    </section>
-
-    <section class="landing-section" id="screenshots" data-landing-reveal>
-        <div class="landing-section-heading">
-            <p class="landing-kicker">Vista del producto</p>
-            <h2>Preparado para capturas reales.</h2>
-        </div>
-        <div class="landing-carousel" data-landing-carousel>
-            <button type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
-            <div class="landing-carousel-track">
-                @for (var index = 1; index <= 5; index++)
-                {
-                    <figure class="landing-screenshot-card" data-carousel-slide>
-                        <img src="/landing/screenshots/screenshot-@(index).png" alt="Captura de Puntelio @index" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false;" />
-                        <figcaption hidden>Captura de ejemplo @index</figcaption>
-                    </figure>
-                }
-            </div>
-            <button type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
-        </div>
-    </section>
-
     <section class="landing-section landing-pricing" id="precios" data-landing-reveal>
         <div class="landing-section-heading">
-            <p class="landing-kicker">Planes y precios</p>
             <h2>Empieza con un plan simple.</h2>
         </div>
         <div class="landing-pricing-grid">
@@ -145,9 +180,10 @@
                     <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
                 </div>
             </article>
-            <article class="landing-price-card">
+            <article class="landing-price-card landing-price-card-flex">
                 <h3>Plan Personalizado</h3>
                 <p>Necesitas mas clientes, varios negocios o funciones adicionales? Podemos preparar una propuesta personalizada.</p>
+                <div class="landing-price-spacer"></div>
                 <div class="landing-actions">
                     <a class="btn btn-primary" href="@Model.MailTo("Propuesta personalizada Puntelio")">Solicitar por correo</a>
                     <a class="btn btn-outline-primary" href="@customWhatsApp">Contactar por WhatsApp</a>
@@ -156,21 +192,8 @@
         </div>
     </section>
 
-    <section class="landing-section landing-split" id="contratar" data-landing-reveal>
-        <div>
-            <p class="landing-kicker">Contratar servicio</p>
-            <h2>La contratacion es manual por ahora.</h2>
-            <p>No se crea negocio ni cuenta automaticamente desde la landing.</p>
-        </div>
-        <div class="landing-actions">
-            <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio")">Contratar por correo</a>
-            <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
-        </div>
-    </section>
-
     <section class="landing-section landing-form-section" id="videollamada" data-landing-reveal>
         <div>
-            <p class="landing-kicker">Google Meet</p>
             <h2>Agendar videollamada</h2>
             <p>Dejanos tus datos y te contactaremos para coordinar la videollamada.</p>
         </div>
@@ -205,21 +228,17 @@
         </form>
     </section>
 
-    <section class="landing-section landing-split" id="informacion" data-landing-reveal>
-        <div>
-            <p class="landing-kicker">Solicitar mas informacion</p>
-            <h2>Hablemos de tu negocio.</h2>
-            <p>Te explicamos como Puntelio puede funcionar para tu flujo de clientes y recompensas.</p>
+    <div class="p-cta-central" id="flujo" data-landing-reveal>
+        <h2>Un flujo para el mostrador.<br>Otro para el cliente.</h2>
+        <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital.</p>
+        <div class="p-cta-btns">
+            <a class="p-btn p-btn-primary p-btn-lg" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
+            <a class="p-btn p-btn-outline p-btn-lg" href="@infoWhatsApp">Enviar WhatsApp</a>
         </div>
-        <div class="landing-actions">
-            <a class="btn btn-primary" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
-            <a class="btn btn-outline-primary" href="@infoWhatsApp">Enviar WhatsApp</a>
-        </div>
-    </section>
+    </div>
 
     <section class="landing-section" id="faq" data-landing-reveal>
         <div class="landing-section-heading">
-            <p class="landing-kicker">Preguntas frecuentes</p>
             <h2>Lo basico antes de empezar.</h2>
         </div>
         <div class="landing-faq">
@@ -235,48 +254,61 @@
 }
 else
 {
-    <section class="home-gateway" data-testid="home-login-gateway">
-        <div class="home-hero-copy">
-            <p class="eyebrow">Puntelio</p>
+    <section class="p-app-hero" data-testid="home-login-gateway">
+        <div class="p-app-hero-left">
             <h1>Tarjetas de lealtad digitales para clientes y negocios.</h1>
-            <p class="lead">
-                Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital desde un solo lugar.
-            </p>
-            <div class="home-hero-actions">
-                <a class="btn btn-primary btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
-                <a class="btn btn-outline-primary btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
+            <p class="p-app-hero-sub">Entra a tu panel para consultar tarjetas, operar sellos o abrir links de tarjeta digital.</p>
+            <div class="p-hero-ctas">
+                <a class="p-btn p-btn-primary p-btn-lg" asp-page="/Client/Login" data-testid="home-client-login-link">Entrar como cliente</a>
+                <a class="p-btn p-btn-outline p-btn-lg" asp-page="/Business/Login" data-testid="home-business-login-link">Entrar como negocio</a>
             </div>
         </div>
-
-        <div class="home-wallet-preview" aria-label="Vista previa de tarjeta digital">
-            <div class="home-wallet-card">
-                <span>Puntelio</span>
-                <strong>Tarjeta digital</strong>
-                <p>Sellos, recompensas y Wallet en un solo lugar.</p>
-                <div class="home-stamp-row" aria-hidden="true">
-                    <span class="filled"></span>
-                    <span class="filled"></span>
-                    <span class="filled"></span>
-                    <span></span>
-                    <span></span>
+        <div class="p-app-hero-right">
+            <div class="p-app-wallet-card">
+                <span class="p-app-card-kicker">Puntelio</span>
+                <strong class="p-app-card-name">Tarjeta digital</strong>
+                <p class="p-app-card-sub">Sellos, recompensas y Wallet en un solo lugar.</p>
+                <div class="p-stamps" aria-hidden="true">
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp on"></span>
+                    <span class="p-stamp"></span>
+                    <span class="p-stamp"></span>
                 </div>
             </div>
-            <div class="home-wallet-status">
+            <div class="p-app-card-meta">
                 <span>Tarjeta lista</span>
                 <span>Sellos actualizados</span>
             </div>
         </div>
     </section>
 
-    <section class="home-info-band">
+    <section class="p-app-split">
         <div>
-            <p class="eyebrow">Operacion real</p>
+            <span class="p-eyebrow">Operacion real</span>
             <h2>Un flujo para el mostrador y otro para el cliente.</h2>
         </div>
-        <p>
-            El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.
-        </p>
+        <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.</p>
     </section>
+
+    <div class="p-mini-grid">
+        <div class="p-mini-card">
+            <strong>Dashboard negocio</strong>
+            <p>Gestiona tarjetas, sellos y clientes desde un panel claro y rapido.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Apple &amp; Google Wallet</strong>
+            <p>El cliente recibe un link para instalar su tarjeta digital en su telefono.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Sellos en tiempo real</strong>
+            <p>Cada sello actualiza la tarjeta del cliente instantaneamente.</p>
+        </div>
+        <div class="p-mini-card">
+            <strong>Branding propio</strong>
+            <p>Personaliza colores y logo para que tu tarjeta refleje tu negocio.</p>
+        </div>
+    </div>
 }
 
 @section Scripts {
@@ -284,5 +316,40 @@ else
     {
         <partial name="_ValidationScriptsPartial" />
         <script src="~/js/landing.js" asp-append-version="true"></script>
+        <script>
+            (function () {
+                var carousel = document.querySelector('[data-landing-carousel]');
+                if (!carousel) return;
+                var slides = Array.from(carousel.querySelectorAll('[data-carousel-slide]'));
+                if (slides.length === 0) return;
+                var prevBtn = carousel.querySelector('[data-carousel-prev]');
+                var nextBtn = carousel.querySelector('[data-carousel-next]');
+                var current = 0;
+                var timer;
+
+                function update() {
+                    var total = slides.length;
+                    slides.forEach(function (slide, i) {
+                        slide.classList.remove('peek-active', 'peek-prev', 'peek-next', 'peek-hidden');
+                        var diff = (i - current + total) % total;
+                        if (diff === 0) slide.classList.add('peek-active');
+                        else if (diff === 1) slide.classList.add('peek-next');
+                        else if (diff === total - 1) slide.classList.add('peek-prev');
+                        else slide.classList.add('peek-hidden');
+                    });
+                }
+
+                function goNext() { current = (current + 1) % slides.length; update(); }
+                function goPrev() { current = (current - 1 + slides.length) % slides.length; update(); }
+                function startTimer() { timer = setInterval(goNext, 3500); }
+                function resetTimer() { clearInterval(timer); startTimer(); }
+
+                if (prevBtn) prevBtn.addEventListener('click', function () { goPrev(); resetTimer(); });
+                if (nextBtn) nextBtn.addEventListener('click', function () { goNext(); resetTimer(); });
+
+                update();
+                startTimer();
+            })();
+        </script>
     }
 }

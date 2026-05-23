@@ -4,33 +4,30 @@
     ViewData["Title"] = "Asociar cliente";
 }
 
-<section class="form-panel business-operation-panel" data-testid="business-enroll-panel">
-    <div class="page-heading">
-        <div>
-            <p class="eyebrow">Tarjetas</p>
-            <h1>Asociar cliente</h1>
-            <p class="lead">Alta operativa de tarjeta cliente-negocio para enviar link Wallet.</p>
-        </div>
+<div class="p-page-header">
+    <h1 class="p-page-heading">Asociar cliente</h1>
+    <p class="p-page-sub">Alta operativa de tarjeta cliente-negocio para enviar link Wallet.</p>
+</div>
+
+@if (Model.IsPilotBlocked)
+{
+    <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+        @Model.PilotBlockMessage
     </div>
+}
 
-    @if (Model.IsPilotBlocked)
-    {
-        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
-            @Model.PilotBlockMessage
-        </div>
-    }
+@if (Model.Result is not null)
+{
+    <div class="alert alert-success" role="status" data-testid="enroll-success">
+        Tarjeta creada para @Model.Result.Card.ClientUserName. Correo generado.
+        <a href="@Model.Result.EnrollmentUrl" data-testid="inline-enrollment-link">Abrir link</a>
+    </div>
+}
 
-    @if (Model.Result is not null)
-    {
-        <div class="alert alert-success" role="status" data-testid="enroll-success">
-            Tarjeta creada para @Model.Result.Card.ClientUserName. Correo generado.
-            <a href="@Model.Result.EnrollmentUrl" data-testid="inline-enrollment-link">Abrir link</a>
-        </div>
-    }
-
-    @if (!Model.IsPilotBlocked)
-    {
-        <form method="post" class="business-form-card" data-testid="enroll-form">
+@if (!Model.IsPilotBlocked)
+{
+    <div class="p-card p-form-card">
+        <form method="post" data-testid="enroll-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">
@@ -41,8 +38,8 @@
 
             <button class="btn btn-primary" type="submit" data-testid="enroll-submit">Asociar</button>
         </form>
-    }
-</section>
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -4,69 +4,67 @@
     ViewData["Title"] = "Agregar sello";
 }
 
-<section class="form-panel business-operation-panel" data-testid="business-stamp-panel">
-    <div class="page-heading">
-        <div>
-            <p class="eyebrow">Checadas</p>
-            <h1>Agregar sello</h1>
-            <p class="lead">Aplicacion rapida por username o correo; la operacion completa vive en Tarjetas.</p>
+<div class="p-page-header">
+    <h1 class="p-page-heading">Agregar sello</h1>
+    <p class="p-page-sub">Aplicacion rapida por username o correo; la operacion completa vive en Tarjetas.</p>
+</div>
+
+@if (Model.IsPilotBlocked)
+{
+    <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
+        @Model.PilotBlockMessage
+    </div>
+}
+
+@if (Model.Result is not null)
+{
+    <div class="alert alert-success" role="status" data-testid="stamp-success">
+        Sello agregado a @Model.Result.ClientUserName.
+    </div>
+    <div class="p-stats-grid mb-4">
+        <div class="p-stat">
+            <div class="p-stat-label">Sellos actuales</div>
+            <div class="p-stat-value" data-testid="current-stamps">@Model.Result.VisibleStamps</div>
+            <div class="p-stat-sub">de @Model.Result.StampGoal</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">Sellos historicos</div>
+            <div class="p-stat-value" data-testid="lifetime-stamps">@Model.Result.LifetimeStamps</div>
+        </div>
+        <div class="p-stat">
+            <div class="p-stat-label">Tarjeta</div>
+            <div class="p-stat-value-sm" data-testid="card-status">@(Model.Result.GoogleObjectId is null ? "Pendiente" : "Actualizada")</div>
         </div>
     </div>
+}
 
-    @if (Model.IsPilotBlocked)
-    {
-        <div class="alert alert-warning" role="status" data-testid="pilot-business-blocked">
-            @Model.PilotBlockMessage
-        </div>
-    }
+@if (Model.Redemption is { Succeeded: true })
+{
+    <div class="alert @(Model.Redemption.HasWalletWarning ? "alert-warning" : "alert-success")" role="status" data-testid="reward-redemption-success">
+        @(Model.Redemption.HasWalletWarning
+            ? Model.Redemption.ErrorMessage
+            : "Recompensa canjeada. La tarjeta inicio un nuevo ciclo con 0 sellos.")
+    </div>
+}
 
-    @if (Model.Result is not null)
-    {
-        <div class="alert alert-success" role="status" data-testid="stamp-success">
-            Sello agregado a @Model.Result.ClientUserName.
-        </div>
-        <div class="metric-row">
-            <div class="metric">
-                <span>Sellos actuales</span>
-                <strong data-testid="current-stamps">@Model.Result.VisibleStamps de @Model.Result.StampGoal</strong>
-            </div>
-            <div class="metric">
-                <span>Sellos historicos</span>
-                <strong data-testid="lifetime-stamps">@Model.Result.LifetimeStamps</strong>
-            </div>
-            <div class="metric">
-                <span>Tarjeta</span>
-                <strong data-testid="card-status">@(Model.Result.GoogleObjectId is null ? "Pendiente" : "Actualizada")</strong>
-            </div>
-        </div>
-    }
+@if (Model.RewardCandidate is { RewardReady: true })
+{
+    <div class="p-card mb-4" data-testid="stamp-reward-candidate">
+        <span class="p-eyebrow p-eyebrow-dot">Recompensa lista</span>
+        <h2 class="p-page-heading mb-2">@Model.RewardCandidate.Client.FirstName @Model.RewardCandidate.Client.LastName</h2>
+        <p class="p-page-sub mb-3">Esta tarjeta ya tiene @Model.RewardCandidate.VisibleStamps de @Model.RewardCandidate.StampGoal sellos. Confirma el canje para iniciar un nuevo ciclo con 0 sellos.</p>
+        <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.RewardCandidate.Id">
+            <button class="btn btn-success" type="submit" data-testid="stamp-redeem-submit" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
+                Canjear recompensa
+            </button>
+        </form>
+    </div>
+}
 
-    @if (Model.Redemption is { Succeeded: true })
-    {
-        <div class="alert @(Model.Redemption.HasWalletWarning ? "alert-warning" : "alert-success")" role="status" data-testid="reward-redemption-success">
-            @(Model.Redemption.HasWalletWarning
-                ? Model.Redemption.ErrorMessage
-                : "Recompensa canjeada. La tarjeta inicio un nuevo ciclo con 0 sellos.")
-        </div>
-    }
-
-    @if (Model.RewardCandidate is { RewardReady: true })
-    {
-        <div class="business-form-card" data-testid="stamp-reward-candidate">
-            <p class="eyebrow">Recompensa lista</p>
-            <h2>@Model.RewardCandidate.Client.FirstName @Model.RewardCandidate.Client.LastName</h2>
-            <p>Esta tarjeta ya tiene @Model.RewardCandidate.VisibleStamps de @Model.RewardCandidate.StampGoal sellos. Confirma el canje para iniciar un nuevo ciclo con 0 sellos.</p>
-            <form method="post" asp-page-handler="Redeem" asp-route-cardId="@Model.RewardCandidate.Id">
-                <button class="btn btn-success" type="submit" data-testid="stamp-redeem-submit" onclick="return confirm('Confirmar canje de recompensa para esta tarjeta?');">
-                    Canjear recompensa
-                </button>
-            </form>
-        </div>
-    }
-
-    @if (!Model.IsPilotBlocked)
-    {
-        <form method="post" class="business-form-card" data-testid="stamp-form">
+@if (!Model.IsPilotBlocked)
+{
+    <div class="p-card p-form-card">
+        <form method="post" data-testid="stamp-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input asp-for="ScannedCode" type="hidden" data-testid="stamp-scanned-code" />
 
@@ -76,7 +74,7 @@
                 <span asp-validation-for="Input.UserNameOrEmail" class="text-danger"></span>
             </div>
 
-            <div class="stamp-form-actions">
+            <div class="p-stamp-actions">
                 <button class="btn btn-primary" type="submit" data-testid="stamp-submit">Agregar sello</button>
                 <button class="btn btn-outline-primary" type="button" data-qr-start data-testid="stamp-scan-submit">Escanear QR</button>
                 <span class="stamp-scan-status" data-qr-status data-testid="stamp-scan-status">Listo</span>
@@ -92,8 +90,8 @@
                 <canvas data-qr-canvas></canvas>
             </div>
         </form>
-    }
-</section>
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

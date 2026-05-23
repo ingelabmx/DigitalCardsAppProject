@@ -4,142 +4,123 @@
     ViewData["Title"] = "Tarjetas cliente";
 }
 
-<section class="result-panel client-cards-heading">
-    <div class="page-heading">
-        <div>
-            <p class="eyebrow">Cliente</p>
-            <h1>Mis tarjetas</h1>
-            <p class="lead">Estas tarjetas pertenecen a tu sesion de cliente. Los links Wallet usan tokens opacos.</p>
-        </div>
-        <a class="btn btn-outline-secondary" asp-page="/Client/Dashboard" data-testid="client-cards-dashboard-link">Dashboard</a>
-    </div>
-    <div class="client-identity-panel client-cards-qr-panel" data-testid="client-cards-qr-panel">
+<div class="p-page-header">
+    <h1 class="p-page-heading">Mis tarjetas</h1>
+    <p class="p-page-sub">Estas tarjetas pertenecen a tu sesion de cliente. Los links Wallet usan tokens opacos.</p>
+</div>
+
+<div class="p-card mb-4" data-testid="client-cards-qr-panel">
+    <div class="p-qr-wrap">
         <div class="client-qr-card" data-testid="client-cards-qr-card" aria-label="QR real del usuario @Model.ClientUserName">
             @Html.Raw(Model.ClientQrSvg)
         </div>
         <div>
-            <p class="eyebrow">QR cliente</p>
-            <strong data-testid="client-cards-qr-username">@Model.ClientUserName</strong>
-            <p class="text-muted mb-0">El negocio puede escanear este codigo para encontrarte por usuario.</p>
+            <span class="p-eyebrow p-eyebrow-sm">QR cliente</span>
+            <p class="p-page-heading" data-testid="client-cards-qr-username">@Model.ClientUserName</p>
+            <p class="p-page-sub">El negocio puede escanear este codigo para encontrarte por usuario.</p>
         </div>
     </div>
-</section>
+</div>
 
 @if (Model.Cards.Count > 0)
 {
     var totalCurrentStamps = Model.Cards.Sum(card => card.CurrentStamps);
     var walletReady = Model.Cards.Count(card => card.GoogleIssued || card.AppleTracked);
 
-    <section class="result-panel mt-3" data-testid="client-card-results">
-        <div class="page-heading">
-            <div>
-                <p class="eyebrow">Tarjetas</p>
-                <h2>Programas asociados</h2>
-            </div>
-            <span class="badge text-bg-light">@Model.Cards.Count tarjeta(s)</span>
+    <div class="p-stats-grid mb-4" data-testid="client-cards-summary">
+        <div class="p-stat">
+            <div class="p-stat-label">Tarjetas</div>
+            <div class="p-stat-value">@Model.Cards.Count</div>
         </div>
-
-        <div class="client-cards-summary" data-testid="client-cards-summary">
-            <div>
-                <span>Tarjetas</span>
-                <strong>@Model.Cards.Count</strong>
-            </div>
-            <div>
-                <span>Sellos actuales</span>
-                <strong>@totalCurrentStamps</strong>
-            </div>
-            <div>
-                <span>Tarjetas listas</span>
-                <strong>@walletReady</strong>
-            </div>
+        <div class="p-stat">
+            <div class="p-stat-label">Sellos actuales</div>
+            <div class="p-stat-value">@totalCurrentStamps</div>
         </div>
+        <div class="p-stat">
+            <div class="p-stat-label">Tarjetas listas</div>
+            <div class="p-stat-value">@walletReady</div>
+        </div>
+    </div>
 
-        <div class="client-card-list">
-            @foreach (var card in Model.Cards)
-            {
-                var stampGoal = Math.Max(1, card.StampGoal);
-                var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
-                var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
-                var stampProgress = visibleStamps * 100 / stampGoal;
+    <div data-testid="client-card-results">
+        @foreach (var card in Model.Cards)
+        {
+            var stampGoal = Math.Max(1, card.StampGoal);
+            var visibleStamps = Math.Min(card.CurrentStamps, stampGoal);
+            var stampsToGoal = Math.Max(0, stampGoal - visibleStamps);
+            var stampProgress = visibleStamps * 100 / stampGoal;
 
-                <article class="client-card-row" data-testid="client-card">
-                    <div class="client-card-main">
-                        <div class="client-card-face">
-                                <span class="client-card-kicker">Puntelio</span>
-                                <h3>@card.BusinessName</h3>
-                                <p>@card.ClientUserName</p>
-                                <div class="client-stamp-track" aria-label="Sellos actuales">
-                                @for (var stamp = 1; stamp <= stampGoal; stamp++)
-                                {
-                                    <span class="@(stamp <= visibleStamps ? "filled" : string.Empty)"></span>
-                                }
-                            </div>
+            <article class="p-client-card" data-testid="client-card"
+                     style="--card-primary:@(card.PrimaryColor ?? "#1A1A1A");--card-secondary:@(card.SecondaryColor ?? "#2E2E2E");"
+>
+                <div class="p-client-card-face">
+                    <p class="kicker">Puntelio</p>
+                    <h3>@card.BusinessName</h3>
+                    <p class="user">@card.ClientUserName</p>
+                    <div class="p-stamps" aria-label="Sellos actuales">
+                        @for (var stamp = 1; stamp <= stampGoal; stamp++)
+                        {
+                            <span class="p-stamp @(stamp <= visibleStamps ? "on" : string.Empty)"></span>
+                        }
+                    </div>
+                </div>
+
+                <div class="p-client-card-body">
+                    <div class="d-flex gap-2 flex-wrap mb-3" data-testid="client-wallet-badges">
+                        <span class="p-badge p-badge-gray">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                        <span class="p-badge @(card.GoogleIssued || card.AppleTracked ? "p-badge-green" : "p-badge-gray")">
+                            @(card.GoogleIssued || card.AppleTracked ? "Tarjeta lista" : "Tarjeta pendiente")
+                        </span>
+                    </div>
+
+                    <div class="mb-3" data-testid="client-card-progress-panel">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="p-stat-label">Progreso</span>
+                            <span class="p-list-name">
+                                @(stampsToGoal == 0
+                                    ? "Tarjeta completa"
+                                    : $"Faltan {stampsToGoal} sello(s)")
+                            </span>
                         </div>
-
-                        <div class="client-card-state">
-                            <div class="client-wallet-badges" data-testid="client-wallet-badges">
-                                <span class="badge text-bg-light">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
-                                <span class="badge @(card.GoogleIssued || card.AppleTracked ? "text-bg-success" : "text-bg-secondary")">
-                                    @(card.GoogleIssued || card.AppleTracked ? "Tarjeta lista" : "Tarjeta pendiente")
-                                </span>
-                            </div>
-                            <div class="client-card-progress-panel" data-testid="client-card-progress-panel">
-                                <div>
-                                    <span>Progreso</span>
-                                    <strong>
-                                        @(stampsToGoal == 0
-                                            ? "Tarjeta completa"
-                                            : $"Faltan {stampsToGoal} sello(s)")
-                                    </strong>
-                                </div>
-                                <div class="client-card-progress-bar" aria-label="Progreso de sellos">
-                                    <div style="width:@stampProgress%"></div>
-                                </div>
-                            </div>
-                            <div class="metric-row metric-row-wide">
-                                <div class="metric">
-                                    <span>Sellos actuales</span>
-                                    <strong data-testid="client-card-current-stamps">@visibleStamps de @stampGoal</strong>
-                                </div>
-                                <div class="metric">
-                                    <span>Tarjeta</span>
-                                    <strong data-testid="client-card-wallet-status">@(card.GoogleIssued || card.AppleTracked ? "Lista" : "Pendiente")</strong>
-                                </div>
-                            </div>
-                            @if (card.RecentRewardRedemptions.Count > 0)
-                            {
-                                <div class="client-card-progress-panel" data-testid="client-card-redemptions">
-                                    <div>
-                                        <span>Ultimo canje</span>
-                                        <strong>@card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</strong>
-                                    </div>
-                                    <small>@card.RecentRewardRedemptions[0].RewardText</small>
-                                </div>
-                            }
+                        <div class="p-progress-bar-wrap" aria-label="Progreso de sellos">
+                            <div class="p-progress-bar-fill" style="width:@stampProgress%"></div>
                         </div>
                     </div>
 
-                    <div class="form-actions">
-                        <a class="btn btn-primary btn-sm" asp-page="/Wallet/Select" asp-route-token="@card.WalletSelectToken" data-testid="client-card-wallet-link">Abrir Wallet</a>
+                    <div class="p-stats-grid mb-3">
+                        <div class="p-stat">
+                            <div class="p-stat-label">Sellos actuales</div>
+                            <div class="p-stat-value" data-testid="client-card-current-stamps">@visibleStamps</div>
+                            <div class="p-stat-sub">de @stampGoal</div>
+                        </div>
+                        <div class="p-stat">
+                            <div class="p-stat-label">Tarjeta</div>
+                            <div class="p-stat-value-sm" data-testid="client-card-wallet-status">@(card.GoogleIssued || card.AppleTracked ? "Lista" : "Pendiente")</div>
+                        </div>
                     </div>
-                </article>
-            }
-        </div>
-    </section>
+
+                    @if (card.RecentRewardRedemptions.Count > 0)
+                    {
+                        <div class="p-info-box mb-3" data-testid="client-card-redemptions">
+                            <strong>Ultimo canje:</strong> @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g") — @card.RecentRewardRedemptions[0].RewardText
+                        </div>
+                    }
+
+                    <a class="btn btn-primary btn-sm" asp-page="/Wallet/Select" asp-route-token="@card.WalletSelectToken" data-testid="client-card-wallet-link">Abrir Wallet</a>
+                </div>
+            </article>
+        }
+    </div>
 }
 else
 {
-    <section class="result-panel mt-3" data-testid="client-card-results">
-        <div class="dashboard-empty-state" data-testid="client-cards-empty-state">
-            <div>
-                <p class="eyebrow">Sin tarjetas asociadas</p>
-                <h2>Visita un negocio participante</h2>
-                <p>Escanea el QR del negocio o pide que te asocien desde el mostrador para recibir tu link Wallet.</p>
-            </div>
-            <div class="dashboard-empty-actions">
-                <a class="btn btn-primary" asp-page="/Client/Dashboard">Ver mi QR</a>
-                <a class="btn btn-outline-primary" asp-page="/Client/Profile">Revisar perfil</a>
-            </div>
+    <div class="p-empty" data-testid="client-card-results">
+        <div class="p-empty-icon"><i class="bi bi-credit-card-2-front"></i></div>
+        <p class="p-empty-title" data-testid="client-cards-empty-state">Visita un negocio participante</p>
+        <p class="p-empty-desc">Escanea el QR del negocio o pide que te asocien desde el mostrador para recibir tu link Wallet.</p>
+        <div class="p-empty-actions">
+            <a class="btn btn-primary" asp-page="/Client/Dashboard">Ver mi QR</a>
+            <a class="btn btn-outline-primary" asp-page="/Client/Profile">Revisar perfil</a>
         </div>
-    </section>
+    </div>
 }
