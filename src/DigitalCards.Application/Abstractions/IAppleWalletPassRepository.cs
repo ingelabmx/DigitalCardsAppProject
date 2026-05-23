@@ -51,4 +51,13 @@ public interface IAppleWalletPassRepository
         string passTypeIdentifier,
         string serialNumber,
         CancellationToken cancellationToken = default);
+
+    Task<AppleWalletDeviceRecord?> FindDeviceByPushTokenAsync(
+        string pushToken,
+        CancellationToken cancellationToken = default);
+
+    Task<int> MigrateRegistrationsAsync(
+        string fromDeviceLibraryIdentifier,
+        string toDeviceLibraryIdentifier,
+        CancellationToken cancellationToken = default);
 }

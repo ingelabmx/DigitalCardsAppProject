@@ -161,9 +161,20 @@ public sealed class InMemoryAppleWalletPassRepository : IAppleWalletPassReposito
     {
         lock (_store.Sync)
         {
+            var callerPushToken = _store.AppleWalletDevices
+                .FirstOrDefault(d => string.Equals(d.DeviceLibraryIdentifier, deviceLibraryIdentifier, StringComparison.Ordinal))
+                ?.PushToken;
+
+            var relevantDeviceIds = callerPushToken is null
+                ? new HashSet<string>(StringComparer.Ordinal) { deviceLibraryIdentifier }
+                : _store.AppleWalletDevices
+                    .Where(d => string.Equals(d.PushToken, callerPushToken, StringComparison.Ordinal))
+                    .Select(d => d.DeviceLibraryIdentifier)
+                    .ToHashSet(StringComparer.Ordinal);
+
             var registrations = _store.AppleWalletRegistrations
                 .Where(registration =>
-                    string.Equals(registration.DeviceLibraryIdentifier, deviceLibraryIdentifier, StringComparison.Ordinal) &&
+                    relevantDeviceIds.Contains(registration.DeviceLibraryIdentifier) &&
                     string.Equals(registration.PassTypeIdentifier, passTypeIdentifier, StringComparison.Ordinal))
                 .Select(registration => registration.SerialNumber)
                 .ToHashSet(StringComparer.Ordinal);
@@ -176,6 +187,52 @@ public sealed class InMemoryAppleWalletPassRepository : IAppleWalletPassReposito
                 .ToArray();
 
             return Task.FromResult<IReadOnlyList<AppleWalletPassRecord>>(passes);
+        }
+    }
+
+    public Task<AppleWalletDeviceRecord?> FindDeviceByPushTokenAsync(
+        string pushToken,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var device = _store.AppleWalletDevices
+                .Where(d => string.Equals(d.PushToken, pushToken, StringComparison.Ordinal))
+                .OrderByDescending(d => d.UpdatedAt)
+                .FirstOrDefault();
+            return Task.FromResult(device);
+        }
+    }
+
+    public Task<int> MigrateRegistrationsAsync(
+        string fromDeviceLibraryIdentifier,
+        string toDeviceLibraryIdentifier,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var toMigrate = _store.AppleWalletRegistrations
+                .Where(r => string.Equals(r.DeviceLibraryIdentifier, fromDeviceLibraryIdentifier, StringComparison.Ordinal))
+                .ToList();
+
+            var migrated = 0;
+            foreach (var reg in toMigrate)
+            {
+                _store.AppleWalletRegistrations.Remove(reg);
+
+                var alreadyExists = _store.AppleWalletRegistrations.Any(r =>
+                    string.Equals(r.DeviceLibraryIdentifier, toDeviceLibraryIdentifier, StringComparison.Ordinal) &&
+                    string.Equals(r.PassTypeIdentifier, reg.PassTypeIdentifier, StringComparison.Ordinal) &&
+                    string.Equals(r.SerialNumber, reg.SerialNumber, StringComparison.Ordinal));
+
+                if (!alreadyExists)
+                {
+                    _store.AppleWalletRegistrations.Add((toDeviceLibraryIdentifier, reg.PassTypeIdentifier, reg.SerialNumber, reg.CreatedAt));
+                    migrated++;
+                }
+            }
+
+            return Task.FromResult(migrated);
         }
     }
 

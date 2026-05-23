@@ -124,6 +124,22 @@ public sealed class AppleWalletService : IAppleWalletService
             return AppleWalletRegistrationStatus.Unauthorized;
         }
 
+        var existingDevice = await _applePasses.FindDeviceByPushTokenAsync(pushToken, cancellationToken);
+        if (existingDevice is not null &&
+            !string.Equals(existingDevice.DeviceLibraryIdentifier, deviceLibraryIdentifier, StringComparison.Ordinal))
+        {
+            var migrated = await _applePasses.MigrateRegistrationsAsync(
+                existingDevice.DeviceLibraryIdentifier,
+                deviceLibraryIdentifier,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Apple Wallet device migrated {OldDevice} → {NewDevice} (same PushToken), {Migrated} registration(s) moved.",
+                existingDevice.DeviceLibraryIdentifier,
+                deviceLibraryIdentifier,
+                migrated);
+        }
+
         var now = _clock.UtcNow;
         await _applePasses.UpsertDeviceAsync(
             new AppleWalletDeviceRecord(deviceLibraryIdentifier, pushToken, now, now),

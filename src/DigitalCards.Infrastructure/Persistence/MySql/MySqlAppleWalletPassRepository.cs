@@ -197,8 +197,12 @@ public sealed class MySqlAppleWalletPassRepository : IAppleWalletPassRepository
         string? previousLastUpdated,
         CancellationToken cancellationToken = default)
     {
+        // Join through AppleWalletDevice so that any device sharing the same PushToken
+        // (e.g. a reinstalled pass that got a new DeviceLibraryIdentifier) still finds
+        // its registered passes via the PushToken subquery.
         const string sql = """
-            select p.PassTypeIdentifier,
+            select distinct
+                   p.PassTypeIdentifier,
                    p.SerialNumber,
                    p.CardID,
                    p.AuthTokenHash,
@@ -209,8 +213,15 @@ public sealed class MySqlAppleWalletPassRepository : IAppleWalletPassRepository
             inner join AppleWalletRegistration r
                 on r.PassTypeIdentifier = p.PassTypeIdentifier
                and r.SerialNumber = p.SerialNumber
-            where r.DeviceLibraryIdentifier = @DeviceLibraryIdentifier
-              and p.PassTypeIdentifier = @PassTypeIdentifier
+            inner join AppleWalletDevice d
+                on d.DeviceLibraryIdentifier = r.DeviceLibraryIdentifier
+            where p.PassTypeIdentifier = @PassTypeIdentifier
+              and d.PushToken = (
+                  select PushToken
+                  from AppleWalletDevice
+                  where DeviceLibraryIdentifier = @DeviceLibraryIdentifier
+                  limit 1
+              )
               and (@PreviousLastUpdated is null or cast(p.UpdateTag as unsigned) > cast(@PreviousLastUpdated as unsigned))
             order by cast(p.UpdateTag as unsigned), p.SerialNumber;
             """;
@@ -253,6 +264,70 @@ public sealed class MySqlAppleWalletPassRepository : IAppleWalletPassRepository
             }, cancellationToken: cancellationToken));
 
         return rows.Select(row => row.ToModel()).ToArray();
+    }
+
+    public async Task<AppleWalletDeviceRecord?> FindDeviceByPushTokenAsync(
+        string pushToken,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select DeviceLibraryIdentifier,
+                   PushToken,
+                   CreatedAt,
+                   UpdatedAt
+            from AppleWalletDevice
+            where PushToken = @PushToken
+            order by UpdatedAt desc
+            limit 1;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var row = await connection.QuerySingleOrDefaultAsync<AppleWalletDeviceRow>(
+            new CommandDefinition(sql, new { PushToken = pushToken }, cancellationToken: cancellationToken));
+
+        return row?.ToModel();
+    }
+
+    public async Task<int> MigrateRegistrationsAsync(
+        string fromDeviceLibraryIdentifier,
+        string toDeviceLibraryIdentifier,
+        CancellationToken cancellationToken = default)
+    {
+        const string copySql = """
+            insert ignore into AppleWalletRegistration (DeviceLibraryIdentifier, PassTypeIdentifier, SerialNumber, CreatedAt)
+            select @ToDeviceLibraryIdentifier, PassTypeIdentifier, SerialNumber, CreatedAt
+            from AppleWalletRegistration
+            where DeviceLibraryIdentifier = @FromDeviceLibraryIdentifier;
+            """;
+
+        const string deleteSql = """
+            delete from AppleWalletRegistration
+            where DeviceLibraryIdentifier = @FromDeviceLibraryIdentifier;
+            """;
+
+        var parameters = new
+        {
+            FromDeviceLibraryIdentifier = fromDeviceLibraryIdentifier,
+            ToDeviceLibraryIdentifier = toDeviceLibraryIdentifier
+        };
+
+        await using var connection = _connectionFactory.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var copied = await connection.ExecuteAsync(
+                new CommandDefinition(copySql, parameters, transaction, cancellationToken: cancellationToken));
+            await connection.ExecuteAsync(
+                new CommandDefinition(deleteSql, parameters, transaction, cancellationToken: cancellationToken));
+            await transaction.CommitAsync(cancellationToken);
+            return copied;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     private static object ToParameters(AppleWalletPassRecord pass)

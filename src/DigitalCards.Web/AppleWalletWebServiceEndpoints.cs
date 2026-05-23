@@ -113,9 +113,12 @@ public static class AppleWalletWebServiceEndpoints
                     cancellationToken);
 
                 logger.LogInformation(
-                    "Apple Wallet update check for pass type {PassTypeIdentifier} returned {UpdatedPassCount} updated passes.",
+                    "Apple Wallet registrations check: device={DeviceId} passType={PassTypeId} since={Since} → {Count} serial(s): [{Serials}]",
+                    deviceLibraryIdentifier,
                     passTypeIdentifier,
-                    result?.SerialNumbers.Count ?? 0);
+                    passesUpdatedSince,
+                    result?.SerialNumbers.Count ?? 0,
+                    result is null ? string.Empty : string.Join(", ", result.SerialNumbers));
 
                 return result is null
                     ? Results.NoContent()
