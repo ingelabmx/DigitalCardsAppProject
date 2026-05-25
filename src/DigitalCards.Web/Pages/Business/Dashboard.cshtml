@@ -82,23 +82,23 @@
                 <div>
                     <h3 class="p-sub-heading">Link publico</h3>
                     <input class="p-input" value="@Model.GeneratedEnrollmentUrl" readonly data-testid="business-enrollment-public-link" />
-                    <button type="button"
-                            class="p-btn p-btn-outline p-btn-sm mt-2"
-                            onclick="copyEnrollmentLink(this)"
-                            data-link="@Model.GeneratedEnrollmentUrl">
-                        <i class="bi bi-clipboard"></i> Copiar enlace
-                    </button>
+                    <div class="d-flex gap-2 mt-2">
+                        <button type="button"
+                                class="p-btn p-btn-outline p-btn-sm"
+                                onclick="copyEnrollmentLink(this)"
+                                data-link="@Model.GeneratedEnrollmentUrl">
+                            <i class="bi bi-clipboard"></i> Copiar enlace
+                        </button>
+                        <button type="button"
+                                class="p-btn p-btn-outline p-btn-sm"
+                                onclick="downloadQRSvg()">
+                            <i class="bi bi-download"></i> Descargar QR
+                        </button>
+                    </div>
                     <p class="p-note mt-2">El link generado no se guarda. Si generas otro QR o link, el anterior queda eliminado.</p>
                 </div>
                 <div class="text-center" data-testid="business-enrollment-qr">
                     @Html.Raw(Model.GeneratedEnrollmentQrSvg)
-                    <div class="mt-2">
-                        <button type="button"
-                                class="p-btn p-btn-outline p-btn-sm"
-                                onclick="downloadQRSvg()">
-                            <i class="bi bi-download"></i> Descargar QR (.png)
-                        </button>
-                    </div>
                 </div>
             </div>
         }
