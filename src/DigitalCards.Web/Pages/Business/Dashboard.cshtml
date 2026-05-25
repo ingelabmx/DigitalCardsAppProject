@@ -92,6 +92,13 @@
                 </div>
                 <div class="text-center" data-testid="business-enrollment-qr">
                     @Html.Raw(Model.GeneratedEnrollmentQrSvg)
+                    <div class="mt-2">
+                        <button type="button"
+                                class="p-btn p-btn-outline p-btn-sm"
+                                onclick="downloadQRSvg()">
+                            <i class="bi bi-download"></i> Descargar QR
+                        </button>
+                    </div>
                 </div>
             </div>
         }
@@ -181,6 +188,17 @@
 }
 
 <script>
+function downloadQRSvg() {
+    var svg = document.querySelector('[data-testid="business-enrollment-qr"] svg');
+    if (!svg) return;
+    var blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'puntelio-qr.svg';
+    a.click();
+    URL.revokeObjectURL(url);
+}
 function copyEnrollmentLink(btn) {
     const link = btn.getAttribute('data-link');
     navigator.clipboard.writeText(link).then(function() {
