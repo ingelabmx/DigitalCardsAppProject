@@ -82,7 +82,13 @@
                 <div>
                     <h3 class="p-sub-heading">Link publico</h3>
                     <input class="p-input" value="@Model.GeneratedEnrollmentUrl" readonly data-testid="business-enrollment-public-link" />
-                    <p class="p-note mt-2">El token plano no se guarda. Si generas otro QR, el anterior queda revocado.</p>
+                    <button type="button"
+                            class="p-btn p-btn-outline p-btn-sm mt-2"
+                            onclick="copyEnrollmentLink(this)"
+                            data-link="@Model.GeneratedEnrollmentUrl">
+                        <i class="bi bi-clipboard"></i> Copiar enlace
+                    </button>
+                    <p class="p-note mt-2">El link generado no se guarda. Si generas otro QR o link, el anterior queda eliminado.</p>
                 </div>
                 <div class="text-center" data-testid="business-enrollment-qr">
                     @Html.Raw(Model.GeneratedEnrollmentQrSvg)
@@ -155,7 +161,7 @@
                             <div class="p-ledger-row">
                                 <div>
                                     <strong class="p-list-name">@item.ClientName</strong>
-                                    <span class="p-list-meta">@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                    <span class="p-list-meta"><time class="local-time" data-utc="@item.CreatedAt.ToUniversalTime().ToString("o")" data-format="datetime">@item.CreatedAt.ToLocalTime().ToString("g")</time></span>
                                 </div>
                                 <span class="p-badge p-badge-gray">@item.NewCheckQTY sellos</span>
                             </div>
@@ -173,6 +179,35 @@
         </div>
     </div>
 }
+
+<script>
+function copyEnrollmentLink(btn) {
+    const link = btn.getAttribute('data-link');
+    navigator.clipboard.writeText(link).then(function() {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Copiado';
+        btn.disabled = true;
+        setTimeout(function() {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }, 2000);
+    }).catch(function() {
+        const input = document.createElement('input');
+        input.value = link;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Copiado';
+        btn.disabled = true;
+        setTimeout(function() {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }, 2000);
+    });
+}
+</script>
 
 @functions {
     private static string CardStatus(

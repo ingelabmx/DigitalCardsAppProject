@@ -31,7 +31,7 @@
     {
         <section class="business-profile-panel mb-4" data-testid="admin-business-public-enrollment">
             <h2>Registro publico del negocio</h2>
-            <p class="text-muted">Genera un link opaco para que clientes se registren directamente en este programa. El token plano no se guarda en base de datos.</p>
+            <p class="text-muted">Genera un link para que clientes se registren directamente en este programa. El link no se guarda en ninguna base de datos.</p>
             @if (!string.IsNullOrWhiteSpace(Model.GeneratedEnrollmentUrl))
             {
                 <div class="alert alert-info" role="status" data-testid="admin-business-public-enrollment-url">

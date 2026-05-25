@@ -79,7 +79,7 @@
                     <p class="p-note">@visibleStamps de @stampGoal sellos</p>
                     @if (card.RecentRewardRedemptions.Count > 0)
                     {
-                        <small class="p-list-meta" data-testid="client-dashboard-redemption">Ultimo canje @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</small>
+                        <small class="p-list-meta" data-testid="client-dashboard-redemption">Ultimo canje <time class="local-time" data-utc="@card.RecentRewardRedemptions[0].RedeemedAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</time></small>
                     }
                     <a class="p-btn p-btn-blue p-wallet-btn"
                        asp-page="/Wallet/Select"

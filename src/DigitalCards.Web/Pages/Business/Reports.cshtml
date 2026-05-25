@@ -265,7 +265,7 @@ else
                                 <td>@client.CurrentStamps</td>
                                 <td>@client.LifetimeStamps</td>
                                 <td><span class="p-badge p-badge-gray">@client.CardStatus</span></td>
-                                <td class="td-muted">@client.LastActivityAt.ToLocalTime().ToString("g")</td>
+                                <td class="td-muted"><time class="local-time" data-utc="@client.LastActivityAt.ToUniversalTime().ToString("o")" data-format="datetime">@client.LastActivityAt.ToLocalTime().ToString("g")</time></td>
                             </tr>
                         }
                     </tbody>

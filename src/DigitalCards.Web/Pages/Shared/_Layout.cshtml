@@ -269,5 +269,34 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+    (function () {
+        function formatLocalTime(utcString, format) {
+            var d = new Date(utcString);
+            if (isNaN(d.getTime())) return null;
+            var opts = { hour12: true };
+            if (format === 'datetime' || !format) {
+                opts.year = 'numeric'; opts.month = 'numeric'; opts.day = 'numeric';
+                opts.hour = 'numeric'; opts.minute = '2-digit';
+            } else if (format === 'date') {
+                opts.year = 'numeric'; opts.month = 'numeric'; opts.day = 'numeric';
+            } else if (format === 'time') {
+                opts.hour = 'numeric'; opts.minute = '2-digit';
+            } else if (format === 'relative') {
+                var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+                if (diff < 60) return 'hace un momento';
+                if (diff < 3600) return 'hace ' + Math.floor(diff / 60) + ' min';
+                if (diff < 86400) return 'hace ' + Math.floor(diff / 3600) + ' h';
+                opts.year = 'numeric'; opts.month = 'numeric'; opts.day = 'numeric';
+                opts.hour = 'numeric'; opts.minute = '2-digit';
+            }
+            return d.toLocaleString(navigator.language || 'es-MX', opts);
+        }
+        document.querySelectorAll('time.local-time[data-utc]').forEach(function (el) {
+            var formatted = formatLocalTime(el.getAttribute('data-utc'), el.getAttribute('data-format'));
+            if (formatted) el.textContent = formatted;
+        });
+    })();
+    </script>
 </body>
 </html>

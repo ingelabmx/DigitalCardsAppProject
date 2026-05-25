@@ -32,11 +32,11 @@ else
     }
 
     <div class="p-card-flush mb-4">
-        <form method="get" class="p-toolbar" data-testid="business-card-table-controls">
+        <form method="get" class="p-toolbar" data-testid="business-card-table-controls" autocomplete="off">
             <input type="hidden" asp-for="CardId" />
             <div class="p-toolbar-grow">
                 <label asp-for="Query" class="visually-hidden"></label>
-                <input asp-for="Query" class="form-control" placeholder="usuario o correo del cliente" data-testid="business-card-search-input" />
+                <input type="search" asp-for="Query" class="form-control" placeholder="usuario o correo del cliente" data-testid="business-card-search-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
             <span class="p-toolbar-count">
                 Tarjetas&nbsp;<strong data-testid="business-card-total-count">@Model.TotalCards</strong>
@@ -85,8 +85,8 @@ else
                                 <td>@card.Client.FirstName @card.Client.LastName</td>
                                 <td class="td-muted">@card.Client.UserName</td>
                                 <td>@card.VisibleStamps de @card.StampGoal</td>
-                                <td class="td-muted">@card.CreatedAt.ToLocalTime().ToString("g")</td>
-                                <td class="td-muted">@card.LastStampedAt.ToLocalTime().ToString("g")</td>
+                                <td class="td-muted"><time class="local-time" data-utc="@card.CreatedAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.CreatedAt.ToLocalTime().ToString("g")</time></td>
+                                <td class="td-muted"><time class="local-time" data-utc="@card.LastStampedAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.LastStampedAt.ToLocalTime().ToString("g")</time></td>
                                 <td>
                                     <span class="p-badge @(card.IsActive ? "p-badge-green" : "p-badge-gray")">
                                         @(card.IsActive ? "Activa" : "Inactiva")
@@ -236,7 +236,7 @@ else
                 </div>
                 <div class="p-stat">
                     <div class="p-stat-label">Ultimo update</div>
-                    <div class="p-stat-value-sm" data-testid="business-card-last-update">@Model.Detail.LastStampedAt.ToLocalTime().ToString("g")</div>
+                    <div class="p-stat-value-sm" data-testid="business-card-last-update"><time class="local-time" data-utc="@Model.Detail.LastStampedAt.ToUniversalTime().ToString("o")" data-format="datetime">@Model.Detail.LastStampedAt.ToLocalTime().ToString("g")</time></div>
                 </div>
             </div>
 
@@ -264,7 +264,7 @@ else
                                         <span class="p-list-name">@CardStatus(item.GoogleWalletAttempted, item.GoogleWalletSucceeded, item.AppleWalletAttempted, item.AppleWalletSucceeded)</span>
                                         <span class="p-list-meta">Sellos: @item.NewCheckQTY actuales · @item.NewHistoricCheckQTY historicos</span>
                                     </div>
-                                    <span class="p-list-meta">@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                                    <span class="p-list-meta"><time class="local-time" data-utc="@item.CreatedAt.ToUniversalTime().ToString("o")" data-format="datetime">@item.CreatedAt.ToLocalTime().ToString("g")</time></span>
                                 </div>
                                 @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                 {
@@ -295,7 +295,7 @@ else
                                         <span class="p-list-name">@(string.IsNullOrWhiteSpace(item.ErrorSummary) ? "Canje registrado" : "Con alerta")</span>
                                         <span class="p-list-meta">@item.RedeemedCheckQTY de @item.StampGoal sellos · @item.RewardText</span>
                                     </div>
-                                    <span class="p-list-meta">@item.RedeemedAt.ToLocalTime().ToString("g")</span>
+                                    <span class="p-list-meta"><time class="local-time" data-utc="@item.RedeemedAt.ToUniversalTime().ToString("o")" data-format="datetime">@item.RedeemedAt.ToLocalTime().ToString("g")</time></span>
                                 </div>
                                 @if (!string.IsNullOrWhiteSpace(item.ErrorSummary))
                                 {

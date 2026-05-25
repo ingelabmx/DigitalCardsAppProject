@@ -67,7 +67,7 @@
 
                 <div class="p-client-card-body">
                     <div class="d-flex gap-2 flex-wrap mb-3" data-testid="client-wallet-badges">
-                        <span class="p-badge p-badge-gray">Ultimo sello @card.LastStampedAt.ToLocalTime().ToString("g")</span>
+                        <span class="p-badge p-badge-gray">Ultimo sello <time class="local-time" data-utc="@card.LastStampedAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.LastStampedAt.ToLocalTime().ToString("g")</time></span>
                         <span class="p-badge @(card.GoogleIssued || card.AppleTracked ? "p-badge-green" : "p-badge-gray")">
                             @(card.GoogleIssued || card.AppleTracked ? "Tarjeta lista" : "Tarjeta pendiente")
                         </span>
@@ -102,7 +102,7 @@
                     @if (card.RecentRewardRedemptions.Count > 0)
                     {
                         <div class="p-info-box mb-3" data-testid="client-card-redemptions">
-                            <strong>Ultimo canje:</strong> @card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g") — @card.RecentRewardRedemptions[0].RewardText
+                            <strong>Ultimo canje:</strong> <time class="local-time" data-utc="@card.RecentRewardRedemptions[0].RedeemedAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.RecentRewardRedemptions[0].RedeemedAt.ToLocalTime().ToString("g")</time> — @card.RecentRewardRedemptions[0].RewardText
                         </div>
                     }
 
