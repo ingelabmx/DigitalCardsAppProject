@@ -54,7 +54,7 @@ builder.Services
         options.LoginPath = "/Business/Login";
         options.AccessDeniedPath = "/Business/Login";
         options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
     })
     .AddCookie(AdminAuth.Scheme, options =>
     {
@@ -76,7 +76,7 @@ builder.Services
         options.LoginPath = "/Client/Login";
         options.AccessDeniedPath = "/Client/Login";
         options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
     });
 builder.Services.AddAuthorization(options =>
 {

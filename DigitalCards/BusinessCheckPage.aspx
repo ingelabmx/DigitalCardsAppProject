@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Checadas</title>
+    <title>Sellos</title>
     <link rel="shortcut icon" type="image/png" href="../assets/images/logos/DigitalCards-Icon-removebg.png" />
     <link rel="stylesheet" href="assets/css/styles.min.css" />
 </head>
@@ -113,7 +113,7 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <h5 class="card-title">Checadas</h5>
+                                        <h5 class="card-title">Sellos</h5>
                                     </div>
                                     <div class="mb-3">
                                         <input type="text" class="form-control" placeholder="Escanear o buscar un cliente por su nombre de usuario o correo electrónico..." id="tbCliente" runat="server">

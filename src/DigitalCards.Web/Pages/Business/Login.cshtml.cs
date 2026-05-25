@@ -69,7 +69,7 @@ public sealed class LoginModel : PageModel
             BusinessAuth.CreatePrincipal(business),
             new AuthenticationProperties
             {
-                IsPersistent = false,
+                IsPersistent = true,
                 IssuedUtc = DateTimeOffset.UtcNow
             });
 

@@ -56,7 +56,7 @@ public sealed class LoginModel : PageModel
             ClientAuth.CreatePrincipal(client),
             new AuthenticationProperties
             {
-                IsPersistent = false,
+                IsPersistent = true,
                 IssuedUtc = DateTimeOffset.UtcNow
             });
 

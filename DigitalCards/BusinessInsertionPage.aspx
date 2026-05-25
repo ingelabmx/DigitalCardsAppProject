@@ -55,7 +55,7 @@
                                     <span>
                                         <iconify-icon icon="solar:danger-circle-bold-duotone" class="fs-6"></iconify-icon>
                                     </span>
-                                    <span class="hide-menu">Checadas</span>
+                                    <span class="hide-menu">Sellos</span>
                                 </a>
                             </li>
                             <li class="nav-small-cap">

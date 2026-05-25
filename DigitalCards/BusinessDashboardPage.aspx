@@ -55,7 +55,7 @@
                                 <span>
                                     <iconify-icon icon="solar:danger-circle-bold-duotone" class="fs-6"></iconify-icon>
                                 </span>
-                                <span class="hide-menu">Checadas</span>
+                                <span class="hide-menu">Sellos</span>
                             </a>
                         </li>
                         <li class="nav-small-cap">
@@ -139,7 +139,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-center gap-2">
-                                    <h5 class="card-title">Últimas checadas</h5>
+                                    <h5 class="card-title">Últimos sellos</h5>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table text-nowrap align-middle mb-0">
