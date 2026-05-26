@@ -47,6 +47,42 @@ body.legacy-shell {
   margin-bottom: 0;
 }
 
+.landing-pricing-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 .landing-price-card ul {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 .landing-price-card > p {
+  min-height: 60px;
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 .landing-price-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 .landing-price-card ul {
+  flex: 1;
+}
+
+.landing-pricing-grid.landing-pricing-grid-3 .landing-actions {
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+    .landing-pricing-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
 .brand-lockup {
   align-items: center;
   color: var(--dc-ink);
@@ -3271,6 +3307,7 @@ body.landing-shell {
   .landing-split,
   .landing-form-section,
   .landing-pricing-grid,
+  .landing-pricing-grid.landing-pricing-grid-3,
   .landing-footer {
     grid-template-columns: 1fr;
   }
