@@ -115,6 +115,50 @@
     }
 </div>
 
+@if (Model.AbandonedSignups.Count > 0)
+{
+    <div class="p-card mt-4" data-testid="admin-abandoned-signups-panel">
+        <div class="p-page-header mb-3">
+            <div>
+                <h2 class="p-page-heading" style="font-size:1.25rem;">Registros pendientes de pago</h2>
+                <p class="p-page-sub">Negocios creados que no completaron el pago en Stripe.</p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle p-table mb-0" data-testid="admin-abandoned-table">
+                <thead>
+                    <tr>
+                        <th>Negocio</th>
+                        <th>Correo</th>
+                        <th>Plan</th>
+                        <th>Fecha registro</th>
+                        <th class="text-end">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var signup in Model.AbandonedSignups)
+                    {
+                        <tr data-testid="admin-abandoned-row">
+                            <td>@signup.BusinessName</td>
+                            <td>@signup.BusinessEmail</td>
+                            <td>@(signup.PlanKey ?? "—")</td>
+                            <td>@signup.CreatedAt.ToLocalTime().ToString("g")</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="ResendPaymentLink" style="display:inline;">
+                                    <input type="hidden" name="businessId" value="@signup.BusinessId" />
+                                    <button class="btn btn-outline-primary btn-sm" type="submit" data-testid="admin-abandoned-resend">
+                                        Reenviar link de pago
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
 @functions {
     private static string ActivationLabel(bool isEnabled)
     {

@@ -206,6 +206,92 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             Layout("Contrasena cambiada", bodyHtml, brand));
     }
 
+    public RenderedEmailTemplate RenderBusinessWelcome(BusinessWelcomeEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        var subject = $"¡Bienvenido a Puntelio! Tu negocio {email.BusinessName} ya esta activo";
+        var textBody = $"""
+            ¡Hola, {email.BusinessName}!
+
+            Tu suscripcion al {email.PlanName} esta activa. Ya puedes comenzar a gestionar tus tarjetas de lealtad.
+
+            Accede a tu dashboard en:
+            {email.DashboardUrl}
+
+            Gracias por elegir Puntelio.
+            """;
+        var bodyHtml = $"""
+            <h1>¡Tu negocio ya esta activo!</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>.</p>
+            <p>Tu suscripcion al <strong>{Html(email.PlanName)}</strong> esta activa. Ya puedes gestionar tus tarjetas de lealtad digitales.</p>
+            {Button(email.DashboardUrl, "Ir a mi Dashboard", brand)}
+            {FallbackLink(email.DashboardUrl)}
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.BusinessWelcome,
+            email.To,
+            subject,
+            textBody,
+            Layout("Tu negocio ya esta activo", bodyHtml, brand));
+    }
+
+    public RenderedEmailTemplate RenderPaymentFailed(BusinessPaymentFailedEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        var graceDate = email.GraceEndsAt.ToLocalTime().ToString("d");
+        var subject = $"Pago fallido - Tu negocio {email.BusinessName} tiene 3 dias de gracia";
+        var textBody = $"""
+            Hola {email.BusinessName},
+
+            El cobro de tu suscripcion a Puntelio no pudo procesarse.
+
+            Tu negocio seguira activo hasta el {graceDate}. Actualiza tu metodo de pago antes de esa fecha para no perder el acceso.
+
+            Si tienes dudas, responde este correo.
+            """;
+        var bodyHtml = $"""
+            <h1>Pago fallido</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>.</p>
+            <p>El cobro de tu suscripcion a Puntelio no pudo procesarse.</p>
+            <p>Tu negocio seguira activo hasta el <strong>{Html(graceDate)}</strong>. Actualiza tu metodo de pago antes de esa fecha.</p>
+            <p>Si tienes dudas, responde este correo o contacta a soporte.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.PaymentFailed,
+            email.To,
+            subject,
+            textBody,
+            Layout("Pago fallido", bodyHtml, brand));
+    }
+
+    public RenderedEmailTemplate RenderSubscriptionCanceled(BusinessSubscriptionCanceledEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        var subject = $"Tu suscripcion de {email.BusinessName} en Puntelio fue cancelada";
+        var textBody = $"""
+            Hola {email.BusinessName},
+
+            Tu suscripcion a Puntelio fue cancelada y tu negocio ha sido desactivado.
+
+            Si fue un error, contáctanos para reactivar tu cuenta.
+            """;
+        var bodyHtml = $"""
+            <h1>Suscripcion cancelada</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>.</p>
+            <p>Tu suscripcion a Puntelio fue cancelada y tu negocio ha sido desactivado.</p>
+            <p>Si esto fue un error o deseas reactivar tu cuenta, por favor respondenos este correo.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.SubscriptionCanceled,
+            email.To,
+            subject,
+            textBody,
+            Layout("Suscripcion cancelada", bodyHtml, brand));
+    }
+
     private static string Layout(string title, string bodyHtml, EmailBranding branding)
     {
         var brand = NormalizeBrand(branding);

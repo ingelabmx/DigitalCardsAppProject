@@ -11,11 +11,13 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class BusinessesModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly BusinessSignupService _signupService;
     private readonly ILogger<BusinessesModel> _logger;
 
-    public BusinessesModel(AdminAppService adminApp, ILogger<BusinessesModel> logger)
+    public BusinessesModel(AdminAppService adminApp, BusinessSignupService signupService, ILogger<BusinessesModel> logger)
     {
         _adminApp = adminApp;
+        _signupService = signupService;
         _logger = logger;
     }
 
@@ -31,6 +33,8 @@ public sealed class BusinessesModel : PageModel
     public IReadOnlyList<PilotBusinessDto> Businesses { get; private set; } = [];
 
     public IReadOnlyList<PilotBusinessDto> PagedBusinesses { get; private set; } = [];
+
+    public IReadOnlyList<AbandonedSignupDto> AbandonedSignups { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
 
@@ -54,6 +58,31 @@ public sealed class BusinessesModel : PageModel
         CancellationToken cancellationToken)
     {
         return await SetPilotAsync(businessId, isEnabled: false, cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostResendPaymentLinkAsync(
+        Guid businessId,
+        CancellationToken cancellationToken)
+    {
+        if (businessId == Guid.Empty)
+        {
+            TempData["AdminBusinessStatus"] = "ID de negocio invalido.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var checkoutUrl = await _signupService.CreateOrResumeCheckoutAsync(businessId, baseUrl, cancellationToken);
+            TempData["AdminBusinessStatus"] = $"Link de pago generado: {checkoutUrl}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating checkout link for business {BusinessId}.", businessId);
+            TempData["AdminBusinessStatus"] = "Error al generar el link de pago.";
+        }
+
+        return RedirectToPage();
     }
 
     private async Task<IActionResult> SetPilotAsync(
@@ -110,6 +139,7 @@ public sealed class BusinessesModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToArray();
+        AbandonedSignups = await _signupService.ListAbandonedAsync(cancellationToken);
     }
 
     private static int NormalizePageSize(int value)

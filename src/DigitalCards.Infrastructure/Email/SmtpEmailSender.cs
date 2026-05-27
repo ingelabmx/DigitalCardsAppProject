@@ -64,6 +64,36 @@ public sealed class SmtpEmailSender : IEmailSender
         _logger.LogInformation("Sent password changed email to {Recipient}.", MaskEmail(email.To));
     }
 
+    public async Task SendBusinessWelcomeAsync(
+        BusinessWelcomeEmail email,
+        CancellationToken cancellationToken = default)
+    {
+        var rendered = _templates.RenderBusinessWelcome(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent business welcome email to {Recipient}.", MaskEmail(email.To));
+    }
+
+    public async Task SendPaymentFailedAsync(
+        BusinessPaymentFailedEmail email,
+        CancellationToken cancellationToken = default)
+    {
+        var rendered = _templates.RenderPaymentFailed(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent payment failed email to {Recipient}.", MaskEmail(email.To));
+    }
+
+    public async Task SendSubscriptionCanceledAsync(
+        BusinessSubscriptionCanceledEmail email,
+        CancellationToken cancellationToken = default)
+    {
+        var rendered = _templates.RenderSubscriptionCanceled(email);
+        await SendRenderedAsync(rendered, cancellationToken);
+
+        _logger.LogInformation("Sent subscription canceled email to {Recipient}.", MaskEmail(email.To));
+    }
+
     private async Task SendRenderedAsync(
         RenderedEmailTemplate rendered,
         CancellationToken cancellationToken)

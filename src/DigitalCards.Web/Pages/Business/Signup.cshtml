@@ -1,0 +1,107 @@
+@page
+@model DigitalCards.Web.Pages.Business.SignupModel
+@{
+    ViewData["Title"] = "Crear negocio en Puntelio";
+    Layout = "_LandingLayout";
+}
+
+<section class="auth-gateway auth-gateway-business">
+    <div class="auth-copy-panel">
+        <h1>Empieza a digitalizar tus tarjetas de lealtad hoy.</h1>
+        <p>
+            Crea tu cuenta, elige tu plan y activa tu programa en minutos.
+            Sin contratos, cancela cuando quieras.
+        </p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
+    </div>
+
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <div>
+                <h2>Crear negocio</h2>
+                <p>Completa tus datos y elige un plan para continuar al pago.</p>
+            </div>
+        </div>
+
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="alert alert-danger" role="alert" data-testid="signup-error">@Model.ErrorMessage</div>
+        }
+
+        <form method="post" data-testid="business-signup-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.BusinessName" class="form-label">Nombre del negocio</label>
+                <input asp-for="Input.BusinessName"
+                       class="form-control form-control-lg"
+                       placeholder="Ej. Cafeteria El Rincón"
+                       data-testid="signup-business-name" />
+                <span asp-validation-for="Input.BusinessName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.BusinessEmail" class="form-label">Correo del negocio</label>
+                <input asp-for="Input.BusinessEmail"
+                       class="form-control form-control-lg"
+                       type="email"
+                       autocomplete="email"
+                       data-testid="signup-email" />
+                <span asp-validation-for="Input.BusinessEmail" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">Contrasena</label>
+                <input asp-for="Input.Password"
+                       class="form-control form-control-lg"
+                       type="password"
+                       autocomplete="new-password"
+                       data-testid="signup-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                <input asp-for="Input.ConfirmPassword"
+                       class="form-control form-control-lg"
+                       type="password"
+                       autocomplete="new-password"
+                       data-testid="signup-confirm-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Plan</label>
+                <div class="d-flex flex-column gap-2">
+                    <label class="p-plan-option @(Model.Input.PlanKey == "Basic" ? "p-plan-option-selected" : "")">
+                        <input asp-for="Input.PlanKey" type="radio" value="Basic" data-testid="signup-plan-basic" />
+                        <span class="fw-semibold">Plan Básico</span>
+                        <span class="text-muted">$299 MXN/mes · hasta 300 clientes</span>
+                    </label>
+                    <label class="p-plan-option @(Model.Input.PlanKey == "Pro" ? "p-plan-option-selected" : "")">
+                        <input asp-for="Input.PlanKey" type="radio" value="Pro" data-testid="signup-plan-pro" />
+                        <span class="fw-semibold">Plan Pro</span>
+                        <span class="text-muted">$599 MXN/mes · hasta 1,000 clientes</span>
+                    </label>
+                    <label class="p-plan-option @(Model.Input.PlanKey == "Business" ? "p-plan-option-selected" : "")">
+                        <input asp-for="Input.PlanKey" type="radio" value="Business" data-testid="signup-plan-business" />
+                        <span class="fw-semibold">Plan Empresarial</span>
+                        <span class="text-muted">$999 MXN/mes · clientes ilimitados</span>
+                    </label>
+                </div>
+                <span asp-validation-for="Input.PlanKey" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="signup-submit">
+                Continuar al pago
+            </button>
+            <p class="text-center text-muted mt-3 small">
+                Al continuar aceptas nuestros <a asp-page="/Terminos">Términos de servicio</a>.
+            </p>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

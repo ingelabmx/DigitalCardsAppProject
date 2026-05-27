@@ -7,7 +7,10 @@ public enum EmailTemplateKind
     PasswordReset,
     InternalAlert,
     LandingContact,
-    PasswordChanged
+    PasswordChanged,
+    BusinessWelcome,
+    PaymentFailed,
+    SubscriptionCanceled
 }
 
 public sealed record RenderedEmailTemplate(
@@ -62,3 +65,18 @@ public sealed record PasswordChangedEmail(
     string AccountType,
     DateTimeOffset ChangedAt,
     EmailBranding? Branding = null);
+
+public sealed record BusinessWelcomeEmail(
+    string To,
+    string BusinessName,
+    string PlanName,
+    string DashboardUrl);
+
+public sealed record BusinessPaymentFailedEmail(
+    string To,
+    string BusinessName,
+    DateTimeOffset GraceEndsAt);
+
+public sealed record BusinessSubscriptionCanceledEmail(
+    string To,
+    string BusinessName);

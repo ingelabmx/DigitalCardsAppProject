@@ -11,4 +11,10 @@ public interface IEmailSender
     Task SendLandingContactAsync(LandingContactEmail email, CancellationToken cancellationToken = default);
 
     Task SendPasswordChangedAsync(PasswordChangedEmail email, CancellationToken cancellationToken = default);
+
+    Task SendBusinessWelcomeAsync(BusinessWelcomeEmail email, CancellationToken cancellationToken = default);
+
+    Task SendPaymentFailedAsync(BusinessPaymentFailedEmail email, CancellationToken cancellationToken = default);
+
+    Task SendSubscriptionCanceledAsync(BusinessSubscriptionCanceledEmail email, CancellationToken cancellationToken = default);
 }

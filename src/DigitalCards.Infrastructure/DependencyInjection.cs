@@ -1,9 +1,11 @@
 using DigitalCards.Application.Abstractions;
+using DigitalCards.Application.Services;
 using DigitalCards.Infrastructure.Branding;
 using DigitalCards.Infrastructure.Email;
 using DigitalCards.Infrastructure.LegacySync;
 using DigitalCards.Infrastructure.Persistence;
 using DigitalCards.Infrastructure.Persistence.MySql;
+using DigitalCards.Infrastructure.Stripe;
 using DigitalCards.Infrastructure.Time;
 using DigitalCards.Infrastructure.Wallets;
 using DigitalCards.Infrastructure.WalletLinks;
@@ -32,6 +34,10 @@ public static class DependencyInjection
             configuration.GetSection(WalletLinkOptions.SectionName));
         services.Configure<BusinessLogoUploadOptions>(
             configuration.GetSection(BusinessLogoUploadOptions.SectionName));
+        services.Configure<StripeOptions>(
+            configuration.GetSection(StripeOptions.SectionName));
+        services.Configure<StripeSignupOptions>(
+            configuration.GetSection(StripeSignupOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
@@ -66,6 +72,12 @@ public static class DependencyInjection
             legacySyncOptions,
             providers.PersistenceProvider);
 
+        var stripeSecretKey = configuration[$"{StripeOptions.SectionName}:SecretKey"];
+        if (!string.IsNullOrWhiteSpace(stripeSecretKey))
+        {
+            services.AddScoped<IStripeService, StripeService>();
+        }
+
         if (string.Equals(providers.PersistenceProvider, "MySql", StringComparison.OrdinalIgnoreCase))
         {
             services.AddSingleton(new MySqlConnectionFactory(providers.DigitalCardsConnectionString!));
@@ -89,6 +101,7 @@ public static class DependencyInjection
             services.AddScoped<IRewardRedemptionRepository, MySqlRewardRedemptionRepository>();
             services.AddScoped<IPilotBusinessRepository, MySqlPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, MySqlPilotClientRepository>();
+            services.AddScoped<IBusinessSubscriptionRepository, MySqlBusinessSubscriptionRepository>();
             services.AddScoped<ILegacyWalletSyncRepository, MySqlLegacyWalletSyncRepository>();
         }
         else
@@ -114,6 +127,8 @@ public static class DependencyInjection
             services.AddScoped<IRewardRedemptionRepository, InMemoryRewardRedemptionRepository>();
             services.AddScoped<IPilotBusinessRepository, InMemoryPilotBusinessRepository>();
             services.AddScoped<IPilotClientRepository, InMemoryPilotClientRepository>();
+            services.AddSingleton<InMemoryBusinessSubscriptionRepository>();
+            services.AddScoped<IBusinessSubscriptionRepository>(p => p.GetRequiredService<InMemoryBusinessSubscriptionRepository>());
         }
 
         if (legacySyncOptions.Enabled)

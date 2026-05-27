@@ -146,7 +146,7 @@
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Básico")">Contratar por correo</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Basic">Contratar ahora</a>
                     <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
                 </div>
             </article>
@@ -163,7 +163,7 @@
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Pro")">Contratar por correo</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Pro">Contratar ahora</a>
                     <a class="btn btn-outline-primary" href="@customWhatsApp">Contratar por WhatsApp</a>
                 </div>
             </article>
@@ -180,7 +180,7 @@
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Empresarial")">Contratar por correo</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Business">Contratar ahora</a>
                     <a class="btn btn-outline-primary" href="@customWhatsApp">Contratar por WhatsApp</a>
                 </div>
             </article>

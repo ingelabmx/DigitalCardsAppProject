@@ -39,6 +39,21 @@ public sealed class FakeWalletEmailOutbox : IEmailSender, IWalletEmailOutbox, IP
         return Task.CompletedTask;
     }
 
+    public Task SendBusinessWelcomeAsync(BusinessWelcomeEmail email, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task SendPaymentFailedAsync(BusinessPaymentFailedEmail email, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task SendSubscriptionCanceledAsync(BusinessSubscriptionCanceledEmail email, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<WalletEnrollmentEmail>> ListAsync(CancellationToken cancellationToken = default)
     {
         lock (_sync)

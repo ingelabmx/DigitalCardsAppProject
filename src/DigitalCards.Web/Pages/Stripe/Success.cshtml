@@ -1,0 +1,36 @@
+@page
+@model DigitalCards.Web.Pages.Stripe.SuccessModel
+@{
+    ViewData["Title"] = "Pago exitoso";
+    Layout = "_LandingLayout";
+}
+
+<div class="p-page-header" style="text-align:center; padding: 3rem 1rem;">
+    @if (Model.IsActive)
+    {
+        <div data-testid="stripe-success-active">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <i class="bi bi-check-circle-fill" style="color:#16a34a;"></i>
+            </div>
+            <h1 class="p-page-heading">¡Tu negocio ya esta activo!</h1>
+            <p class="p-page-sub">Tu suscripcion ha sido activada. Puedes comenzar a usar Puntelio ahora mismo.</p>
+            <div class="mt-4">
+                <a class="btn btn-primary btn-lg" asp-page="/Business/Dashboard" data-testid="stripe-success-dashboard-link">
+                    Ir a mi Dashboard
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div data-testid="stripe-success-pending">
+            <meta http-equiv="refresh" content="5">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+            <h1 class="p-page-heading">Procesando tu pago...</h1>
+            <p class="p-page-sub">Estamos confirmando tu pago con Stripe. Esto tarda solo unos segundos.</p>
+            <p class="text-muted small">Esta pagina se actualiza automaticamente.</p>
+        </div>
+    }
+</div>

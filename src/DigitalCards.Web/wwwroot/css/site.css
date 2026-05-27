@@ -4580,6 +4580,43 @@ body.legacy-shell .p-page-header .p-eyebrow {
 .p-badge-gray   { background: #E4E3DF; color: #6B6B6B; border: 1px solid #D8D7D3; }
 .p-badge-black  { background: #0A0A0A; color: #FFFFFF; }
 
+/* Plan selector (Signup page) */
+.p-plan-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 2px solid #D8D7D3;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #FFFFFF;
+}
+
+.p-plan-option:hover {
+  border-color: #9B9B9B;
+}
+
+.p-plan-option input[type="radio"] {
+  display: none;
+}
+
+.p-plan-option-selected {
+  border-color: #0A0A0A;
+  box-shadow: 0 0 0 3px rgba(10,10,10,0.08);
+}
+
+.p-plan-option .p-plan-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0A0A0A;
+}
+
+.p-plan-option .p-plan-price {
+  font-size: 0.875rem;
+  color: #6B6B6B;
+}
+
 /* Flow steps */
 .p-step {
   background: #FFFFFF;

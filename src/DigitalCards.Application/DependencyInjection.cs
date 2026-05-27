@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<AdminAppService>();
         services.AddScoped<DigitalCardsAppService>();
         services.AddScoped<WalletBrandingRefreshService>();
+        services.AddScoped<BusinessSignupService>();
         return services;
     }
 }
