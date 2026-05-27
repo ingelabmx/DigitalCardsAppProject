@@ -71,7 +71,7 @@
             </div>
             <form method="post" asp-page-handler="GenerateEnrollmentLink">
                 <button class="p-btn p-btn-primary" type="submit" data-testid="business-generate-enrollment-qr">
-                    <i class="bi bi-qr-code"></i> Generar link y QR
+                    <i class="bi bi-qr-code"></i> @(Model.HasExistingToken ? "Ver link y QR" : "Crear link y QR")
                 </button>
             </form>
         </div>
@@ -95,7 +95,7 @@
                             <i class="bi bi-download"></i> Descargar QR
                         </button>
                     </div>
-                    <p class="p-note mt-2">El link generado no se guarda. Si generas otro QR o link, el anterior queda eliminado.</p>
+                    <p class="p-note mt-2">Este es tu link unico de registro. Siempre es el mismo — puedes compartirlo con confianza.</p>
                 </div>
                 <div class="text-center" data-testid="business-enrollment-qr">
                     @Html.Raw(Model.GeneratedEnrollmentQrSvg)

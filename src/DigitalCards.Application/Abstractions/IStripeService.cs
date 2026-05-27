@@ -2,11 +2,15 @@ namespace DigitalCards.Application.Abstractions;
 
 public interface IStripeService
 {
-    Task<string> CreateCheckoutSessionAsync(
+    Task<(string Url, string SessionId)> CreateCheckoutSessionAsync(
         string planKey,
         Guid businessId,
         string successUrl,
         string cancelUrl,
+        CancellationToken cancellationToken = default);
+
+    Task<(string? BusinessId, string? PlanKey)> GetCheckoutSessionMetadataAsync(
+        string sessionId,
         CancellationToken cancellationToken = default);
 
     Task<string> CreatePortalSessionAsync(

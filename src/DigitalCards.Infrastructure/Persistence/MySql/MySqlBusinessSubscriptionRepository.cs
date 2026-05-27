@@ -89,6 +89,23 @@ public sealed class MySqlBusinessSubscriptionRepository : IBusinessSubscriptionR
         }, cancellationToken: cancellationToken));
     }
 
+    public async Task<BusinessSubscription?> FindByStripeCustomerIdAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            select BusinessID, StripePlanKey, StripeCustomerId, StripeSubscriptionId,
+                   StripeCheckoutSessionId, SubscriptionStatus, MaxClients,
+                   SubscriptionEndsAt, GraceEndsAt, CreatedViaSelfService, CreatedAt, UpdatedAt
+            from ModernBusinessSubscription
+            where StripeCustomerId = @CustomerId
+            limit 1;
+            """;
+
+        await using var connection = _connectionFactory.Create();
+        var row = await connection.QuerySingleOrDefaultAsync<SubscriptionRow>(
+            new CommandDefinition(sql, new { CustomerId = customerId }, cancellationToken: cancellationToken));
+        return row?.ToDomain();
+    }
+
     public async Task<IReadOnlyList<BusinessSubscription>> ListPastDueGraceExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         const string sql = """

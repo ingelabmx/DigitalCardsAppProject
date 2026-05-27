@@ -42,6 +42,7 @@ public sealed class BusinessEnrollmentLinkService : IBusinessEnrollmentLinkServi
                     businessId,
                     hash,
                     Suffix(token),
+                    token,
                     _clock.UtcNow,
                     LastUsedAt: null,
                     RevokedAt: null),
@@ -51,6 +52,21 @@ public sealed class BusinessEnrollmentLinkService : IBusinessEnrollmentLinkServi
         }
 
         throw new InvalidOperationException("Could not create a unique business enrollment token.");
+    }
+
+    public async Task<string?> GetExistingTokenAsync(Guid businessId, CancellationToken cancellationToken = default)
+    {
+        var active = await _links.ListActiveByBusinessIdAsync(businessId, cancellationToken);
+        return active.FirstOrDefault(r => !string.IsNullOrEmpty(r.Token))?.Token;
+    }
+
+    public async Task<string> GetOrCreateTokenAsync(Guid businessId, CancellationToken cancellationToken = default)
+    {
+        var existing = await GetExistingTokenAsync(businessId, cancellationToken);
+        if (existing is not null)
+            return existing;
+
+        return await CreateOrReplaceTokenAsync(businessId, cancellationToken);
     }
 
     public async Task<Guid?> ResolveBusinessIdAsync(string token, CancellationToken cancellationToken = default)

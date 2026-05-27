@@ -89,15 +89,30 @@ else if (Model.Settings is not null)
                 <div class="p-branding-colors mb-3">
                     <div>
                         <label asp-for="Input.PrimaryColor" class="form-label">Color primario</label>
-                        <input asp-for="Input.PrimaryColor" class="form-control" maxlength="7" data-testid="business-branding-primary" data-branding-color-input="primary" />
+                        <div class="p-color-picker-wrap">
+                            <button type="button" class="p-color-swatch" style="background:@Model.Input.PrimaryColor" data-swatch-for="Input_PrimaryColor"></button>
+                            <input type="color" id="picker_primary" class="p-color-native" value="@Model.Input.PrimaryColor" data-picker-for="Input_PrimaryColor" />
+                            <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.PrimaryColor" data-branding-color-input="primary" data-hex-for="Input_PrimaryColor" data-testid="business-branding-primary" />
+                            <input type="hidden" asp-for="Input.PrimaryColor" />
+                        </div>
                     </div>
                     <div>
                         <label asp-for="Input.SecondaryColor" class="form-label">Color secundario 1</label>
-                        <input asp-for="Input.SecondaryColor" class="form-control" maxlength="7" data-testid="business-branding-secondary" data-branding-color-input="secondary" />
+                        <div class="p-color-picker-wrap">
+                            <button type="button" class="p-color-swatch" style="background:@Model.Input.SecondaryColor" data-swatch-for="Input_SecondaryColor"></button>
+                            <input type="color" id="picker_secondary" class="p-color-native" value="@Model.Input.SecondaryColor" data-picker-for="Input_SecondaryColor" />
+                            <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.SecondaryColor" data-branding-color-input="secondary" data-hex-for="Input_SecondaryColor" data-testid="business-branding-secondary" />
+                            <input type="hidden" asp-for="Input.SecondaryColor" />
+                        </div>
                     </div>
                     <div>
                         <label asp-for="Input.CustomFieldColor" class="form-label">Color secundario 2</label>
-                        <input asp-for="Input.CustomFieldColor" class="form-control" maxlength="7" data-testid="business-branding-custom-field-color" data-branding-color-input="custom" />
+                        <div class="p-color-picker-wrap">
+                            <button type="button" class="p-color-swatch" style="background:@Model.Input.CustomFieldColor" data-swatch-for="Input_CustomFieldColor"></button>
+                            <input type="color" id="picker_custom" class="p-color-native" value="@Model.Input.CustomFieldColor" data-picker-for="Input_CustomFieldColor" />
+                            <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.CustomFieldColor" data-branding-color-input="custom" data-hex-for="Input_CustomFieldColor" data-testid="business-branding-custom-field-color" />
+                            <input type="hidden" asp-for="Input.CustomFieldColor" />
+                        </div>
                     </div>
                 </div>
 
@@ -149,7 +164,6 @@ else if (Model.Settings is not null)
     var preview = document.getElementById('brandingPreview');
     if (!preview) return;
 
-    // --- Color normalization ---
     function normalizeHex(val) {
         val = (val || '').trim();
         if (val.charAt(0) === '#') val = val.slice(1);
@@ -159,7 +173,6 @@ else if (Model.Settings is not null)
         return val.length === 0 ? '' : '#' + val;
     }
 
-    // --- Update preview gradient ---
     function updateColors() {
         var primary   = document.querySelector('[data-branding-color-input="primary"]');
         var secondary = document.querySelector('[data-branding-color-input="secondary"]');
@@ -169,25 +182,61 @@ else if (Model.Settings is not null)
         if (custom    && custom.value)    preview.style.setProperty('--brand-custom',     custom.value);
     }
 
-    // --- Update preview text ---
     function updateText(key, value) {
         var el = preview.querySelector('[data-branding-preview="' + key + '"]');
         if (el) el.textContent = value;
     }
 
-    // --- Wire color inputs ---
+    // Sync hidden input + picker + swatch to a new value
+    function applyColor(hiddenId, val) {
+        var hidden = document.getElementById(hiddenId);
+        var picker = document.querySelector('[data-picker-for="' + hiddenId + '"]');
+        var swatch = document.querySelector('[data-swatch-for="' + hiddenId + '"]');
+        if (hidden) hidden.value = val;
+        if (picker && /^#[0-9A-Fa-f]{6}$/.test(val)) picker.value = val;
+        if (swatch) swatch.style.background = val;
+    }
+
+    // Native color picker → hex text + hidden + swatch + preview
+    document.querySelectorAll('[data-picker-for]').forEach(function (picker) {
+        var hiddenId = picker.getAttribute('data-picker-for');
+        var hexEl = document.querySelector('[data-hex-for="' + hiddenId + '"]');
+        picker.addEventListener('input', function () {
+            if (hexEl) hexEl.value = this.value;
+            applyColor(hiddenId, this.value);
+            updateColors();
+        });
+    });
+
+    // Hex text input → picker + hidden + swatch + preview
     document.querySelectorAll('[data-branding-color-input]').forEach(function (input) {
-        input.addEventListener('input', updateColors);
+        var hiddenId = input.getAttribute('data-hex-for');
+        input.addEventListener('input', function () {
+            if (hiddenId && /^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                applyColor(hiddenId, this.value);
+            }
+            updateColors();
+        });
         input.addEventListener('blur', function () {
             var normalized = normalizeHex(this.value);
             if (normalized) {
                 this.value = normalized;
+                if (hiddenId) applyColor(hiddenId, normalized);
                 updateColors();
             }
         });
     });
 
-    // --- Wire text inputs ---
+    // Swatch button → click native picker
+    document.querySelectorAll('[data-swatch-for]').forEach(function (swatch) {
+        var hiddenId = swatch.getAttribute('data-swatch-for');
+        swatch.addEventListener('click', function () {
+            var picker = document.querySelector('[data-picker-for="' + hiddenId + '"]');
+            if (picker) picker.click();
+        });
+    });
+
+    // Text fields → preview
     document.querySelectorAll('[data-branding-text]').forEach(function (input) {
         var key = input.getAttribute('data-branding-text');
         input.addEventListener('input', function () {

@@ -15,7 +15,7 @@ public sealed class StripeService : IStripeService
         StripeConfiguration.ApiKey = _options.SecretKey;
     }
 
-    public async Task<string> CreateCheckoutSessionAsync(
+    public async Task<(string Url, string SessionId)> CreateCheckoutSessionAsync(
         string planKey,
         Guid businessId,
         string successUrl,
@@ -24,6 +24,12 @@ public sealed class StripeService : IStripeService
     {
         if (!_options.Plans.TryGetValue(planKey, out var plan))
             throw new InvalidOperationException($"Stripe plan '{planKey}' not configured.");
+
+        var meta = new Dictionary<string, string>
+        {
+            ["business_id"] = businessId.ToString("D"),
+            ["plan_key"] = planKey
+        };
 
         var service = new SessionService();
         var session = await service.CreateAsync(new SessionCreateOptions
@@ -37,16 +43,29 @@ public sealed class StripeService : IStripeService
                     Quantity = 1
                 }
             ],
-            Metadata = new Dictionary<string, string>
+            Metadata = meta,
+            SubscriptionData = new SessionSubscriptionDataOptions
             {
-                ["business_id"] = businessId.ToString("D"),
-                ["plan_key"] = planKey
+                Metadata = meta
             },
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl
         }, cancellationToken: cancellationToken);
 
-        return session.Url;
+        return (session.Url, session.Id);
+    }
+
+    public async Task<(string? BusinessId, string? PlanKey)> GetCheckoutSessionMetadataAsync(
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var service = new SessionService();
+        var session = await service.GetAsync(sessionId, cancellationToken: cancellationToken);
+        string? businessId = null;
+        string? planKey = null;
+        session.Metadata?.TryGetValue("business_id", out businessId);
+        session.Metadata?.TryGetValue("plan_key", out planKey);
+        return (businessId, planKey);
     }
 
     public async Task<string> CreatePortalSessionAsync(

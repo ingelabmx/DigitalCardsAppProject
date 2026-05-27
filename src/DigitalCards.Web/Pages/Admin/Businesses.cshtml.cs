@@ -1,3 +1,4 @@
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web.Security;
@@ -12,12 +13,18 @@ public sealed class BusinessesModel : PageModel
 {
     private readonly AdminAppService _adminApp;
     private readonly BusinessSignupService _signupService;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
     private readonly ILogger<BusinessesModel> _logger;
 
-    public BusinessesModel(AdminAppService adminApp, BusinessSignupService signupService, ILogger<BusinessesModel> logger)
+    public BusinessesModel(
+        AdminAppService adminApp,
+        BusinessSignupService signupService,
+        IBusinessSubscriptionRepository subscriptions,
+        ILogger<BusinessesModel> logger)
     {
         _adminApp = adminApp;
         _signupService = signupService;
+        _subscriptions = subscriptions;
         _logger = logger;
     }
 
@@ -29,6 +36,9 @@ public sealed class BusinessesModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = 10;
+
+    [BindProperty(SupportsGet = true)]
+    public string? SubscriptionFilter { get; set; }
 
     public IReadOnlyList<PilotBusinessDto> Businesses { get; private set; } = [];
 
@@ -131,7 +141,28 @@ public sealed class BusinessesModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Businesses = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
+        var all = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
+
+        var enriched = new List<PilotBusinessDto>(all.Count);
+        foreach (var b in all)
+        {
+            var sub = await _subscriptions.FindByBusinessIdAsync(b.BusinessId, cancellationToken);
+            enriched.Add(b with
+            {
+                SubscriptionStatus = sub?.SubscriptionStatus,
+                StripePlanKey = sub?.StripePlanKey,
+                GraceEndsAt = sub?.GraceEndsAt
+            });
+        }
+
+        Businesses = SubscriptionFilter switch
+        {
+            "active" => enriched.Where(b => b.SubscriptionStatus == "active").ToArray(),
+            "past_due" => enriched.Where(b => b.SubscriptionStatus is "past_due" or "canceled").ToArray(),
+            "none" => enriched.Where(b => b.SubscriptionStatus is null).ToArray(),
+            _ => enriched
+        };
+
         PageSize = NormalizePageSize(PageSize);
         TotalPages = Math.Max(1, (int)Math.Ceiling(Businesses.Count / (double)PageSize));
         PageNumber = Math.Clamp(PageNumber, 1, TotalPages);

@@ -16,8 +16,8 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
     public async Task AddAsync(BusinessEnrollmentLinkRecord token, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            insert into BusinessEnrollmentLinkToken (TokenHash, TokenSuffix, BusinessID, CreatedAt, LastUsedAt, RevokedAt)
-            values (@TokenHash, @TokenSuffix, @BusinessID, @CreatedAt, @LastUsedAt, @RevokedAt);
+            insert into BusinessEnrollmentLinkToken (TokenHash, TokenSuffix, Token, BusinessID, CreatedAt, LastUsedAt, RevokedAt)
+            values (@TokenHash, @TokenSuffix, @Token, @BusinessID, @CreatedAt, @LastUsedAt, @RevokedAt);
             """;
 
         await using var connection = _connectionFactory.Create();
@@ -31,6 +31,7 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
         const string sql = """
             select TokenHash,
                    TokenSuffix,
+                   Token,
                    BusinessID,
                    CreatedAt,
                    LastUsedAt,
@@ -55,6 +56,7 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
         const string sql = """
             select TokenHash,
                    TokenSuffix,
+                   Token,
                    BusinessID,
                    CreatedAt,
                    LastUsedAt,
@@ -130,6 +132,7 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
         {
             token.TokenHash,
             token.TokenSuffix,
+            token.Token,
             BusinessID = LegacyIdMapper.ToInt32(token.BusinessId),
             CreatedAt = token.CreatedAt.UtcDateTime,
             LastUsedAt = token.LastUsedAt?.UtcDateTime,
@@ -147,6 +150,7 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
     private sealed record BusinessEnrollmentLinkTokenRow(
         string TokenHash,
         string TokenSuffix,
+        string Token,
         int BusinessID,
         DateTime CreatedAt,
         DateTime? LastUsedAt,
@@ -158,6 +162,7 @@ public sealed class MySqlBusinessEnrollmentLinkRepository : IBusinessEnrollmentL
                 LegacyIdMapper.ToGuid(BusinessID),
                 TokenHash,
                 TokenSuffix,
+                Token,
                 AsUtc(CreatedAt),
                 LastUsedAt is null ? null : AsUtc(LastUsedAt.Value),
                 RevokedAt is null ? null : AsUtc(RevokedAt.Value));

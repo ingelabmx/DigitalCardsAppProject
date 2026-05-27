@@ -31,6 +31,27 @@
             </div>
             <button class="btn btn-primary" type="submit" data-testid="admin-business-search-submit">Buscar</button>
         </form>
+        <div class="d-flex gap-2 flex-wrap mt-2" data-testid="admin-business-sub-filter">
+            @{
+                var filters = new[] {
+                    (Key: (string?)null,     Label: "Todos"),
+                    (Key: "active",          Label: "Activos"),
+                    (Key: "past_due",        Label: "Atrasados"),
+                    (Key: "none",            Label: "Sin plan"),
+                };
+            }
+            @foreach (var f in filters)
+            {
+                var isActive = Model.SubscriptionFilter == f.Key;
+                <a class="p-btn p-btn-sm @(isActive ? "p-btn-primary" : "p-btn-outline")"
+                   asp-page="/Admin/Businesses"
+                   asp-route-query="@Model.Query"
+                   asp-route-pageSize="@Model.PageSize"
+                   asp-route-subscriptionFilter="@f.Key">
+                    @f.Label
+                </a>
+            }
+        </div>
     </div>
 
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -61,6 +82,8 @@
                         <th>Clientes</th>
                         <th>Sellos</th>
                         <th>Estado</th>
+                        <th>Plan</th>
+                        <th>Suscripcion</th>
                         <th>Actualizado</th>
                         <th class="text-end">Administrar</th>
                     </tr>
@@ -76,6 +99,16 @@
                             <td>
                                 <span class="p-badge @(business.IsEnabled ? "p-badge-green" : "p-badge-gray")" data-testid="admin-business-activation-status">
                                     @ActivationLabel(business.IsEnabled)
+                                </span>
+                            </td>
+                            <td>
+                                <span class="p-badge @PlanBadgeClass(business.StripePlanKey)">
+                                    @PlanLabel(business.StripePlanKey)
+                                </span>
+                            </td>
+                            <td>
+                                <span class="p-badge @SubBadgeClass(business.SubscriptionStatus, business.GraceEndsAt)">
+                                    @SubLabel(business.SubscriptionStatus, business.GraceEndsAt)
                                 </span>
                             </td>
                             <td>@(business.UpdatedAt?.ToLocalTime().ToString("g") ?? "Sin cambios")</td>
@@ -160,8 +193,48 @@
 }
 
 @functions {
-    private static string ActivationLabel(bool isEnabled)
+    private static string ActivationLabel(bool isEnabled) => isEnabled ? "Activo" : "Inactivo";
+
+    private static string PlanBadgeClass(string? planKey) => planKey switch
     {
-        return isEnabled ? "Activo" : "Inactivo";
+        null       => "p-badge-gray",
+        "Manual"   => "p-badge-gray",
+        "Basic"    => "p-badge-blue",
+        "Pro"      => "p-badge-black",
+        "Business" => "p-badge-black",
+        _          => "p-badge-blue"
+    };
+
+    private static string PlanLabel(string? planKey) => planKey switch
+    {
+        null       => "Sin plan",
+        "Manual"   => "Manual",
+        "Basic"    => "Basico",
+        "Pro"      => "Pro",
+        "Business" => "Empresarial",
+        _          => planKey
+    };
+
+    private static string SubBadgeClass(string? status, DateTimeOffset? graceEndsAt) => status switch
+    {
+        "active"   => "p-badge-green",
+        "manual"   => "p-badge-black",
+        "past_due" => graceEndsAt.HasValue && graceEndsAt.Value < DateTimeOffset.UtcNow ? "p-badge-red" : "p-badge-amber",
+        "canceled" => "p-badge-red",
+        _          => "p-badge-gray"
+    };
+
+    private static string SubLabel(string? status, DateTimeOffset? graceEndsAt)
+    {
+        return status switch
+        {
+            "active"   => "Activa",
+            "manual"   => "Manual",
+            "past_due" => graceEndsAt.HasValue
+                ? $"Atrasado (gracia hasta {graceEndsAt.Value.ToLocalTime():d})"
+                : "Atrasado",
+            "canceled" => "Cancelada",
+            _          => "Sin suscripcion"
+        };
     }
 }

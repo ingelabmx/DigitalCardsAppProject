@@ -8,6 +8,8 @@ public interface IBusinessSubscriptionRepository
 
     Task<BusinessSubscription?> FindByCheckoutSessionIdAsync(string sessionId, CancellationToken cancellationToken = default);
 
+    Task<BusinessSubscription?> FindByStripeCustomerIdAsync(string customerId, CancellationToken cancellationToken = default);
+
     Task UpsertAsync(BusinessSubscription subscription, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<BusinessSubscription>> ListPastDueGraceExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default);

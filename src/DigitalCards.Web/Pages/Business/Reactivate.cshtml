@@ -1,0 +1,79 @@
+@page
+@model DigitalCards.Web.Pages.Business.ReactivateModel
+@{
+    ViewData["Title"] = "Reactivar cuenta";
+    Layout = "_LandingLayout";
+}
+
+<section class="auth-gateway auth-gateway-business">
+    <div class="auth-copy-panel">
+        <h1>Tu cuenta esta suspendida.</h1>
+        <p>
+            Tu suscripcion vencio o fue cancelada.
+            Completa el pago para recuperar acceso inmediato a tu dashboard y tarjetas de lealtad.
+        </p>
+        <a class="auth-home-link" asp-page="/Index">Volver al inicio</a>
+    </div>
+
+    <div class="auth-form-card">
+        <div class="auth-form-heading">
+            <div>
+                <h2>Reactivar cuenta</h2>
+                <p>Completa el pago para restablecer el acceso a tu negocio.</p>
+            </div>
+        </div>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        @if (!Model.ShowEmailForm)
+        {
+            @if (Model.PlanKey is not null)
+            {
+                <div class="p-plan-option p-plan-option-selected mb-4" style="cursor:default;">
+                    <span class="p-plan-name">
+                        @(Model.PlanKey == "Basic" ? "Plan Básico" : Model.PlanKey == "Pro" ? "Plan Pro" : "Plan Empresarial")
+                    </span>
+                    <span class="p-plan-price">Tu plan anterior</span>
+                </div>
+            }
+
+            <form method="post" data-testid="reactivate-form">
+                <input type="hidden" name="businessId" value="@Model.BusinessId" />
+                <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="reactivate-submit">
+                    Reactivar ahora
+                </button>
+            </form>
+            <div class="mt-3 text-center">
+                <a asp-page="/Business/Login" class="text-muted small">Volver al login</a>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-4">
+                Ingresa el correo de tu negocio para continuar con la reactivacion.
+            </p>
+            <form method="post" asp-page-handler="ByEmail" data-testid="reactivate-email-form">
+                <div class="mb-3">
+                    <label asp-for="EmailInput.Email" class="form-label">Correo del negocio</label>
+                    <input asp-for="EmailInput.Email"
+                           class="form-control form-control-lg"
+                           type="email"
+                           autocomplete="email"
+                           placeholder="correo@negocio.com"
+                           data-testid="reactivate-email" />
+                    <span asp-validation-for="EmailInput.Email" class="text-danger"></span>
+                </div>
+                <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="reactivate-email-submit">
+                    Continuar
+                </button>
+            </form>
+            <div class="mt-3 text-center">
+                <a asp-page="/Business/Login" class="text-muted small">Volver al login</a>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -380,7 +380,7 @@ body.legacy-shell .legacy-body-wrapper {
 
 .legacy-container-fluid {
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: 1440px;
   padding: 24px;
 }
 
@@ -4579,6 +4579,7 @@ body.legacy-shell .p-page-header .p-eyebrow {
 .p-badge-blue   { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
 .p-badge-gray   { background: #E4E3DF; color: #6B6B6B; border: 1px solid #D8D7D3; }
 .p-badge-black  { background: #0A0A0A; color: #FFFFFF; }
+.p-badge-purple { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; }
 
 /* Plan selector (Signup page) */
 .p-plan-option {
@@ -5818,6 +5819,42 @@ body.legacy-shell .form-control-sm {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+
+.p-color-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.p-color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid #D8D7D3;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.p-color-swatch:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.p-color-native {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.p-color-hex {
+  max-width: 110px;
+  font-family: monospace;
+  font-size: 14px;
 }
 
 .p-branding-preview {

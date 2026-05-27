@@ -128,10 +128,10 @@ public sealed class BusinessSignupService
         var successUrl = $"{baseUrl.TrimEnd('/')}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}";
         var cancelUrl = $"{baseUrl.TrimEnd('/')}/stripe/cancel?businessId={businessId:D}";
 
-        var sessionUrl = await _stripe.CreateCheckoutSessionAsync(planKey, businessId, successUrl, cancelUrl, cancellationToken);
+        var (sessionUrl, sessionId) = await _stripe.CreateCheckoutSessionAsync(planKey, businessId, successUrl, cancelUrl, cancellationToken);
 
         var now = _clock.UtcNow;
-        await _subscriptions.UpsertAsync(subscription.WithCheckoutSession(ExtractSessionId(sessionUrl), now), cancellationToken);
+        await _subscriptions.UpsertAsync(subscription.WithCheckoutSession(sessionId, now), cancellationToken);
 
         return sessionUrl;
     }
@@ -175,6 +175,21 @@ public sealed class BusinessSignupService
         }
 
         return results;
+    }
+
+    public async Task<(Guid? BusinessId, string? PlanKey, string? Error)> FindForReactivationByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var business = await _businesses.FindByEmailAsync(email.Trim().ToLowerInvariant(), cancellationToken);
+        if (business is null)
+            return (null, null, "No encontramos un negocio con ese correo.");
+
+        var sub = await _subscriptions.FindByBusinessIdAsync(business.Id, cancellationToken);
+        if (sub is null || !sub.CreatedViaSelfService)
+            return (null, null, "Este negocio no tiene una suscripcion activa para reactivar.");
+
+        return (business.Id, sub.StripePlanKey, null);
     }
 
     public async Task DeactivateExpiredGracePeriodAsync(CancellationToken cancellationToken = default)
@@ -253,24 +268,34 @@ public sealed class BusinessSignupService
 
     private async Task HandlePaymentSucceededAsync(StripeWebhookEvent evt, CancellationToken cancellationToken)
     {
-        if (!TryParseBusinessId(evt.BusinessId, out var businessId)) return;
-
-        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
-        if (sub is null || sub.SubscriptionStatus == "pending_payment") return;
+        var sub = await ResolveSubscriptionAsync(evt.BusinessId, evt.CustomerId, cancellationToken);
+        if (sub is null) return;
 
         var now = _clock.UtcNow;
-        await _subscriptions.UpsertAsync(sub.WithRenewal(evt.PeriodEnd ?? now.AddMonths(1), now), cancellationToken);
-        await ActivatePilotAsync(businessId, now, cancellationToken);
 
-        _logger.LogInformation("Business {BusinessId} subscription renewed.", businessId);
+        if (sub.SubscriptionStatus == "pending_payment")
+        {
+            var activated = sub.WithStripeActivation(
+                evt.CustomerId ?? string.Empty,
+                evt.SubscriptionId ?? string.Empty,
+                evt.PeriodEnd ?? now.AddMonths(1),
+                now);
+            await _subscriptions.UpsertAsync(activated, cancellationToken);
+            await ActivatePilotAsync(sub.BusinessId, now, cancellationToken);
+            _logger.LogInformation("Business {BusinessId} activated via invoice.payment_succeeded (initial).", sub.BusinessId);
+            return;
+        }
+
+        await _subscriptions.UpsertAsync(sub.WithRenewal(evt.PeriodEnd ?? now.AddMonths(1), now), cancellationToken);
+        await ActivatePilotAsync(sub.BusinessId, now, cancellationToken);
+        _logger.LogInformation("Business {BusinessId} subscription renewed.", sub.BusinessId);
     }
 
     private async Task HandlePaymentFailedAsync(StripeWebhookEvent evt, CancellationToken cancellationToken)
     {
-        if (!TryParseBusinessId(evt.BusinessId, out var businessId)) return;
-
-        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+        var sub = await ResolveSubscriptionAsync(evt.BusinessId, evt.CustomerId, cancellationToken);
         if (sub is null) return;
+        var businessId = sub.BusinessId;
 
         var now = _clock.UtcNow;
         var graceEndsAt = now.AddDays(GracePeriodDays);
@@ -296,26 +321,24 @@ public sealed class BusinessSignupService
 
     private async Task HandleSubscriptionDeletedAsync(StripeWebhookEvent evt, CancellationToken cancellationToken)
     {
-        if (!TryParseBusinessId(evt.BusinessId, out var businessId)) return;
-
-        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+        var sub = await ResolveSubscriptionAsync(evt.BusinessId, evt.CustomerId, cancellationToken);
         if (sub is null) return;
 
         await CancelSubscriptionInternalAsync(sub, _clock.UtcNow, cancellationToken);
-        _logger.LogInformation("Business {BusinessId} subscription deleted by Stripe.", businessId);
+        _logger.LogInformation("Business {BusinessId} subscription deleted by Stripe.", sub.BusinessId);
     }
 
     private async Task HandleSubscriptionUpdatedAsync(StripeWebhookEvent evt, CancellationToken cancellationToken)
     {
-        if (!TryParseBusinessId(evt.BusinessId, out var businessId)) return;
-        if (evt.PlanKey is null) return;
-
-        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+        var sub = await ResolveSubscriptionAsync(evt.BusinessId, evt.CustomerId, cancellationToken);
         if (sub is null) return;
 
-        var maxClients = _stripeOptions.Plans.TryGetValue(evt.PlanKey, out var plan) ? plan.MaxClients : sub.MaxClients;
-        await _subscriptions.UpsertAsync(sub.WithPlanUpdate(evt.PlanKey, maxClients, _clock.UtcNow), cancellationToken);
-        _logger.LogInformation("Business {BusinessId} plan updated to {Plan}.", businessId, evt.PlanKey);
+        var planKey = evt.PlanKey ?? sub.StripePlanKey;
+        if (planKey is null) return;
+
+        var maxClients = _stripeOptions.Plans.TryGetValue(planKey, out var plan) ? plan.MaxClients : sub.MaxClients;
+        await _subscriptions.UpsertAsync(sub.WithPlanUpdate(planKey, maxClients, _clock.UtcNow), cancellationToken);
+        _logger.LogInformation("Business {BusinessId} plan updated to {Plan}.", sub.BusinessId, planKey);
     }
 
     private async Task CancelSubscriptionInternalAsync(BusinessSubscription sub, DateTimeOffset now, CancellationToken cancellationToken)
@@ -355,18 +378,37 @@ public sealed class BusinessSignupService
         await _pilotBusinesses.UpsertAsync(access, cancellationToken);
     }
 
+    private async Task<BusinessSubscription?> ResolveSubscriptionAsync(
+        string? metaBusinessId,
+        string? stripeCustomerId,
+        CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(metaBusinessId, out var businessId))
+        {
+            var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+            if (sub is not null) return sub;
+        }
+
+        if (!string.IsNullOrWhiteSpace(stripeCustomerId))
+        {
+            var sub = await _subscriptions.FindByStripeCustomerIdAsync(stripeCustomerId, cancellationToken);
+            if (sub is not null)
+            {
+                _logger.LogInformation("Resolved subscription for customer {CustomerId} via StripeCustomerId fallback.", stripeCustomerId);
+                return sub;
+            }
+        }
+
+        _logger.LogWarning("Could not resolve subscription: metaBusinessId={MetaId}, customerId={CustomerId}.", metaBusinessId, stripeCustomerId);
+        return null;
+    }
+
     private static bool TryParseBusinessId(string? raw, out Guid businessId)
     {
         businessId = Guid.Empty;
         return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out businessId);
     }
 
-    private static string ExtractSessionId(string sessionUrl)
-    {
-        if (!Uri.TryCreate(sessionUrl, UriKind.Absolute, out var uri)) return sessionUrl;
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        return query["session_id"] ?? sessionUrl;
-    }
 
     private static SignupResult Fail(string message) => new(null, message);
 }

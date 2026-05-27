@@ -37,6 +37,8 @@ public sealed class DashboardModel : PageModel
 
     public bool IsPilotBlocked => PilotBlockMessage is not null;
 
+    public bool HasExistingToken { get; private set; }
+
     public string? GeneratedEnrollmentUrl { get; private set; }
 
     public string? GeneratedEnrollmentQrSvg { get; private set; }
@@ -54,11 +56,12 @@ public sealed class DashboardModel : PageModel
             return result;
         }
 
-        var token = await _businessEnrollmentLinks.CreateOrReplaceTokenAsync(
+        var token = await _businessEnrollmentLinks.GetOrCreateTokenAsync(
             Dashboard.Business.Id,
             cancellationToken);
         GeneratedEnrollmentUrl = $"{GetBaseUrl()}/Enroll/{token}";
         GeneratedEnrollmentQrSvg = EnrollmentQrCodeRenderer.RenderSvg(GeneratedEnrollmentUrl);
+        HasExistingToken = true;
         return Page();
     }
 
@@ -81,6 +84,9 @@ public sealed class DashboardModel : PageModel
         {
             PilotBlockMessage = pilotAccess.Message;
         }
+
+        var existingToken = await _businessEnrollmentLinks.GetExistingTokenAsync(businessId, cancellationToken);
+        HasExistingToken = existingToken is not null;
 
         return Page();
     }

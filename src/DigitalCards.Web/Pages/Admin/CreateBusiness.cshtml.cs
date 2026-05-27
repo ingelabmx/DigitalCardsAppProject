@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,17 +15,20 @@ public sealed class CreateBusinessModel : PageModel
 {
     private readonly AdminAppService _adminApp;
     private readonly DigitalCardsAppService _appService;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
     private readonly IConfiguration _configuration;
     private readonly ILogger<CreateBusinessModel> _logger;
 
     public CreateBusinessModel(
         AdminAppService adminApp,
         DigitalCardsAppService appService,
+        IBusinessSubscriptionRepository subscriptions,
         IConfiguration configuration,
         ILogger<CreateBusinessModel> logger)
     {
         _adminApp = adminApp;
         _appService = appService;
+        _subscriptions = subscriptions;
         _configuration = configuration;
         _logger = logger;
     }
@@ -69,10 +74,30 @@ public sealed class CreateBusinessModel : PageModel
         }
 
         CreatedBusiness = result.Business;
+
+        var maxClients = Input.PlanKey switch
+        {
+            "Basic"    => 300,
+            "Pro"      => 1000,
+            "Business" => -1,
+            _          => -1
+        };
+        var now = DateTimeOffset.UtcNow;
+        await _subscriptions.UpsertAsync(
+            new BusinessSubscription(
+                CreatedBusiness!.BusinessId,
+                subscriptionStatus: "manual",
+                maxClients: maxClients,
+                createdViaSelfService: false,
+                createdAt: now,
+                updatedAt: now,
+                stripePlanKey: Input.PlanKey),
+            cancellationToken);
+
         if (sendInvite)
         {
             await _appService.RequestBusinessPasswordResetAsync(
-                new RequestBusinessPasswordResetCommand(CreatedBusiness!.BusinessEmail, GetBaseUrl()),
+                new RequestBusinessPasswordResetCommand(CreatedBusiness.BusinessEmail, GetBaseUrl()),
                 cancellationToken);
         }
 
@@ -134,6 +159,9 @@ public sealed class CreateBusinessModel : PageModel
         [Display(Name = "Confirmar contrasena")]
         [Required(ErrorMessage = "Confirma la contrasena inicial.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Display(Name = "Plan")]
+        public string PlanKey { get; set; } = "Manual";
 
         [Display(Name = "Activar negocio")]
         public bool EnablePilot { get; set; }

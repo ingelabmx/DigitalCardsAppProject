@@ -24,6 +24,14 @@ public sealed class InMemoryBusinessSubscriptionRepository : IBusinessSubscripti
         }
     }
 
+    public Task<BusinessSubscription?> FindByStripeCustomerIdAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        lock (_sync)
+        {
+            return Task.FromResult(_subscriptions.SingleOrDefault(s => s.StripeCustomerId == customerId));
+        }
+    }
+
     public Task UpsertAsync(BusinessSubscription subscription, CancellationToken cancellationToken = default)
     {
         lock (_sync)

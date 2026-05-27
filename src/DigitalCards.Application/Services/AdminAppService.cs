@@ -18,11 +18,11 @@ public sealed class AdminAppService
     private const int BrandingDescriptionMaxLength = 280;
     private const int NotesMaxLength = 500;
     private const string DefaultBusinessLogoPath = "/img/demo-coffee.svg";
-    private const string DefaultPrimaryColor = "#111827";
-    private const string DefaultSecondaryColor = "#2563eb";
-    private const string DefaultCustomFieldColor = "#FFFFFF";
+    private const string DefaultPrimaryColor = "#FFFFFF";
+    private const string DefaultSecondaryColor = "#000000";
+    private const string DefaultCustomFieldColor = "#000000";
     private const string DefaultProgramName = "Tarjeta de lealtad";
-    private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
+    private const string DefaultProgramDescription = "Regalo";
     private const int MaxStampGoal = 1000;
     private const string DuplicateAdminMessage = "An admin user with the same username or email already exists.";
     private const string DuplicateBusinessMessage = "A business with the same name or email already exists.";
