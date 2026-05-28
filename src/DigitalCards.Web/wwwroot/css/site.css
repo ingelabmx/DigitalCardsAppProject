@@ -4873,7 +4873,7 @@ body.legacy-shell .p-page-header .p-eyebrow {
 }
 
 .hero-compatible-label {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   color: #6B6B6B;
   text-transform: none;
@@ -4888,7 +4888,7 @@ body.legacy-shell .p-page-header .p-eyebrow {
 }
 
 .hero-platform-logos img {
-  height: 22px;
+  height: 28px;
   width: auto;
   opacity: 0.65;
 }
