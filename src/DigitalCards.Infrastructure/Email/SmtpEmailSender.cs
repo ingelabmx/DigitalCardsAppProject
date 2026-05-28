@@ -2,6 +2,7 @@ using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -13,14 +14,17 @@ public sealed class SmtpEmailSender : IEmailSender
     private readonly ILogger<SmtpEmailSender> _logger;
     private readonly SmtpEmailOptions _options;
     private readonly IEmailTemplateRenderer _templates;
+    private readonly IHostEnvironment _hostEnv;
 
     public SmtpEmailSender(
         IOptions<SmtpEmailOptions> options,
         IEmailTemplateRenderer templates,
+        IHostEnvironment hostEnv,
         ILogger<SmtpEmailSender> logger)
     {
         _options = options.Value;
         _templates = templates;
+        _hostEnv = hostEnv;
         _logger = logger;
     }
 
@@ -69,8 +73,19 @@ public sealed class SmtpEmailSender : IEmailSender
         CancellationToken cancellationToken = default)
     {
         var rendered = _templates.RenderBusinessWelcome(email);
-        await SendRenderedAsync(rendered, cancellationToken);
 
+        byte[]? pdfBytes = null;
+        var pdfPath = Path.Combine(_hostEnv.ContentRootPath, "wwwroot", "files", "guia-puntelio.pdf");
+        if (File.Exists(pdfPath))
+        {
+            pdfBytes = await File.ReadAllBytesAsync(pdfPath, cancellationToken);
+        }
+        else
+        {
+            _logger.LogWarning("Welcome guide PDF not found at {PdfPath}. Sending welcome email without attachment.", pdfPath);
+        }
+
+        await SendRenderedAsync(rendered, cancellationToken, pdfBytes);
         _logger.LogInformation("Sent business welcome email to {Recipient}.", MaskEmail(email.To));
     }
 
@@ -96,7 +111,9 @@ public sealed class SmtpEmailSender : IEmailSender
 
     private async Task SendRenderedAsync(
         RenderedEmailTemplate rendered,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        byte[]? attachmentBytes = null,
+        string attachmentFileName = "Guia-Puntelio.pdf")
     {
         ValidateOptions();
         var fromAddress = _options.FromAddress!;
@@ -114,6 +131,12 @@ public sealed class SmtpEmailSender : IEmailSender
             TextBody = rendered.TextBody,
             HtmlBody = rendered.HtmlBody
         };
+
+        if (attachmentBytes is { Length: > 0 })
+        {
+            bodyBuilder.Attachments.Add(attachmentFileName, attachmentBytes, new ContentType("application", "pdf"));
+        }
+
         message.Body = bodyBuilder.ToMessageBody();
 
         using var client = new SmtpClient();

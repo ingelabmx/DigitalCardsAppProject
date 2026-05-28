@@ -246,15 +246,31 @@
                   asp-route-businessId="@Model.Profile.BusinessId"
                   class="business-profile-panel"
                   data-testid="admin-business-invite-form">
-                <h2>Invitacion de acceso</h2>
-                <p class="text-muted">Envia un correo al negocio con un link seguro para configurar su contrasena. No se muestra ni se envia password plano.</p>
+                <h2>Recuperacion de contrasena</h2>
+                <p class="text-muted">Envia un correo al negocio con un link seguro para restablecer su contrasena. No se muestra ni se envia password plano.</p>
 
                 <div class="business-profile-meta">
                     <span>Destino</span>
                     <strong data-testid="admin-business-invite-email">@Model.Profile.BusinessEmail</strong>
                 </div>
 
-                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-invite">Enviar invitacion</button>
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-invite">Enviar correo de recuperacion</button>
+            </form>
+
+            <form method="post"
+                  asp-page-handler="SendWelcomeEmail"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel"
+                  data-testid="admin-business-welcome-form">
+                <h2>Correo de bienvenida</h2>
+                <p class="text-muted">Envia el correo de bienvenida con la guia PDF adjunta, igual al que recibe un negocio nuevo al completar su pago.</p>
+
+                <div class="business-profile-meta">
+                    <span>Destino</span>
+                    <strong data-testid="admin-business-welcome-email">@Model.Profile.BusinessEmail</strong>
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-welcome">Enviar bienvenida</button>
             </form>
 
             <form method="post"

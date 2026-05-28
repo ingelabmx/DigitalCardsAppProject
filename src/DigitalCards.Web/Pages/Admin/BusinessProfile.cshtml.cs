@@ -17,6 +17,7 @@ public sealed class BusinessProfileModel : PageModel
     private readonly DigitalCardsAppService _appService;
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly IBusinessSubscriptionRepository _subscriptions;
+    private readonly IEmailSender _emailSender;
     private readonly BusinessLogoUploadService _logoUploads;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BusinessProfileModel> _logger;
@@ -26,6 +27,7 @@ public sealed class BusinessProfileModel : PageModel
         DigitalCardsAppService appService,
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
         IBusinessSubscriptionRepository subscriptions,
+        IEmailSender emailSender,
         BusinessLogoUploadService logoUploads,
         IConfiguration configuration,
         ILogger<BusinessProfileModel> logger)
@@ -34,6 +36,7 @@ public sealed class BusinessProfileModel : PageModel
         _appService = appService;
         _businessEnrollmentLinks = businessEnrollmentLinks;
         _subscriptions = subscriptions;
+        _emailSender = emailSender;
         _logoUploads = logoUploads;
         _configuration = configuration;
         _logger = logger;
@@ -161,10 +164,43 @@ public sealed class BusinessProfileModel : PageModel
             new RequestBusinessPasswordResetCommand(Profile!.BusinessEmail, GetBaseUrl()),
             cancellationToken);
 
-        StatusMessage = "Invitacion enviada por correo para que el negocio configure su acceso.";
+        StatusMessage = "Correo de recuperacion de contrasena enviado.";
 
         _logger.LogInformation(
-            "Admin {AdminUserId} sent onboarding invite for business {BusinessId}.",
+            "Admin {AdminUserId} sent password recovery email for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostSendWelcomeEmailAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var planLabel = Subscription?.StripePlanKey switch
+        {
+            "Basic"    => "Basico",
+            "Pro"      => "Pro",
+            "Business" => "Empresarial",
+            _          => "Manual"
+        };
+
+        await _emailSender.SendBusinessWelcomeAsync(
+            new BusinessWelcomeEmail(
+                Profile!.BusinessEmail,
+                Profile.BusinessName,
+                planLabel,
+                "https://app.puntelio.com/Business/Login"),
+            cancellationToken);
+
+        StatusMessage = $"Correo de bienvenida enviado a {Profile.BusinessEmail}.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} sent welcome email for business {BusinessId}.",
             AdminAuth.GetAdminUserId(User),
             businessId);
 
