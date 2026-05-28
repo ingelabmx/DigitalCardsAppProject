@@ -2,7 +2,9 @@
 @inject Microsoft.Extensions.Options.IOptions<LandingOptions> LandingOptionsAccessor
 @{
     var landing = LandingOptionsAccessor.Value;
-    var title = ViewData["Title"]?.ToString() == "Puntelio" ? "Puntelio" : "Puntelio";
+    var title = ViewData["Title"] != null
+        ? ViewData["Title"] + " — Puntelio"
+        : "Puntelio — Tarjetas de lealtad digitales";
     var description = ViewData["Description"]?.ToString()
         ?? "Digitaliza tus tarjetas de sellos, premia a tus clientes y administra recompensas con QR desde una plataforma simple para negocios.";
 }
@@ -11,16 +13,28 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- SEO -->
     <title>@title</title>
-    <meta name="description" content="@description" />
-    <meta property="og:title" content="Puntelio" />
-    <meta property="og:description" content="@description" />
-    <meta property="og:url" content="@landing.SiteUrl" />
+    <meta name="description" content="Puntelio ayuda a negocios locales a reemplazar tarjetas físicas por tarjetas digitales con sellos, QR, recompensas y estadísticas. Un sistema para el mostrador y otro para el cliente." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="@landing.SiteUrl" />
+
+    <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="@($"{landing.SiteUrl.TrimEnd('/')}/img/puntelio-branding.svg")" />
+    <meta property="og:site_name" content="Puntelio" />
+    <meta property="og:title" content="Puntelio — Tarjetas de lealtad digitales" />
+    <meta property="og:description" content="Fideliza a tus clientes con tarjetas digitales, sellos, QR y Wallet. Sin app, sin tarjetas físicas." />
+    <meta property="og:image" content="@($"{landing.SiteUrl.TrimEnd('/')}/img/og-image.png")" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="@landing.SiteUrl" />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- Twitter/X Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Puntelio" />
-    <meta name="twitter:description" content="@description" />
+    <meta name="twitter:title" content="Puntelio — Tarjetas de lealtad digitales" />
+    <meta name="twitter:description" content="Fideliza a tus clientes con tarjetas digitales, sellos, QR y Wallet." />
+    <meta name="twitter:image" content="@($"{landing.SiteUrl.TrimEnd('/')}/img/og-image.png")" />
     <link rel="icon" type="image/svg+xml" href="~/img/puntelio-logo.svg" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
