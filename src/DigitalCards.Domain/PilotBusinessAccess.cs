@@ -8,7 +8,7 @@ public sealed class PilotBusinessAccess
         string? notes,
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
-        Guid updatedByAdminUserId,
+        Guid? updatedByAdminUserId,
         BusinessActivationStatus? activationStatus = null)
     {
         if (businessId == Guid.Empty)
@@ -18,7 +18,7 @@ public sealed class PilotBusinessAccess
 
         if (updatedByAdminUserId == Guid.Empty)
         {
-            throw new ArgumentException("Admin user id is required.", nameof(updatedByAdminUserId));
+            throw new ArgumentException("Admin user id must not be empty guid; pass null for system-created records.", nameof(updatedByAdminUserId));
         }
 
         BusinessId = businessId;
@@ -44,13 +44,13 @@ public sealed class PilotBusinessAccess
 
     public DateTimeOffset UpdatedAt { get; }
 
-    public Guid UpdatedByAdminUserId { get; }
+    public Guid? UpdatedByAdminUserId { get; }
 
     public PilotBusinessAccess WithState(
         bool isEnabled,
         string? notes,
         DateTimeOffset updatedAt,
-        Guid updatedByAdminUserId,
+        Guid? updatedByAdminUserId,
         BusinessActivationStatus? activationStatus = null)
     {
         return new PilotBusinessAccess(

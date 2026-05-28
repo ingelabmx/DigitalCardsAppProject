@@ -16,6 +16,8 @@ public sealed class BusinessProfileModel : PageModel
     private readonly AdminAppService _adminApp;
     private readonly DigitalCardsAppService _appService;
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
+    private readonly IEmailSender _emailSender;
     private readonly BusinessLogoUploadService _logoUploads;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BusinessProfileModel> _logger;
@@ -24,6 +26,8 @@ public sealed class BusinessProfileModel : PageModel
         AdminAppService adminApp,
         DigitalCardsAppService appService,
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
+        IBusinessSubscriptionRepository subscriptions,
+        IEmailSender emailSender,
         BusinessLogoUploadService logoUploads,
         IConfiguration configuration,
         ILogger<BusinessProfileModel> logger)
@@ -31,6 +35,8 @@ public sealed class BusinessProfileModel : PageModel
         _adminApp = adminApp;
         _appService = appService;
         _businessEnrollmentLinks = businessEnrollmentLinks;
+        _subscriptions = subscriptions;
+        _emailSender = emailSender;
         _logoUploads = logoUploads;
         _configuration = configuration;
         _logger = logger;
@@ -56,6 +62,8 @@ public sealed class BusinessProfileModel : PageModel
     public bool BrandingLogoUnavailable { get; private set; }
 
     public CutoverBusinessViewModel? OperationalView { get; private set; }
+
+    public BusinessSubscription? Subscription { get; private set; }
 
     [BindProperty]
     public BusinessProfileSmokeInput SmokeInput { get; set; } = new();
@@ -156,10 +164,43 @@ public sealed class BusinessProfileModel : PageModel
             new RequestBusinessPasswordResetCommand(Profile!.BusinessEmail, GetBaseUrl()),
             cancellationToken);
 
-        StatusMessage = "Invitacion enviada por correo para que el negocio configure su acceso.";
+        StatusMessage = "Correo de recuperacion de contrasena enviado.";
 
         _logger.LogInformation(
-            "Admin {AdminUserId} sent onboarding invite for business {BusinessId}.",
+            "Admin {AdminUserId} sent password recovery email for business {BusinessId}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId);
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostSendWelcomeEmailAsync(Guid businessId, CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var planLabel = Subscription?.StripePlanKey switch
+        {
+            "Basic"    => "Basico",
+            "Pro"      => "Pro",
+            "Business" => "Empresarial",
+            _          => "Manual"
+        };
+
+        await _emailSender.SendBusinessWelcomeAsync(
+            new BusinessWelcomeEmail(
+                Profile!.BusinessEmail,
+                Profile.BusinessName,
+                planLabel,
+                "https://app.puntelio.com/Business/Login"),
+            cancellationToken);
+
+        StatusMessage = $"Correo de bienvenida enviado a {Profile.BusinessEmail}.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} sent welcome email for business {BusinessId}.",
             AdminAuth.GetAdminUserId(User),
             businessId);
 
@@ -310,9 +351,9 @@ public sealed class BusinessProfileModel : PageModel
             return NotFound();
         }
 
-        var token = await _businessEnrollmentLinks.CreateOrReplaceTokenAsync(businessId, cancellationToken);
+        var token = await _businessEnrollmentLinks.GetOrCreateTokenAsync(businessId, cancellationToken);
         GeneratedEnrollmentUrl = $"{GetBaseUrl()}/Enroll/{token}";
-        StatusMessage = "Link publico de registro generado. Solo se muestra en esta respuesta.";
+        StatusMessage = "Link publico de registro. Siempre es el mismo para este negocio.";
 
         _logger.LogInformation(
             "Admin {AdminUserId} generated public enrollment link for business {BusinessId}.",
@@ -373,6 +414,62 @@ public sealed class BusinessProfileModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostUpdatePlanAsync(Guid businessId, string planKey, CancellationToken cancellationToken)
+    {
+        if (!await LoadAsync(businessId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var maxClients = planKey switch
+        {
+            "Basic"    => 300,
+            "Pro"      => 1000,
+            "Business" => -1,
+            _          => -1
+        };
+
+        var now = DateTimeOffset.UtcNow;
+        if (Subscription is not null)
+        {
+            await _subscriptions.UpsertAsync(
+                Subscription.WithPlanUpdate(planKey, maxClients, now),
+                cancellationToken);
+        }
+        else
+        {
+            await _subscriptions.UpsertAsync(
+                new BusinessSubscription(
+                    businessId,
+                    subscriptionStatus: "manual",
+                    maxClients: maxClients,
+                    createdViaSelfService: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    stripePlanKey: planKey),
+                cancellationToken);
+        }
+
+        Subscription = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+
+        var label = planKey switch
+        {
+            "Basic"    => "Basico",
+            "Pro"      => "Pro",
+            "Business" => "Empresarial",
+            _          => "Manual"
+        };
+        StatusMessage = $"Plan actualizado a {label}.";
+
+        _logger.LogInformation(
+            "Admin {AdminUserId} updated plan for business {BusinessId} to {PlanKey}.",
+            AdminAuth.GetAdminUserId(User),
+            businessId,
+            planKey);
+
+        return Page();
+    }
+
     private async Task<bool> LoadAsync(Guid businessId, CancellationToken cancellationToken)
     {
         Profile = await _adminApp.GetBusinessProfileAsync(businessId, cancellationToken);
@@ -381,6 +478,7 @@ public sealed class BusinessProfileModel : PageModel
             return false;
         }
 
+        Subscription = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
         SetInputFromProfile(Profile);
         var reports = await _adminApp.GetReportsAsync(cancellationToken);
         var report = reports.Businesses.SingleOrDefault(item => item.BusinessId == businessId);

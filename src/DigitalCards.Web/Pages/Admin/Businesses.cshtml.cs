@@ -1,3 +1,4 @@
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web.Security;
@@ -11,11 +12,19 @@ namespace DigitalCards.Web.Pages.Admin;
 public sealed class BusinessesModel : PageModel
 {
     private readonly AdminAppService _adminApp;
+    private readonly BusinessSignupService _signupService;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
     private readonly ILogger<BusinessesModel> _logger;
 
-    public BusinessesModel(AdminAppService adminApp, ILogger<BusinessesModel> logger)
+    public BusinessesModel(
+        AdminAppService adminApp,
+        BusinessSignupService signupService,
+        IBusinessSubscriptionRepository subscriptions,
+        ILogger<BusinessesModel> logger)
     {
         _adminApp = adminApp;
+        _signupService = signupService;
+        _subscriptions = subscriptions;
         _logger = logger;
     }
 
@@ -28,9 +37,14 @@ public sealed class BusinessesModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = 10;
 
+    [BindProperty(SupportsGet = true)]
+    public string? SubscriptionFilter { get; set; }
+
     public IReadOnlyList<PilotBusinessDto> Businesses { get; private set; } = [];
 
     public IReadOnlyList<PilotBusinessDto> PagedBusinesses { get; private set; } = [];
+
+    public IReadOnlyList<AbandonedSignupDto> AbandonedSignups { get; private set; } = [];
 
     public string? StatusMessage { get; private set; }
 
@@ -54,6 +68,31 @@ public sealed class BusinessesModel : PageModel
         CancellationToken cancellationToken)
     {
         return await SetPilotAsync(businessId, isEnabled: false, cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostResendPaymentLinkAsync(
+        Guid businessId,
+        CancellationToken cancellationToken)
+    {
+        if (businessId == Guid.Empty)
+        {
+            TempData["AdminBusinessStatus"] = "ID de negocio invalido.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var checkoutUrl = await _signupService.CreateOrResumeCheckoutAsync(businessId, baseUrl, cancellationToken);
+            TempData["AdminBusinessStatus"] = $"Link de pago generado: {checkoutUrl}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating checkout link for business {BusinessId}.", businessId);
+            TempData["AdminBusinessStatus"] = "Error al generar el link de pago.";
+        }
+
+        return RedirectToPage();
     }
 
     private async Task<IActionResult> SetPilotAsync(
@@ -102,7 +141,28 @@ public sealed class BusinessesModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Businesses = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
+        var all = await _adminApp.ListPilotBusinessesAsync(Query ?? string.Empty, cancellationToken);
+
+        var enriched = new List<PilotBusinessDto>(all.Count);
+        foreach (var b in all)
+        {
+            var sub = await _subscriptions.FindByBusinessIdAsync(b.BusinessId, cancellationToken);
+            enriched.Add(b with
+            {
+                SubscriptionStatus = sub?.SubscriptionStatus,
+                StripePlanKey = sub?.StripePlanKey,
+                GraceEndsAt = sub?.GraceEndsAt
+            });
+        }
+
+        Businesses = SubscriptionFilter switch
+        {
+            "active" => enriched.Where(b => b.SubscriptionStatus == "active").ToArray(),
+            "past_due" => enriched.Where(b => b.SubscriptionStatus is "past_due" or "canceled").ToArray(),
+            "none" => enriched.Where(b => b.SubscriptionStatus is null).ToArray(),
+            _ => enriched
+        };
+
         PageSize = NormalizePageSize(PageSize);
         TotalPages = Math.Max(1, (int)Math.Ceiling(Businesses.Count / (double)PageSize));
         PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
@@ -110,6 +170,7 @@ public sealed class BusinessesModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToArray();
+        AbandonedSignups = await _signupService.ListAbandonedAsync(cancellationToken);
     }
 
     private static int NormalizePageSize(int value)

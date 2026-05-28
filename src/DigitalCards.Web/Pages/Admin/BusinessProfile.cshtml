@@ -134,6 +134,34 @@
             </section>
         }
 
+        <section class="business-profile-panel mb-4" data-testid="admin-business-plan-panel">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <h2 class="mb-0">Plan y suscripcion</h2>
+                <span class="p-badge @PlanBadgeClass(Model.Subscription?.StripePlanKey)" data-testid="admin-business-plan-badge">
+                    @PlanLabel(Model.Subscription?.StripePlanKey)
+                </span>
+                <span class="p-badge @SubBadgeClass(Model.Subscription?.SubscriptionStatus, Model.Subscription?.GraceEndsAt)" data-testid="admin-business-sub-badge">
+                    @SubLabel(Model.Subscription?.SubscriptionStatus, Model.Subscription?.GraceEndsAt)
+                </span>
+            </div>
+            <form method="post"
+                  asp-page-handler="UpdatePlan"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="d-flex gap-2 align-items-end flex-wrap">
+                <div>
+                    <label class="form-label mb-1">Cambiar plan</label>
+                    <select name="planKey" class="form-select form-select-sm" data-testid="admin-business-plan-select">
+                        <option value="Manual" selected="@(Model.Subscription?.StripePlanKey is null or "Manual")">Manual (sin Stripe)</option>
+                        <option value="Basic" selected="@(Model.Subscription?.StripePlanKey == "Basic")">Basico (300 clientes)</option>
+                        <option value="Pro" selected="@(Model.Subscription?.StripePlanKey == "Pro")">Pro (1,000 clientes)</option>
+                        <option value="Business" selected="@(Model.Subscription?.StripePlanKey == "Business")">Empresarial (ilimitado)</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" type="submit" data-testid="admin-business-plan-submit">Actualizar plan</button>
+            </form>
+            <p class="text-muted mt-2 mb-0"><small>Solo cambia StripePlanKey y MaxClients. El estado de suscripcion no se modifica.</small></p>
+        </section>
+
         <div class="business-profile-grid">
             <form method="post"
                   asp-page-handler="Save"
@@ -218,15 +246,31 @@
                   asp-route-businessId="@Model.Profile.BusinessId"
                   class="business-profile-panel"
                   data-testid="admin-business-invite-form">
-                <h2>Invitacion de acceso</h2>
-                <p class="text-muted">Envia un correo al negocio con un link seguro para configurar su contrasena. No se muestra ni se envia password plano.</p>
+                <h2>Recuperacion de contrasena</h2>
+                <p class="text-muted">Envia un correo al negocio con un link seguro para restablecer su contrasena. No se muestra ni se envia password plano.</p>
 
                 <div class="business-profile-meta">
                     <span>Destino</span>
                     <strong data-testid="admin-business-invite-email">@Model.Profile.BusinessEmail</strong>
                 </div>
 
-                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-invite">Enviar invitacion</button>
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-invite">Enviar correo de recuperacion</button>
+            </form>
+
+            <form method="post"
+                  asp-page-handler="SendWelcomeEmail"
+                  asp-route-businessId="@Model.Profile.BusinessId"
+                  class="business-profile-panel"
+                  data-testid="admin-business-welcome-form">
+                <h2>Correo de bienvenida</h2>
+                <p class="text-muted">Envia el correo de bienvenida con la guia PDF adjunta, igual al que recibe un negocio nuevo al completar su pago.</p>
+
+                <div class="business-profile-meta">
+                    <span>Destino</span>
+                    <strong data-testid="admin-business-welcome-email">@Model.Profile.BusinessEmail</strong>
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit" data-testid="admin-business-send-welcome">Enviar bienvenida</button>
             </form>
 
             <form method="post"
@@ -396,6 +440,46 @@
 </section>
 
 @functions {
+    private static string PlanBadgeClass(string? planKey) => planKey switch
+    {
+        null       => "p-badge-gray",
+        "Manual"   => "p-badge-gray",
+        "Basic"    => "p-badge-blue",
+        "Pro"      => "p-badge-black",
+        "Business" => "p-badge-black",
+        _          => "p-badge-blue"
+    };
+
+    private static string PlanLabel(string? planKey) => planKey switch
+    {
+        null       => "Sin plan",
+        "Manual"   => "Manual",
+        "Basic"    => "Basico",
+        "Pro"      => "Pro",
+        "Business" => "Empresarial",
+        _          => planKey
+    };
+
+    private static string SubBadgeClass(string? status, DateTimeOffset? graceEndsAt) => status switch
+    {
+        "active"   => "p-badge-green",
+        "manual"   => "p-badge-black",
+        "past_due" => graceEndsAt.HasValue && graceEndsAt.Value < DateTimeOffset.UtcNow ? "p-badge-red" : "p-badge-amber",
+        "canceled" => "p-badge-red",
+        _          => "p-badge-gray"
+    };
+
+    private static string SubLabel(string? status, DateTimeOffset? graceEndsAt) => status switch
+    {
+        "active"   => "Activa",
+        "manual"   => "Manual",
+        "past_due" => graceEndsAt.HasValue
+            ? $"Atrasado (gracia hasta {graceEndsAt.Value.ToLocalTime():d})"
+            : "Atrasado",
+        "canceled" => "Cancelada",
+        _          => "Sin suscripcion"
+    };
+
     private static string VersionedLogoPath(string logoPath, DateTimeOffset? updatedAt)
     {
         if (string.IsNullOrWhiteSpace(logoPath))

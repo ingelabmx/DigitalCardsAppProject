@@ -7,6 +7,7 @@ using DigitalCards.Web.Landing;
 using DigitalCards.Web.Operations;
 using DigitalCards.Web.Pilot;
 using DigitalCards.Web.Security;
+using DigitalCards.Web.Workers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -104,6 +105,7 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddDigitalCardsApplication();
 builder.Services.AddDigitalCardsInfrastructure(builder.Configuration);
+builder.Services.AddHostedService<SubscriptionExpiryWorker>();
 
 var app = builder.Build();
 

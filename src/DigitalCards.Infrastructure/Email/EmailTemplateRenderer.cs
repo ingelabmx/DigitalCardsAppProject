@@ -206,6 +206,113 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             Layout("Contrasena cambiada", bodyHtml, brand));
     }
 
+    public RenderedEmailTemplate RenderBusinessWelcome(BusinessWelcomeEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        const string loginUrl = "https://app.puntelio.com/Business/Login";
+        var subject = $"¡Bienvenido a Puntelio, {email.BusinessName}!";
+        var textBody = $"""
+            Hola {email.BusinessName},
+
+            Tu suscripcion esta activa. Ya puedes acceder a tu panel y comenzar a fidelizar a tus clientes.
+
+            Acceder a mi panel:
+            {loginUrl}
+
+            Adjuntamos tu Guia de Inicio Rapido con todo lo que necesitas saber para arrancar:
+
+            - Configurar tu branding (logo y colores)
+            - Generar tu link y QR para clientes
+            - Agregar sellos desde el mostrador
+            - Ver reportes de actividad
+
+            ¿Tienes dudas? Escribenos a punteliomx@gmail.com o por WhatsApp al +52 664 197 2204.
+
+            ¡Con Puntelio, cada visita cuenta!
+            — El equipo de Puntelio
+            puntelio.com
+            """;
+        var bodyHtml = $"""
+            <h1>¡Tu negocio ya esta activo!</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>,</p>
+            <p>Tu suscripcion esta activa. Ya puedes acceder a tu panel y comenzar a fidelizar a tus clientes.</p>
+            {Button(loginUrl, "Acceder a mi panel", brand)}
+            {FallbackLink(loginUrl)}
+            <p style="margin-top:24px;">Adjuntamos tu <strong>Guia de Inicio Rapido</strong> con todo lo que necesitas saber para arrancar:</p>
+            <ul style="padding-left:20px;color:#444;">
+                <li>Configurar tu branding (logo y colores)</li>
+                <li>Generar tu link y QR para clientes</li>
+                <li>Agregar sellos desde el mostrador</li>
+                <li>Ver reportes de actividad</li>
+            </ul>
+            <p style="margin-top:24px;color:#666;">¿Tienes dudas? Escribenos a <a href="mailto:punteliomx@gmail.com">punteliomx@gmail.com</a> o por WhatsApp al <a href="https://wa.me/526641972204">+52 664 197 2204</a>.</p>
+            <p style="color:#666;">¡Con Puntelio, cada visita cuenta!<br>— El equipo de Puntelio<br>puntelio.com</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.BusinessWelcome,
+            email.To,
+            subject,
+            textBody,
+            Layout("Tu negocio ya esta activo", bodyHtml, brand));
+    }
+
+    public RenderedEmailTemplate RenderPaymentFailed(BusinessPaymentFailedEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        var graceDate = email.GraceEndsAt.ToLocalTime().ToString("d");
+        var subject = $"Pago fallido - Tu negocio {email.BusinessName} tiene 3 dias de gracia";
+        var textBody = $"""
+            Hola {email.BusinessName},
+
+            El cobro de tu suscripcion a Puntelio no pudo procesarse.
+
+            Tu negocio seguira activo hasta el {graceDate}. Actualiza tu metodo de pago antes de esa fecha para no perder el acceso.
+
+            Si tienes dudas, responde este correo.
+            """;
+        var bodyHtml = $"""
+            <h1>Pago fallido</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>.</p>
+            <p>El cobro de tu suscripcion a Puntelio no pudo procesarse.</p>
+            <p>Tu negocio seguira activo hasta el <strong>{Html(graceDate)}</strong>. Actualiza tu metodo de pago antes de esa fecha.</p>
+            <p>Si tienes dudas, responde este correo o contacta a soporte.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.PaymentFailed,
+            email.To,
+            subject,
+            textBody,
+            Layout("Pago fallido", bodyHtml, brand));
+    }
+
+    public RenderedEmailTemplate RenderSubscriptionCanceled(BusinessSubscriptionCanceledEmail email)
+    {
+        var brand = new EmailBranding("Puntelio");
+        var subject = $"Tu suscripcion de {email.BusinessName} en Puntelio fue cancelada";
+        var textBody = $"""
+            Hola {email.BusinessName},
+
+            Tu suscripcion a Puntelio fue cancelada y tu negocio ha sido desactivado.
+
+            Si fue un error, contáctanos para reactivar tu cuenta.
+            """;
+        var bodyHtml = $"""
+            <h1>Suscripcion cancelada</h1>
+            <p>Hola, <strong>{Html(email.BusinessName)}</strong>.</p>
+            <p>Tu suscripcion a Puntelio fue cancelada y tu negocio ha sido desactivado.</p>
+            <p>Si esto fue un error o deseas reactivar tu cuenta, por favor respondenos este correo.</p>
+            """;
+
+        return new RenderedEmailTemplate(
+            EmailTemplateKind.SubscriptionCanceled,
+            email.To,
+            subject,
+            textBody,
+            Layout("Suscripcion cancelada", bodyHtml, brand));
+    }
+
     private static string Layout(string title, string bodyHtml, EmailBranding branding)
     {
         var brand = NormalizeBrand(branding);
@@ -251,11 +358,35 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
 
     private static string Button(string url, string text, EmailBranding branding)
     {
+        var bg = NormalizeColor(branding.PrimaryColor);
+        var fg = ContrastTextColor(bg);
         return $"""
             <p style="margin:28px 0;">
-              <a href="{SafeHref(url)}" style="background:{NormalizeColor(branding.PrimaryColor)};color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;">{Html(text)}</a>
+              <a href="{SafeHref(url)}" style="background:{bg};color:{fg};text-decoration:none;padding:12px 18px;border-radius:6px;display:inline-block;font-weight:bold;">{Html(text)}</a>
             </p>
             """;
+    }
+
+    // Returns #111827 (dark) or #ffffff (light) whichever contrasts better with the background.
+    private static string ContrastTextColor(string hexColor)
+    {
+        if (hexColor.Length == 7 && hexColor[0] == '#')
+        {
+            try
+            {
+                var r = Convert.ToInt32(hexColor.Substring(1, 2), 16);
+                var g = Convert.ToInt32(hexColor.Substring(3, 2), 16);
+                var b = Convert.ToInt32(hexColor.Substring(5, 2), 16);
+                var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+                return luminance > 0.5 ? "#111827" : "#ffffff";
+            }
+            catch
+            {
+                // malformed hex — fall back to white text
+            }
+        }
+
+        return "#ffffff";
     }
 
     private static string WalletStoreBadges(string enrollmentUrl, EmailBranding branding)

@@ -68,6 +68,16 @@
             </div>
         </div>
 
+        <div class="mb-3">
+            <label asp-for="Input.PlanKey" class="form-label"></label>
+            <select asp-for="Input.PlanKey" class="form-select" data-testid="admin-create-business-plan">
+                <option value="Manual">Manual (sin Stripe)</option>
+                <option value="Basic">Plan Basico (300 clientes)</option>
+                <option value="Pro">Plan Pro (1,000 clientes)</option>
+                <option value="Business">Plan Empresarial (ilimitado)</option>
+            </select>
+        </div>
+
         <div class="form-check mb-3">
             <input asp-for="Input.EnablePilot" class="form-check-input" data-testid="admin-create-business-enable-pilot" />
             <label asp-for="Input.EnablePilot" class="form-check-label"></label>

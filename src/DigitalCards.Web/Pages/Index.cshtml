@@ -130,7 +130,7 @@
 
     <section class="landing-section landing-pricing" id="precios" data-landing-reveal>
         <div class="landing-section-heading">
-            <h2>Empieza con un plan simple.</h2>
+            <h2>Elige un plan segun tus necesidades.</h2>
         </div>
         <div class="landing-pricing-grid landing-pricing-grid-3">
             <article class="landing-price-card">
@@ -139,15 +139,14 @@
                 <strong>$299 MXN <span>/ mes</span></strong>
                 <ul>
                     <li>1 negocio</li>
-                    <li>Hasta 300 clientes</li>
+                    <li>Hasta 100 clientes</li>
                     <li>Personalización de logo y colores</li>
                     <li>Estadísticas</li>
                     <li>Soporte</li>
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Básico")">Contratar por correo</a>
-                    <a class="btn btn-outline-primary" href="@hireWhatsApp">Contratar por WhatsApp</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Basic">Contratar ahora</a>
                 </div>
             </article>
             <article class="landing-price-card featured">
@@ -163,8 +162,7 @@
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Pro")">Contratar por correo</a>
-                    <a class="btn btn-outline-primary" href="@customWhatsApp">Contratar por WhatsApp</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Pro">Contratar ahora</a>
                 </div>
             </article>
             <article class="landing-price-card">
@@ -180,8 +178,7 @@
                     <li>Invitaciones por correo</li>
                 </ul>
                 <div class="landing-actions">
-                    <a class="btn btn-primary" href="@Model.MailTo("Quiero contratar Puntelio Plan Empresarial")">Contratar por correo</a>
-                    <a class="btn btn-outline-primary" href="@customWhatsApp">Contratar por WhatsApp</a>
+                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Business">Contratar ahora</a>
                 </div>
             </article>
         </div>
@@ -243,7 +240,7 @@
             <details><summary>Como se agregan sellos?</summary><p>Desde tu celular o PC, escaneando el QR de cada tarjeta o manualmente.</p></details>
             <details><summary>Que pasa cuando el cliente completa la tarjeta?</summary><p>Se genera una alerta de canje de recompensa, se canjea y la tarjeta vuelve a 0 sellos.</p></details>
             <details><summary>Puedo administrar varios negocios?</summary><p>Si, se genera un acceso con diferente usuario y contrasena.</p></details>
-            <details><summary>Como contrato el servicio?</summary><p>Directamente por correo con nosotros.</p></details>
+            <details><summary>Como contrato el servicio?</summary><p>A traves del apartado de contratacion en nuestro sitio web, elige un plan de acuerdo a tus necesidades.</p></details>
         </div>
     </section>
 }

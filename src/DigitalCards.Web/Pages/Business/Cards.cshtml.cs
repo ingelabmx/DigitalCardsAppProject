@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web;
@@ -206,6 +207,56 @@ public sealed class CardsModel : PageModel
         StatusMessage = "Tarjeta eliminada para este negocio. La cuenta global del cliente se conserva.";
         await LoadAsync(cancellationToken);
         return Page();
+    }
+
+    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    {
+        var businessId = BusinessAuth.GetBusinessId(User);
+        var cards = await _appService.ListBusinessCardsAsync(businessId, cancellationToken);
+
+        var businessName = cards.Count > 0 ? cards[0].BusinessName : "negocio";
+        var slug = businessName
+            .ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("/", "")
+            .Replace("\\", "");
+        var date = DateTime.Now.ToString("yyyy-MM-dd");
+        var fileName = $"clientes-{slug}-{date}.csv";
+
+        var csv = GenerateCsv(cards);
+        var bom = new byte[] { 0xEF, 0xBB, 0xBF };
+        var bytes = bom.Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+
+        return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    private static string GenerateCsv(IEnumerable<BusinessCardDto> rows)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Nombre,Usuario,Correo,Sellos actuales,Sellos historicos,Fecha de alta");
+
+        foreach (var row in rows)
+        {
+            sb.AppendLine(string.Join(",", new[]
+            {
+                CsvEscape($"{row.Client.FirstName} {row.Client.LastName}"),
+                CsvEscape(row.Client.UserName),
+                CsvEscape(row.Client.Email),
+                row.CurrentStamps.ToString(),
+                row.LifetimeStamps.ToString(),
+                row.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            }));
+        }
+
+        return sb.ToString();
+    }
+
+    private static string CsvEscape(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        return value;
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)

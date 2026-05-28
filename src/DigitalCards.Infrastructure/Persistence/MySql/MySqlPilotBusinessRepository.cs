@@ -123,7 +123,9 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
                     access.Notes,
                     CreatedAt = access.CreatedAt.UtcDateTime,
                     UpdatedAt = access.UpdatedAt.UtcDateTime,
-                    UpdatedByAdminUserID = LegacyIdMapper.ToInt32(access.UpdatedByAdminUserId)
+                    UpdatedByAdminUserID = access.UpdatedByAdminUserId.HasValue
+                        ? LegacyIdMapper.ToInt32(access.UpdatedByAdminUserId.Value)
+                        : (int?)null
                 },
                 cancellationToken: cancellationToken));
         }
@@ -165,7 +167,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
         string? Notes,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        int UpdatedByAdminUserID)
+        int? UpdatedByAdminUserID)
     {
         public PilotBusinessAccess ToDomain()
         {
@@ -175,7 +177,7 @@ public sealed class MySqlPilotBusinessRepository : IPilotBusinessRepository
                 Notes,
                 AsUtc(CreatedAt),
                 AsUtc(UpdatedAt),
-                LegacyIdMapper.ToGuid(UpdatedByAdminUserID),
+                UpdatedByAdminUserID.HasValue ? LegacyIdMapper.ToGuid(UpdatedByAdminUserID.Value) : null,
                 ParseActivationStatus(ActivationStatus, IsEnabled));
         }
 

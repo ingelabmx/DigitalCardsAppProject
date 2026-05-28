@@ -15,4 +15,10 @@ public interface IEmailTemplateRenderer
     RenderedEmailTemplate RenderLandingContact(LandingContactEmail email);
 
     RenderedEmailTemplate RenderPasswordChanged(PasswordChangedEmail email);
+
+    RenderedEmailTemplate RenderBusinessWelcome(BusinessWelcomeEmail email);
+
+    RenderedEmailTemplate RenderPaymentFailed(BusinessPaymentFailedEmail email);
+
+    RenderedEmailTemplate RenderSubscriptionCanceled(BusinessSubscriptionCanceledEmail email);
 }
