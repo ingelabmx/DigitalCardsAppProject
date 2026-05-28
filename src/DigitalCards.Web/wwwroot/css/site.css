@@ -4872,6 +4872,28 @@ body.legacy-shell .p-page-header .p-eyebrow {
   margin: 0;
 }
 
+.hero-compatible-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9B9B9B;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.hero-platform-logos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-platform-logos img {
+  height: 24px;
+  width: auto;
+  opacity: 0.6;
+}
+
 /* Feature cards grid */
 .p-feature-grid {
   max-width: 1200px;
