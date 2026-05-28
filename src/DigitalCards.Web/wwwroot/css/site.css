@@ -4811,7 +4811,15 @@ body.legacy-shell .p-page-header .p-eyebrow {
 
 /* Hero */
 .p-hero {
-  background: var(--bg-page);
+  background-color: #EDECE8;
+  background-image:
+    linear-gradient(to right,
+      rgba(237,236,232,0.93) 50%,
+      rgba(237,236,232,0.55) 100%),
+    url('/img/background.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 56px 40px 44px;
   max-width: 1200px;
   margin: 0 auto;
