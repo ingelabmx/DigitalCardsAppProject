@@ -16,7 +16,7 @@
         <div class="p-hero-left">
             <h1>Lealtad digital<br>para negocios<br>y clientes.</h1>
             <div class="p-hero-ctas">
-                <a class="p-btn p-btn-primary p-btn-lg" href="#flujo">Solicitar informacion</a>
+                <a class="p-btn p-btn-primary p-btn-lg" href="/planes">Contratar ahora</a>
                 <a class="p-btn p-btn-outline p-btn-lg" href="@Model.Landing.AppUrl">Entrar</a>
             </div>
         </div>
@@ -128,68 +128,12 @@
         </ul>
     </section>
 
-    <section class="landing-section landing-pricing" id="precios" data-landing-reveal>
-        <div class="landing-section-heading">
-            <h2>Elige un plan segun tus necesidades.</h2>
-        </div>
-        <div class="landing-pricing-grid landing-pricing-grid-3">
-            <article class="landing-price-card">
-                <h3>Plan Básico</h3>
-                <p>Para negocios que quieren iniciar con un programa de lealtad digital simple y profesional.</p>
-                <strong>$299 MXN <span>/ mes</span></strong>
-                <ul>
-                    <li>1 negocio</li>
-                    <li>Hasta 100 clientes</li>
-                    <li>Personalización de logo y colores</li>
-                    <li>Estadísticas</li>
-                    <li>Soporte</li>
-                    <li>Invitaciones por correo</li>
-                </ul>
-                <div class="landing-actions">
-                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Basic">Contratar ahora</a>
-                </div>
-            </article>
-            <article class="landing-price-card featured">
-                <h3>Plan Pro</h3>
-                <p>Para negocios con mayor volumen de clientes que quieren sacar el máximo provecho de su programa de lealtad.</p>
-                <strong>$599 MXN <span>/ mes</span></strong>
-                <ul>
-                    <li>1 negocio</li>
-                    <li>Hasta 1,000 clientes</li>
-                    <li>Personalización de logo y colores</li>
-                    <li>Estadísticas avanzadas</li>
-                    <li>Soporte prioritario</li>
-                    <li>Invitaciones por correo</li>
-                </ul>
-                <div class="landing-actions">
-                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Pro">Contratar ahora</a>
-                </div>
-            </article>
-            <article class="landing-price-card">
-                <h3>Plan Empresarial</h3>
-                <p>Para cadenas o franquicias que operan múltiples negocios desde un solo lugar.</p>
-                <strong>$999 MXN <span>/ mes</span></strong>
-                <ul>
-                    <li>3 negocios</li>
-                    <li>Clientes ilimitados</li>
-                    <li>Personalización de logo y colores</li>
-                    <li>Estadísticas avanzadas</li>
-                    <li>Soporte prioritario</li>
-                    <li>Invitaciones por correo</li>
-                </ul>
-                <div class="landing-actions">
-                    <a class="btn btn-primary" asp-page="/Business/Signup" asp-route-plan="Business">Contratar ahora</a>
-                </div>
-            </article>
-        </div>
-    </section>
-
-     <div class="p-cta-central" id="flujo" data-landing-reveal>
+    <div class="p-cta-central" id="flujo" data-landing-reveal>
         <h2>Un flujo para el mostrador.<br>Otro para el cliente.</h2>
         <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital.</p>
         <div class="p-cta-btns">
-            <a class="p-btn p-btn-primary p-btn-lg" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
-            <a class="p-btn p-btn-outline p-btn-lg" href="@infoWhatsApp">Enviar WhatsApp</a>
+            <a class="p-btn p-btn-primary p-btn-lg" href="/planes">Contratar ahora</a>
+            <a class="p-btn p-btn-outline p-btn-lg" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
         </div>
     </div>
     
