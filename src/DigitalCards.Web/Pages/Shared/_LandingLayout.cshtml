@@ -35,6 +35,12 @@
     <meta name="twitter:title" content="Puntelio — Tarjetas de lealtad digitales" />
     <meta name="twitter:description" content="Fideliza a tus clientes con tarjetas digitales, sellos, QR y Wallet." />
     <meta name="twitter:image" content="@($"{landing.SiteUrl.TrimEnd('/')}/img/og-image.png")" />
+    <!-- FIX 1: Preconnect para dominios criticos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <!-- FIX 3: Preload hero background para mejorar LCP -->
+    <link rel="preload" as="image" href="/img/background.webp" fetchpriority="high" />
     <link rel="icon" type="image/svg+xml" href="~/img/puntelio-logo.svg" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -78,9 +84,9 @@
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/landing.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js" defer></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="~/js/landing.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
