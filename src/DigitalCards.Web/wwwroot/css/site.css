@@ -6154,11 +6154,16 @@ body.legacy-shell .form-control-sm {
   border-top: 1px solid #D8D7D3;
 }
 
+.p-app-split > div:only-child {
+  grid-column: 1 / -1;
+}
+
 .p-app-split h2 {
   font-size: 22px;
   font-weight: 800;
   color: #0A0A0A;
   margin: 8px 0 0;
+  text-align: center;
 }
 
 .p-app-split p {
