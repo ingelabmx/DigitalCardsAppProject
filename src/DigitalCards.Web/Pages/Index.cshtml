@@ -22,6 +22,11 @@
         </div>
         <div class="p-hero-right">
             <p>Puntelio ayuda a negocios locales a reemplazar las tarjetas fisicas por tarjetas digitales con sellos, QR, recompensas y estadisticas. Un sistema para el mostrador y otro para el cliente.</p>
+            <div class="hero-platform-logos">
+                <span class="hero-compatible-label">Disponible para:</span>
+                <img src="~/img/apple-logo.svg" alt="Apple" />
+                <img src="~/img/android-logo.svg" alt="Android" />
+            </div>
         </div>
     </div>
 
@@ -42,40 +47,40 @@
             <button type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
             <div class="landing-carousel-track">
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card1.png" alt="Puntelio — tarjeta 1" loading="lazy" />
+                    <img src="/img/card1.webp" alt="Puntelio — tarjeta 1" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card2.png" alt="Puntelio — tarjeta 2" loading="lazy" />
+                    <img src="/img/card2.webp" alt="Puntelio — tarjeta 2" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card3.png" alt="Puntelio — tarjeta 3" loading="lazy" />
+                    <img src="/img/card3.webp" alt="Puntelio — tarjeta 3" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card4.png" alt="Puntelio — tarjeta 4" loading="lazy" />
+                    <img src="/img/card4.webp" alt="Puntelio — tarjeta 4" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card5.png" alt="Puntelio — tarjeta 5" loading="lazy" />
+                    <img src="/img/card5.webp" alt="Puntelio — tarjeta 5" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" data-carousel-slide>
-                    <img src="/img/card6.png" alt="Puntelio — tarjeta 6" loading="lazy" />
+                    <img src="/img/card6.webp" alt="Puntelio — tarjeta 6" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card1.png" alt="" loading="lazy" />
+                    <img src="/img/card1.webp" alt="" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card2.png" alt="" loading="lazy" />
+                    <img src="/img/card2.webp" alt="" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card3.png" alt="" loading="lazy" />
+                    <img src="/img/card3.webp" alt="" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card4.png" alt="" loading="lazy" />
+                    <img src="/img/card4.webp" alt="" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card5.png" alt="" loading="lazy" />
+                    <img src="/img/card5.webp" alt="" loading="lazy" />
                 </figure>
                 <figure class="landing-screenshot-card" aria-hidden="true">
-                    <img src="/img/card6.png" alt="" loading="lazy" />
+                    <img src="/img/card6.webp" alt="" loading="lazy" />
                 </figure>
             </div>
             <button type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
@@ -106,11 +111,12 @@
         </div>
         <div class="landing-steps" aria-label="Como funciona">
             <h3>Como funciona</h3>
-            <p>En tres pasos, tu negocio puede operar un programa de lealtad digital sin tarjetas fisicas y sin procesos complicados.</p>
+            <p>En pocos pasos, tu negocio puede operar un programa de lealtad digital sin tarjetas fisicas y sin procesos complicados.</p>
             <ol>
                 <li>El negocio registra a sus clientes.</li>
-                <li>El cliente muestra su QR en cada compra.</li>
-                <li>El negocio agrega sellos y canjea recompensas.</li>
+                <li>El cliente guarda su tarjeta en Apple Wallet o Google Wallet.</li>
+                <li>El negocio agrega sellos a la tarjeta del cliente y actualiza la tarjeta.</li>
+                <li>Canjea recompensas y reinicia el contador.</li>
             </ol>
         </div>
     </section>
@@ -121,10 +127,12 @@
             <p>Tus clientes pueden consultar sus tarjetas digitales, mostrar su QR y saber cuantos sellos les faltan para obtener su recompensa.</p>
         </div>
         <ul class="landing-check-list">
-            <li>No necesitan cargar tarjetas fisicas.</li>
-            <li>Pueden consultar sus sellos en linea.</li>
-            <li>Usan su QR para acumular sellos.</li>
-            <li>Reinicia el conteo al canjear una recompensa.</li>
+            <li>Elimina el riesgo de falsificación.</li>
+            <li>No se pierden ni se olvidan en casa.</li>
+            <li>Cada sello queda registrado con fecha y hora exacta.</li>
+            <li>El negocio controla quién acumula y quién canjea.</li>
+            <li>Sin costo de impresión ni reposición de tarjetas físicas.</li>
+            <li>El historial completo de cada cliente siempre disponible.</li>
         </ul>
     </section>
 
@@ -213,18 +221,20 @@ else
                 </div>
             </div>
             <div class="p-app-card-meta">
-                <span>Tarjeta lista</span>
-                <span>Sellos actualizados</span>
+                <div class="wallet-store-badge-link">
+                    <img src="~/img/add_to_apple_wallet.svg" alt="Disponible en Apple Wallet" />
+                </div>
+                <div class="wallet-store-badge-link">
+                    <img src="~/img/add_to_google_wallet.svg" alt="Disponible en Google Wallet" />
+                </div>
             </div>
         </div>
     </section>
 
     <section class="p-app-split">
         <div>
-            <span class="p-eyebrow">Operacion real</span>
             <h2>Un flujo para el mostrador y otro para el cliente.</h2>
         </div>
-        <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital, y las actualizaciones se mantienen conectadas al estado de su cuenta.</p>
     </section>
 
     <div class="p-mini-grid">
@@ -243,6 +253,15 @@ else
         <div class="p-mini-card">
             <strong>Branding propio</strong>
             <p>Personaliza colores y logo para que tu tarjeta refleje tu negocio.</p>
+        </div>
+    </div>
+
+    <div class="p-cta-central">
+        <h2>Recompensas para los clientes.<br>Laltad digital para tu negocio.</h2>
+        <p>El negocio opera tarjetas y sellos desde su dashboard. El cliente recibe un link seguro para guardar su tarjeta digital.</p>
+        <div class="p-cta-btns">
+            <a class="p-btn p-btn-primary p-btn-lg" href="/planes">Contratar ahora</a>
+            <a class="p-btn p-btn-outline p-btn-lg" href="@Model.MailTo("Solicitud de informacion - Puntelio")">Enviar correo</a>
         </div>
     </div>
 }

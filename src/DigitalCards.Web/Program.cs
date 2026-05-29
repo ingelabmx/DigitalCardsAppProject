@@ -131,7 +131,17 @@ app.Use(async (context, next) =>
 
     await next();
 });
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // 1 año para assets con fingerprint (?v=...), 7 días para los demás
+        var hasVersion = ctx.Context.Request.Query.ContainsKey("v");
+        var maxAge = hasVersion ? 31536000 : 604800;
+        ctx.Context.Response.Headers.Append(
+            "Cache-Control", $"public, max-age={maxAge}{(hasVersion ? ", immutable" : "")}");
+    }
+});
 
 var logoUploadOptions = app.Services.GetRequiredService<IOptions<BusinessLogoUploadOptions>>().Value;
 var logoUploadRoot = logoUploadOptions.GetPhysicalRoot();

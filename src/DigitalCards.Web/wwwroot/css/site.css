@@ -4811,7 +4811,7 @@ body.legacy-shell .p-page-header .p-eyebrow {
 
 /* Hero */
 .p-hero {
-  background: var(--bg-page);
+  position: relative;
   padding: 56px 40px 44px;
   max-width: 1200px;
   margin: 0 auto;
@@ -4819,6 +4819,25 @@ body.legacy-shell .p-page-header .p-eyebrow {
   grid-template-columns: 55% 45%;
   gap: 40px;
   align-items: start;
+}
+
+.p-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  background-color: #EDECE8;
+  background-image:
+    linear-gradient(to right,
+      rgba(237,236,232,0.8) 50%,
+      rgba(237,236,232,0.45) 100%),
+    url('/img/background.webp');
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+  z-index: -1;
 }
 
 .p-hero-left h1 {
@@ -4851,6 +4870,27 @@ body.legacy-shell .p-page-header .p-eyebrow {
   line-height: 1.65;
   max-width: 380px;
   margin: 0;
+}
+
+.hero-compatible-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6B6B6B;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hero-platform-logos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.hero-platform-logos img {
+  height: 35px;
+  width: auto;
+  opacity: 0.65;
 }
 
 /* Feature cards grid */
@@ -6114,11 +6154,16 @@ body.legacy-shell .form-control-sm {
   border-top: 1px solid #D8D7D3;
 }
 
+.p-app-split > div:only-child {
+  grid-column: 1 / -1;
+}
+
 .p-app-split h2 {
   font-size: 22px;
   font-weight: 800;
   color: #0A0A0A;
   margin: 8px 0 0;
+  text-align: center;
 }
 
 .p-app-split p {

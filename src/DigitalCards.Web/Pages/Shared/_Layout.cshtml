@@ -70,7 +70,19 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>@ViewData["Title"] - Puntelio</title>
+
+    <!-- SEO -->
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — Puntelio" : "Puntelio — Panel de negocios y clientes")</title>
+    <meta name="description" content="Accede a tu panel de Puntelio para gestionar tarjetas de lealtad, sellos y clientes." />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Puntelio" />
+    <meta property="og:title" content="Puntelio — Panel de negocios" />
+    <meta property="og:description" content="Gestiona tu programa de lealtad digital desde un solo panel." />
+    <meta property="og:image" content="https://puntelio.com/img/og-image.png" />
+    <meta property="og:url" content="https://app.puntelio.com" />
     @if (puntelioIconPath is not null)
     {
         <link rel="icon" type="image/svg+xml" href="@puntelioIconPath" asp-append-version="true" />
