@@ -12,7 +12,7 @@ public sealed class AppleWalletOptions
 
     public string? OrganizationName { get; init; }
 
-    public string Description { get; init; } = "Digital loyalty card";
+    public string Description { get; init; } = "Regalo";
 
     public string? CertificatePath { get; init; }
 

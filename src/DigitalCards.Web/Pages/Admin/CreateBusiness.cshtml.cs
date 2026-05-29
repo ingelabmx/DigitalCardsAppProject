@@ -17,6 +17,7 @@ public sealed class CreateBusinessModel : PageModel
     private readonly DigitalCardsAppService _appService;
     private readonly IBusinessSubscriptionRepository _subscriptions;
     private readonly IConfiguration _configuration;
+    private readonly IEmailSender _emailSender;
     private readonly ILogger<CreateBusinessModel> _logger;
 
     public CreateBusinessModel(
@@ -24,12 +25,14 @@ public sealed class CreateBusinessModel : PageModel
         DigitalCardsAppService appService,
         IBusinessSubscriptionRepository subscriptions,
         IConfiguration configuration,
+        IEmailSender emailSender,
         ILogger<CreateBusinessModel> logger)
     {
         _adminApp = adminApp;
         _appService = appService;
         _subscriptions = subscriptions;
         _configuration = configuration;
+        _emailSender = emailSender;
         _logger = logger;
     }
 
@@ -94,11 +97,48 @@ public sealed class CreateBusinessModel : PageModel
                 stripePlanKey: Input.PlanKey),
             cancellationToken);
 
+        var planLabel = Input.PlanKey switch
+        {
+            "Basic"    => "Basico",
+            "Pro"      => "Pro",
+            "Business" => "Empresarial",
+            _          => "Manual"
+        };
+
+        try
+        {
+            await _emailSender.SendBusinessWelcomeAsync(
+                new BusinessWelcomeEmail(
+                    CreatedBusiness!.BusinessEmail,
+                    CreatedBusiness.BusinessName,
+                    planLabel,
+                    "https://app.puntelio.com/Business/Login"),
+                cancellationToken);
+            _logger.LogInformation(
+                "Welcome email sent for manually created business {BusinessId}.",
+                CreatedBusiness.BusinessId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to send welcome email for business {BusinessId}.",
+                CreatedBusiness!.BusinessId);
+        }
+
         if (sendInvite)
         {
-            await _appService.RequestBusinessPasswordResetAsync(
-                new RequestBusinessPasswordResetCommand(CreatedBusiness.BusinessEmail, GetBaseUrl()),
-                cancellationToken);
+            try
+            {
+                await _appService.RequestBusinessPasswordResetAsync(
+                    new RequestBusinessPasswordResetCommand(CreatedBusiness!.BusinessEmail, GetBaseUrl()),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to send password reset email for business {BusinessId}.",
+                    CreatedBusiness!.BusinessId);
+            }
         }
 
         StatusMessage = CreatedBusiness!.IsEnabled
