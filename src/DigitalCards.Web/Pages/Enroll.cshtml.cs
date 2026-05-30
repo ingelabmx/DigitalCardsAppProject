@@ -185,7 +185,7 @@ public sealed class EnrollModel : PageModel
 
     public sealed class InputModel
     {
-        [Display(Name = "Usuario")]
+        [Display(Name = "Crea un usuario unico")]
         [Required]
         [RegularExpression("^[A-Za-z0-9]+$", ErrorMessage = "El usuario solo puede usar letras y numeros, sin espacios.")]
         public string UserName { get; set; } = string.Empty;
