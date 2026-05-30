@@ -196,12 +196,14 @@ public sealed class AppleWalletPassPackageBuilder
         {
             files.Remove("logo.png");
             files.Remove("logo@2x.png");
+            files.Remove("logo@3x.png");
         }
 
         if (TryLoadUploadedLogoPng(business.LogoPath) is { } logoBytes)
         {
             files["logo.png"] = logoBytes;
             files["logo@2x.png"] = logoBytes;
+            files["logo@3x.png"] = logoBytes;
 
             var (icon, icon2x, icon3x) = GenerateIconsFromLogo(logoBytes, business.PrimaryColor);
             files["icon.png"] = icon;
