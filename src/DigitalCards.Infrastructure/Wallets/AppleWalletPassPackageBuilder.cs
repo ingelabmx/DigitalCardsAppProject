@@ -90,7 +90,7 @@ public sealed class AppleWalletPassPackageBuilder
             passTypeIdentifier = options.PassTypeIdentifier,
             serialNumber = serialNumber ?? CreateSerialNumber(card),
             teamIdentifier = options.TeamIdentifier,
-            organizationName = options.OrganizationName,
+            organizationName = business.DisplayName ?? options.OrganizationName,
             description = business.DisplayName,
             webServiceURL = settings?.WebServiceUrl,
             authenticationToken = settings?.AuthenticationToken,

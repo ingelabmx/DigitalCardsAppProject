@@ -1,7 +1,10 @@
 @page "/Enroll/{businessToken}"
 @model DigitalCards.Web.Pages.EnrollModel
 @{
-    ViewData["Title"] = "Registro de lealtad";
+    ViewData["Title"] = "Registra tu tarjeta de lealtad";
+    ViewData["Description"] = "Regístrate y obtén tu tarjeta de lealtad digital. Acumula sellos y canjea recompensas.";
+    ViewData["OgTitle"] = "Puntelio — Registra tu tarjeta de lealtad";
+    ViewData["OgDescription"] = "Únete al programa de lealtad. Acumula sellos digitales y canjea recompensas en tu próxima visita.";
 }
 
 @if (Model.IsUnavailable)

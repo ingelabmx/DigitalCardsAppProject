@@ -73,16 +73,17 @@
 
     <!-- SEO -->
     <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — Puntelio" : "Puntelio — Panel de negocios y clientes")</title>
-    <meta name="description" content="Accede a tu panel de Puntelio para gestionar tarjetas de lealtad, sellos y clientes." />
+    <meta name="description" content="@(ViewData["Description"] ?? "Accede a tu panel de Puntelio para gestionar tarjetas de lealtad, sellos y clientes.")" />
     <meta name="robots" content="noindex, nofollow" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Puntelio" />
-    <meta property="og:title" content="Puntelio — Panel de negocios" />
-    <meta property="og:description" content="Gestiona tu programa de lealtad digital desde un solo panel." />
+    <meta property="og:title" content="@(ViewData["OgTitle"] ?? "Puntelio — Panel de negocios")" />
+    <meta property="og:description" content="@(ViewData["OgDescription"] ?? "Gestiona tu programa de lealtad digital desde un solo panel.")" />
     <meta property="og:image" content="https://puntelio.com/img/og-image.png" />
     <meta property="og:url" content="https://app.puntelio.com" />
+    @await RenderSectionAsync("Head", required: false)
     @if (puntelioIconPath is not null)
     {
         <link rel="icon" type="image/svg+xml" href="@puntelioIconPath" asp-append-version="true" />
