@@ -119,7 +119,7 @@ public sealed class AppleWalletPassPackageBuilder
             {
                 primaryFields = new[]
                 {
-                    Field("businessName", "Nombre del negocio", business.DisplayName)
+                    Field("businessName", "Nombre del negocio", business.DisplayName ?? string.Empty)
                 },
                 secondaryFields = new[]
                 {
