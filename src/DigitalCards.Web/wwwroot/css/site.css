@@ -1232,9 +1232,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-pass-preview {
-  background:
-    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
-    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  background: var(--wallet-primary, #111827);
   color: var(--wallet-custom, #fff);
   gap: 1rem;
 }
@@ -1291,7 +1289,7 @@ form.is-submitting input[type="submit"] {
 
 .wallet-pass-preview .wallet-pass-primary span,
 .wallet-pass-preview .wallet-pass-fields span {
-  color: rgb(255 255 255 / 76%);
+  color: var(--wallet-secondary, #5d87ff);
 }
 
 .wallet-pass-preview .wallet-pass-primary strong,
