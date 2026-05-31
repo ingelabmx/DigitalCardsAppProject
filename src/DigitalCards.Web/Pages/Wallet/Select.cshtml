@@ -74,7 +74,6 @@ else
                data-wallet-button="apple"
                data-testid="apple-wallet-button">
                 <img src="/img/add_to_apple_wallet.svg" alt="Add to Apple Wallet" />
-                <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
             <a class="wallet-store-badge-link"
                asp-page="/Wallet/Select"
@@ -83,7 +82,6 @@ else
                data-wallet-button="google"
                data-testid="google-wallet-button">
                 <img src="/img/add_to_google_wallet.svg" alt="Add to Google Wallet" />
-                <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
         </div>
     </section>
@@ -92,25 +90,20 @@ else
         <script>
             (() => {
                 const root = document.querySelector("[data-testid='wallet-select']");
-                if (!root) {
-                    return;
-                }
+                if (!root) return;
 
-                const userAgent = navigator.userAgent || "";
-                const recommendedWallet = /iPhone|iPad|iPod/i.test(userAgent)
+                const ua = navigator.userAgent || "";
+                const detected = /iPhone|iPad|iPod/i.test(ua)
                     ? "apple"
-                    : /Android/i.test(userAgent)
+                    : /Android/i.test(ua)
                         ? "google"
                         : "";
 
-                if (!recommendedWallet) {
-                    return;
-                }
+                if (!detected) return;
 
-                root.dataset.recommendedWallet = recommendedWallet;
-                const button = root.querySelector(`[data-wallet-button="${recommendedWallet}"]`);
-                button?.classList.add("is-recommended");
-                button?.querySelector("[data-wallet-recommendation]")?.removeAttribute("hidden");
+                const other = detected === "apple" ? "google" : "apple";
+                const otherBtn = root.querySelector(`[data-wallet-button="${other}"]`);
+                if (otherBtn) otherBtn.style.display = "none";
             })();
         </script>
     }

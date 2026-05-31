@@ -212,7 +212,9 @@ else
                 </div>
             </div>
 
-            <div class="p-card-face-visual" data-testid="business-detail-card-face">
+            <div class="p-card-face-visual"
+                 style="--card-primary:@(Model.Branding?.Branding.PrimaryColor ?? "#1A1A1A");--card-secondary:@(Model.Branding?.Branding.SecondaryColor ?? "#2E2E2E");--card-custom:@(Model.Branding?.Branding.CustomFieldColor ?? "#ffffff");"
+                 data-testid="business-detail-card-face">
                 <p class="p-card-face-kicker">Tarjeta digital</p>
                 <p class="p-card-face-name">@Model.Detail.BusinessName</p>
                 <p class="p-card-face-user">@Model.Detail.Client.UserName</p>

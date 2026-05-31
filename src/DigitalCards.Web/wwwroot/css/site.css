@@ -1113,9 +1113,10 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-actions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: center;
 }
 
 .wallet-store-badge-link {
@@ -1160,9 +1161,6 @@ form.is-submitting input[type="submit"] {
   white-space: nowrap;
 }
 
-.wallet-store-badge-link.is-recommended {
-  filter: drop-shadow(0 0 8px rgb(73 190 255 / 38%));
-}
 
 .wallet-store-badge-link-single {
   background: transparent;
@@ -5693,10 +5691,10 @@ body.legacy-shell .form-control-sm {
 
 /* Card face visual */
 .p-card-face-visual {
-  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%);
+  background: var(--card-primary, #1A1A1A);
   border-radius: 16px;
   padding: 24px;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 20px;
 }
 
@@ -5705,20 +5703,20 @@ body.legacy-shell .form-control-sm {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 4px;
 }
 
 .p-card-face-name {
   font-size: 20px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 2px;
 }
 
 .p-card-face-user {
   font-size: 13px;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 20px;
 }
 
@@ -5989,9 +5987,9 @@ body.legacy-shell .form-control-sm {
 }
 
 .p-client-card-face {
-  background: linear-gradient(135deg, var(--card-primary, #1A1A1A) 0%, var(--card-secondary, #2E2E2E) 100%);
+  background: var(--card-primary, #1A1A1A);
   padding: 24px;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
 }
 
 .p-client-card-face .kicker {
@@ -5999,18 +5997,18 @@ body.legacy-shell .form-control-sm {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 4px;
 }
 
 .p-client-card-face h3 {
   font-size: 20px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 2px;
 }
 
-.p-client-card-face .user { font-size: 13px; color: #9B9B9B; margin-bottom: 16px; }
+.p-client-card-face .user { font-size: 13px; color: var(--card-secondary, #5d87ff); margin-bottom: 16px; }
 
 .p-client-card-body { padding: 20px 24px; }
 
