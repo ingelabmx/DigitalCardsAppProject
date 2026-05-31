@@ -118,10 +118,76 @@ else
 
                 <button class="btn btn-primary btn-lg w-100" type="submit" data-testid="public-enroll-submit">Registrarme</button>
             </form>
+
+            <div class="p-enroll-divider">
+                <span>¿Ya tienes cuenta en Puntelio?</span>
+            </div>
+
+            <button type="button"
+                    id="btn-existing-account"
+                    class="btn btn-outline-primary w-100"
+                    onclick="toggleExistingForm()"
+                    data-testid="public-enroll-existing-toggle">
+                Ya tengo cuenta
+            </button>
+
+            <div id="existing-account-form"
+                 style="@(Model.ShowExistingForm ? "" : "display:none")"
+                 class="mt-3"
+                 data-testid="public-enroll-existing-form">
+                @if (!string.IsNullOrWhiteSpace(Model.ExistingFormError))
+                {
+                    <div class="alert alert-danger" data-testid="public-enroll-existing-error">
+                        @Model.ExistingFormError
+                    </div>
+                }
+                <form method="post" asp-page-handler="EnrollExisting">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Usuario o correo</label>
+                        <input type="text"
+                               name="usernameOrEmail"
+                               class="form-control form-control-lg"
+                               placeholder="Tu usuario o correo de Puntelio"
+                               autocomplete="username"
+                               autocapitalize="none"
+                               spellcheck="false"
+                               required
+                               data-testid="public-enroll-existing-username" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password"
+                               name="password"
+                               class="form-control form-control-lg"
+                               placeholder="Tu contraseña de Puntelio"
+                               autocomplete="current-password"
+                               required
+                               data-testid="public-enroll-existing-password" />
+                    </div>
+                    <button type="submit"
+                            class="btn btn-primary btn-lg w-100"
+                            data-testid="public-enroll-existing-submit">
+                        Enrolarme con mi cuenta
+                    </button>
+                </form>
+            </div>
         </div>
     </section>
 }
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function toggleExistingForm() {
+            document.getElementById('existing-account-form').style.display = 'block';
+            document.getElementById('btn-existing-account').style.display = 'none';
+        }
+        @if (Model.ShowExistingForm)
+        {
+            <text>
+            document.getElementById('btn-existing-account').style.display = 'none';
+            </text>
+        }
+    </script>
 }
