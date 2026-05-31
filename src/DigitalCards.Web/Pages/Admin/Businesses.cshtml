@@ -111,7 +111,7 @@
                                     @SubLabel(business.SubscriptionStatus, business.GraceEndsAt)
                                 </span>
                             </td>
-                            <td>@(business.UpdatedAt?.ToLocalTime().ToString("g") ?? "Sin cambios")</td>
+                            <td>@if (business.UpdatedAt.HasValue) {<time class="local-time" data-utc="@business.UpdatedAt.Value.ToUniversalTime().ToString("o")" data-format="datetime">@business.UpdatedAt.Value.ToLocalTime().ToString("g")</time>} else {<text>Sin cambios</text>}</td>
                             <td class="text-end">
                                 <a class="btn btn-outline-primary btn-sm"
                                    asp-page="/Admin/BusinessProfile"
@@ -175,7 +175,7 @@
                             <td>@signup.BusinessName</td>
                             <td>@signup.BusinessEmail</td>
                             <td>@(signup.PlanKey ?? "—")</td>
-                            <td>@signup.CreatedAt.ToLocalTime().ToString("g")</td>
+                            <td><time class="local-time" data-utc="@signup.CreatedAt.ToUniversalTime().ToString("o")" data-format="datetime">@signup.CreatedAt.ToLocalTime().ToString("g")</time></td>
                             <td class="text-end">
                                 <form method="post" asp-page-handler="ResendPaymentLink" style="display:inline;">
                                     <input type="hidden" name="businessId" value="@signup.BusinessId" />

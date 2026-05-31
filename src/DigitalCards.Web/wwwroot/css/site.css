@@ -1173,11 +1173,9 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-panel {
-  background:
-    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
-    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  background: var(--wallet-primary, #111827);
   border: 0;
-  color: #fff;
+  color: var(--wallet-secondary, #5d87ff);
   display: grid;
   gap: 1.15rem;
   margin: 0 auto;
@@ -1185,18 +1183,18 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-panel .eyebrow {
-  color: rgb(255 255 255 / 72%);
+  color: var(--wallet-secondary, #5d87ff);
 }
 
 .wallet-public-panel h1 {
-  color: var(--wallet-custom, #fff);
+  color: var(--wallet-secondary, #5d87ff);
   font-size: clamp(2rem, 5vw, 3.35rem);
   line-height: 1.05;
   margin-bottom: 0.35rem;
 }
 
 .wallet-public-panel .lead {
-  color: rgb(255 255 255 / 82%);
+  color: var(--wallet-secondary, #5d87ff);
   margin-bottom: 0;
 }
 

@@ -77,7 +77,8 @@ else
                 <small data-wallet-recommendation hidden>Recomendado para este celular</small>
             </a>
             <a class="wallet-store-badge-link"
-               asp-page="/Wallet/Google"
+               asp-page="/Wallet/Select"
+               asp-page-handler="Google"
                asp-route-token="@Model.Landing.Token"
                data-wallet-button="google"
                data-testid="google-wallet-button">
