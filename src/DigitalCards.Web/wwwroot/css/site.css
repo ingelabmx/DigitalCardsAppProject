@@ -5877,28 +5877,40 @@ body.legacy-shell .form-control-sm {
   gap: 10px;
 }
 
+.p-color-swatch-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 .p-color-swatch {
   width: 40px;
   height: 40px;
   border-radius: 10px;
   border: 1.5px solid #D8D7D3;
   cursor: pointer;
-  flex-shrink: 0;
   padding: 0;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.p-color-swatch:hover {
+.p-color-swatch-wrap:hover .p-color-swatch {
   transform: scale(1.08);
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+/* Input nativo superpuesto — invisible pero tocable en todos los OS */
 .p-color-native {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 .p-color-hex {

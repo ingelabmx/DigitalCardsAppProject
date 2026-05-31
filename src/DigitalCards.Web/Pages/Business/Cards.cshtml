@@ -36,7 +36,7 @@ else
             <input type="hidden" asp-for="CardId" />
             <div class="p-toolbar-grow">
                 <label asp-for="Query" class="visually-hidden"></label>
-                <input type="search" asp-for="Query" class="form-control" placeholder="usuario o correo del cliente" data-testid="business-card-search-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                <input type="search" asp-for="Query" class="form-control" placeholder="usuario o correo del cliente" data-testid="business-card-search-input" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
             <span class="p-toolbar-count">
                 Tarjetas&nbsp;<strong data-testid="business-card-total-count">@Model.TotalCards</strong>
