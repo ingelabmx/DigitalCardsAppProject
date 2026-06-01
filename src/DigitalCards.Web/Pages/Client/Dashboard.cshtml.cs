@@ -1,7 +1,9 @@
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
 using DigitalCards.Web.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DigitalCards.Web.Pages.Client;
@@ -26,10 +28,20 @@ public sealed class DashboardModel : PageModel
         ? string.Empty
         : EnrollmentQrCodeRenderer.RenderSvg(Dashboard.Client.UserName);
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        Dashboard = await _appService.GetClientDashboardAsync(
-            ClientAuth.GetClientId(User),
-            cancellationToken);
+        try
+        {
+            Dashboard = await _appService.GetClientDashboardAsync(
+                ClientAuth.GetClientId(User),
+                cancellationToken);
+            return Page();
+        }
+        catch (InvalidOperationException ex)
+            when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+        {
+            await HttpContext.SignOutAsync();
+            return RedirectToPage("/Client/Login");
+        }
     }
 }

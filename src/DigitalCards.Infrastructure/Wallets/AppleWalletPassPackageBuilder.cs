@@ -9,6 +9,9 @@ using DigitalCards.Application.Models;
 using DigitalCards.Domain;
 using DigitalCards.Infrastructure.Branding;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace DigitalCards.Infrastructure.Wallets;
 
@@ -90,7 +93,7 @@ public sealed class AppleWalletPassPackageBuilder
             passTypeIdentifier = options.PassTypeIdentifier,
             serialNumber = serialNumber ?? CreateSerialNumber(card),
             teamIdentifier = options.TeamIdentifier,
-            organizationName = options.OrganizationName,
+            organizationName = business.DisplayName ?? options.OrganizationName,
             description = business.DisplayName,
             webServiceURL = settings?.WebServiceUrl,
             authenticationToken = settings?.AuthenticationToken,
@@ -119,7 +122,7 @@ public sealed class AppleWalletPassPackageBuilder
             {
                 primaryFields = new[]
                 {
-                    Field("businessName", "Nombre del negocio", business.DisplayName)
+                    Field("businessName", "Nombre del negocio", business.DisplayName ?? string.Empty)
                 },
                 secondaryFields = new[]
                 {
@@ -193,12 +196,19 @@ public sealed class AppleWalletPassPackageBuilder
         {
             files.Remove("logo.png");
             files.Remove("logo@2x.png");
+            files.Remove("logo@3x.png");
         }
 
         if (TryLoadUploadedLogoPng(business.LogoPath) is { } logoBytes)
         {
             files["logo.png"] = logoBytes;
             files["logo@2x.png"] = logoBytes;
+            files["logo@3x.png"] = logoBytes;
+
+            var (icon, icon2x, icon3x) = GenerateIconsFromLogo(logoBytes, business.PrimaryColor);
+            files["icon.png"] = icon;
+            files["icon@2x.png"] = icon2x;
+            files["icon@3x.png"] = icon3x;
         }
 
         return files;
@@ -285,6 +295,46 @@ public sealed class AppleWalletPassPackageBuilder
             bytes.AsSpan(0, PngSignature.Length).SequenceEqual(PngSignature)
             ? bytes
             : null;
+    }
+
+    private static (byte[] icon, byte[] icon2x, byte[] icon3x) GenerateIconsFromLogo(
+        byte[] logoBytes, string? primaryColor)
+    {
+        var bg = ParseIconBackground(primaryColor) ?? new Rgba32(24, 139, 202);
+        using var logo = Image.Load<Rgba32>(logoBytes);
+        return (RenderIcon(logo, bg, 87), RenderIcon(logo, bg, 174), RenderIcon(logo, bg, 261));
+    }
+
+    private static byte[] RenderIcon(Image<Rgba32> logo, Rgba32 bg, int size)
+    {
+        var padding = (int)(size * 0.15);
+        var innerSize = size - padding * 2;
+
+        using var sized = logo.Clone(ctx => ctx.Resize(new ResizeOptions
+        {
+            Size = new Size(innerSize, innerSize),
+            Mode = ResizeMode.Pad,
+            PadColor = Color.Transparent,
+            Sampler = KnownResamplers.Lanczos3
+        }));
+
+        using var icon = new Image<Rgba32>(size, size, bg);
+        icon.Mutate(ctx => ctx.DrawImage(sized, new Point(padding, padding), 1f));
+
+        using var ms = new MemoryStream();
+        icon.SaveAsPng(ms);
+        return ms.ToArray();
+    }
+
+    private static Rgba32? ParseIconBackground(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return null;
+        hex = hex.TrimStart('#');
+        if (hex.Length != 6) return null;
+        return new Rgba32(
+            (byte)Convert.ToInt32(hex[..2], 16),
+            (byte)Convert.ToInt32(hex[2..4], 16),
+            (byte)Convert.ToInt32(hex[4..6], 16));
     }
 
     private static byte[] SignManifest(byte[] manifestBytes, AppleWalletOptions options)

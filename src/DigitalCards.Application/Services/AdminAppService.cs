@@ -17,10 +17,10 @@ public sealed class AdminAppService
     private const int BrandingLogoMaxLength = 200;
     private const int BrandingDescriptionMaxLength = 280;
     private const int NotesMaxLength = 500;
-    private const string DefaultBusinessLogoPath = "/img/demo-coffee.svg";
-    private const string DefaultPrimaryColor = "#FFFFFF";
-    private const string DefaultSecondaryColor = "#000000";
-    private const string DefaultCustomFieldColor = "#000000";
+    private const string DefaultBusinessLogoPath = "/img/puntelio-logo.png";
+    private const string DefaultPrimaryColor = "#188bca";
+    private const string DefaultSecondaryColor = "#ffffff";
+    private const string DefaultCustomFieldColor = "#ffffff";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Regalo";
     private const int MaxStampGoal = 1000;
@@ -349,6 +349,21 @@ public sealed class AdminAppService
                 _businessPasswordHasher.HashPassword(subject, command.InitialPassword),
                 now,
                 now),
+            cancellationToken);
+
+        await _businessBranding.UpsertAsync(
+            new BusinessBranding(
+                business.Id,
+                business.Name,
+                DefaultBusinessLogoPath,
+                DefaultPrimaryColor,
+                DefaultSecondaryColor,
+                DefaultCustomFieldColor,
+                Business.DefaultStampGoal,
+                DefaultProgramName,
+                DefaultProgramDescription,
+                now,
+                command.AdminUserId),
             cancellationToken);
 
         PilotBusinessAccess? access = null;

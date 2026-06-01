@@ -1113,9 +1113,10 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-actions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: center;
 }
 
 .wallet-store-badge-link {
@@ -1160,9 +1161,6 @@ form.is-submitting input[type="submit"] {
   white-space: nowrap;
 }
 
-.wallet-store-badge-link.is-recommended {
-  filter: drop-shadow(0 0 8px rgb(73 190 255 / 38%));
-}
 
 .wallet-store-badge-link-single {
   background: transparent;
@@ -1173,11 +1171,9 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-panel {
-  background:
-    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
-    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  background: var(--wallet-primary, #111827);
   border: 0;
-  color: #fff;
+  color: var(--wallet-secondary, #5d87ff);
   display: grid;
   gap: 1.15rem;
   margin: 0 auto;
@@ -1185,18 +1181,18 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-public-panel .eyebrow {
-  color: rgb(255 255 255 / 72%);
+  color: var(--wallet-secondary, #5d87ff);
 }
 
 .wallet-public-panel h1 {
-  color: var(--wallet-custom, #fff);
+  color: var(--wallet-secondary, #5d87ff);
   font-size: clamp(2rem, 5vw, 3.35rem);
   line-height: 1.05;
   margin-bottom: 0.35rem;
 }
 
 .wallet-public-panel .lead {
-  color: rgb(255 255 255 / 82%);
+  color: var(--wallet-secondary, #5d87ff);
   margin-bottom: 0;
 }
 
@@ -1234,9 +1230,7 @@ form.is-submitting input[type="submit"] {
 }
 
 .wallet-pass-preview {
-  background:
-    radial-gradient(circle at top right, rgb(255 255 255 / 18%), transparent 34%),
-    linear-gradient(135deg, var(--wallet-primary, #111827), var(--wallet-secondary, #5d87ff));
+  background: var(--wallet-primary, #111827);
   color: var(--wallet-custom, #fff);
   gap: 1rem;
 }
@@ -1293,7 +1287,7 @@ form.is-submitting input[type="submit"] {
 
 .wallet-pass-preview .wallet-pass-primary span,
 .wallet-pass-preview .wallet-pass-fields span {
-  color: rgb(255 255 255 / 76%);
+  color: var(--wallet-secondary, #5d87ff);
 }
 
 .wallet-pass-preview .wallet-pass-primary strong,
@@ -5416,6 +5410,22 @@ body.public-shell .p-auth-simple {
   margin: 0;
 }
 
+.p-enroll-divider {
+  align-items: center;
+  color: #9B9B9B;
+  display: flex;
+  font-size: 13px;
+  gap: 0.75rem;
+  margin: 1.25rem 0 1rem;
+  text-align: center;
+}
+.p-enroll-divider::before,
+.p-enroll-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #dde3ea;
+}
+
 body.public-shell .auth-gateway {
   gap: 0;
   grid-template-columns: 1fr 1fr;
@@ -5718,10 +5728,10 @@ body.legacy-shell .form-control-sm {
 
 /* Card face visual */
 .p-card-face-visual {
-  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%);
+  background: var(--card-primary, #1A1A1A);
   border-radius: 16px;
   padding: 24px;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 20px;
 }
 
@@ -5730,20 +5740,20 @@ body.legacy-shell .form-control-sm {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 4px;
 }
 
 .p-card-face-name {
   font-size: 20px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 2px;
 }
 
 .p-card-face-user {
   font-size: 13px;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 20px;
 }
 
@@ -5888,28 +5898,40 @@ body.legacy-shell .form-control-sm {
   gap: 10px;
 }
 
+.p-color-swatch-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 .p-color-swatch {
   width: 40px;
   height: 40px;
   border-radius: 10px;
   border: 1.5px solid #D8D7D3;
   cursor: pointer;
-  flex-shrink: 0;
   padding: 0;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.p-color-swatch:hover {
+.p-color-swatch-wrap:hover .p-color-swatch {
   transform: scale(1.08);
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+/* Input nativo superpuesto — invisible pero tocable en todos los OS */
 .p-color-native {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 .p-color-hex {
@@ -6014,9 +6036,9 @@ body.legacy-shell .form-control-sm {
 }
 
 .p-client-card-face {
-  background: linear-gradient(135deg, var(--card-primary, #1A1A1A) 0%, var(--card-secondary, #2E2E2E) 100%);
+  background: var(--card-primary, #1A1A1A);
   padding: 24px;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
 }
 
 .p-client-card-face .kicker {
@@ -6024,18 +6046,18 @@ body.legacy-shell .form-control-sm {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9B9B9B;
+  color: var(--card-secondary, #5d87ff);
   margin-bottom: 4px;
 }
 
 .p-client-card-face h3 {
   font-size: 20px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--card-custom, #fff);
   margin-bottom: 2px;
 }
 
-.p-client-card-face .user { font-size: 13px; color: #9B9B9B; margin-bottom: 16px; }
+.p-client-card-face .user { font-size: 13px; color: var(--card-secondary, #5d87ff); margin-bottom: 16px; }
 
 .p-client-card-body { padding: 20px 24px; }
 

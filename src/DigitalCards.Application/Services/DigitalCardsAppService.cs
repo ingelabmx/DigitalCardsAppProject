@@ -16,9 +16,9 @@ public sealed class DigitalCardsAppService
     private const int BrandingDescriptionMaxLength = 280;
     private const int ClientNameMaxLength = 30;
     private const int ClientEmailMaxLength = 30;
-    private const string DefaultPrimaryColor = "#111827";
-    private const string DefaultSecondaryColor = "#2563eb";
-    private const string DefaultCustomFieldColor = "#FFFFFF";
+    private const string DefaultPrimaryColor = "#188bca";
+    private const string DefaultSecondaryColor = "#ffffff";
+    private const string DefaultCustomFieldColor = "#ffffff";
     private const string DefaultProgramName = "Tarjeta de lealtad";
     private const string DefaultProgramDescription = "Acumula sellos digitales y consulta tu tarjeta en Wallet.";
     private const string RewardRedemptionTableMissingMessage =

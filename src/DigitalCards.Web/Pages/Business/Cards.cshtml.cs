@@ -47,6 +47,8 @@ public sealed class CardsModel : PageModel
 
     public BusinessCardDto? Detail { get; private set; }
 
+    public BusinessBrandingSettingsDto? Branding { get; private set; }
+
     public CardLookupState LookupState { get; private set; } = CardLookupState.Empty;
 
     public string? PilotBlockMessage { get; private set; }
@@ -261,6 +263,9 @@ public sealed class CardsModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
+        Branding = await _appService.GetBusinessBrandingSettingsAsync(
+            BusinessAuth.GetBusinessId(User), cancellationToken);
+
         await LoadCardTableAsync(cancellationToken);
 
         if (CardId is not null)

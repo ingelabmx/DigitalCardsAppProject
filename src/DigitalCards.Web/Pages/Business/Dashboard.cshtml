@@ -98,7 +98,10 @@
                     <p class="p-note mt-2">Este es tu link unico de registro. Siempre es el mismo — puedes compartirlo con confianza.</p>
                 </div>
                 <div class="text-center" data-testid="business-enrollment-qr">
-                    @Html.Raw(Model.GeneratedEnrollmentQrSvg)
+                    <div id="qr-svg-source" hidden>@Html.Raw(Model.GeneratedEnrollmentQrSvg)</div>
+                    <img id="qr-png-img"
+                         alt="QR de enrolamiento Puntelio"
+                         style="max-width:220px;width:100%;height:auto;border-radius:8px;" />
                 </div>
             </div>
         }
@@ -188,29 +191,37 @@
 }
 
 <script>
-function downloadQRSvg() {
-    var svg = document.querySelector('[data-testid="business-enrollment-qr"] svg');
-    if (!svg) return;
-    var svgData = new XMLSerializer().serializeToString(svg);
-    var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    var url = URL.createObjectURL(svgBlob);
-    var img = new Image();
-    img.onload = function () {
-        var scale = 3;
+(function () {
+    var svgEl = document.querySelector('#qr-svg-source svg');
+    if (!svgEl) return;
+    var svgData = new XMLSerializer().serializeToString(svgEl);
+    var blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    var blobUrl = URL.createObjectURL(blob);
+    var tmp = new Image();
+    tmp.onload = function () {
+        var scale = 4;
         var canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth * scale;
-        canvas.height = img.naturalHeight * scale;
+        canvas.width = tmp.naturalWidth * scale;
+        canvas.height = tmp.naturalHeight * scale;
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        var a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'puntelio-qr.png';
-        a.click();
+        ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(blobUrl);
+        window._qrPngDataUrl = canvas.toDataURL('image/png');
+        var imgEl = document.getElementById('qr-png-img');
+        if (imgEl) imgEl.src = window._qrPngDataUrl;
     };
-    img.src = url;
+    tmp.src = blobUrl;
+})();
+
+function downloadQRSvg() {
+    var dataUrl = window._qrPngDataUrl;
+    if (!dataUrl) return;
+    var a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'puntelio-qr.png';
+    a.click();
 }
 function copyEnrollmentLink(btn) {
     const link = btn.getAttribute('data-link');

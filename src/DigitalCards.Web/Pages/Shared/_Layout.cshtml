@@ -38,6 +38,27 @@
 
     var puntelioBrandingLogoPath = ResolvePuntelioBrandingLogoPath();
     var puntelioIconPath = ResolvePuntelioIconPath();
+
+    // OG metadata — por path prefix; las páginas pueden sobreescribir con ViewData["OgTitle"] / ViewData["OgDescription"]
+    var ogTitle = ViewData["OgTitle"] as string
+        ?? (requestPath.StartsWithSegments("/Client")
+            ? "Puntelio — Panel de clientes"
+            : requestPath.StartsWithSegments("/Admin")
+                ? "Puntelio — Panel de administradores"
+                : requestPath.StartsWithSegments("/Business")
+                    ? "Puntelio — Panel de negocios"
+                    : "Puntelio — Tarjetas de lealtad digitales");
+    var ogDescription = ViewData["OgDescription"] as string
+        ?? (requestPath.StartsWithSegments("/Client")
+            ? "Consulta tus tarjetas de lealtad, sellos acumulados y recompensas disponibles."
+            : requestPath.StartsWithSegments("/Admin")
+                ? "Panel de administración de Puntelio."
+                : requestPath.StartsWithSegments("/Business")
+                    ? "Gestiona tu programa de lealtad digital desde un solo panel."
+                    : "Fideliza a tus clientes con tarjetas digitales, sellos, QR y Wallet. Sin app, sin tarjetas físicas.");
+    var ogUrl = requestPath.Value is { Length: > 1 } rp
+        ? $"https://app.puntelio.com{rp}"
+        : "https://app.puntelio.com";
     string SidebarClass(string path) => requestPath.StartsWithSegments(path)
         ? "legacy-sidebar-link active"
         : "legacy-sidebar-link";
@@ -73,16 +94,26 @@
 
     <!-- SEO -->
     <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — Puntelio" : "Puntelio — Panel de negocios y clientes")</title>
-    <meta name="description" content="Accede a tu panel de Puntelio para gestionar tarjetas de lealtad, sellos y clientes." />
+    <meta name="description" content="@(ViewData["Description"] ?? "Accede a tu panel de Puntelio para gestionar tarjetas de lealtad, sellos y clientes.")" />
     <meta name="robots" content="noindex, nofollow" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Puntelio" />
-    <meta property="og:title" content="Puntelio — Panel de negocios" />
-    <meta property="og:description" content="Gestiona tu programa de lealtad digital desde un solo panel." />
+    <meta property="og:title" content="@ogTitle" />
+    <meta property="og:description" content="@ogDescription" />
     <meta property="og:image" content="https://puntelio.com/img/og-image.png" />
-    <meta property="og:url" content="https://app.puntelio.com" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="@ogUrl" />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@ogTitle" />
+    <meta name="twitter:description" content="@ogDescription" />
+    <meta name="twitter:image" content="https://puntelio.com/img/og-image.png" />
+    @await RenderSectionAsync("Head", required: false)
     @if (puntelioIconPath is not null)
     {
         <link rel="icon" type="image/svg+xml" href="@puntelioIconPath" asp-append-version="true" />

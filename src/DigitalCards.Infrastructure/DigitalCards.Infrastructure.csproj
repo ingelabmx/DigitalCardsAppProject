@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.72" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
     <PackageReference Include="Stripe.net" Version="47.*" />
     <PackageReference Include="Google.Apis.Walletobjects.v1" Version="1.73.0.4115" />
     <PackageReference Include="MailKit" Version="4.16.0" />

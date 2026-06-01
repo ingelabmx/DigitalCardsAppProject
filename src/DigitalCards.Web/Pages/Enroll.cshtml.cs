@@ -84,6 +84,10 @@ public sealed class EnrollModel : PageModel
 
     public string? WalletLink { get; private set; }
 
+    public bool ShowExistingForm { get; private set; }
+
+    public string? ExistingFormError { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadBusinessAsync(cancellationToken);
@@ -143,6 +147,42 @@ public sealed class EnrollModel : PageModel
         }
     }
 
+    public async Task<IActionResult> OnPostEnrollExistingAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken)
+    {
+        if (!await LoadBusinessAsync(cancellationToken))
+            return Page();
+
+        var client = await _appService.LoginClientAsync(
+            new ClientLoginCommand(usernameOrEmail, password),
+            cancellationToken);
+
+        if (client is null)
+        {
+            ShowExistingForm = true;
+            ExistingFormError = "Usuario, correo o contraseña incorrectos.";
+            return Page();
+        }
+
+        var enrollment = await _appService.EnrollClientAsync(
+            new EnrollClientCommand(_business!.Id, client.UserName, GetBaseUrl()),
+            cancellationToken);
+
+        await _appService.RecordClientConsentAsync(
+            new RecordClientConsentCommand(
+                client.Id,
+                _business.Id,
+                ConsentPolicyVersion,
+                "PublicBusinessEnrollmentExisting"),
+            cancellationToken);
+
+        WalletLink = enrollment.EnrollmentUrl;
+        StatusMessage = $"Listo. Ya estas enrolado en {BusinessName}. Te enviamos el link de Wallet a tu correo.";
+        return Page();
+    }
+
     private async Task<bool> LoadBusinessAsync(CancellationToken cancellationToken)
     {
         var businessId = await _businessEnrollmentLinks.ResolveBusinessIdAsync(
@@ -185,7 +225,7 @@ public sealed class EnrollModel : PageModel
 
     public sealed class InputModel
     {
-        [Display(Name = "Usuario")]
+        [Display(Name = "Crea un usuario unico")]
         [Required]
         [RegularExpression("^[A-Za-z0-9]+$", ErrorMessage = "El usuario solo puede usar letras y numeros, sin espacios.")]
         public string UserName { get; set; } = string.Empty;

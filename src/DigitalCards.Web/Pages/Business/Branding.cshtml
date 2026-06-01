@@ -90,8 +90,10 @@ else if (Model.Settings is not null)
                     <div>
                         <label asp-for="Input.PrimaryColor" class="form-label">Color primario</label>
                         <div class="p-color-picker-wrap">
-                            <button type="button" class="p-color-swatch" style="background:@Model.Input.PrimaryColor" data-swatch-for="Input_PrimaryColor"></button>
-                            <input type="color" id="picker_primary" class="p-color-native" value="@Model.Input.PrimaryColor" data-picker-for="Input_PrimaryColor" />
+                            <div class="p-color-swatch-wrap">
+                                <div class="p-color-swatch" style="background:@Model.Input.PrimaryColor" data-swatch-for="Input_PrimaryColor"></div>
+                                <input type="color" class="p-color-native" value="@Model.Input.PrimaryColor" data-picker-for="Input_PrimaryColor" />
+                            </div>
                             <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.PrimaryColor" data-branding-color-input="primary" data-hex-for="Input_PrimaryColor" data-testid="business-branding-primary" />
                             <input type="hidden" asp-for="Input.PrimaryColor" />
                         </div>
@@ -99,8 +101,10 @@ else if (Model.Settings is not null)
                     <div>
                         <label asp-for="Input.SecondaryColor" class="form-label">Color secundario 1</label>
                         <div class="p-color-picker-wrap">
-                            <button type="button" class="p-color-swatch" style="background:@Model.Input.SecondaryColor" data-swatch-for="Input_SecondaryColor"></button>
-                            <input type="color" id="picker_secondary" class="p-color-native" value="@Model.Input.SecondaryColor" data-picker-for="Input_SecondaryColor" />
+                            <div class="p-color-swatch-wrap">
+                                <div class="p-color-swatch" style="background:@Model.Input.SecondaryColor" data-swatch-for="Input_SecondaryColor"></div>
+                                <input type="color" class="p-color-native" value="@Model.Input.SecondaryColor" data-picker-for="Input_SecondaryColor" />
+                            </div>
                             <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.SecondaryColor" data-branding-color-input="secondary" data-hex-for="Input_SecondaryColor" data-testid="business-branding-secondary" />
                             <input type="hidden" asp-for="Input.SecondaryColor" />
                         </div>
@@ -108,8 +112,10 @@ else if (Model.Settings is not null)
                     <div>
                         <label asp-for="Input.CustomFieldColor" class="form-label">Color secundario 2</label>
                         <div class="p-color-picker-wrap">
-                            <button type="button" class="p-color-swatch" style="background:@Model.Input.CustomFieldColor" data-swatch-for="Input_CustomFieldColor"></button>
-                            <input type="color" id="picker_custom" class="p-color-native" value="@Model.Input.CustomFieldColor" data-picker-for="Input_CustomFieldColor" />
+                            <div class="p-color-swatch-wrap">
+                                <div class="p-color-swatch" style="background:@Model.Input.CustomFieldColor" data-swatch-for="Input_CustomFieldColor"></div>
+                                <input type="color" class="p-color-native" value="@Model.Input.CustomFieldColor" data-picker-for="Input_CustomFieldColor" />
+                            </div>
                             <input type="text" class="form-control p-color-hex" maxlength="7" placeholder="#000000" value="@Model.Input.CustomFieldColor" data-branding-color-input="custom" data-hex-for="Input_CustomFieldColor" data-testid="business-branding-custom-field-color" />
                             <input type="hidden" asp-for="Input.CustomFieldColor" />
                         </div>
@@ -224,15 +230,6 @@ else if (Model.Settings is not null)
                 if (hiddenId) applyColor(hiddenId, normalized);
                 updateColors();
             }
-        });
-    });
-
-    // Swatch button → click native picker
-    document.querySelectorAll('[data-swatch-for]').forEach(function (swatch) {
-        var hiddenId = swatch.getAttribute('data-swatch-for');
-        swatch.addEventListener('click', function () {
-            var picker = document.querySelector('[data-picker-for="' + hiddenId + '"]');
-            if (picker) picker.click();
         });
     });
 

@@ -76,7 +76,7 @@
                             <td>@string.Join(", ", client.LinkedBusinessNames)</td>
                             <td>@client.CardCount</td>
                             <td>@client.CurrentStamps / @client.LifetimeStamps</td>
-                            <td>@(client.LastActivityAt?.ToLocalTime().ToString("g") ?? "Sin actividad")</td>
+                            <td>@if (client.LastActivityAt.HasValue) {<time class="local-time" data-utc="@client.LastActivityAt.Value.ToUniversalTime().ToString("o")" data-format="datetime">@client.LastActivityAt.Value.ToLocalTime().ToString("g")</time>} else {<text>Sin actividad</text>}</td>
                             <td class="text-end">
                                 <a class="btn btn-outline-primary btn-sm"
                                    asp-page="/Admin/Clients"
@@ -155,7 +155,7 @@
                                     <td>@card.CurrentStamps</td>
                                     <td>@card.LifetimeStamps</td>
                                     <td><span class="status-pill">@card.CardStatus</span></td>
-                                    <td>@card.LastActivityAt.ToLocalTime().ToString("g")</td>
+                                    <td><time class="local-time" data-utc="@card.LastActivityAt.ToUniversalTime().ToString("o")" data-format="datetime">@card.LastActivityAt.ToLocalTime().ToString("g")</time></td>
                                 </tr>
                             }
                         </tbody>

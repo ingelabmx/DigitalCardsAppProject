@@ -48,17 +48,21 @@
     }
   }
 
-  function stop(message, state, previewMessage) {
-    scanning = false;
-    clearScanTimeout();
+  // Fully releases camera tracks and permission — only called on page hide or denied permission
+  function releaseCamera() {
     if (stream) {
       for (const track of stream.getTracks()) {
         track.stop();
       }
+      stream = null;
+      video.srcObject = null;
     }
+  }
 
-    stream = null;
-    video.srcObject = null;
+  // Stops scanning logic but keeps the camera stream alive to avoid re-requesting permission
+  function stop(message, state, previewMessage) {
+    scanning = false;
+    clearScanTimeout();
     setButton(false);
     setStatus(message || "Listo");
     setPreview(state || "ready", previewMessage || message || "Listo para escanear");
@@ -158,10 +162,21 @@
         detector = new window.BarcodeDetector({ formats: ["qr_code"] });
       }
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
+      // If an existing stream has tracks that were ended externally (e.g. user revoked
+      // permission from browser settings), release it so we can re-request.
+      if (stream) {
+        const allLive = stream.getTracks().every(t => t.readyState === "live");
+        if (!allLive) {
+          releaseCamera();
+        }
+      }
+
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+      }
 
       video.srcObject = stream;
       await video.play();
@@ -171,12 +186,23 @@
       setPreview("active", "Buscando QR...");
       scanTimeout = window.setTimeout(handleScanTimeout, scanTimeoutMs);
       await scanLoop();
-    } catch {
-      stop("Camara no disponible", "error");
-      setPreview("error", "Camara no disponible. Captura el usuario manualmente.");
+    } catch (err) {
+      if (err?.name === "NotAllowedError") {
+        // User denied — release so next click re-requests permission
+        releaseCamera();
+        stop("Camara no disponible", "error");
+        setPreview("error", "Para escanear QR necesitas permitir el acceso a la camara. Toca el icono de camara en la barra de direccion para habilitarlo.");
+      } else {
+        releaseCamera();
+        stop("Camara no disponible", "error");
+        setPreview("error", "Camara no disponible. Captura el usuario manualmente.");
+      }
     }
   }
 
   startButton.addEventListener("click", start);
-  window.addEventListener("pagehide", stop);
+  window.addEventListener("pagehide", function () {
+    releaseCamera();
+    stop();
+  });
 })();
