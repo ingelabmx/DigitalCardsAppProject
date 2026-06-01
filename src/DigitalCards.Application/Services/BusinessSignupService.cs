@@ -237,12 +237,12 @@ public sealed class BusinessSignupService
         if (sub is null) return;
 
         var now = _clock.UtcNow;
-        var endsAt = evt.PeriodEnd ?? now.AddMonths(1);
+        var trialEndsAt = evt.PeriodEnd ?? now.AddDays(30);
 
-        var updated = sub.WithStripeActivation(
+        var updated = sub.WithTrialActivation(
             evt.CustomerId ?? string.Empty,
             evt.SubscriptionId ?? string.Empty,
-            endsAt,
+            trialEndsAt,
             now);
         await _subscriptions.UpsertAsync(updated, cancellationToken);
 
@@ -263,7 +263,7 @@ public sealed class BusinessSignupService
             }
         }
 
-        _logger.LogInformation("Business {BusinessId} activated via checkout.session.completed.", businessId);
+        _logger.LogInformation("Business {BusinessId} activated in trial via checkout.session.completed.", businessId);
     }
 
     private async Task HandlePaymentSucceededAsync(StripeWebhookEvent evt, CancellationToken cancellationToken)
@@ -333,12 +333,52 @@ public sealed class BusinessSignupService
         var sub = await ResolveSubscriptionAsync(evt.BusinessId, evt.CustomerId, cancellationToken);
         if (sub is null) return;
 
+        var now = _clock.UtcNow;
+        var previousStatus = sub.SubscriptionStatus;
         var planKey = evt.PlanKey ?? sub.StripePlanKey;
-        if (planKey is null) return;
 
-        var maxClients = _stripeOptions.Plans.TryGetValue(planKey, out var plan) ? plan.MaxClients : sub.MaxClients;
-        await _subscriptions.UpsertAsync(sub.WithPlanUpdate(planKey, maxClients, _clock.UtcNow), cancellationToken);
-        _logger.LogInformation("Business {BusinessId} plan updated to {Plan}.", sub.BusinessId, planKey);
+        if (planKey is not null)
+        {
+            var maxClients = _stripeOptions.Plans.TryGetValue(planKey, out var plan) ? plan.MaxClients : sub.MaxClients;
+            sub = sub.WithPlanUpdate(planKey, maxClients, now);
+        }
+
+        var newStatus = evt.SubscriptionStatus;
+        switch (newStatus)
+        {
+            case "trialing":
+                if (previousStatus != "trial")
+                {
+                    sub = sub.WithTrialActivation(
+                        sub.StripeCustomerId ?? evt.CustomerId ?? string.Empty,
+                        sub.StripeSubscriptionId ?? evt.SubscriptionId ?? string.Empty,
+                        evt.PeriodEnd ?? now.AddDays(30),
+                        now);
+                    _logger.LogInformation("Business {BusinessId} entered trial via subscription.updated.", sub.BusinessId);
+                }
+                break;
+            case "active":
+                if (previousStatus == "trial" || previousStatus == "past_due")
+                {
+                    sub = sub.WithRenewal(evt.PeriodEnd ?? now.AddMonths(1), now);
+                    _logger.LogInformation("Business {BusinessId} transitioned {From}->active.", sub.BusinessId, previousStatus);
+                }
+                break;
+            case "past_due":
+                if (previousStatus != "past_due")
+                {
+                    sub = sub.WithPastDue(now.AddDays(GracePeriodDays), now);
+                    _logger.LogInformation("Business {BusinessId} marked past_due via subscription.updated.", sub.BusinessId);
+                }
+                break;
+        }
+
+        await _subscriptions.UpsertAsync(sub, cancellationToken);
+
+        if (newStatus is "trialing" or "active")
+        {
+            await ActivatePilotAsync(sub.BusinessId, now, cancellationToken);
+        }
     }
 
     private async Task CancelSubscriptionInternalAsync(BusinessSubscription sub, DateTimeOffset now, CancellationToken cancellationToken)

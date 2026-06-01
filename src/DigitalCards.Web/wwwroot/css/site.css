@@ -4618,6 +4618,27 @@ body.legacy-shell .p-page-header .p-eyebrow {
   color: #6B6B6B;
 }
 
+.p-plan-option .p-plan-trial {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.p-plan-price-original {
+  color: #9aa3b2;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+.p-plan-price-free {
+  color: #0A0A0A;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
 /* Flow steps */
 .p-step {
   background: #FFFFFF;
@@ -6448,5 +6469,63 @@ body.public-shell .p-mini-grid {
 
   body.legacy-shell .p-page-heading {
     font-size: 20px;
+  }
+}
+
+/* ============================================================
+   TRIAL OFFER — Banner, badge, struck price (Planes page)
+   ============================================================ */
+
+.landing-trial-banner {
+  background: #188bca;
+  color: #fff;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+  padding: 14px 24px;
+  border-radius: 999px;
+  max-width: 720px;
+  margin: 0 auto 28px;
+  box-shadow: 0 6px 18px rgba(24, 139, 202, 0.18);
+}
+
+.landing-price-trial {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0.9rem 0 1.1rem;
+}
+
+.landing-price-original {
+  color: #9aa3b2;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.landing-price-free {
+  color: #0A0A0A;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.landing-price-after {
+  color: #6B6B6B;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .landing-trial-banner {
+    font-size: 0.95rem;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+  }
+
+  .landing-price-free {
+    font-size: 2.2rem;
   }
 }

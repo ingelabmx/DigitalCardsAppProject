@@ -76,17 +76,29 @@
                     <label class="p-plan-option @(Model.Input.PlanKey == "Basic" ? "p-plan-option-selected" : "")">
                         <input asp-for="Input.PlanKey" type="radio" value="Basic" data-testid="signup-plan-basic" />
                         <span class="fw-semibold">Plan Básico</span>
-                        <span class="text-muted">$299 MXN/mes · hasta 300 clientes</span>
+                        <span class="p-plan-trial">
+                            <s class="p-plan-price-original">$299 MXN/mes</s>
+                            <strong class="p-plan-price-free">$0 hoy</strong>
+                        </span>
+                        <span class="text-muted">Primer mes gratis · hasta 300 clientes</span>
                     </label>
                     <label class="p-plan-option @(Model.Input.PlanKey == "Pro" ? "p-plan-option-selected" : "")">
                         <input asp-for="Input.PlanKey" type="radio" value="Pro" data-testid="signup-plan-pro" />
                         <span class="fw-semibold">Plan Pro</span>
-                        <span class="text-muted">$599 MXN/mes · hasta 1,000 clientes</span>
+                        <span class="p-plan-trial">
+                            <s class="p-plan-price-original">$599 MXN/mes</s>
+                            <strong class="p-plan-price-free">$0 hoy</strong>
+                        </span>
+                        <span class="text-muted">Primer mes gratis · hasta 1,000 clientes</span>
                     </label>
                     <label class="p-plan-option @(Model.Input.PlanKey == "Business" ? "p-plan-option-selected" : "")">
                         <input asp-for="Input.PlanKey" type="radio" value="Business" data-testid="signup-plan-business" />
                         <span class="fw-semibold">Plan Empresarial</span>
-                        <span class="text-muted">$999 MXN/mes · clientes ilimitados</span>
+                        <span class="p-plan-trial">
+                            <s class="p-plan-price-original">$999 MXN/mes</s>
+                            <strong class="p-plan-price-free">$0 hoy</strong>
+                        </span>
+                        <span class="text-muted">Primer mes gratis · clientes ilimitados</span>
                     </label>
                 </div>
                 <span asp-validation-for="Input.PlanKey" class="text-danger"></span>

@@ -28,4 +28,5 @@ public sealed record StripeWebhookEvent(
     string? CustomerId,
     string? SubscriptionId,
     string? CheckoutSessionId,
-    DateTimeOffset? PeriodEnd);
+    DateTimeOffset? PeriodEnd,
+    string? SubscriptionStatus = null);

@@ -46,7 +46,8 @@ public sealed class StripeService : IStripeService
             Metadata = meta,
             SubscriptionData = new SessionSubscriptionDataOptions
             {
-                Metadata = meta
+                Metadata = meta,
+                TrialPeriodDays = 30
             },
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl
@@ -102,6 +103,7 @@ public sealed class StripeService : IStripeService
         string? subscriptionId = null;
         string? checkoutSessionId = null;
         DateTimeOffset? periodEnd = null;
+        string? subscriptionStatus = null;
 
         switch (stripeEvent.Type)
         {
@@ -146,6 +148,7 @@ public sealed class StripeService : IStripeService
                     subscriptionId = sub.Id;
                     if (sub.CurrentPeriodEnd != default)
                         periodEnd = new DateTimeOffset(sub.CurrentPeriodEnd, TimeSpan.Zero);
+                    subscriptionStatus = sub.Status;
                 }
                 break;
             }
@@ -158,6 +161,7 @@ public sealed class StripeService : IStripeService
             customerId,
             subscriptionId,
             checkoutSessionId,
-            periodEnd);
+            periodEnd,
+            subscriptionStatus);
     }
 }

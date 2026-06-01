@@ -108,7 +108,7 @@
                             </td>
                             <td>
                                 <span class="p-badge @SubBadgeClass(business.SubscriptionStatus, business.GraceEndsAt)">
-                                    @SubLabel(business.SubscriptionStatus, business.GraceEndsAt)
+                                    @SubLabel(business.SubscriptionStatus, business.GraceEndsAt, business.SubscriptionEndsAt)
                                 </span>
                             </td>
                             <td>@(business.UpdatedAt?.ToLocalTime().ToString("g") ?? "Sin cambios")</td>
@@ -218,17 +218,21 @@
     private static string SubBadgeClass(string? status, DateTimeOffset? graceEndsAt) => status switch
     {
         "active"   => "p-badge-green",
+        "trial"    => "p-badge-blue",
         "manual"   => "p-badge-black",
         "past_due" => graceEndsAt.HasValue && graceEndsAt.Value < DateTimeOffset.UtcNow ? "p-badge-red" : "p-badge-amber",
         "canceled" => "p-badge-red",
         _          => "p-badge-gray"
     };
 
-    private static string SubLabel(string? status, DateTimeOffset? graceEndsAt)
+    private static string SubLabel(string? status, DateTimeOffset? graceEndsAt, DateTimeOffset? subscriptionEndsAt)
     {
         return status switch
         {
             "active"   => "Activa",
+            "trial"    => subscriptionEndsAt.HasValue
+                ? $"Trial (hasta {subscriptionEndsAt.Value.ToLocalTime():d})"
+                : "Trial",
             "manual"   => "Manual",
             "past_due" => graceEndsAt.HasValue
                 ? $"Atrasado (gracia hasta {graceEndsAt.Value.ToLocalTime():d})"
