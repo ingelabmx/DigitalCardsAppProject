@@ -16,6 +16,27 @@
     </div>
 }
 
+@if (Model.SubscriptionStatus == "past_due")
+{
+    <div class="alert-past-due" data-testid="business-past-due-banner" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            <strong>Hay un problema con tu metodo de pago.</strong>
+            @if (Model.GraceEndsAt.HasValue)
+            {
+                <span> Tu cuenta se desactivara el
+                    <time class="local-time"
+                          data-utc="@Model.GraceEndsAt.Value.ToUniversalTime().ToString("o")"
+                          data-format="date">@Model.GraceEndsAt.Value.ToLocalTime().ToString("d")</time>.
+                </span>
+            }
+        </div>
+        <a class="p-btn p-btn-primary p-btn-sm" asp-page="/Business/Account">
+            Actualizar metodo de pago
+        </a>
+    </div>
+}
+
 @if (!Model.IsPilotBlocked && Model.Dashboard is not null)
 {
     <div class="p-steps-grid" data-testid="business-flow-steps">

@@ -192,6 +192,24 @@ public sealed class BusinessSignupService
         return (business.Id, sub.StripePlanKey, null);
     }
 
+    public async Task<bool> SyncSubscriptionFromStripeAsync(Guid businessId, CancellationToken cancellationToken = default)
+    {
+        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+        if (sub?.StripeSubscriptionId is null || string.IsNullOrEmpty(sub.StripeSubscriptionId))
+        {
+            return false;
+        }
+
+        var evt = await _stripe.GetSubscriptionEventAsync(sub.StripeSubscriptionId, cancellationToken);
+        if (evt is null)
+        {
+            return false;
+        }
+
+        await HandleSubscriptionUpdatedAsync(evt, cancellationToken);
+        return true;
+    }
+
     public async Task DeactivateExpiredGracePeriodAsync(CancellationToken cancellationToken = default)
     {
         var now = _clock.UtcNow;

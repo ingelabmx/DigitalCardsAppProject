@@ -84,6 +84,69 @@ public sealed class StripeService : IStripeService
         return session.Url;
     }
 
+    public async Task CancelSubscriptionImmediatelyAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        var service = new SubscriptionService();
+        await service.CancelAsync(
+            stripeSubscriptionId,
+            new SubscriptionCancelOptions(),
+            cancellationToken: cancellationToken);
+    }
+
+    public async Task<StripeWebhookEvent?> GetSubscriptionEventAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        var service = new SubscriptionService();
+        global::Stripe.Subscription sub;
+        try
+        {
+            sub = await service.GetAsync(stripeSubscriptionId, cancellationToken: cancellationToken);
+        }
+        catch (StripeException)
+        {
+            return null;
+        }
+        if (sub is null) return null;
+
+        string? businessId = null;
+        string? planKey = null;
+        sub.Metadata?.TryGetValue("business_id", out businessId);
+
+        var priceId = sub.Items?.Data?.FirstOrDefault()?.Price?.Id;
+        if (!string.IsNullOrEmpty(priceId))
+        {
+            foreach (var kv in _options.Plans)
+            {
+                if (kv.Value.PriceId == priceId)
+                {
+                    planKey = kv.Key;
+                    break;
+                }
+            }
+        }
+        if (string.IsNullOrEmpty(planKey))
+        {
+            sub.Metadata?.TryGetValue("plan_key", out planKey);
+        }
+
+        DateTimeOffset? periodEnd = sub.CurrentPeriodEnd != default
+            ? new DateTimeOffset(sub.CurrentPeriodEnd, TimeSpan.Zero)
+            : null;
+
+        return new StripeWebhookEvent(
+            Type: "customer.subscription.updated",
+            BusinessId: businessId,
+            PlanKey: planKey,
+            CustomerId: sub.CustomerId,
+            SubscriptionId: sub.Id,
+            CheckoutSessionId: null,
+            PeriodEnd: periodEnd,
+            SubscriptionStatus: sub.Status);
+    }
+
     public StripeWebhookEvent ConstructWebhookEvent(string payload, string stripeSignatureHeader)
     {
         var stripeEvent = EventUtility.ConstructEvent(
@@ -95,7 +158,7 @@ public sealed class StripeService : IStripeService
         return MapEvent(stripeEvent);
     }
 
-    private static StripeWebhookEvent MapEvent(Event stripeEvent)
+    private StripeWebhookEvent MapEvent(Event stripeEvent)
     {
         string? businessId = null;
         string? planKey = null;
@@ -143,12 +206,31 @@ public sealed class StripeService : IStripeService
                 if (stripeEvent.Data.Object is global::Stripe.Subscription sub)
                 {
                     sub.Metadata?.TryGetValue("business_id", out businessId);
-                    sub.Metadata?.TryGetValue("plan_key", out planKey);
                     customerId = sub.CustomerId;
                     subscriptionId = sub.Id;
                     if (sub.CurrentPeriodEnd != default)
                         periodEnd = new DateTimeOffset(sub.CurrentPeriodEnd, TimeSpan.Zero);
                     subscriptionStatus = sub.Status;
+
+                    // Derive plan_key from the current Price ID — subscription.metadata is set
+                    // at creation and does NOT update when the customer changes plan in the
+                    // Customer Portal. The Price ID on items[0] is the source of truth.
+                    var priceId = sub.Items?.Data?.FirstOrDefault()?.Price?.Id;
+                    if (!string.IsNullOrEmpty(priceId))
+                    {
+                        foreach (var kv in _options.Plans)
+                        {
+                            if (kv.Value.PriceId == priceId)
+                            {
+                                planKey = kv.Key;
+                                break;
+                            }
+                        }
+                    }
+                    if (string.IsNullOrEmpty(planKey))
+                    {
+                        sub.Metadata?.TryGetValue("plan_key", out planKey);
+                    }
                 }
                 break;
             }

@@ -18,6 +18,14 @@ public interface IStripeService
         string returnUrl,
         CancellationToken cancellationToken = default);
 
+    Task CancelSubscriptionImmediatelyAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default);
+
+    Task<StripeWebhookEvent?> GetSubscriptionEventAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default);
+
     StripeWebhookEvent ConstructWebhookEvent(string payload, string stripeSignatureHeader);
 }
 
