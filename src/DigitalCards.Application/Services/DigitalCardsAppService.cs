@@ -105,7 +105,7 @@ public sealed class DigitalCardsAppService
         if (await _clients.UserNameOrEmailExistsAsync(userName, cancellationToken) ||
             await _clients.UserNameOrEmailExistsAsync(email, cancellationToken))
         {
-            throw new InvalidOperationException("Client username or email already exists.");
+            throw new InvalidOperationException("Ya existe otro usuario con ese correo. Intenta con: Ya tengo cuenta");
         }
 
         var legacyPasswordHash = string.IsNullOrWhiteSpace(command.Password)
@@ -121,7 +121,7 @@ public sealed class DigitalCardsAppService
         await _clients.AddAsync(client, cancellationToken);
         // Re-fetch from DB to get the auto-assigned legacy integer ID encoded as Guid.
         var persistedClient = await _clients.FindByUserNameOrEmailAsync(userName, cancellationToken)
-            ?? throw new InvalidOperationException("Client could not be retrieved after creation.");
+            ?? throw new InvalidOperationException("El cliente no pudo ser recuperado después de la creación.");
         if (!string.IsNullOrWhiteSpace(command.Password))
         {
             var now = _clock.UtcNow;
