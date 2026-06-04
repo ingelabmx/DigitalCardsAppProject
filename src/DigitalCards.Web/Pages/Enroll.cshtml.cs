@@ -139,11 +139,7 @@ public sealed class EnrollModel : PageModel
                     "PublicBusinessEnrollment"),
                 cancellationToken);
 
-            WalletLink = enrollment.EnrollmentUrl;
-            StatusMessage = "Registro completado. Te enviamos el link para agregar tu tarjeta a Wallet.";
-            ModelState.Clear();
-            Input = new InputModel();
-            return Page();
+            return Redirect(enrollment.EnrollmentUrl);
         }
         catch (InvalidOperationException exception)
         {
