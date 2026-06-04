@@ -74,25 +74,25 @@ else
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label asp-for="Input.FirstName" class="form-label"></label>
-                        <input asp-for="Input.FirstName" class="form-control form-control-lg" data-testid="public-enroll-first-name" />
+                        <input asp-for="Input.FirstName" class="form-control form-control-lg" placeholder="Tu nombre" data-testid="public-enroll-first-name" />
                         <span asp-validation-for="Input.FirstName" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label asp-for="Input.LastName" class="form-label"></label>
-                        <input asp-for="Input.LastName" class="form-control form-control-lg" data-testid="public-enroll-last-name" />
+                        <input asp-for="Input.LastName" class="form-control form-control-lg" placeholder="Tu apellido" data-testid="public-enroll-last-name" />
                         <span asp-validation-for="Input.LastName" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Input.Email" class="form-label"></label>
-                    <input asp-for="Input.Email" class="form-control form-control-lg" data-testid="public-enroll-email" />
+                    <input asp-for="Input.Email" class="form-control form-control-lg" placeholder="tucorreo@ejemplo.com" data-testid="public-enroll-email" />
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Input.Password" class="form-label"></label>
-                    <input asp-for="Input.Password" class="form-control form-control-lg" data-testid="public-enroll-password" />
+                    <input asp-for="Input.Password" class="form-control form-control-lg" placeholder="Crea una contrasena de minimo 8 caracteres" data-testid="public-enroll-password" />
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
 
@@ -132,11 +132,11 @@ else
                 <form method="post" asp-page-handler="EnrollExisting">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
-                        <label class="form-label">Usuario o correo</label>
+                        <label class="form-label">Correo o usuario</label>
                         <input type="text"
                                name="usernameOrEmail"
                                class="form-control form-control-lg"
-                               placeholder="Tu usuario o correo de Puntelio"
+                               placeholder="Tu correo o usuario de Puntelio"
                                autocomplete="username"
                                autocapitalize="none"
                                spellcheck="false"

@@ -179,9 +179,7 @@ public sealed class EnrollModel : PageModel
                 "PublicBusinessEnrollmentExisting"),
             cancellationToken);
 
-        WalletLink = enrollment.EnrollmentUrl;
-        StatusMessage = $"Listo. Ya estas enrolado en {BusinessName}. Te enviamos el link de Wallet a tu correo.";
-        return Page();
+        return Redirect(enrollment.EnrollmentUrl);
     }
 
     private async Task<bool> LoadBusinessAsync(CancellationToken cancellationToken)

@@ -69,7 +69,7 @@ public sealed class ForgotPasswordModel : PageModel
 
     public sealed class InputModel
     {
-        [Display(Name = "Usuario o correo")]
+        [Display(Name = "Correo o usuario")]
         [Required]
         public string UserNameOrEmail { get; set; } = string.Empty;
     }
