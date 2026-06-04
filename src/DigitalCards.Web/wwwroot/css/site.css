@@ -4612,6 +4612,27 @@ body.legacy-shell .p-page-header .p-eyebrow {
   color: #6B6B6B;
 }
 
+.p-plan-option .p-plan-trial {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.p-plan-price-original {
+  color: #9aa3b2;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+.p-plan-price-free {
+  color: #0A0A0A;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
 /* Flow steps */
 .p-step {
   background: #FFFFFF;
@@ -6470,5 +6491,169 @@ body.public-shell .p-mini-grid {
 
   body.legacy-shell .p-page-heading {
     font-size: 20px;
+  }
+}
+
+/* ============================================================
+   TRIAL OFFER — Banner, badge, struck price (Planes page)
+   ============================================================ */
+
+.landing-trial-banner {
+  background: #188bca;
+  color: #fff;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+  padding: 14px 24px;
+  border-radius: 999px;
+  max-width: 720px;
+  margin: 0 auto 28px;
+  box-shadow: 0 6px 18px rgba(24, 139, 202, 0.18);
+}
+
+.landing-price-trial {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0.9rem 0 1.1rem;
+}
+
+.landing-price-original {
+  color: #9aa3b2;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.landing-price-free {
+  color: #0A0A0A;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.landing-price-after {
+  color: #6B6B6B;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .landing-trial-banner {
+    font-size: 0.95rem;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+  }
+
+  .landing-price-free {
+    font-size: 2.2rem;
+  }
+}
+
+/* ============================================================
+   Account page + past_due banner (Business/Account, Business/Dashboard)
+   ============================================================ */
+
+.alert-past-due {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  color: #92400E;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+}
+
+.alert-past-due > i {
+  font-size: 1.4rem;
+  flex: 0 0 auto;
+}
+
+.alert-past-due > div {
+  flex: 1 1 auto;
+  line-height: 1.4;
+}
+
+.alert-past-due .p-btn {
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.account-sub-card {
+  margin-bottom: 20px;
+}
+
+.account-sub-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.account-sub-sync {
+  margin-left: auto;
+  display: inline-flex;
+}
+
+.account-sub-sync-btn {
+  background: transparent;
+  border: 1px solid #D8D7D3;
+  color: #6B6B6B;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.account-sub-sync-btn:hover {
+  background: #F4F3EF;
+  color: #0A0A0A;
+}
+
+.account-sub-meta {
+  color: #6B6B6B;
+  font-size: 0.95rem;
+}
+
+.account-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.account-actions-row .p-btn {
+  border-radius: 999px;
+}
+
+.p-btn-outline-danger {
+  background: transparent;
+  border: 1px solid #B91C1C;
+  color: #B91C1C;
+  padding: 0.45rem 1rem;
+  font-weight: 700;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.p-btn-outline-danger:hover {
+  background: #FEF2F2;
+  color: #B91C1C;
+}
+
+@media (max-width: 640px) {
+  .alert-past-due {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

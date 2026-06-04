@@ -15,17 +15,20 @@ public sealed class DashboardModel : PageModel
     private readonly DigitalCardsAppService _appService;
     private readonly IBusinessEnrollmentLinkService _businessEnrollmentLinks;
     private readonly PilotAccessService _pilotAccess;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
     private readonly IConfiguration _configuration;
 
     public DashboardModel(
         DigitalCardsAppService appService,
         IBusinessEnrollmentLinkService businessEnrollmentLinks,
         PilotAccessService pilotAccess,
+        IBusinessSubscriptionRepository subscriptions,
         IConfiguration configuration)
     {
         _appService = appService;
         _businessEnrollmentLinks = businessEnrollmentLinks;
         _pilotAccess = pilotAccess;
+        _subscriptions = subscriptions;
         _configuration = configuration;
     }
 
@@ -42,6 +45,10 @@ public sealed class DashboardModel : PageModel
     public string? GeneratedEnrollmentUrl { get; private set; }
 
     public string? GeneratedEnrollmentQrSvg { get; private set; }
+
+    public string? SubscriptionStatus { get; private set; }
+
+    public DateTimeOffset? GraceEndsAt { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -87,6 +94,10 @@ public sealed class DashboardModel : PageModel
 
         var existingToken = await _businessEnrollmentLinks.GetExistingTokenAsync(businessId, cancellationToken);
         HasExistingToken = existingToken is not null;
+
+        var sub = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
+        SubscriptionStatus = sub?.SubscriptionStatus;
+        GraceEndsAt = sub?.GraceEndsAt;
 
         return Page();
     }

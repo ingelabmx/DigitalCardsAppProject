@@ -151,7 +151,8 @@ public sealed class BusinessesModel : PageModel
             {
                 SubscriptionStatus = sub?.SubscriptionStatus,
                 StripePlanKey = sub?.StripePlanKey,
-                GraceEndsAt = sub?.GraceEndsAt
+                GraceEndsAt = sub?.GraceEndsAt,
+                SubscriptionEndsAt = sub?.SubscriptionEndsAt
             });
         }
 

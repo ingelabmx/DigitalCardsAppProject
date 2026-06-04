@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
+using DigitalCards.Domain;
 using DigitalCards.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +14,23 @@ namespace DigitalCards.Web.Pages.Business;
 public sealed class AccountModel : PageModel
 {
     private readonly DigitalCardsAppService _appService;
+    private readonly IBusinessSubscriptionRepository _subscriptions;
+    private readonly IStripeService _stripe;
+    private readonly BusinessSignupService _signupService;
+    private readonly ILogger<AccountModel> _logger;
 
-    public AccountModel(DigitalCardsAppService appService)
+    public AccountModel(
+        DigitalCardsAppService appService,
+        IBusinessSubscriptionRepository subscriptions,
+        IStripeService stripe,
+        BusinessSignupService signupService,
+        ILogger<AccountModel> logger)
     {
         _appService = appService;
+        _subscriptions = subscriptions;
+        _stripe = stripe;
+        _signupService = signupService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -24,6 +39,14 @@ public sealed class AccountModel : PageModel
     public string? BusinessName { get; private set; }
 
     public string? StatusMessage { get; private set; }
+
+    public BusinessSubscription? Subscription { get; private set; }
+
+    [TempData]
+    public string? SubscriptionStatusMessage { get; set; }
+
+    [TempData]
+    public string? SubscriptionErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -36,6 +59,7 @@ public sealed class AccountModel : PageModel
 
         BusinessName = settings.BusinessName;
         ViewData["BusinessShellName"] = settings.Branding.PublicName;
+        Subscription = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
         return Page();
     }
 
@@ -50,6 +74,7 @@ public sealed class AccountModel : PageModel
 
         BusinessName = settings.BusinessName;
         ViewData["BusinessShellName"] = settings.Branding.PublicName;
+        Subscription = await _subscriptions.FindByBusinessIdAsync(businessId, cancellationToken);
 
         if (!ModelState.IsValid)
         {
@@ -72,6 +97,85 @@ public sealed class AccountModel : PageModel
         Input = new InputModel();
         StatusMessage = "Contrasena actualizada correctamente. Se envio un correo de confirmacion.";
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostOpenPortalAsync(CancellationToken cancellationToken)
+    {
+        var sub = await _subscriptions.FindByBusinessIdAsync(
+            BusinessAuth.GetBusinessId(User),
+            cancellationToken);
+
+        if (sub is null ||
+            string.IsNullOrEmpty(sub.StripeCustomerId) ||
+            sub.SubscriptionStatus == "manual")
+        {
+            SubscriptionErrorMessage = "Tu plan no se administra desde Stripe.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            var returnUrl = $"{Request.Scheme}://{Request.Host}/Business/Account";
+            var portalUrl = await _stripe.CreatePortalSessionAsync(
+                sub.StripeCustomerId,
+                returnUrl,
+                cancellationToken);
+            return Redirect(portalUrl);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create billing portal session for business {Id}.", sub.BusinessId);
+            SubscriptionErrorMessage = "No se pudo abrir el portal de pagos. Intenta de nuevo.";
+            return RedirectToPage();
+        }
+    }
+
+    public async Task<IActionResult> OnPostSyncAsync(CancellationToken cancellationToken)
+    {
+        var businessId = BusinessAuth.GetBusinessId(User);
+        try
+        {
+            var synced = await _signupService.SyncSubscriptionFromStripeAsync(businessId, cancellationToken);
+            SubscriptionStatusMessage = synced
+                ? "Suscripcion sincronizada con Stripe."
+                : "No hay nada que sincronizar.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to sync subscription for business {Id}.", businessId);
+            SubscriptionErrorMessage = "No se pudo sincronizar con Stripe. Intenta de nuevo.";
+        }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(CancellationToken cancellationToken)
+    {
+        var sub = await _subscriptions.FindByBusinessIdAsync(
+            BusinessAuth.GetBusinessId(User),
+            cancellationToken);
+
+        if (sub is null ||
+            string.IsNullOrEmpty(sub.StripeSubscriptionId) ||
+            sub.SubscriptionStatus == "manual" ||
+            sub.SubscriptionStatus == "canceled")
+        {
+            SubscriptionErrorMessage = "No hay suscripcion activa que cancelar.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            await _stripe.CancelSubscriptionImmediatelyAsync(sub.StripeSubscriptionId, cancellationToken);
+            SubscriptionStatusMessage = "Tu suscripcion fue cancelada.";
+            _logger.LogInformation("Business {Id} requested immediate cancellation.", sub.BusinessId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to cancel subscription for business {Id}.", sub.BusinessId);
+            SubscriptionErrorMessage = "No se pudo cancelar la suscripcion. Intenta de nuevo.";
+        }
+
+        return RedirectToPage();
     }
 
     public sealed class InputModel

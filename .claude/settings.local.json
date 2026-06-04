@@ -5,7 +5,8 @@
       "Bash(powershell *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\new user\\\\Documents\\\\GitHub\\\\DigitalCardsAppProject\\\\src\\\\DigitalCards.Web\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(Get-Content *)"
+      "Bash(Get-Content *)",
+      "Bash(dotnet build *)"
     ]
   }
 }

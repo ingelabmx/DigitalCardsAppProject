@@ -21,6 +21,195 @@
     </div>
 }
 
+@if (!string.IsNullOrWhiteSpace(Model.SubscriptionStatusMessage))
+{
+    <div class="alert alert-success" role="status" data-testid="business-account-sub-status">
+        @Model.SubscriptionStatusMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.SubscriptionErrorMessage))
+{
+    <div class="alert alert-danger" role="alert" data-testid="business-account-sub-error">
+        @Model.SubscriptionErrorMessage
+    </div>
+}
+
+@{
+    var sub = Model.Subscription;
+    var status = sub?.SubscriptionStatus;
+    string SubBadgeClass(string? s) => s switch
+    {
+        "active"   => "p-badge-green",
+        "trial"    => "p-badge-blue",
+        "manual"   => "p-badge-black",
+        "past_due" => "p-badge-red",
+        "canceled" => "p-badge-gray",
+        _          => "p-badge-gray"
+    };
+    string SubLabel(string? s) => s switch
+    {
+        "active"   => "Activa",
+        "trial"    => "En prueba",
+        "manual"   => "Plan manual",
+        "past_due" => "Pago atrasado",
+        "canceled" => "Cancelada",
+        _          => "Sin suscripcion"
+    };
+    string PlanLabel(string? p) => p switch
+    {
+        "Basic"    => "Plan Basico",
+        "Pro"      => "Plan Pro",
+        "Business" => "Plan Empresarial",
+        "Manual"   => "Plan manual",
+        null       => "Sin plan",
+        _          => p
+    };
+}
+
+<div class="p-card account-sub-card" data-testid="business-account-subscription">
+    <h2 class="p-section-title">Mi suscripcion</h2>
+    @if (sub is null)
+    {
+        <p class="account-sub-meta">No tienes una suscripcion registrada.</p>
+        <div class="account-actions-row mt-3">
+            <a class="p-btn p-btn-primary" asp-page="/Business/Reactivate">Contratar plan</a>
+        </div>
+    }
+    else
+    {
+        <div class="account-sub-status">
+            <span class="p-badge @SubBadgeClass(status)" data-testid="business-account-sub-badge">@SubLabel(status)</span>
+            <span class="account-sub-meta" data-testid="business-account-plan">@PlanLabel(sub.StripePlanKey)</span>
+            @if (!string.IsNullOrEmpty(sub.StripeSubscriptionId) && status != "manual")
+            {
+                <form method="post" asp-page-handler="Sync" class="account-sub-sync">
+                    <button type="submit" class="account-sub-sync-btn" data-testid="business-account-sync"
+                            title="Volver a leer el estado actual desde Stripe">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (status == "trial" && sub.SubscriptionEndsAt.HasValue)
+        {
+            <p class="account-sub-meta">Tu prueba gratuita termina el
+                <time class="local-time"
+                      data-utc="@sub.SubscriptionEndsAt.Value.ToUniversalTime().ToString("o")"
+                      data-format="date">@sub.SubscriptionEndsAt.Value.ToLocalTime().ToString("d")</time>.
+            </p>
+        }
+        else if (status == "active" && sub.SubscriptionEndsAt.HasValue)
+        {
+            <p class="account-sub-meta">Proxima renovacion:
+                <time class="local-time"
+                      data-utc="@sub.SubscriptionEndsAt.Value.ToUniversalTime().ToString("o")"
+                      data-format="date">@sub.SubscriptionEndsAt.Value.ToLocalTime().ToString("d")</time>.
+            </p>
+        }
+        else if (status == "past_due" && sub.GraceEndsAt.HasValue)
+        {
+            <p class="account-sub-meta">Tu cuenta se desactivara el
+                <time class="local-time"
+                      data-utc="@sub.GraceEndsAt.Value.ToUniversalTime().ToString("o")"
+                      data-format="date">@sub.GraceEndsAt.Value.ToLocalTime().ToString("d")</time>.
+            </p>
+        }
+        else if (status == "canceled")
+        {
+            <p class="account-sub-meta">Cancelada el
+                <time class="local-time"
+                      data-utc="@sub.UpdatedAt.ToUniversalTime().ToString("o")"
+                      data-format="date">@sub.UpdatedAt.ToLocalTime().ToString("d")</time>.
+            </p>
+        }
+        else if (status == "manual")
+        {
+            <p class="account-sub-meta">Plan administrado por Puntelio.</p>
+        }
+
+        <div class="account-actions-row mt-3" data-testid="business-account-actions">
+            @if (status == "trial")
+            {
+                <form method="post" asp-page-handler="OpenPortal" style="display:inline">
+                    <button type="submit" class="p-btn p-btn-outline" data-testid="business-account-change-plan">
+                        Cambiar plan
+                    </button>
+                </form>
+                <button type="button" class="p-btn p-btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                        data-testid="business-account-cancel-trigger">
+                    Cancelar suscripcion
+                </button>
+            }
+            else if (status == "active")
+            {
+                <form method="post" asp-page-handler="OpenPortal" style="display:inline">
+                    <button type="submit" class="p-btn p-btn-outline" data-testid="business-account-change-plan">
+                        Cambiar plan
+                    </button>
+                </form>
+                <form method="post" asp-page-handler="OpenPortal" style="display:inline">
+                    <button type="submit" class="p-btn p-btn-outline" data-testid="business-account-update-payment">
+                        Actualizar metodo de pago
+                    </button>
+                </form>
+                <button type="button" class="p-btn p-btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                        data-testid="business-account-cancel-trigger">
+                    Cancelar suscripcion
+                </button>
+            }
+            else if (status == "past_due")
+            {
+                <form method="post" asp-page-handler="OpenPortal" style="display:inline">
+                    <button type="submit" class="p-btn p-btn-primary" data-testid="business-account-update-payment">
+                        Actualizar metodo de pago
+                    </button>
+                </form>
+                <button type="button" class="p-btn p-btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                        data-testid="business-account-cancel-trigger">
+                    Cancelar suscripcion
+                </button>
+            }
+            else if (status == "canceled")
+            {
+                <a class="p-btn p-btn-primary" asp-page="/Business/Reactivate" data-testid="business-account-reactivate">
+                    Reactivar
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@if (status == "trial" || status == "active" || status == "past_due")
+{
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:16px">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="cancelModalLabel">¿Cancelar suscripcion?</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Tu negocio se desactivara inmediatamente y perderas acceso a todas las funciones. Esta accion no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:999px">
+                        Volver
+                    </button>
+                    <form method="post" asp-page-handler="Cancel" style="display:inline">
+                        <button type="submit" class="btn btn-danger" style="border-radius:999px" data-testid="business-account-cancel-confirm">
+                            Si, cancelar ahora
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <form method="post" data-testid="business-account-form">
     <div class="p-card mb-4">
         <h2 class="p-section-title">Cambiar contrasena</h2>

@@ -64,6 +64,27 @@ public sealed class BusinessSubscription
             graceEndsAt: null);
     }
 
+    public BusinessSubscription WithTrialActivation(
+        string customerId,
+        string subscriptionId,
+        DateTimeOffset trialEndsAt,
+        DateTimeOffset updatedAt)
+    {
+        return new BusinessSubscription(
+            BusinessId,
+            "trial",
+            MaxClients,
+            CreatedViaSelfService,
+            CreatedAt,
+            updatedAt,
+            StripePlanKey,
+            customerId,
+            subscriptionId,
+            StripeCheckoutSessionId,
+            trialEndsAt,
+            graceEndsAt: null);
+    }
+
     public BusinessSubscription WithRenewal(DateTimeOffset subscriptionEndsAt, DateTimeOffset updatedAt)
     {
         return new BusinessSubscription(

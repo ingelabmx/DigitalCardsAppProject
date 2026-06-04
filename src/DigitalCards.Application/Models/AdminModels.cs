@@ -135,7 +135,8 @@ public sealed record PilotBusinessDto(
     DateTimeOffset? UpdatedAt,
     string? SubscriptionStatus = null,
     string? StripePlanKey = null,
-    DateTimeOffset? GraceEndsAt = null);
+    DateTimeOffset? GraceEndsAt = null,
+    DateTimeOffset? SubscriptionEndsAt = null);
 
 public sealed record SetPilotBusinessCommand(
     Guid BusinessId,
