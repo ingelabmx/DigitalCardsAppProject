@@ -71,18 +71,6 @@ else
             <form method="post" data-testid="public-business-enrollment-form">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-                <div class="mb-3">
-                    <label asp-for="Input.UserName" class="form-label"></label>
-                    <input asp-for="Input.UserName"
-                           class="form-control form-control-lg"
-                           pattern="[A-Za-z0-9]+"
-                           autocomplete="username"
-                           autocapitalize="none"
-                           spellcheck="false"
-                           data-testid="public-enroll-username" />
-                    <span asp-validation-for="Input.UserName" class="text-danger"></span>
-                </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label asp-for="Input.FirstName" class="form-label"></label>

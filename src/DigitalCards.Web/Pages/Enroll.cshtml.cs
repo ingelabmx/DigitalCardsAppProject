@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Text;
 using DigitalCards.Application.Abstractions;
 using DigitalCards.Application.Models;
 using DigitalCards.Application.Services;
@@ -19,6 +21,7 @@ public sealed class EnrollModel : PageModel
     private readonly IBusinessRepository _businesses;
     private readonly IBusinessBrandingRepository _businessBranding;
     private readonly DigitalCardsAppService _appService;
+    private readonly IClientRepository _clients;
     private readonly PilotAccessService _pilotAccess;
     private readonly IConfiguration _configuration;
     private BusinessEntity? _business;
@@ -29,6 +32,7 @@ public sealed class EnrollModel : PageModel
         IBusinessRepository businesses,
         IBusinessBrandingRepository businessBranding,
         DigitalCardsAppService appService,
+        IClientRepository clients,
         PilotAccessService pilotAccess,
         IConfiguration configuration)
     {
@@ -36,6 +40,7 @@ public sealed class EnrollModel : PageModel
         _businesses = businesses;
         _businessBranding = businessBranding;
         _appService = appService;
+        _clients = clients;
         _pilotAccess = pilotAccess;
         _configuration = configuration;
     }
@@ -113,7 +118,7 @@ public sealed class EnrollModel : PageModel
 
         try
         {
-            var userName = ClientUserNameNormalizer.NormalizeUserName(Input.UserName);
+            var userName = await GenerateUserNameAsync(Input.FirstName, Input.LastName, cancellationToken);
             var client = await _appService.RegisterClientAsync(
                 new RegisterClientCommand(
                     userName,
@@ -223,13 +228,44 @@ public sealed class EnrollModel : PageModel
             Request.Host);
     }
 
+    private async Task<string> GenerateUserNameAsync(string firstName, string lastName, CancellationToken ct)
+    {
+        var initial = NormalizeToAscii(firstName.Trim());
+        initial = initial.Length > 0 ? initial[..1] : "";
+        var surname = NormalizeToAscii(lastName.Trim());
+        var baseCandidate = initial + surname;
+        if (string.IsNullOrEmpty(baseCandidate))
+            baseCandidate = "cliente";
+
+        if (!await _clients.UserNameOrEmailExistsAsync(baseCandidate, ct))
+            return baseCandidate;
+
+        for (var i = 1; i <= 999; i++)
+        {
+            var candidate = $"{baseCandidate}{i}";
+            if (!await _clients.UserNameOrEmailExistsAsync(candidate, ct))
+                return candidate;
+        }
+        return (baseCandidate + Guid.NewGuid().ToString("N"))[..20];
+    }
+
+    private static string NormalizeToAscii(string input)
+    {
+        var sb = new StringBuilder();
+        foreach (var c in input.Normalize(NormalizationForm.FormD))
+        {
+            var lower = char.ToLowerInvariant(c);
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark
+                && lower is >= 'a' and <= 'z')
+            {
+                sb.Append(lower);
+            }
+        }
+        return sb.ToString();
+    }
+
     public sealed class InputModel
     {
-        [Display(Name = "Crea un usuario unico")]
-        [Required]
-        [RegularExpression("^[A-Za-z0-9]+$", ErrorMessage = "El usuario solo puede usar letras y numeros, sin espacios.")]
-        public string UserName { get; set; } = string.Empty;
-
         [Display(Name = "Nombre")]
         [Required]
         public string FirstName { get; set; } = string.Empty;
