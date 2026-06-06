@@ -1,12 +1,14 @@
 @page "/Demo"
+@using DigitalCards.Web.Landing
+@inject Microsoft.Extensions.Options.IOptions<LandingOptions> LandingOptionsAccessor
 @{
     Layout = "_LandingLayout";
+    var landing = LandingOptionsAccessor.Value;
     ViewData["Title"] = "Demo";
     ViewData["Description"] = "Prueba Puntelio en vivo: registrate como cliente del negocio Puntelio, instala tu tarjeta digital en Apple o Google Wallet y descubre como funciona el sistema de sellos.";
 }
 
 <div class="p-cta-central" data-landing-reveal>
-    <p class="p-eyebrow">Demo interactivo</p>
     <h1>Experiencia Puntelio, en vivo.</h1>
     <p>Este es el negocio Puntelio. Registrate como cliente, instala tu tarjeta en Apple o Google Wallet, y descubre de primera mano como funciona el sistema de sellos digitales.</p>
 </div>
@@ -66,6 +68,6 @@
            href="https://app.puntelio.com/Enroll/t7RbkkU7fWNXQ8-oC8AfU0rG_qML2_WMTV6Y_DNn8qk">
             Registrarme como cliente de Puntelio
         </a>
-        <a class="p-btn p-btn-outline p-btn-lg" href="/">Volver al inicio</a>
+        <a class="p-btn p-btn-outline p-btn-lg" href="@landing.SiteUrl">Volver al inicio</a>
     </div>
 </div>
