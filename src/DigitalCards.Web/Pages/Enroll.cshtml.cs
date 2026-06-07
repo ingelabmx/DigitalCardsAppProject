@@ -274,7 +274,7 @@ public sealed class EnrollModel : PageModel
         public string Email { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
-        [Display(Name = "Contrasena")]
+        [Display(Name = "Crea tu contrasena")]
         [Required]
         [MinLength(8)]
         public string Password { get; set; } = string.Empty;

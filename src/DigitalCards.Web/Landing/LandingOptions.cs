@@ -8,7 +8,7 @@ public sealed class LandingOptions
 
     public string AppUrl { get; set; } = "https://app.puntelio.com";
 
-    public string ContactEmail { get; set; } = "ingelabmx@gmail.com";
+    public string ContactEmail { get; set; } = "punteliomx@gmail.com";
 
     public string WhatsAppUrl { get; set; } = "https://wa.me/526641972204";
 
